@@ -97,7 +97,7 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
-                href="/sign-up"
+                href="/signup"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "h-11 px-6 bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-base"
@@ -313,7 +313,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link
-                href="/sign-up"
+                href="/signup"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "mt-8 w-full h-11"
@@ -362,7 +362,7 @@ export default function LandingPage() {
                 ))}
               </ul>
               <Link
-                href="/sign-up?plan=pro"
+                href="/signup?plan=pro"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "mt-8 w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
@@ -457,7 +457,7 @@ export default function LandingPage() {
             required.
           </p>
           <Link
-            href="/sign-up"
+            href="/signup"
             className={cn(
               buttonVariants({ variant: "default", size: "lg" }),
               "mt-8 h-11 px-8 bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-base"

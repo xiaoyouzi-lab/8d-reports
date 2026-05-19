@@ -4,8 +4,18 @@ import { getDb } from "./db";
 import * as schema from "./db/schema";
 
 function createAuth() {
+  const db = getDb();
+  if (!db) {
+    const dummy = betterAuth({
+      database: {},
+      emailAndPassword: { enabled: true },
+      socialProviders: {},
+    } as any);
+    return dummy;
+  }
+
   return betterAuth({
-    database: drizzleAdapter(getDb(), {
+    database: drizzleAdapter(db, {
       provider: "pg",
       schema: {
         user: schema.users,
@@ -14,9 +24,7 @@ function createAuth() {
         verification: schema.verifications,
       },
     }),
-    emailAndPassword: {
-      enabled: true,
-    },
+    emailAndPassword: { enabled: true },
     socialProviders: {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -30,17 +38,4 @@ function createAuth() {
   });
 }
 
-let _auth: ReturnType<typeof createAuth> | null = null;
-
-function getAuth() {
-  if (!_auth) {
-    _auth = createAuth();
-  }
-  return _auth;
-}
-
-export const auth = new Proxy({} as ReturnType<typeof createAuth>, {
-  get(_, prop) {
-    return (getAuth() as any)[prop];
-  },
-});
+export const auth = createAuth();

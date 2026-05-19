@@ -63,7 +63,7 @@ export default function MarketingLayout({
 
           <div className="flex items-center gap-2">
             <Link
-              href="/sign-in"
+              href="/login"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" })
               )}
@@ -71,7 +71,7 @@ export default function MarketingLayout({
               Sign in
             </Link>
             <Link
-              href="/sign-up"
+              href="/signup"
               className={cn(
                 buttonVariants({ variant: "default", size: "sm" }),
                 "bg-[#4F46E5] hover:bg-[#4F46E5]/90"
