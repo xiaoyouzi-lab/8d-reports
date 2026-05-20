@@ -1,22 +1,23 @@
 import { getRequestConfig } from "next-intl/server"
-import { cookies } from "next/headers"
 
 export default getRequestConfig(async () => {
-  let locale = "en"
-
   try {
-    const cookieStore = await cookies()
-    const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value
-    if (cookieLocale === "en" || cookieLocale === "zh-CN") {
-      locale = cookieLocale
+    const { headers } = await import("next/headers")
+    const heads = await headers()
+    const locale = heads.get("x-locale")
+
+    if (locale === "zh-CN") {
+      return {
+        locale: "zh-CN",
+        messages: (await import("../messages/zh-CN.json")).default,
+        timeZone: "Asia/Shanghai",
+      }
     }
-  } catch {
-    locale = "en"
-  }
+  } catch { /* fall through to default */ }
 
   return {
-    locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    locale: "en",
+    messages: (await import("../messages/en.json")).default,
     timeZone: "Asia/Shanghai",
   }
 })

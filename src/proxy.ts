@@ -13,26 +13,26 @@ function detectLocale(request: NextRequest): string {
 
 const protectedPaths = ["/dashboard", "/reports"]
 
-function setLocaleCookie(response: NextResponse, locale: string) {
-  response.cookies.set(LANG_COOKIE, locale, {
-    path: "/",
-    maxAge: 31536000,
-    sameSite: "lax",
-  })
-}
-
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-
   const locale = detectLocale(request)
+
+  const headers = new Headers(request.headers)
+  headers.set("x-locale", locale)
 
   const isProtected = protectedPaths.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   )
 
   if (!isProtected) {
-    const response = NextResponse.next()
-    setLocaleCookie(response, locale)
+    const response = NextResponse.next({
+      request: { headers },
+    })
+    response.cookies.set(LANG_COOKIE, locale, {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    })
     return response
   }
 
@@ -44,12 +44,22 @@ export default function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("redirect", pathname)
     const response = NextResponse.redirect(loginUrl)
-    setLocaleCookie(response, locale)
+    response.cookies.set(LANG_COOKIE, locale, {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    })
     return response
   }
 
-  const response = NextResponse.next()
-  setLocaleCookie(response, locale)
+  const response = NextResponse.next({
+    request: { headers },
+  })
+  response.cookies.set(LANG_COOKIE, locale, {
+    path: "/",
+    maxAge: 31536000,
+    sameSite: "lax",
+  })
   return response
 }
 
