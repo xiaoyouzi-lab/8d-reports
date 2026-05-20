@@ -3,6 +3,15 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "./db";
 import * as schema from "./db/schema";
 
+function validatePassword(password: string): string | null {
+  if (!password || password.length < 8) return "Password must be at least 8 characters";
+  if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter";
+  if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter";
+  if (!/[0-9]/.test(password)) return "Password must contain at least one digit";
+  if (!/[^A-Za-z0-9]/.test(password)) return "Password must contain at least one special character";
+  return null;
+}
+
 function createAuth() {
   const db = getDb();
   if (!db) {
@@ -24,7 +33,12 @@ function createAuth() {
         verification: schema.verifications,
       },
     }),
-    emailAndPassword: { enabled: true },
+    emailAndPassword: {
+      enabled: true,
+      passwordValidator: async (password: string) => {
+        return validatePassword(password);
+      },
+    },
     socialProviders: {
       google: {
         clientId: process.env.GOOGLE_CLIENT_ID || "",
@@ -34,6 +48,16 @@ function createAuth() {
         clientId: process.env.GITHUB_CLIENT_ID || "",
         clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
       },
+    },
+    session: {
+      cookieCache: {
+        enabled: true,
+        maxAge: 30 * 24 * 60 * 60,
+      },
+    },
+    advanced: {
+      cookiePrefix: "better-auth",
+      useSecureCookies: process.env.NODE_ENV === "production",
     },
   });
 }

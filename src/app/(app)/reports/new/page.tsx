@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { ArrowRight, FileText } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -14,25 +15,36 @@ import {
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
-function generateReportId(): string {
-  const num = String(Math.floor(Math.random() * 9000) + 1000)
-  return `QR-2025-${num}`
-}
-
 export default function NewReportPage() {
   const router = useRouter()
   const [reportType, setReportType] = useState("customer_8d")
   const [priority, setPriority] = useState("medium")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleStart = () => {
+  const handleStart = async () => {
     setIsSubmitting(true)
-    const reportId = generateReportId()
-    localStorage.setItem(
-      `report_${reportId}_meta`,
-      JSON.stringify({ reportType, priority, createdAt: new Date().toISOString() }),
-    )
-    router.push(`/reports/${reportId}`)
+    try {
+      const res = await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reportType, priority }),
+      })
+      if (res.status === 403) {
+        toast.error("Quota exhausted. Upgrade to Pro to create more reports.")
+        setIsSubmitting(false)
+        return
+      }
+      if (!res.ok) {
+        toast.error("Failed to create report")
+        setIsSubmitting(false)
+        return
+      }
+      const report = await res.json()
+      router.push(`/reports/${report.id}`)
+    } catch {
+      toast.error("An unexpected error occurred")
+      setIsSubmitting(false)
+    }
   }
 
   return (

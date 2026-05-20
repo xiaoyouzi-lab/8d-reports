@@ -13,7 +13,8 @@ import { Separator } from "@/components/ui/separator"
 export default function SignupPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+  const rawCallback = searchParams.get("callbackUrl")
+  const callbackUrl = rawCallback && rawCallback.startsWith("/") ? rawCallback : "/dashboard"
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -81,7 +82,7 @@ export default function SignupPage() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="Min. 8 characters" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-9" />
+            <Input id="password" type="password" placeholder="8+ chars, upper, lower, digit, special" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-9" />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="confirmPassword">Confirm password</Label>

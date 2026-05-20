@@ -9,6 +9,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react"
+import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
@@ -16,47 +17,9 @@ import { ReportStepsNav } from "@/components/report/ReportStepsNav"
 import { StepForm } from "@/components/report/StepForm"
 import { ExportButton } from "@/components/report/ExportButton"
 import { ShareDialog } from "@/components/report/ShareDialog"
-import { incrementQuotaUsed } from "@/components/report/QuotaIndicator"
 import { STEPS, DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
 import { cn } from "@/lib/utils"
-
-const STORAGE_PREFIX = "report_data_"
-const STEPS_STORAGE_PREFIX = "report_steps_"
-
-function loadReportData(reportId: string): ReportData {
-  if (typeof window === "undefined") return { ...DEFAULT_REPORT_DATA, reportNumber: reportId }
-  try {
-    const metaStr = localStorage.getItem(`report_${reportId}_meta`)
-    const meta = metaStr ? JSON.parse(metaStr) : null
-    const savedStr = localStorage.getItem(`${STORAGE_PREFIX}${reportId}`)
-    const saved = savedStr ? JSON.parse(savedStr) : {}
-
-    return {
-      ...DEFAULT_REPORT_DATA,
-      reportNumber: reportId,
-      reportType: meta?.reportType ?? DEFAULT_REPORT_DATA.reportType,
-      priority: meta?.priority ?? DEFAULT_REPORT_DATA.priority,
-      ...saved,
-    }
-  } catch {
-    // ignore
-  }
-  return { ...DEFAULT_REPORT_DATA, reportNumber: reportId }
-}
-
-function loadCompletedSteps(reportId: string): Set<string> {
-  if (typeof window === "undefined") return new Set<string>()
-  try {
-    const saved = localStorage.getItem(`${STEPS_STORAGE_PREFIX}${reportId}`)
-    if (saved) {
-      return new Set(JSON.parse(saved))
-    }
-  } catch {
-    // ignore
-  }
-  return new Set<string>()
-}
 
 const statusStyles: Record<string, string> = {
   draft: "bg-amber-100 text-amber-700 ring-amber-600/20",
@@ -75,16 +38,53 @@ export default function ReportEditorPage({
   const isPro = plan === "pro"
   const hasConsumedQuotaRef = useRef(false)
 
-  const [reportData, setReportData] = useState<ReportData>(() =>
-    loadReportData(reportId),
-  )
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(() =>
-    loadCompletedSteps(reportId),
-  )
+  const [reportData, setReportData] = useState<ReportData>({
+    ...DEFAULT_REPORT_DATA,
+    reportNumber: reportId,
+  })
+  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
   const [activeStepIndex, setActiveStepIndex] = useState(0)
   const [reportTitle, setReportTitle] = useState("Untitled Report")
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
 
-  const status = completedSteps.size === STEPS.length ? "completed" : completedSteps.size > 0 ? "in_progress" : "draft"
+  useEffect(() => {
+    async function load() {
+      try {
+        const res = await fetch(`/api/reports/${reportId}`)
+        if (!res.ok) return
+        const row = await res.json()
+        setReportTitle(row.title || "Untitled Report")
+        if (row.data && typeof row.data === "object") {
+          setReportData((prev) => ({
+            ...prev,
+            ...row.data,
+            reportNumber: reportId,
+            reportType: row.reportType || prev.reportType,
+            priority: row.priority || prev.priority,
+          }))
+        }
+        if (row.stepStatus && typeof row.stepStatus === "object") {
+          const completed = new Set<string>()
+          for (const [stepId, done] of Object.entries(row.stepStatus)) {
+            if (done) completed.add(stepId)
+          }
+          setCompletedSteps(completed)
+        }
+      } catch {
+        // ignore
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [reportId])
+
+  const status = completedSteps.size === STEPS.length
+    ? "completed"
+    : completedSteps.size > 0
+      ? "in_progress"
+      : "draft"
 
   const currentStep = STEPS[activeStepIndex]
 
@@ -92,29 +92,31 @@ export default function ReportEditorPage({
     setReportData((prev) => ({ ...prev, [name]: value }))
   }, [])
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      localStorage.setItem(
-        `${STORAGE_PREFIX}${reportId}`,
-        JSON.stringify(reportData),
-      )
-      localStorage.setItem(
-        `${STEPS_STORAGE_PREFIX}${reportId}`,
-        JSON.stringify(Array.from(completedSteps)),
-      )
-    }, 10000)
-    return () => clearInterval(interval)
-  }, [reportId, reportData, completedSteps])
+  const saveToServer = useCallback(async (data: ReportData, steps: Set<string>, title: string) => {
+    const stepStatusObj: Record<string, boolean> = {}
+    for (const stepId of steps) stepStatusObj[stepId] = true
+    await fetch(`/api/reports/${reportId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        data,
+        stepStatus: stepStatusObj,
+        title,
+        status: steps.size === STEPS.length ? "completed" : steps.size > 0 ? "in_progress" : "draft",
+      }),
+    })
+  }, [reportId])
 
-  const handleSave = () => {
-    localStorage.setItem(
-      `${STORAGE_PREFIX}${reportId}`,
-      JSON.stringify(reportData),
-    )
-    localStorage.setItem(
-      `${STEPS_STORAGE_PREFIX}${reportId}`,
-      JSON.stringify(Array.from(completedSteps)),
-    )
+  const handleSave = async () => {
+    setSaving(true)
+    try {
+      await saveToServer(reportData, completedSteps, reportTitle)
+      toast.success("Report saved")
+    } catch {
+      toast.error("Failed to save")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const handleMarkStepComplete = () => {
@@ -142,6 +144,24 @@ export default function ReportEditorPage({
     setActiveStepIndex(index)
   }
 
+  const consumeQuota = async () => {
+    if (hasConsumedQuotaRef.current || plan === "pro") return
+    hasConsumedQuotaRef.current = true
+    try {
+      await fetch("/api/quota", { method: "POST" })
+    } catch {
+      // ignore
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-[#F8F9FB]">
+        <div className="text-sm text-muted-foreground">Loading report...</div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col bg-[#F8F9FB]">
       <div className="sticky top-14 z-30 border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -158,7 +178,7 @@ export default function ReportEditorPage({
             <span className="hidden h-4 w-px bg-border sm:block" />
 
             <span className="font-mono text-xs font-semibold text-indigo-600 tabular-nums">
-              {reportId}
+              {reportId.slice(0, 8)}
             </span>
 
             <input
@@ -199,9 +219,10 @@ export default function ReportEditorPage({
               size="sm"
               className="bg-indigo-600 text-white hover:bg-indigo-700"
               onClick={handleSave}
+              disabled={saving}
             >
               <Save className="size-3.5" />
-              <span className="hidden sm:inline">Save</span>
+              <span className="hidden sm:inline">{saving ? "Saving..." : "Save"}</span>
             </Button>
           </div>
         </div>
@@ -253,7 +274,7 @@ export default function ReportEditorPage({
               </Button>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleSave}>
+                <Button variant="outline" onClick={handleSave} disabled={saving}>
                   <Save className="size-3.5" />
                   Save Draft
                 </Button>
@@ -273,10 +294,7 @@ export default function ReportEditorPage({
                     onClick={() => {
                       handleMarkStepComplete()
                       handleSave()
-                      if (!hasConsumedQuotaRef.current && plan !== "pro" && session?.user?.id) {
-                        hasConsumedQuotaRef.current = true
-                        incrementQuotaUsed(session.user.id)
-                      }
+                      consumeQuota()
                     }}
                   >
                     Complete Report

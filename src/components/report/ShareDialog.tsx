@@ -16,32 +16,9 @@ import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
 
 interface ShareInfo {
-  token: string
-  createdAt: string
+  accessToken: string
   views: number
-}
-
-function getShareKey(reportId: string): string {
-  return `share-${reportId}`
-}
-
-function loadShareInfo(reportId: string): ShareInfo | null {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = localStorage.getItem(getShareKey(reportId))
-    if (!raw) return null
-    return JSON.parse(raw)
-  } catch {
-    return null
-  }
-}
-
-function saveShareInfo(reportId: string, info: ShareInfo) {
-  localStorage.setItem(getShareKey(reportId), JSON.stringify(info))
-}
-
-function removeShareInfo(reportId: string) {
-  localStorage.removeItem(getShareKey(reportId))
+  createdAt: string
 }
 
 interface ShareDialogProps {
@@ -54,38 +31,63 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
   const [shareInfo, setShareInfo] = useState<ShareInfo | null>(null)
   const [copied, setCopied] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     setMounted(true)
-    setShareInfo(loadShareInfo(reportId))
-  }, [reportId])
+  }, [])
+
+  const fetchShare = async () => {
+    try {
+      const res = await fetch(`/api/reports/${reportId}/share`)
+      if (res.ok) {
+        const data = await res.json()
+        setShareInfo(data)
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   useEffect(() => {
     if (!open) {
-      setShareInfo(loadShareInfo(reportId))
+      fetchShare()
     }
   }, [open, reportId])
 
-  const shareUrl = shareInfo
-    ? `https://8dreports.com/share/${shareInfo.token}`
-    : ""
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
+  const shareUrl = shareInfo?.accessToken ? `${baseUrl}/share/${shareInfo.accessToken}` : ""
 
-  const handleCreateLink = () => {
-    const token = crypto.randomUUID()
-    const info: ShareInfo = {
-      token,
-      createdAt: new Date().toISOString(),
-      views: 0,
+  const handleCreateLink = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/reports/${reportId}/share`, { method: "POST" })
+      if (res.ok) {
+        const data = await res.json()
+        setShareInfo(data)
+        toast.success("Share link created!")
+      } else {
+        toast.error("Failed to create share link")
+      }
+    } catch {
+      toast.error("An unexpected error occurred")
+    } finally {
+      setLoading(false)
     }
-    saveShareInfo(reportId, info)
-    setShareInfo(info)
-    toast.success("Share link created!")
   }
 
-  const handleDeleteLink = () => {
-    removeShareInfo(reportId)
-    setShareInfo(null)
-    toast.success("Share link removed")
+  const handleDeleteLink = async () => {
+    try {
+      const res = await fetch(`/api/reports/${reportId}/share`, { method: "DELETE" })
+      if (res.ok) {
+        setShareInfo(null)
+        toast.success("Share link removed")
+      } else {
+        toast.error("Failed to remove share link")
+      }
+    } catch {
+      toast.error("An unexpected error occurred")
+    }
   }
 
   const handleCopy = async () => {
@@ -128,7 +130,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
               <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2">
                 <Link className="size-4 shrink-0 text-emerald-600" />
                 <span className="text-sm font-medium text-emerald-700">
-                  Shared — {shareInfo.views} views
+                  Shared — {shareInfo.views ?? 0} views
                 </span>
               </div>
 
@@ -159,9 +161,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
 
               <div className="text-xs text-muted-foreground">
                 Created{" "}
-                {mounted
-                  ? new Date(shareInfo.createdAt).toLocaleDateString()
-                  : ""}
+                {new Date(shareInfo.createdAt).toLocaleDateString()}
               </div>
             </>
           ) : (
@@ -202,10 +202,10 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
             <Button
               className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
               onClick={handleCreateLink}
-              disabled={!mounted}
+              disabled={!mounted || loading}
             >
               <Link className="size-4" />
-              Create Share Link
+              {loading ? "Creating..." : "Create Share Link"}
             </Button>
           )}
         </DialogFooter>

@@ -8,67 +8,21 @@ import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import { STEPS, type ReportData, DEFAULT_REPORT_DATA } from "@/lib/report-steps"
 
-interface ShareInfo {
-  token: string
-  createdAt: string
-  views: number
-}
-
-function findReportByToken(
-  token: string
-): { reportId: string; data: ReportData; shareInfo: ShareInfo; title: string } | null {
-  if (typeof window === "undefined") return null
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (!key || !key.startsWith("share-")) continue
-      const reportId = key.slice("share-".length)
-      try {
-        const raw = localStorage.getItem(key)
-        if (!raw) continue
-        const info: ShareInfo = JSON.parse(raw)
-        if (info.token === token) {
-          const dataStr = localStorage.getItem(`report_data_${reportId}`)
-          const data: ReportData = dataStr
-            ? { ...DEFAULT_REPORT_DATA, reportNumber: reportId, ...JSON.parse(dataStr) }
-            : { ...DEFAULT_REPORT_DATA, reportNumber: reportId }
-
-          const titleStr = localStorage.getItem(`report_${reportId}_title`)
-          const title = titleStr || "Untitled Report"
-
-          return { reportId, data, shareInfo: info, title }
-        }
-      } catch {
-        continue
-      }
-    }
-  } catch {
-    return null
+interface ShareResponse {
+  share: {
+    accessToken: string
+    views: number
+    createdAt: string
   }
-  return null
-}
-
-function incrementViews(token: string) {
-  if (typeof window === "undefined") return
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i)
-      if (!key || !key.startsWith("share-")) continue
-      const raw = localStorage.getItem(key)
-      if (!raw) continue
-      try {
-        const info: ShareInfo = JSON.parse(raw)
-        if (info.token === token) {
-          info.views += 1
-          localStorage.setItem(key, JSON.stringify(info))
-          return
-        }
-      } catch {
-        continue
-      }
-    }
-  } catch {
-    // ignore
+  report: {
+    id: string
+    title: string
+    data: Record<string, unknown>
+    stepStatus: Record<string, boolean> | null
+    reportType: string
+    priority: string
+    source: string | null
+    createdAt: string
   }
 }
 
@@ -80,21 +34,41 @@ export default function SharePage({
   const { token } = use(params)
   const [expandedStep, setExpandedStep] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [report, setReport] = useState<{
     reportId: string
     data: ReportData
-    shareInfo: ShareInfo
     title: string
+    createdAt: string
   } | null>(null)
 
   useEffect(() => {
     setMounted(true)
-    incrementViews(token)
-    const found = findReportByToken(token)
-    setReport(found)
+    fetch(`/api/share/${token}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((share: ShareResponse | null) => {
+        if (!share) {
+          setReport(null)
+          return
+        }
+        setReport({
+          reportId: share.report.id,
+          title: share.report.title,
+          createdAt: share.report.createdAt,
+          data: {
+            ...DEFAULT_REPORT_DATA,
+            reportNumber: share.report.id,
+            reportType: share.report.reportType || DEFAULT_REPORT_DATA.reportType,
+            priority: share.report.priority || DEFAULT_REPORT_DATA.priority,
+            ...(share.report.data as Record<string, unknown>),
+          } as ReportData,
+        })
+      })
+      .catch(() => setReport(null))
+      .finally(() => setLoading(false))
   }, [token])
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8F9FB]">
         <div className="text-sm text-muted-foreground">Loading...</div>
@@ -154,11 +128,11 @@ export default function SharePage({
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
             <span className="font-mono text-xs font-semibold text-indigo-600">
-              {reportId}
+              {reportId.slice(0, 8)}
             </span>
             <span className="h-1 w-1 rounded-full bg-border" />
             <span>
-              {new Date(report.shareInfo.createdAt).toLocaleDateString()}
+              {new Date(report.createdAt).toLocaleDateString()}
             </span>
           </div>
         </div>

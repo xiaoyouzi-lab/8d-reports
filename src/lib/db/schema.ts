@@ -150,6 +150,7 @@ export const reportShares = pgTable("report_shares", {
   permissionLevel: text("permission_level").notNull().default("view"),
   accessToken: text("access_token").unique(),
   expiresAt: timestamp("expires_at"),
+  views: integer("views").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

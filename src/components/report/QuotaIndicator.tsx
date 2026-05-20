@@ -13,51 +13,34 @@ interface QuotaData {
   used: number
 }
 
-function getQuotaKey(userId: string): string {
-  return `quota-${userId}`
-}
-
-function loadQuota(userId: string): QuotaData {
-  if (typeof window === "undefined") return { total: DEFAULT_QUOTA_TOTAL, used: 0 }
-  try {
-    const raw = localStorage.getItem(getQuotaKey(userId))
-    if (!raw) return { total: DEFAULT_QUOTA_TOTAL, used: 0 }
-    const data = JSON.parse(raw)
-    return {
-      total: data.total ?? DEFAULT_QUOTA_TOTAL,
-      used: data.used ?? 0,
-    }
-  } catch {
-    return { total: DEFAULT_QUOTA_TOTAL, used: 0 }
-  }
-}
-
-export function saveQuota(userId: string, data: QuotaData) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(getQuotaKey(userId), JSON.stringify(data))
-}
-
-export function incrementQuotaUsed(userId: string) {
-  const quota = loadQuota(userId)
-  quota.used = Math.min(quota.used + 1, quota.total)
-  saveQuota(userId, quota)
-}
-
 interface QuotaIndicatorProps {
   userId: string
   isPro: boolean
 }
 
-export function QuotaIndicator({ userId, isPro }: QuotaIndicatorProps) {
+export function QuotaIndicator({ userId: _userId, isPro }: QuotaIndicatorProps) {
   const [mounted, setMounted] = useState(false)
   const [quota, setQuota] = useState<QuotaData>({ total: DEFAULT_QUOTA_TOTAL, used: 0 })
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     setMounted(true)
     if (!isPro) {
-      setQuota(loadQuota(userId))
+      fetch("/api/quota")
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (data) setQuota({ total: data.totalQuota ?? DEFAULT_QUOTA_TOTAL, used: data.usedQuota ?? 0 })
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
     }
-  }, [userId, isPro])
+  }, [isPro])
+
+  const remaining = Math.max(quota.total - quota.used, 0)
+  const percentUsed = quota.total > 0 ? Math.round((quota.used / quota.total) * 100) : 0
+  const isExhausted = remaining === 0
 
   if (isPro) {
     return (
@@ -72,16 +55,10 @@ export function QuotaIndicator({ userId, isPro }: QuotaIndicatorProps) {
     )
   }
 
-  const remaining = Math.max(quota.total - quota.used, 0)
-  const percentUsed = quota.total > 0 ? Math.round((quota.used / quota.total) * 100) : 0
-  const isExhausted = remaining === 0
-
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
-        <p className="text-sm font-medium text-indigo-900">
-          Free Quota
-        </p>
+        <p className="text-sm font-medium text-indigo-900">Free Quota</p>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-indigo-100">
           <div className="h-full w-0 rounded-full bg-indigo-500" />
         </div>
