@@ -76,34 +76,43 @@ function drawHeaderLine(doc: jsPDF, y: number) {
   doc.line(MARGIN, y, PAGE_W - MARGIN, y)
 }
 
-function addCoverPage(doc: jsPDF, reportTitle: string, reportId: string, withWatermark: boolean) {
+function addCoverPage(doc: jsPDF, reportTitle: string, reportId: string, withWatermark: boolean, logoUrl?: string | null) {
   if (withWatermark) {
     addWatermark(doc)
   }
   drawPageBorder(doc)
 
+  let titleY = 80
+
+  if (logoUrl) {
+    try {
+      doc.addImage(logoUrl, "PNG", MARGIN, MARGIN + 5, 35, 18, undefined, "FAST")
+      titleY = 90
+    } catch { /* ignore logo rendering error */ }
+  }
+
   doc.setFont("helvetica", "bold")
   doc.setFontSize(36)
   doc.setTextColor(79, 70, 229)
-  doc.text("8D REPORT", PAGE_W / 2, 80, { align: "center" })
+  doc.text("8D REPORT", PAGE_W / 2, titleY, { align: "center" })
 
-  drawHeaderLine(doc, 90)
+  drawHeaderLine(doc, titleY + 10)
 
   doc.setFontSize(14)
   doc.setTextColor(60, 60, 60)
-  doc.text(reportTitle || "Untitled Report", PAGE_W / 2, 110, { align: "center" })
+  doc.text(reportTitle || "Untitled Report", PAGE_W / 2, titleY + 30, { align: "center" })
 
   doc.setFont("helvetica", "normal")
   doc.setFontSize(11)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Report ID: ${reportId}`, PAGE_W / 2, 125, { align: "center" })
+  doc.text(`Report ID: ${reportId}`, PAGE_W / 2, titleY + 45, { align: "center" })
 
   const today = new Date().toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",
   })
-  doc.text(`Generated: ${today}`, PAGE_W / 2, 133, { align: "center" })
+  doc.text(`Generated: ${today}`, PAGE_W / 2, titleY + 53, { align: "center" })
 
   if (withWatermark) {
     doc.setFont("helvetica", "bold")
@@ -286,10 +295,11 @@ export function exportReportToPdf(
   reportTitle: string,
   reportId: string,
   withWatermark: boolean,
-): void {
+  logoUrl?: string | null,
+): jsPDF {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
 
-  addCoverPage(doc, reportTitle, reportId, withWatermark)
+  addCoverPage(doc, reportTitle, reportId, withWatermark, logoUrl)
 
   for (const step of STEPS) {
     doc.addPage()
@@ -298,5 +308,5 @@ export function exportReportToPdf(
 
   addPageNumbers(doc)
 
-  doc.save(`${reportId}_8D_Report.pdf`)
+  return doc
 }

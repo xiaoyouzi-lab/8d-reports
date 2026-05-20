@@ -3,6 +3,7 @@
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { LayoutDashboard, LogOut, User } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -16,8 +17,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { LangSwitcher } from "@/components/LangSwitcher"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const t = useTranslations()
   const router = useRouter()
   const pathname = usePathname()
   const { data: session, isPending } = authClient.useSession()
@@ -67,6 +70,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {plan === "pro" ? "Pro · Unlimited" : "Free · 2/5"}
             </Badge>
 
+            <LangSwitcher />
+
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={
@@ -94,7 +99,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   className="cursor-pointer"
                 >
                   <LayoutDashboard className="size-4" />
-                  Dashboard
+                  {t("dashboard.myReports")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

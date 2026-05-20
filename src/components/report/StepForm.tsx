@@ -1,6 +1,5 @@
 "use client"
 
-import { Upload } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -12,27 +11,14 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
+import { AttachmentArea } from "@/components/report/AttachmentArea"
 import type { ReportStep, ReportField, ReportData } from "@/lib/report-steps"
 
 interface StepFormProps {
   step: ReportStep
   data: ReportData
   onChange: (name: string, value: string) => void
-}
-
-function PhotoUpload({ label }: { label: string }) {
-  return (
-    <div className="space-y-1.5">
-      <Label>{label}</Label>
-      <div className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-muted-foreground transition-colors hover:border-indigo-300 hover:text-indigo-500">
-        <Upload className="size-5" />
-        <span className="text-xs">Click to upload or drag and drop</span>
-        <span className="text-[11px] text-muted-foreground/60">
-          SVG, PNG, JPG or GIF (max. 5MB)
-        </span>
-      </div>
-    </div>
-  )
+  reportId: string
 }
 
 function renderField(
@@ -41,7 +27,7 @@ function renderField(
   onChange: (name: string, value: string) => void,
 ) {
   if (field.type === "photo") {
-    return <PhotoUpload label={field.label} />
+    return null
   }
 
   if (field.type === "textarea") {
@@ -128,10 +114,13 @@ function renderField(
   )
 }
 
-export function StepForm({ step, data, onChange }: StepFormProps) {
+const ATTACHMENT_STEPS = new Set(["D2", "D3", "D5", "D6", "D7"])
+
+export function StepForm({ step, data, onChange, reportId }: StepFormProps) {
   const hasFiveWhys = step.id === "D4"
   const fiveWhyFields = step.fields.filter((f) => f.name.startsWith("why"))
   const otherFields = step.fields.filter((f) => !f.name.startsWith("why"))
+  const showAttachments = ATTACHMENT_STEPS.has(step.id)
 
   return (
     <div className="space-y-5">
@@ -149,7 +138,7 @@ export function StepForm({ step, data, onChange }: StepFormProps) {
           <div
             key={field.name}
             className={cn(
-              (field.type === "textarea" || field.type === "photo") &&
+              (field.type === "textarea") &&
                 "sm:col-span-2",
             )}
           >
@@ -157,6 +146,10 @@ export function StepForm({ step, data, onChange }: StepFormProps) {
           </div>
         ))}
       </div>
+
+      {showAttachments && (
+        <AttachmentArea reportId={reportId} stepId={step.id} />
+      )}
 
       {hasFiveWhys && fiveWhyFields.length > 0 && (
         <div className="space-y-3">

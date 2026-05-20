@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { ReportStepsNav } from "@/components/report/ReportStepsNav"
 import { StepForm } from "@/components/report/StepForm"
-import { ExportButton } from "@/components/report/ExportButton"
+import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
 import { STEPS, DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
@@ -208,11 +208,12 @@ export default function ReportEditorPage({
 
             <ShareDialog reportId={reportId} reportTitle={reportTitle} />
 
-            <ExportButton
+            <ExportMenu
               reportData={reportData}
               reportTitle={reportTitle}
               reportId={reportId}
               withWatermark={!isPro}
+              logoUrl={(session?.user as Record<string, unknown>)?.logoUrl as string || null}
             />
 
             <Button
@@ -256,6 +257,7 @@ export default function ReportEditorPage({
                     step={currentStep}
                     data={reportData}
                     onChange={handleFieldChange}
+                    reportId={reportId}
                   />
                 </CardContent>
               </Card>

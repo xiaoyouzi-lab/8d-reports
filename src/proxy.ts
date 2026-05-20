@@ -1,16 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
+import createIntlMiddleware from "next-intl/middleware";
+import { routing } from "./i18n/routing";
+
+const intlMiddleware = createIntlMiddleware(routing);
+
+const LANG_HEADER_PATTERN = /^\/api\//;
 
 const protectedPaths = ["/dashboard", "/reports"];
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  const intlResponse = intlMiddleware(request);
+  const needsIntlCookie = intlResponse.headers.get("set-cookie");
+
+  if (LANG_HEADER_PATTERN.test(pathname)) {
+    return intlResponse;
+  }
+
   const isProtected = protectedPaths.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
 
   if (!isProtected) {
-    return NextResponse.next();
+    return intlResponse;
   }
 
   const sessionCookie =
@@ -20,10 +33,17 @@ export default function proxy(request: NextRequest) {
   if (!sessionCookie?.value) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirect = NextResponse.redirect(loginUrl);
+    if (needsIntlCookie) {
+      redirect.headers.set("set-cookie", needsIntlCookie);
+    }
+    return redirect;
   }
 
-  return NextResponse.next();
+  if (needsIntlCookie) {
+    intlResponse.headers.set("set-cookie", needsIntlCookie);
+  }
+  return intlResponse;
 }
 
 export const config = {

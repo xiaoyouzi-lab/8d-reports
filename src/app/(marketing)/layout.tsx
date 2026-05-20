@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { LangSwitcher } from "@/components/LangSwitcher"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -17,6 +19,7 @@ export default function MarketingLayout({
 }: {
   children: React.ReactNode
 }) {
+  const t = useTranslations()
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
@@ -62,13 +65,14 @@ export default function MarketingLayout({
           </nav>
 
           <div className="flex items-center gap-2">
+            <LangSwitcher />
             <Link
               href="/login"
               className={cn(
                 buttonVariants({ variant: "ghost", size: "sm" })
               )}
             >
-              Sign in
+              {t("auth.signIn")}
             </Link>
             <Link
               href="/signup"
@@ -77,7 +81,7 @@ export default function MarketingLayout({
                 "bg-[#4F46E5] hover:bg-[#4F46E5]/90"
               )}
             >
-              Start free
+              {t("marketing.ctaStart")}
             </Link>
           </div>
         </div>
