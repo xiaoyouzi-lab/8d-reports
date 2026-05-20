@@ -4,26 +4,17 @@ import { routing } from "./i18n/routing";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
-const LANG_HEADER_PATTERN = /^\/api\//;
-
 const protectedPaths = ["/dashboard", "/reports"];
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  const intlResponse = intlMiddleware(request);
-  const needsIntlCookie = intlResponse.headers.get("set-cookie");
-
-  if (LANG_HEADER_PATTERN.test(pathname)) {
-    return intlResponse;
-  }
 
   const isProtected = protectedPaths.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   );
 
   if (!isProtected) {
-    return intlResponse;
+    return intlMiddleware(request);
   }
 
   const sessionCookie =
@@ -33,17 +24,10 @@ export default function proxy(request: NextRequest) {
   if (!sessionCookie?.value) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    const redirect = NextResponse.redirect(loginUrl);
-    if (needsIntlCookie) {
-      redirect.headers.set("set-cookie", needsIntlCookie);
-    }
-    return redirect;
+    return NextResponse.redirect(loginUrl);
   }
 
-  if (needsIntlCookie) {
-    intlResponse.headers.set("set-cookie", needsIntlCookie);
-  }
-  return intlResponse;
+  return intlMiddleware(request);
 }
 
 export const config = {
