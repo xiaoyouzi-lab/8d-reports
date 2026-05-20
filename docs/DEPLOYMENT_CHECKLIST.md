@@ -115,7 +115,7 @@
 
 ---
 
-## 三、完整环境变量清单（12 个变量）
+## 三、完整环境变量清单（16 个变量）
 
 ### ⚠️ 以下变量必须全部在 Vercel Settings > Environment Variables 中填写
 
@@ -134,6 +134,9 @@
 | 11 | `R2_BUCKET_NAME` | 固定值 `8d-reports` | 上传附件成功 |
 | 12 | `CREEM_API_KEY` | Creem 后台 | 支付功能正常 |
 | 13 | `CREEM_WEBHOOK_SECRET` | 🔴 当前为空 | 必须去 Creem 后台生成 |
+| 14 | `CREEM_PRODUCT_MONTHLY` | 🔴 当前为空 | Creem 后台 Pro Monthly 产品的 ID |
+| 15 | `CREEM_PRODUCT_YEARLY` | 🔴 当前为空 | Creem 后台 Pro Yearly 产品的 ID |
+| 16 | `RESEND_API_KEY` | 🔴 当前为空 | 注册 Resend → API Keys → 创建 新 Key |
 
 > **实际值参考 `.env` 文件**（不在本文档中复制，避免 git push protection 拦截）
 
