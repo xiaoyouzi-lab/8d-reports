@@ -1,12 +1,43 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { cookies } from "next/headers";
+import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
+import { CookieConsent } from "@/components/CookieConsent";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "8D Reports - Quality Management Software",
-  description: "Professional 8D problem-solving reports. No spreadsheets.",
+  title: {
+    default: "8D Reports — Professional 8D Problem-Solving Software",
+    template: "%s | 8D Reports",
+  },
+  description:
+    "Create, manage, and export professional 8D reports directly from the factory floor. Structured D0-D8 workflow, one-click PDF/Word export, real-time team collaboration. No spreadsheets.",
+  keywords: [
+    "8D report",
+    "8D problem solving",
+    "quality management",
+    "8D software",
+    "CAPA",
+    "root cause analysis",
+    "corrective action",
+    "8D template",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://8d-reports.vercel.app",
+    siteName: "8D Reports",
+    title: "8D Reports — Professional 8D Problem-Solving Software",
+    description:
+      "Create professional 8D reports. No spreadsheets needed.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "8D Reports — Professional 8D Reporting",
+    description: "Professional 8D reports. No spreadsheets.",
+  },
+  robots: { index: true, follow: true },
 };
 
 const SUPPORTED = ["en", "zh-CN"] as const;
@@ -35,6 +66,8 @@ export default async function RootLayout({
       <body className="min-h-full flex flex-col">
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
+          <CookieConsent />
+          <Analytics />
           <Toaster />
         </NextIntlClientProvider>
       </body>

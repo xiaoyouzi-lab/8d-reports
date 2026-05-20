@@ -1,7 +1,8 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Search, Plus, Filter } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { Search, Plus, Filter, FileText, CheckCircle2, ArrowRight, Share2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,6 +55,7 @@ const priorityLabel: Record<string, string> = {
 }
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { data: session } = authClient.useSession()
   const userId = session?.user?.id || ""
   const plan = (session?.user as Record<string, unknown>)?.plan as string || "free"
@@ -61,6 +63,7 @@ export default function DashboardPage() {
 
   const [reports, setReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
+  const [sampleLoading, setSampleLoading] = useState(false)
 
   const fetchReports = useCallback(async () => {
     try {
@@ -89,6 +92,21 @@ export default function DashboardPage() {
       return new Date(dateStr).toISOString().split("T")[0]
     } catch {
       return dateStr
+    }
+  }
+
+  async function createSampleReport() {
+    setSampleLoading(true)
+    try {
+      const res = await fetch("/api/reports/sample", { method: "POST" })
+      if (res.ok) {
+        const report = await res.json()
+        router.push(`/reports/${report.id}`)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSampleLoading(false)
     }
   }
 
@@ -165,14 +183,64 @@ export default function DashboardPage() {
           Loading reports...
         </div>
       ) : reports.length === 0 ? (
-        <div className="py-12 text-center">
-          <p className="text-sm text-muted-foreground">No reports yet.</p>
-          <Link href="/reports/new">
-            <Button className="mt-3 bg-indigo-600 text-white hover:bg-indigo-700" size="sm">
-              <Plus className="size-4" />
-              Create your first report
-            </Button>
-          </Link>
+        <div className="flex flex-col items-center py-12 gap-8">
+          <div className="flex flex-col items-center gap-4 max-w-md text-center">
+            <div className="flex size-12 items-center justify-center rounded-xl bg-indigo-100">
+              <FileText className="size-6 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Welcome to 8D Reports</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Get started by creating your first 8D report, or explore a pre-filled sample to see how it works.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Link href="/reports/new">
+                <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700">
+                  <Plus className="size-4" />
+                  Create your first report
+                </Button>
+              </Link>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={createSampleReport}
+                disabled={sampleLoading}
+              >
+                {sampleLoading ? "Creating..." : "See a sample report"}
+              </Button>
+            </div>
+          </div>
+
+          <div className="w-full max-w-lg rounded-lg border bg-card p-5">
+            <h4 className="mb-4 text-sm font-semibold text-foreground">How it works</h4>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">1</span>
+                <span className="text-sm text-muted-foreground">
+                  Create a report — start a new 8D report or use a template
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">2</span>
+                <span className="text-sm text-muted-foreground">
+                  Fill each D-step — work through D1 to D8 with guided forms
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">3</span>
+                <span className="text-sm text-muted-foreground">
+                  Export PDF — generate a professional PDF report in one click
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">4</span>
+                <span className="text-sm text-muted-foreground">
+                  Share with your customer — send a secure link or the PDF
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       ) : (
         <>

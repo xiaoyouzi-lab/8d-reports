@@ -11,7 +11,7 @@ const navLinks = [
   { href: "#comparison", label: "Product" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
-  { href: "#", label: "Docs" },
+  { href: "/docs", label: "Docs" },
 ]
 
 export default function MarketingLayout({

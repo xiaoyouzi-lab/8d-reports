@@ -48,6 +48,7 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
+      fetch("/api/notify/welcome", { method: "POST" }).catch(() => {})
       router.push(callbackUrl)
       router.refresh()
     } catch {

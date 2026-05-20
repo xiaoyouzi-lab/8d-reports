@@ -1,10 +1,17 @@
 import Link from "next/link"
-import { Check, X } from "lucide-react"
+import { Car, Check, Cpu, Factory, Heart, Plane, X } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { CheckoutButton } from "@/components/CheckoutButton"
 
-const logoCompanies = ["Toyota", "Bosch", "Continental", "Magna", "Denso", "ZF"]
+const industries = [
+  { name: "Automotive", desc: "IATF 16949 compliant", icon: Car },
+  { name: "Electronics", desc: "IPC-A-610 ready", icon: Cpu },
+  { name: "Medical Device", desc: "ISO 13485 aligned", icon: Heart },
+  { name: "Aerospace", desc: "AS9100 compatible", icon: Plane },
+  { name: "General Manufacturing", desc: "ISO 9001 ready", icon: Factory },
+]
 
 const painPoints = [
   "Manual data entry across multiple Excel sheets",
@@ -164,20 +171,28 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Logos */}
-      <section className="border-y border-border bg-muted/30 py-10">
+      {/* Industries */}
+      <section className="border-y border-border bg-muted/30 py-12">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <p className="mb-6 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Trusted by quality teams at
+          <p className="mb-8 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">
+            Built for quality teams across industries
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-            {logoCompanies.map((company) => (
-              <span
-                key={company}
-                className="text-lg font-bold text-muted-foreground/40"
+          <div className="flex flex-wrap items-center justify-center gap-6">
+            {industries.map((industry) => (
+              <div
+                key={industry.name}
+                className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3"
               >
-                {company}
-              </span>
+                <industry.icon className="h-5 w-5 shrink-0 text-[#4F46E5]" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {industry.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {industry.desc}
+                  </p>
+                </div>
+              </div>
             ))}
           </div>
         </div>
@@ -361,39 +376,25 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/signup?plan=pro"
-                className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "mt-8 w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
-                )}
+              <CheckoutButton
+                planType="monthly"
+                variant="default"
+                size="lg"
+                className="mt-8 w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
               >
                 Start Pro
-              </Link>
+              </CheckoutButton>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Testimonial */}
+      {/* Testimonial placeholder — enable when customer stories are available */}
       <section className="border-y border-border bg-muted/10 py-20 sm:py-24">
         <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <blockquote>
-            <p className="text-xl leading-relaxed text-foreground sm:text-2xl">
-              &ldquo;We used to spend 40 minutes formatting an 8D report in
-              Excel for every customer complaint. With 8D Reports, we just fill
-              in the steps and hit export. It has changed how our quality team
-              works.&rdquo;
-            </p>
-          </blockquote>
-          <div className="mt-6">
-            <p className="text-sm font-semibold text-foreground">
-              Thomas Weber
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Senior Quality Engineer, Automotive Tier 1 Supplier
-            </p>
-          </div>
+          <p className="text-lg text-muted-foreground">
+            Customer stories coming soon
+          </p>
         </div>
       </section>
 
@@ -476,9 +477,9 @@ export default function LandingPage() {
           </p>
           <div className="flex items-center gap-6">
             {[
-              { label: "Privacy", href: "#" },
-              { label: "Terms", href: "#" },
-              { label: "Contact", href: "#" },
+              { label: "Privacy", href: "/privacy" },
+              { label: "Terms", href: "/terms" },
+              { label: "Contact", href: "mailto:support@8dreports.com" },
             ].map((link) => (
               <Link
                 key={link.label}
