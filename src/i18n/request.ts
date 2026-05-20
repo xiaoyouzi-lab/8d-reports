@@ -1,24 +1,22 @@
-import { getRequestConfig } from 'next-intl/server';
+import { getRequestConfig } from "next-intl/server"
 
 export default getRequestConfig(async () => {
-  let locale = 'en';
+  let locale = "en"
 
-  if (typeof globalThis !== 'undefined') {
-    try {
-      const { cookies } = await import('next/headers');
-      const cookieStore = await cookies();
-      const cookieLocale = cookieStore.get('NEXT_LOCALE')?.value;
-      if (cookieLocale === 'en' || cookieLocale === 'zh-CN') {
-        locale = cookieLocale;
-      }
-    } catch {
-      // fallback to default
+  try {
+    const { cookies } = await import("next/headers")
+    const cookieStore = await cookies()
+    const localeCookie = cookieStore.get("NEXT_LOCALE")?.value
+    if (localeCookie === "en" || localeCookie === "zh-CN") {
+      locale = localeCookie
     }
+  } catch {
+    // fallback to default "en"
   }
 
   return {
     locale,
     messages: (await import(`../messages/${locale}.json`)).default,
-    timeZone: 'Asia/Shanghai',
-  };
-});
+    timeZone: "Asia/Shanghai",
+  }
+})
