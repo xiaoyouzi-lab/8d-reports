@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import { useEffect } from "react"
-import { useTranslations } from "next-intl"
+import { useTranslations, useLocale } from "next-intl"
 import { LayoutDashboard, LogOut, User } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -18,9 +18,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { LangSwitcher } from "@/components/LangSwitcher"
+import { QualityAgentFab } from "@/components/quality-agent/QualityAgentFab"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations()
+  const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
   const { data: session, isPending } = authClient.useSession()
@@ -119,6 +121,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="flex-1">{children}</main>
+      <QualityAgentFab locale={locale} />
     </div>
   )
 }

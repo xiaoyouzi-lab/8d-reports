@@ -78,7 +78,7 @@ export default function NewReportPage() {
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="start" sideOffset={4} className="max-h-60 z-50">
                 <SelectItem value="customer_8d">Customer 8D</SelectItem>
                 <SelectItem value="internal_8d">Internal 8D</SelectItem>
               </SelectContent>
@@ -94,7 +94,7 @@ export default function NewReportPage() {
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent align="start" sideOffset={4} className="max-h-60 z-50">
                 <SelectItem value="low">Low</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="high">High</SelectItem>

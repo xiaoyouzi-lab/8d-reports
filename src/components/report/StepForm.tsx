@@ -65,7 +65,7 @@ function renderField(
           <SelectTrigger className="w-full">
             <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent align="start" sideOffset={4} className="max-h-60 z-50">
             {field.options.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}

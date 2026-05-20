@@ -1,35 +1,20 @@
 import { NextRequest, NextResponse } from "next/server"
+import createIntlMiddleware from "next-intl/middleware"
+import { routing } from "./i18n/routing"
 
-const LANG_COOKIE = "NEXT_LOCALE"
-const SUPPORTED = ["en", "zh-CN"]
-
-function detectLocale(request: NextRequest): string {
-  const cookieLocale = request.cookies.get(LANG_COOKIE)?.value
-  if (cookieLocale && SUPPORTED.includes(cookieLocale)) return cookieLocale
-  const accept = request.headers.get("accept-language") || ""
-  if (accept.split(",")[0]?.trim()?.toLowerCase().startsWith("zh")) return "zh-CN"
-  return "en"
-}
+const intlMiddleware = createIntlMiddleware(routing)
 
 const protectedPaths = ["/dashboard", "/reports"]
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  const locale = detectLocale(request)
-
   const isProtected = protectedPaths.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
   )
 
   if (!isProtected) {
-    const response = NextResponse.next()
-    response.cookies.set(LANG_COOKIE, locale, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
-    return response
+    return intlMiddleware(request)
   }
 
   const sessionCookie =
@@ -39,22 +24,14 @@ export default function proxy(request: NextRequest) {
   if (!sessionCookie?.value) {
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("redirect", pathname)
-    const response = NextResponse.redirect(loginUrl)
-    response.cookies.set(LANG_COOKIE, locale, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
-    return response
+    const redirect = NextResponse.redirect(loginUrl)
+    const intlResponse = intlMiddleware(request)
+    const intlCookie = intlResponse.headers.get("set-cookie")
+    if (intlCookie) redirect.headers.set("set-cookie", intlCookie)
+    return redirect
   }
 
-  const response = NextResponse.next()
-  response.cookies.set(LANG_COOKIE, locale, {
-    path: "/",
-    maxAge: 31536000,
-    sameSite: "lax",
-  })
-  return response
+  return intlMiddleware(request)
 }
 
 export const config = {

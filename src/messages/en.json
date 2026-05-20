@@ -238,5 +238,14 @@
     "error": "Error",
     "cancel": "Cancel",
     "confirm": "Confirm"
+  },
+  "qualityAgent": {
+    "title": "Quality Expert",
+    "placeholder": "Ask about quality...",
+    "thinking": "Thinking...",
+    "close": "Close",
+    "qualityExpert": "Quality Expert",
+    "errorMessage": "Sorry, I'm unable to process your request right now. Please try again later.",
+    "welcome": "Hello! I'm your **Quality Expert Consultant**.\n\nI specialize in global quality management systems (ISO 9001, IATF 16949, AS9100, ISO 13485, etc.), methodologies (Six Sigma, Lean, TQM, Kaizen, 8D), and quality tools (FMEA, SPC, MSA, APQP, PPAP, etc.).\n\nWhether you're a Fortune 500 company, a mid-sized business, or a small workshop, I can provide practical quality advice tailored to your situation.\n\nTell me about your company (size, industry, country) and the quality challenges you're facing, and I'll give you targeted guidance."
   }
 }

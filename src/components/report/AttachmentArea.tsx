@@ -60,30 +60,28 @@ export function AttachmentArea({ reportId, stepId }: AttachmentAreaProps) {
     setUploadingFiles((prev) => new Set(prev).add(key))
 
     try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("reportId", reportId)
+      formData.append("stepId", stepId)
+
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          reportId, stepId,
-          filename: file.name,
-          contentType: file.type,
-          fileSize: file.size,
-        }),
+        body: formData,
       })
       if (!uploadRes.ok) {
         const err = await uploadRes.json()
         toast.error(err.error || t("fileTooBig"))
         return
       }
-      const { presignedUrl, storagePath, publicUrl, fileType, contentType } = await uploadRes.json()
-
-      await fetch(presignedUrl, { method: "PUT", body: file, headers: { "Content-Type": contentType } })
+      const { storagePath, publicUrl, fileType, mimeType, fileSize } = await uploadRes.json()
 
       const saveRes = await fetch(`/api/reports/${reportId}/attachments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          storagePath, url: publicUrl, filename: file.name, fileType, mimeType: file.type, fileSize: file.size, stepId,
+          storagePath, url: publicUrl, filename: file.name,
+          fileType, mimeType, fileSize, stepId,
         }),
       })
       if (saveRes.ok) {
