@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react"
 import { MessageSquareText, Star, X, Send, Loader2 } from "lucide-react"
-import { toast } from "sonner"
 
 interface FeedbackButtonProps {
   locale?: string
@@ -88,7 +87,7 @@ export function FeedbackButton({ locale = "en" }: FeedbackButtonProps) {
       if (!res.ok) throw new Error("Failed")
       setSent(true)
     } catch {
-      toast.error(isZh ? "提交失败，请稍后再试" : "Failed to submit, please try again")
+      // ignore — feedback sent or not, don't disrupt user
     } finally {
       setLoading(false)
     }
