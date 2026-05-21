@@ -1,16 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { FileDown, FileText, FileSpreadsheet } from "lucide-react"
+import { useState, useRef, useEffect } from "react"
+import { FileDown, FileText, FileSpreadsheet, Check } from "lucide-react"
 import { toast } from "sonner"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu"
 import { exportReportToPdf } from "@/lib/pdf-export"
 import { createExportZip, downloadBlob } from "@/lib/export-zip"
 import { useTranslations } from "next-intl"
@@ -28,8 +20,26 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   const t = useTranslations("export")
   const editorT = useTranslations("editor")
   const [loading, setLoading] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handleClick = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        triggerRef.current && !triggerRef.current.contains(e.target as Node)
+      ) {
+        setOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [open])
 
   const handleExportPdf = async () => {
+    setOpen(false)
     setLoading("pdf")
     try {
       const pdf = exportReportToPdf(reportData, reportTitle, reportId, withWatermark, logoUrl)
@@ -54,6 +64,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   }
 
   const handleExportDocx = async () => {
+    setOpen(false)
     setLoading("docx")
     try {
       const res = await fetch(`/api/reports/${reportId}/export/docx`, {
@@ -88,28 +99,42 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger>
-        <button
-          className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
-          disabled={!!loading}
+    <div className="relative inline-flex">
+      <button
+        ref={triggerRef}
+        type="button"
+        disabled={!!loading}
+        onClick={() => setOpen(!open)}
+        className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+      >
+        <FileDown className="size-3.5" />
+        <span className="hidden sm:inline ml-0.5">{loading ? "..." : editorT("export")}</span>
+      </button>
+      {open && (
+        <div
+          ref={menuRef}
+          className="absolute right-0 top-full z-50 mt-1 min-w-40 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
         >
-          <FileDown className="size-3.5" />
-          <span className="hidden sm:inline ml-0.5">{loading ? "..." : editorT("export")}</span>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" sideOffset={4}>
-        <DropdownMenuLabel>Export Format</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleExportPdf} className="cursor-pointer">
-          <FileText className="size-4" />
-          {t("pdf")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleExportDocx} className="cursor-pointer">
-          <FileSpreadsheet className="size-4" />
-          {t("word")}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <div className="px-1.5 py-1 text-xs font-medium text-muted-foreground">Export Format</div>
+          <div className="-mx-1 my-1 h-px bg-border" />
+          <button
+            type="button"
+            onClick={handleExportPdf}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileText className="size-4" />
+            {t("pdf")}
+          </button>
+          <button
+            type="button"
+            onClick={handleExportDocx}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="size-4" />
+            {t("word")}
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
