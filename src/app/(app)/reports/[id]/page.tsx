@@ -95,7 +95,7 @@ export default function ReportEditorPage({
   const saveToServer = useCallback(async (data: ReportData, steps: Set<string>, title: string) => {
     const stepStatusObj: Record<string, boolean> = {}
     for (const stepId of steps) stepStatusObj[stepId] = true
-    await fetch(`/api/reports/${reportId}`, {
+    const res = await fetch(`/api/reports/${reportId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -105,6 +105,11 @@ export default function ReportEditorPage({
         status: steps.size === STEPS.length ? "completed" : steps.size > 0 ? "in_progress" : "draft",
       }),
     })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+      throw new Error(err.error || `Save failed (${res.status})`)
+    }
+    return res.json()
   }, [reportId])
 
   const handleSave = async () => {
@@ -112,8 +117,8 @@ export default function ReportEditorPage({
     try {
       await saveToServer(reportData, completedSteps, reportTitle)
       toast.success("Report saved")
-    } catch {
-      toast.error("Failed to save")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save")
     } finally {
       setSaving(false)
     }
@@ -293,9 +298,9 @@ export default function ReportEditorPage({
                 {activeStepIndex === STEPS.length - 1 && (
                   <Button
                     className="bg-emerald-600 text-white hover:bg-emerald-700"
-                    onClick={() => {
+                    onClick={async () => {
                       handleMarkStepComplete()
-                      handleSave()
+                      await handleSave()
                       consumeQuota()
                     }}
                   >

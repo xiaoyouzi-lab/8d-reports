@@ -97,14 +97,12 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="outline" size="sm" disabled={!!loading}>
-            <FileDown className="size-3.5" />
-            <span className="hidden sm:inline ml-1">{loading ? "..." : editorT("export")}</span>
-          </Button>
-        }
-      />
+      <DropdownMenuTrigger>
+        <Button variant="outline" size="sm" disabled={!!loading}>
+          <FileDown className="size-3.5" />
+          <span className="hidden sm:inline ml-1">{loading ? "..." : editorT("export")}</span>
+        </Button>
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Export Format</DropdownMenuLabel>
         <DropdownMenuSeparator />
