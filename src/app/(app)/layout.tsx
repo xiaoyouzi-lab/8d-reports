@@ -10,7 +10,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { LangSwitcher } from "@/components/LangSwitcher"
 import { QualityAgentFab } from "@/components/quality-agent/QualityAgentFab"
-import { FeedbackButton } from "@/components/feedback/FeedbackButton"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations()
@@ -148,7 +147,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
       <main className="flex-1">{children}</main>
       <QualityAgentFab locale={locale} />
-      <FeedbackButton locale={locale} />
     </div>
   )
 }

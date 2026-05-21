@@ -9,7 +9,6 @@ import { buttonVariants } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
-import { FeedbackButton } from "@/components/feedback/FeedbackButton"
 
 const navLinks = [
   { href: "#comparison", label: "Product" },
@@ -184,7 +183,6 @@ export default function MarketingLayout({
         </div>
       </header>
       <main className="flex-1">{children}</main>
-      <FeedbackButton locale={locale} />
     </>
   )
 }

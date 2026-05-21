@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
 import { CookieConsent } from "@/components/CookieConsent";
+import { FeedbackWrapper } from "@/components/feedback/FeedbackWrapper";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -69,6 +70,7 @@ export default async function RootLayout({
           <CookieConsent />
           <Analytics />
           <Toaster />
+          <FeedbackWrapper />
         </NextIntlClientProvider>
       </body>
     </html>
