@@ -27,6 +27,14 @@ const WELCOME_MESSAGES: Record<string, string> = {
   en: "Hello! I'm your **Quality Expert Consultant**.\n\nI specialize in global quality management systems (ISO 9001, IATF 16949, AS9100, ISO 13485, etc.), methodologies (Six Sigma, Lean, TQM, Kaizen, 8D), and quality tools (FMEA, SPC, MSA, APQP, PPAP, etc.).\n\nWhether you're a Fortune 500 company, a mid-sized business, or a small workshop, I can provide practical quality advice tailored to your situation.\n\nTell me about your company (size, industry, country) and the quality challenges you're facing, and I'll give you targeted guidance." + NOTICE_EN,
 }
 
+function detectLocale(propLocale: string): string {
+  if (typeof window !== "undefined") {
+    if (document.cookie.includes("NEXT_LOCALE=zh")) return "zh-CN"
+    return "en"
+  }
+  return propLocale || "en"
+}
+
 export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
   const [messages, setMessages] = useState<LocalMessage[]>([])
   const [input, setInput] = useState("")
@@ -34,11 +42,12 @@ export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
-  const isZh = locale === "zh-CN"
+  const resolvedLocale = detectLocale(locale)
+  const isZh = resolvedLocale === "zh-CN"
 
   useEffect(() => {
     if (open && messages.length === 0) {
-      const welcomeText = WELCOME_MESSAGES[locale] || WELCOME_MESSAGES.en
+      const welcomeText = WELCOME_MESSAGES[resolvedLocale] || WELCOME_MESSAGES.en
       setMessages([
         {
           id: "welcome",
@@ -48,7 +57,7 @@ export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
         },
       ])
     }
-  }, [open, locale, messages.length])
+  }, [open, resolvedLocale, messages.length])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -90,7 +99,7 @@ export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
         body: JSON.stringify({
           query: trimmed,
           history,
-          locale,
+          locale: resolvedLocale,
         }),
       })
 

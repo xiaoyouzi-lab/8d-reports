@@ -22,6 +22,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
+  const [quotaLabel, setQuotaLabel] = useState("2/5")
 
   useEffect(() => {
     if (!menuOpen) return
@@ -36,6 +37,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     document.addEventListener("mousedown", handleClick)
     return () => document.removeEventListener("mousedown", handleClick)
   }, [menuOpen])
+
+  useEffect(() => {
+    if (!session) return
+    fetch("/api/quota")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data) {
+          const used = data.usedQuota ?? 0
+          const total = data.totalQuota ?? 5
+          setQuotaLabel(`${used}/${total}`)
+        }
+      })
+      .catch(() => {})
+  }, [session])
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -79,7 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               variant={plan === "pro" ? "default" : "outline"}
               className="hidden sm:inline-flex"
             >
-              {plan === "pro" ? "Pro · Unlimited" : "Free · 2/5"}
+              {plan === "pro" ? "Pro · Unlimited" : `Free · ${quotaLabel}`}
             </Badge>
 
             <LangSwitcher />

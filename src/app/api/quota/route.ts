@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
-import { userQuotas } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { userQuotas, reports } from "@/lib/db/schema";
+import { eq, count } from "drizzle-orm";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -14,15 +14,28 @@ export async function GET() {
     .where(eq(userQuotas.userId, user.id))
     .limit(1);
 
-  if (!quota) {
-    const [newQuota] = await db
-      .insert(userQuotas)
-      .values({ userId: user.id, totalQuota: 5, usedQuota: 0 })
-      .returning();
-    return NextResponse.json(newQuota);
+  const [reportCountRow] = await db
+    .select({ cnt: count() })
+    .from(reports)
+    .where(eq(reports.userId, user.id));
+
+  const actualReportCount = reportCountRow?.cnt ?? 0;
+
+  const totalQuota = quota?.totalQuota ?? 5;
+  const usedQuota = Math.max(quota?.usedQuota ?? 0, actualReportCount);
+
+  if (quota && (quota.usedQuota ?? 0) < actualReportCount) {
+    await db
+      .update(userQuotas)
+      .set({ usedQuota: actualReportCount, updatedAt: new Date() })
+      .where(eq(userQuotas.userId, user.id));
   }
 
-  return NextResponse.json(quota);
+  return NextResponse.json({
+    totalQuota,
+    usedQuota,
+    actualReportCount,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -35,22 +48,29 @@ export async function POST(req: NextRequest) {
     .where(eq(userQuotas.userId, user.id))
     .limit(1);
 
+  const [reportCountRow] = await db
+    .select({ cnt: count() })
+    .from(reports)
+    .where(eq(reports.userId, user.id));
+
+  const actualCount = (reportCountRow?.cnt ?? 0) + 1;
+  const totalQuota = quota?.totalQuota ?? 5;
+
   if (!quota) {
     const [newQuota] = await db
       .insert(userQuotas)
-      .values({ userId: user.id, totalQuota: 5, usedQuota: 1 })
+      .values({ userId: user.id, totalQuota: 5, usedQuota: actualCount })
       .returning();
     return NextResponse.json(newQuota, { status: 201 });
   }
 
-  if ((quota.usedQuota ?? 0) >= (quota.totalQuota ?? 5)) {
+  if (actualCount > totalQuota) {
     return NextResponse.json({ error: "Quota exhausted" }, { status: 403 });
   }
 
-  const currentUsed = quota.usedQuota ?? 0;
   const [updated] = await db
     .update(userQuotas)
-    .set({ usedQuota: currentUsed + 1, updatedAt: new Date() })
+    .set({ usedQuota: actualCount, updatedAt: new Date() })
     .where(eq(userQuotas.userId, user.id))
     .returning();
 
