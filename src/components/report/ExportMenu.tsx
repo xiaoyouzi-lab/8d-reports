@@ -29,6 +29,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   const t = useTranslations("export")
   const editorT = useTranslations("editor")
   const [loading, setLoading] = useState<string | null>(null)
+  const [open, setOpen] = useState(false)
 
   const handleExportPdf = async () => {
     setLoading("pdf")
@@ -96,14 +97,16 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger>
-        <Button variant="outline" size="sm" disabled={!!loading}>
-          <FileDown className="size-3.5" />
-          <span className="hidden sm:inline ml-1">{loading ? "..." : editorT("export")}</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+    <DropdownMenu onOpenChange={(open) => setOpen(open)}>
+      <DropdownMenuTrigger
+        render={
+          <Button variant="outline" size="sm" disabled={!!loading} aria-expanded={open}>
+            <FileDown className="size-3.5" />
+            <span className="hidden sm:inline ml-1">{loading ? "..." : editorT("export")}</span>
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end" sideOffset={4}>
         <DropdownMenuLabel>Export Format</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleExportPdf} className="cursor-pointer">
