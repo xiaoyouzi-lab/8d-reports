@@ -132,8 +132,13 @@ export default function ReportEditorPage({
     })
   }
 
-  const handleNext = () => {
-    handleMarkStepComplete()
+  const handleNext = async () => {
+    const next = new Set(completedSteps)
+    next.add(currentStep.id)
+    setCompletedSteps(next)
+    try {
+      await saveToServer(reportData, next, reportTitle)
+    } catch { /* silently fail — explicit save handles errors */ }
     if (activeStepIndex < STEPS.length - 1) {
       setActiveStepIndex(activeStepIndex + 1)
     }
@@ -299,8 +304,18 @@ export default function ReportEditorPage({
                   <Button
                     className="bg-emerald-600 text-white hover:bg-emerald-700"
                     onClick={async () => {
-                      handleMarkStepComplete()
-                      await handleSave()
+                      const next = new Set(completedSteps)
+                      next.add(currentStep.id)
+                      setCompletedSteps(next)
+                      setSaving(true)
+                      try {
+                        await saveToServer(reportData, next, reportTitle)
+                        toast.success("Report completed")
+                      } catch (err) {
+                        toast.error(err instanceof Error ? err.message : "Failed to save")
+                      } finally {
+                        setSaving(false)
+                      }
                       consumeQuota()
                     }}
                   >

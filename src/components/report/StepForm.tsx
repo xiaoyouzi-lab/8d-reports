@@ -52,17 +52,19 @@ function renderField(
   }
 
   if (field.type === "select" && field.options) {
+    const selectId = `select-${field.name}`
     return (
       <div className="space-y-1.5">
-        <Label>
+        <Label htmlFor={selectId}>
           {field.label}
           {field.required && <span className="ml-0.5 text-red-500">*</span>}
         </Label>
         <Select
           value={value || undefined}
           onValueChange={(val) => onChange(field.name, val ?? "")}
+          name={field.name}
         >
-          <SelectTrigger className="w-full">
+          <SelectTrigger id={selectId} className="w-full">
             <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
           </SelectTrigger>
           <SelectContent align="start" sideOffset={4} className="max-h-60 z-50">
@@ -184,6 +186,8 @@ export function StepForm({ step, data, onChange, reportId }: StepFormProps) {
                       </td>
                       <td className="px-3 py-1.5">
                         <Input
+                          id={field.name}
+                          aria-label={`Why ${idx + 1}`}
                           placeholder={field.placeholder}
                           value={data[field.name as keyof ReportData] as string}
                           onChange={(e) => onChange(field.name, e.target.value)}

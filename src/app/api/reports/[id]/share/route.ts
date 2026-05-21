@@ -4,6 +4,38 @@ import { db } from "@/lib/db";
 import { reportShares, reports } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 
+export async function GET(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getSessionUser();
+  if (!user) return unauthorizedResponse();
+
+  const { id: reportId } = await params;
+
+  const [report] = await db
+    .select()
+    .from(reports)
+    .where(and(eq(reports.id, reportId), eq(reports.userId, user.id)))
+    .limit(1);
+
+  if (!report) {
+    return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  }
+
+  const [existingShare] = await db
+    .select()
+    .from(reportShares)
+    .where(eq(reportShares.reportId, reportId))
+    .limit(1);
+
+  if (!existingShare) {
+    return NextResponse.json(null, { status: 200 });
+  }
+
+  return NextResponse.json(existingShare);
+}
+
 export async function POST(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }

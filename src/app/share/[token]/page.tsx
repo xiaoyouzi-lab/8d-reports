@@ -115,9 +115,18 @@ export default function SharePage({
               8D Reports
             </span>
           </Link>
-          <Badge variant="outline" className="text-xs">
-            Shared Report
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-xs">
+              Shared Report
+            </Badge>
+            <Link
+              href={`/reports/${reportId}`}
+              className="inline-flex items-center gap-1.5 rounded-md bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-indigo-700 transition-colors"
+            >
+              <ExternalLink className="size-3.5" />
+              Edit Report
+            </Link>
+          </div>
         </div>
       </header>
 
