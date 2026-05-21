@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { FileDown, FileText, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
-import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,21 +28,17 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   const t = useTranslations("export")
   const editorT = useTranslations("editor")
   const [loading, setLoading] = useState<string | null>(null)
-  const [open, setOpen] = useState(false)
 
   const handleExportPdf = async () => {
     setLoading("pdf")
     try {
       const pdf = exportReportToPdf(reportData, reportTitle, reportId, withWatermark, logoUrl)
-
       const attachmentsRes = await fetch(`/api/reports/${reportId}/attachments`)
       const allAttachments = attachmentsRes.ok ? await attachmentsRes.json() : []
-
       if (allAttachments.length > 0) {
         const blob = new Blob([pdf.output("blob")], { type: "application/pdf" })
         const zip = await createExportZip(
-          blob,
-          `${reportId.slice(0, 8)}_8D_Report.pdf`,
+          blob, `${reportId.slice(0, 8)}_8D_Report.pdf`,
           allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
         )
         downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
@@ -70,17 +65,13 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
           locale: document.cookie.includes("NEXT_LOCALE=zh") ? "zh-CN" : "en",
         }),
       })
-
       if (!res.ok) throw new Error("Export failed")
-
       const attachmentsRes = await fetch(`/api/reports/${reportId}/attachments`)
       const allAttachments = attachmentsRes.ok ? await attachmentsRes.json() : []
-
       if (allAttachments.length > 0) {
         const blob = await res.blob()
         const zip = await createExportZip(
-          blob,
-          `${reportId.slice(0, 8)}_8D_Report.docx`,
+          blob, `${reportId.slice(0, 8)}_8D_Report.docx`,
           allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
         )
         downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
@@ -97,15 +88,16 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   }
 
   return (
-    <DropdownMenu onOpenChange={(open) => setOpen(open)}>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="outline" size="sm" disabled={!!loading} aria-expanded={open}>
-            <FileDown className="size-3.5" />
-            <span className="hidden sm:inline ml-1">{loading ? "..." : editorT("export")}</span>
-          </Button>
-        }
-      />
+    <DropdownMenu>
+      <DropdownMenuTrigger>
+        <button
+          className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+          disabled={!!loading}
+        >
+          <FileDown className="size-3.5" />
+          <span className="hidden sm:inline ml-0.5">{loading ? "..." : editorT("export")}</span>
+        </button>
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end" sideOffset={4}>
         <DropdownMenuLabel>Export Format</DropdownMenuLabel>
         <DropdownMenuSeparator />
