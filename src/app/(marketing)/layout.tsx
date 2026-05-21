@@ -30,7 +30,16 @@ export default function MarketingLayout({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const loggedIn = !!session
+  const [hasSession, setHasSession] = useState(false)
+  const loggedIn = !!session || hasSession
+
+  useEffect(() => {
+    // Force session check on mount for public pages
+    fetch("/api/auth/get-session")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => { if (data?.user) setHasSession(true) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!menuOpen) return
