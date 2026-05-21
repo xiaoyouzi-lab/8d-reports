@@ -144,7 +144,7 @@ export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
           </div>
           <div>
             <span className="text-sm font-semibold text-white">
-              {isZh ? "质量专家顾问" : "Quality Expert"}
+              {isZh ? "随便问任何质量问题" : "Ask Anything Quality"}
             </span>
           </div>
         </div>

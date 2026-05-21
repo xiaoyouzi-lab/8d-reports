@@ -36,7 +36,7 @@ export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
           <>
             <Sparkles className="size-4" />
             <span className="hidden sm:inline text-sm font-medium">
-              {locale === "zh-CN" ? "质量专家" : "Quality Expert"}
+              {locale === "zh-CN" ? "随便问任何质量问题" : "Ask Anything Quality"}
             </span>
           </>
         )}
