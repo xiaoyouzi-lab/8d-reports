@@ -3,9 +3,12 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
+import { LayoutDashboard } from "lucide-react"
 import { LangSwitcher } from "@/components/LangSwitcher"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { authClient } from "@/lib/auth-client"
+import { FeedbackButton } from "@/components/feedback/FeedbackButton"
 
 const navLinks = [
   { href: "#comparison", label: "Product" },
@@ -21,6 +24,8 @@ export default function MarketingLayout({
 }) {
   const t = useTranslations()
   const [scrolled, setScrolled] = useState(false)
+  const { data: session } = authClient.useSession()
+  const loggedIn = !!session
 
   useEffect(() => {
     const handleScroll = () => {
@@ -66,27 +71,43 @@ export default function MarketingLayout({
 
           <div className="flex items-center gap-2">
             <LangSwitcher />
-            <Link
-              href="/login"
-              className={cn(
-                buttonVariants({ variant: "ghost", size: "sm" })
-              )}
-            >
-              {t("auth.signIn")}
-            </Link>
-            <Link
-              href="/signup"
-              className={cn(
-                buttonVariants({ variant: "default", size: "sm" }),
-                "bg-[#4F46E5] hover:bg-[#4F46E5]/90"
-              )}
-            >
-              {t("marketing.ctaStart")}
-            </Link>
+            {loggedIn ? (
+              <Link
+                href="/dashboard"
+                className={cn(
+                  buttonVariants({ variant: "default", size: "sm" }),
+                  "bg-[#4F46E5] hover:bg-[#4F46E5]/90"
+                )}
+              >
+                <LayoutDashboard className="size-3.5" />
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "sm" })
+                  )}
+                >
+                  {t("auth.signIn")}
+                </Link>
+                <Link
+                  href="/signup"
+                  className={cn(
+                    buttonVariants({ variant: "default", size: "sm" }),
+                    "bg-[#4F46E5] hover:bg-[#4F46E5]/90"
+                  )}
+                >
+                  {t("marketing.ctaStart")}
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
       <main className="flex-1">{children}</main>
+      <FeedbackButton locale="en" />
     </>
   )
 }

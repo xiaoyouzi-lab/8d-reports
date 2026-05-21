@@ -2,23 +2,15 @@
 
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
-import { useEffect } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useTranslations, useLocale } from "next-intl"
-import { LayoutDashboard, LogOut, User } from "lucide-react"
+import { LayoutDashboard, LogOut } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { LangSwitcher } from "@/components/LangSwitcher"
 import { QualityAgentFab } from "@/components/quality-agent/QualityAgentFab"
+import { FeedbackButton } from "@/components/feedback/FeedbackButton"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations()
@@ -26,6 +18,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { data: session, isPending } = authClient.useSession()
+
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const handleClick = (e: MouseEvent) => {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target as Node) &&
+        triggerRef.current && !triggerRef.current.contains(e.target as Node)
+      ) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClick)
+    return () => document.removeEventListener("mousedown", handleClick)
+  }, [menuOpen])
 
   useEffect(() => {
     if (!isPending && !session) {
@@ -54,7 +64,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="flex h-14 items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="flex items-center gap-2.5">
+            <Link href="/" className="flex items-center gap-2.5">
               <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
                 8D
               </div>
@@ -74,54 +84,56 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
             <LangSwitcher />
 
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <button className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
-                    <Avatar size="sm">
-                      <AvatarFallback className="bg-indigo-100 text-xs font-medium text-indigo-700">
-                        {userInitial}
-                      </AvatarFallback>
-                    </Avatar>
-                  </button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-medium">{user?.name || "User"}</span>
-                    <span className="text-xs font-normal text-muted-foreground">
-                      {user?.email || ""}
-                    </span>
+            <div className="relative">
+              <button
+                ref={triggerRef}
+                type="button"
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <Avatar size="sm">
+                  <AvatarFallback className="bg-indigo-100 text-xs font-medium text-indigo-700">
+                    {userInitial}
+                  </AvatarFallback>
+                </Avatar>
+              </button>
+              {menuOpen && (
+                <div
+                  ref={menuRef}
+                  className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
+                >
+                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                    <div className="font-medium text-foreground">{user?.name || "User"}</div>
+                    <div className="text-xs font-normal text-muted-foreground">{user?.email || ""}</div>
                   </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => router.push("/dashboard")}
-                  className="cursor-pointer"
-                >
-                  <LayoutDashboard className="size-4" />
-                  {t("dashboard.myReports")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => {
-                    authClient.signOut()
-                    router.push("/login")
-                  }}
-                  className="cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <LogOut className="size-4" />
-                  Sign out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <div className="-mx-1 my-1 h-px bg-border" />
+                  <button
+                    type="button"
+                    onClick={() => { router.push("/dashboard"); setMenuOpen(false) }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <LayoutDashboard className="size-4" />
+                    {t("dashboard.myReports")}
+                  </button>
+                  <div className="-mx-1 my-1 h-px bg-border" />
+                  <button
+                    type="button"
+                    onClick={() => { authClient.signOut(); router.push("/login"); setMenuOpen(false) }}
+                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-accent"
+                  >
+                    <LogOut className="size-4" />
+                    Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       <main className="flex-1">{children}</main>
       <QualityAgentFab locale={locale} />
+      <FeedbackButton locale={locale} />
     </div>
   )
 }

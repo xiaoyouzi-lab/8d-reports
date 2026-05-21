@@ -190,3 +190,12 @@ export const blockedEmailDomains = pgTable("blocked_email_domains", {
   reason: text("reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const feedback = pgTable("feedback", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  rating: integer("rating").default(0),
+  text: text("text").default(""),
+  email: text("email"),
+  locale: text("locale").default("en"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
