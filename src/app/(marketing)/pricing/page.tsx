@@ -11,15 +11,6 @@ const freeFeatures = [
   "Basic templates",
 ]
 
-const proFeatures = [
-  "Unlimited reports",
-  "Everything in Free",
-  "Team collaboration",
-  "Custom templates",
-  "Audit trail & version history",
-  "Priority support",
-]
-
 export default function PricingPage() {
   return (
     <div className="font-sans">
@@ -90,15 +81,30 @@ export default function PricingPage() {
                 Unlimited reports for quality professionals.
               </p>
               <ul className="mt-6 space-y-3">
-                {proFeatures.map((feat) => (
-                  <li
-                    key={feat}
-                    className="flex items-center gap-2.5 text-sm text-foreground/80"
-                  >
-                    <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                    {feat}
-                  </li>
-                ))}
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
+                  Unlimited reports
+                </li>
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
+                  Everything in Free
+                </li>
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-amber-500" />
+                  <span>Team collaboration <span className="text-[10px] text-amber-600 font-normal">(coming soon)</span></span>
+                </li>
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-amber-500" />
+                  <span>Custom templates <span className="text-[10px] text-amber-600 font-normal">(coming soon)</span></span>
+                </li>
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
+                  Audit trail &amp; version history
+                </li>
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
+                  Priority support
+                </li>
               </ul>
               <div className="mt-6 space-y-2">
                 <Link
