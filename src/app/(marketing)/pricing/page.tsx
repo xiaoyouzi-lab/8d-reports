@@ -100,15 +100,26 @@ export default function PricingPage() {
                   </li>
                 ))}
               </ul>
-              <Link
-                href="/sign-up?plan=pro"
-                className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "mt-8 w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
-                )}
-              >
-                Start Pro
-              </Link>
+              <div className="mt-6 space-y-2">
+                <Link
+                  href="/sign-up?plan=pro&billing=monthly"
+                  className={cn(
+                    buttonVariants({ variant: "default", size: "lg" }),
+                    "w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
+                  )}
+                >
+                  $9.99 / month
+                </Link>
+                <Link
+                  href="/sign-up?plan=pro&billing=yearly"
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "lg" }),
+                    "w-full h-11 border-[#4F46E5]/30 text-[#059669] hover:bg-[#059669]/5"
+                  )}
+                >
+                  $79 / year — save 34%
+                </Link>
+              </div>
             </div>
           </div>
 

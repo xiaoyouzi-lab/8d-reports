@@ -7,7 +7,8 @@ export function FeedbackWrapper() {
   const [locale, setLocale] = useState("en")
 
   useEffect(() => {
-    if (document.cookie.includes("NEXT_LOCALE=zh")) {
+    const match = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/)
+    if (match?.[1] === "zh-CN") {
       setLocale("zh-CN")
     }
   }, [])

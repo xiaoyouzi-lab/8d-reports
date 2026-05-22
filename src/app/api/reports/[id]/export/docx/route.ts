@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
-import { reports } from "@/lib/db/schema";
+import { reports, attachments } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { generateWordDocument } from "@/lib/word-export";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
@@ -34,6 +34,12 @@ export async function POST(
     ...(typeof report.data === "object" && report.data ? (report.data as Record<string, unknown>) : {}),
   } as ReportData;
 
+  const attachmentRows = await db
+    .select()
+    .from(attachments)
+    .where(eq(attachments.reportId, reportId))
+    .orderBy(attachments.sortOrder);
+
   const isPro = body.plan !== "free";
   const logoUrl = body.logoUrl || null;
   const locale = body.locale || "en";
@@ -45,6 +51,9 @@ export async function POST(
     withWatermark: !isPro,
     logoUrl,
     locale,
+    attachmentImages: attachmentRows
+      .filter((a) => a.fileType === "photo" || a.mimeType?.startsWith("image/"))
+      .map((a) => ({ url: a.url!, filename: a.filename!, stepId: a.stepId || undefined })),
   });
 
   return new NextResponse(new Uint8Array(buffer), {

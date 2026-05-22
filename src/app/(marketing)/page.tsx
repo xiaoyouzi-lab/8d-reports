@@ -376,14 +376,24 @@ export default function LandingPage() {
                   </li>
                 ))}
               </ul>
-              <CheckoutButton
-                planType="monthly"
-                variant="default"
-                size="lg"
-                className="mt-8 w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
-              >
-                Start Pro
-              </CheckoutButton>
+              <div className="mt-6 space-y-2">
+                <CheckoutButton
+                  planType="monthly"
+                  variant="default"
+                  size="lg"
+                  className="w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
+                >
+                  $9.99 / month
+                </CheckoutButton>
+                <CheckoutButton
+                  planType="yearly"
+                  variant="outline"
+                  size="lg"
+                  className="w-full h-11 border-[#4F46E5]/30 text-[#059669] hover:bg-[#059669]/5"
+                >
+                  $79 / year — save 34%
+                </CheckoutButton>
+              </div>
             </div>
           </div>
         </div>

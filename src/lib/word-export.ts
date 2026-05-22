@@ -11,10 +11,11 @@ interface WordExportOptions {
   withWatermark: boolean;
   logoUrl?: string | null;
   locale?: string;
+  attachmentImages?: { url: string; filename: string; stepId?: string }[];
 }
 
 export async function generateWordDocument(options: WordExportOptions): Promise<Buffer> {
-  const { reportData, reportTitle, reportId, withWatermark, logoUrl } = options;
+  const { reportData, reportTitle, reportId, withWatermark, logoUrl, attachmentImages = [] } = options;
   const isZh = options.locale?.startsWith("zh");
 
   const children: any[] = [];
@@ -113,6 +114,33 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
             ],
           })
         );
+      }
+    }
+
+    const stepImages = attachmentImages.filter((img) => img.stepId === step.id)
+    if (stepImages.length > 0) {
+      children.push(
+        new Paragraph({
+          spacing: { before: 200, after: 100 },
+          children: [new TextRun({ text: isZh ? "附件图片：" : "Attached Images:", bold: true, size: 20, italics: true, color: "6b7280" })],
+        })
+      )
+      for (const img of stepImages) {
+        try {
+          const res = await fetch(img.url)
+          const buf = Buffer.from(await res.arrayBuffer())
+          children.push(
+            new Paragraph({
+              spacing: { after: 50 },
+              children: [new TextRun({ text: img.filename, size: 18, italics: true, color: "9ca3af" })],
+            })
+          )
+          children.push(
+            new Paragraph({
+              children: [new ImageRun({ type: "png", data: buf, transformation: { width: 360, height: 270 } })],
+            })
+          )
+        } catch { /* skip failed image fetch */ }
       }
     }
   }
