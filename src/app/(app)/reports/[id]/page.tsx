@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback, use, useRef } from "react"
 import Link from "next/link"
 import {
   ArrowLeft,
-  Eye,
   Save,
   ChevronLeft,
   ChevronRight,
@@ -40,7 +39,6 @@ export default function ReportEditorPage({
 
   const [reportData, setReportData] = useState<ReportData>({
     ...DEFAULT_REPORT_DATA,
-    reportNumber: reportId,
   })
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
   const [activeStepIndex, setActiveStepIndex] = useState(0)
@@ -59,7 +57,6 @@ export default function ReportEditorPage({
           setReportData((prev) => ({
             ...prev,
             ...row.data,
-            reportNumber: reportId,
             reportType: row.reportType || prev.reportType,
             priority: row.priority || prev.priority,
           }))
@@ -210,11 +207,6 @@ export default function ReportEditorPage({
             >
               {status === "draft" ? "Draft" : status === "in_progress" ? "In Progress" : "Completed"}
             </Badge>
-
-            <Button variant="outline" size="sm" className="hidden sm:inline-flex">
-              <Eye className="size-3.5" />
-              Preview
-            </Button>
 
             <ShareDialog reportId={reportId} reportTitle={reportTitle} />
 

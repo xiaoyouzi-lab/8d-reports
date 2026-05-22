@@ -1,22 +1,27 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { Camera, Image, FileUp, X, FileText } from "lucide-react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { toast } from "sonner"
+import { X, Camera, Image, FileUp, FileText, Maximize2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
+
+const ALLOWED_IMAGE = "image/jpeg,image/png,image/webp,image/heic,image/heif"
+const ALLOWED_FILE = ".pdf,.xlsx,.xls,.docx,.doc,.csv,.txt,.zip"
 
 interface Attachment {
   id: string
-  reportId: string
-  stepId: string | null
-  storagePath: string
-  url: string
   filename: string
+  url: string
   fileType: string
-  mimeType: string | null
-  fileSize: number | null
+  mimeType?: string
+  fileSize?: number
+  stepId?: string
+}
+
+function isImage(att: Attachment): boolean {
+  if (att.fileType === "photo") return true
+  return att.mimeType?.startsWith("image/") ?? false
 }
 
 interface AttachmentAreaProps {
@@ -24,94 +29,81 @@ interface AttachmentAreaProps {
   stepId: string
 }
 
-const ALLOWED_IMAGE = "image/jpeg,image/png,image/webp,image/heic,image/heif"
-const ALLOWED_FILE = ".pdf,.xlsx,.xls,.docx,.doc,.csv,.txt,.zip"
-const MAX_SIZE = 5 * 1024 * 1024
-
 export function AttachmentArea({ reportId, stepId }: AttachmentAreaProps) {
   const t = useTranslations("editor")
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [loading, setLoading] = useState(true)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const cameraInputRef = useRef<HTMLInputElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
-  const [uploadingFiles, setUploadingFiles] = useState<Set<string>>(new Set())
 
-  const fetchAttachments = async () => {
+  const fetchAttachments = useCallback(async () => {
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments`)
       if (res.ok) {
-        const data = await res.json()
-        setAttachments((data as Attachment[]).filter((a) => a.stepId === stepId))
+        const all = await res.json()
+        setAttachments(all.filter((a: Attachment) => a.stepId === stepId))
       }
     } catch { /* ignore */ }
-    finally { setLoading(false) }
-  }
+    setLoading(false)
+  }, [reportId, stepId])
 
-  useEffect(() => { fetchAttachments() }, [reportId, stepId])
+  useEffect(() => {
+    fetchAttachments()
+  }, [fetchAttachments])
 
   const handleFileSelect = async (file: File) => {
-    if (file.size > MAX_SIZE) {
-      toast.error(t("fileTooBig"))
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File too large (max 5MB)")
       return
     }
-
-    const key = file.name + file.size
-    setUploadingFiles((prev) => new Set(prev).add(key))
-
+    setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("reportId", reportId)
-      formData.append("stepId", stepId)
+      const form = new FormData()
+      form.append("file", file)
+      const uploadRes = await fetch("/api/upload", { method: "POST", body: form })
+      if (!uploadRes.ok) throw new Error("Upload failed")
+      const uploaded = await uploadRes.json()
 
-      const uploadRes = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      })
-      if (!uploadRes.ok) {
-        const err = await uploadRes.json()
-        toast.error(err.error || t("fileTooBig"))
-        return
-      }
-      const { storagePath, publicUrl, fileType, mimeType, fileSize } = await uploadRes.json()
-
-      const saveRes = await fetch(`/api/reports/${reportId}/attachments`, {
+      const attachRes = await fetch(`/api/reports/${reportId}/attachments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          storagePath, url: publicUrl, filename: file.name,
-          fileType, mimeType, fileSize, stepId,
+          storagePath: uploaded.storagePath,
+          url: uploaded.url,
+          filename: file.name,
+          fileType: file.type.startsWith("image/") ? "photo" : "file",
+          mimeType: file.type,
+          fileSize: file.size,
+          stepId,
         }),
       })
-      if (saveRes.ok) {
-        const newAtt = await saveRes.json()
-        setAttachments((prev) => [...prev, newAtt])
-      }
+      if (!attachRes.ok) throw new Error("Attachment save failed")
+      toast.success("File attached")
+      fetchAttachments()
     } catch {
-      toast.error(t("createFailed"))
-    } finally {
-      setUploadingFiles((prev) => { const n = new Set(prev); n.delete(key); return n })
+      toast.error("Failed to upload file")
     }
+    setUploading(false)
   }
 
   const handleDelete = async (att: Attachment) => {
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments?attachmentId=${att.id}`, { method: "DELETE" })
-      if (res.ok) {
-        setAttachments((prev) => prev.filter((a) => a.id !== att.id))
-      }
-    } catch { /* ignore */ }
+      if (!res.ok) throw new Error("Delete failed")
+      setAttachments((prev) => prev.filter((a) => a.id !== att.id))
+      toast.success("Attachment removed")
+    } catch {
+      toast.error("Failed to remove attachment")
+    }
   }
 
-  const isImage = (att: Attachment) => att.fileType === "photo" || att.mimeType?.startsWith("image/")
-
   return (
-    <div className="mt-6 space-y-3">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t("attachments")}
-        </span>
+        <span className="text-sm font-medium text-foreground">{t("attachments")}</span>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -123,12 +115,7 @@ export function AttachmentArea({ reportId, stepId }: AttachmentAreaProps) {
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => cameraInputRef.current?.click()}
-          className="h-8 text-xs"
-        >
+        <Button variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
           <Camera className="size-3.5 mr-1.5" />
           {t("takePhoto")}
         </Button>
@@ -140,12 +127,7 @@ export function AttachmentArea({ reportId, stepId }: AttachmentAreaProps) {
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fileInputRef.current?.click()}
-          className="h-8 text-xs"
-        >
+        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
           <Image className="size-3.5 mr-1.5" />
           {t("photoLibrary")}
         </Button>
@@ -157,18 +139,17 @@ export function AttachmentArea({ reportId, stepId }: AttachmentAreaProps) {
           className="hidden"
           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
         />
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => docInputRef.current?.click()}
-          className="h-8 text-xs"
-        >
+        <Button variant="outline" size="sm" onClick={() => docInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
           <FileUp className="size-3.5 mr-1.5" />
           {t("uploadFile")}
         </Button>
       </div>
 
-      {loading && (
+      {uploading && (
+        <div className="text-xs text-muted-foreground py-2">Uploading...</div>
+      )}
+
+      {loading && attachments.length === 0 && (
         <div className="text-xs text-muted-foreground py-2">Loading...</div>
       )}
 
@@ -186,16 +167,21 @@ export function AttachmentArea({ reportId, stepId }: AttachmentAreaProps) {
                 <X className="size-3" />
               </button>
               {isImage(att) ? (
-                <img
-                  src={att.url}
-                  alt={att.filename}
-                  className="h-20 w-full object-cover rounded"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="flex h-20 w-full items-center justify-center rounded bg-muted">
-                  <FileText className="size-8 text-muted-foreground" />
+                <div className="relative cursor-pointer" onClick={() => setPreviewUrl(att.url)}>
+                  <img
+                    src={att.url}
+                    alt={att.filename}
+                    className="h-20 w-full object-cover rounded"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center rounded bg-black/0 group-hover:bg-black/10 transition-colors">
+                    <Maximize2 className="size-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
                 </div>
+              ) : (
+                <a href={att.url} target="_blank" rel="noopener noreferrer" className="flex h-20 w-full items-center justify-center rounded bg-muted hover:bg-muted/80">
+                  <FileText className="size-8 text-muted-foreground" />
+                </a>
               )}
               <span className="mt-1 w-full truncate text-center text-[10px] text-muted-foreground">
                 {att.filename}
@@ -207,6 +193,26 @@ export function AttachmentArea({ reportId, stepId }: AttachmentAreaProps) {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {previewUrl && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewUrl(null)}
+        >
+          <button
+            className="absolute top-4 right-4 text-white hover:text-gray-300"
+            onClick={() => setPreviewUrl(null)}
+          >
+            <X className="size-6" />
+          </button>
+          <img
+            src={previewUrl}
+            alt="Preview"
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>

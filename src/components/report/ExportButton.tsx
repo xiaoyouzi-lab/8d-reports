@@ -5,6 +5,7 @@ import { FileDown, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { exportReportToPdf } from "@/lib/pdf-export"
+import { downloadBlob } from "@/lib/export-zip"
 import type { ReportData } from "@/lib/report-steps"
 
 interface ExportButtonProps {
@@ -24,9 +25,11 @@ export function ExportButton({
 
   const handleExport = async () => {
     setLoading(true)
-    await new Promise((resolve) => setTimeout(resolve, 100))
     try {
-      exportReportToPdf(reportData, reportTitle, reportId, withWatermark)
+      const pdf = await exportReportToPdf({
+        reportData, reportTitle, reportId, withWatermark,
+      })
+      pdf.save(`${reportId.slice(0, 8)}_8D_Report.pdf`)
       toast.success("PDF exported successfully")
     } catch {
       toast.error("Failed to export PDF")

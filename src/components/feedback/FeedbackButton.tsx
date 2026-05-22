@@ -99,7 +99,7 @@ export function FeedbackButton({ locale = "en" }: FeedbackButtonProps) {
         ref={triggerRef}
         type="button"
         onClick={() => { setOpen(!open); setSent(false) }}
-        className="fixed bottom-6 left-6 z-50 inline-flex items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-sm font-medium text-muted-foreground shadow-lg ring-1 ring-black/5 transition-all hover:text-foreground hover:shadow-xl"
+        className="fixed bottom-6 left-6 z-40 inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-2 sm:px-3.5 sm:py-2 text-sm font-medium text-muted-foreground shadow-lg ring-1 ring-black/5 transition-all hover:text-foreground hover:shadow-xl"
       >
         <MessageSquareText className="size-4" />
         <span className="hidden sm:inline">{texts.button}</span>
@@ -108,7 +108,7 @@ export function FeedbackButton({ locale = "en" }: FeedbackButtonProps) {
       {open && (
         <div
           ref={panelRef}
-          className="fixed bottom-16 left-4 z-50 w-[340px] max-w-[calc(100vw-2rem)] rounded-xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden"
+          className="fixed bottom-16 left-2 sm:left-4 z-40 w-[calc(100vw-1rem)] sm:w-[340px] max-w-[calc(100vw-2rem)] rounded-xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden"
         >
           <div className="flex items-center justify-between border-b px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-400">
             <span className="text-sm font-semibold text-white">{texts.title}</span>

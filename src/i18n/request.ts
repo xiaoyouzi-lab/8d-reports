@@ -1,19 +1,21 @@
 import { getRequestConfig } from "next-intl/server"
 
 export default getRequestConfig(async () => {
+  let locale = "en"
   try {
-    const { headers } = await import("next/headers")
-    const heads = await headers()
-    const locale = heads.get("x-locale")
+    const { cookies } = await import("next/headers")
+    const store = await cookies()
+    const val = store.get("NEXT_LOCALE")?.value
+    if (val === "zh-CN") locale = "zh-CN"
+  } catch { /* use default */ }
 
-    if (locale === "zh-CN") {
-      return {
-        locale: "zh-CN",
-        messages: (await import("../messages/zh-CN.json")).default,
-        timeZone: "Asia/Shanghai",
-      }
+  if (locale === "zh-CN") {
+    return {
+      locale: "zh-CN",
+      messages: (await import("../messages/zh-CN.json")).default,
+      timeZone: "Asia/Shanghai",
     }
-  } catch { /* fall through to default */ }
+  }
 
   return {
     locale: "en",

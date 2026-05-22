@@ -21,14 +21,18 @@ export function CheckoutButton({
   size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs";
 }) {
   const [loading, setLoading] = useState(false);
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
   const router = useRouter();
 
   const handleClick = async () => {
+    if (loading) return
     setLoading(true);
     try {
-      if (!session?.user) {
-        router.push(`/signup?plan=${planType}`);
+      if (!session?.user && !isPending) {
+        router.push(`/signup?plan=pro&billing=${planType}`);
+        return;
+      }
+      if (isPending) {
         return;
       }
 

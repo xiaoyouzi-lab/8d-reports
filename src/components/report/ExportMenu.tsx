@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { FileDown, FileText, FileSpreadsheet, Check } from "lucide-react"
+import { FileDown, FileText, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { exportReportToPdf } from "@/lib/pdf-export"
 import { createExportZip, downloadBlob } from "@/lib/export-zip"
@@ -38,19 +38,33 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
 
+  const fetchAttachments = async () => {
+    try {
+      const res = await fetch(`/api/reports/${reportId}/attachments`)
+      return res.ok ? await res.json() : []
+    } catch { return [] }
+  }
+
   const handleExportPdf = async () => {
     setOpen(false)
     setLoading("pdf")
     try {
-      const pdf = exportReportToPdf(reportData, reportTitle, reportId, withWatermark, logoUrl)
-      const attachmentsRes = await fetch(`/api/reports/${reportId}/attachments`)
-      const allAttachments = attachmentsRes.ok ? await attachmentsRes.json() : []
-      if (allAttachments.length > 0) {
+      const allAttachments = await fetchAttachments()
+      const pdf = await exportReportToPdf({
+        reportData,
+        reportTitle,
+        reportId,
+        withWatermark,
+        logoUrl,
+        attachmentImages: allAttachments
+          .filter((a: any) => a.fileType === "photo" || a.mimeType?.startsWith("image/"))
+          .map((a: any) => ({ url: a.url, filename: a.filename, stepId: a.stepId })),
+      })
+
+      const allAttachForZip = allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
+      if (allAttachForZip.length > 0) {
         const blob = new Blob([pdf.output("blob")], { type: "application/pdf" })
-        const zip = await createExportZip(
-          blob, `${reportId.slice(0, 8)}_8D_Report.pdf`,
-          allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
-        )
+        const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.pdf`, allAttachForZip)
         downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
       } else {
         pdf.save(`${reportId.slice(0, 8)}_8D_Report.pdf`)
@@ -77,14 +91,11 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
         }),
       })
       if (!res.ok) throw new Error("Export failed")
-      const attachmentsRes = await fetch(`/api/reports/${reportId}/attachments`)
-      const allAttachments = attachmentsRes.ok ? await attachmentsRes.json() : []
-      if (allAttachments.length > 0) {
+      const allAttachments = await fetchAttachments()
+      const allAttachForZip = allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
+      if (allAttachForZip.length > 0) {
         const blob = await res.blob()
-        const zip = await createExportZip(
-          blob, `${reportId.slice(0, 8)}_8D_Report.docx`,
-          allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
-        )
+        const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.docx`, allAttachForZip)
         downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
       } else {
         const blob = await res.blob()

@@ -7,6 +7,15 @@ const MARGIN = 20
 const CONTENT_W = PAGE_W - 2 * MARGIN
 const LINE_H = 7
 
+interface PdfExportOptions {
+  reportData: ReportData
+  reportTitle: string
+  reportId: string
+  withWatermark: boolean
+  logoUrl?: string | null
+  attachmentImages?: { url: string; filename: string; stepId?: string }[]
+}
+
 function resolveSelectLabel(fieldName: string, value: string): string {
   for (const step of STEPS) {
     for (const field of step.fields) {
@@ -24,21 +33,15 @@ function formatDateValue(value: string): string {
   try {
     const d = new Date(value)
     if (isNaN(d.getTime())) return value
-    return d.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    })
-  } catch {
-    return value
-  }
+    return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  } catch { return value }
 }
 
 function formatDisplayValue(field: ReportField, value: string): string {
   if (!value) return "—"
   if (field.type === "select") return resolveSelectLabel(field.name, value)
   if (field.type === "date" || field.type === "datetime-local") return formatDateValue(value)
-  if (field.type === "photo") return "[Photo attached]"
+  if (field.type === "photo") return ""
   return value
 }
 
@@ -47,23 +50,18 @@ function addWatermark(doc: jsPDF) {
   doc.setFontSize(60)
   doc.setTextColor(230, 230, 230)
   doc.setFont("helvetica", "bold")
-  doc.text("SAMPLE - 8D Reports", PAGE_W / 2, PAGE_H / 2, {
-    align: "center",
-    angle: 45,
-  })
-  doc.setTextColor(0, 0, 0)
-  doc.setFont("helvetica", "normal")
+  doc.text("SAMPLE - 8D Reports", PAGE_W / 2, PAGE_H / 2, { align: "center", angle: 45 })
   doc.restoreGraphicsState()
 }
 
 function drawPageBorder(doc: jsPDF) {
   doc.setDrawColor(200, 200, 200)
   doc.setLineWidth(0.3)
-  doc.rect(MARGIN - 5, MARGIN - 5, PAGE_W - 2 * (MARGIN - 5), PAGE_H - 2 * (MARGIN - 5))
+  doc.rect(MARGIN - 2, MARGIN - 2, PAGE_W - 2 * MARGIN + 4, PAGE_H - 2 * MARGIN + 4)
 }
 
-function checkPageBreak(doc: jsPDF, y: number, neededSpace: number = 30): number {
-  if (y + neededSpace > PAGE_H - MARGIN) {
+function checkPageBreak(doc: jsPDF, y: number, needed: number): number {
+  if (y + needed > PAGE_H - MARGIN - 10) {
     doc.addPage()
     return MARGIN + 10
   }
@@ -72,71 +70,80 @@ function checkPageBreak(doc: jsPDF, y: number, neededSpace: number = 30): number
 
 function drawHeaderLine(doc: jsPDF, y: number) {
   doc.setDrawColor(79, 70, 229)
-  doc.setLineWidth(0.8)
-  doc.line(MARGIN, y, PAGE_W - MARGIN, y)
+  doc.setLineWidth(0.5)
+  doc.line(MARGIN, y, MARGIN + 60, y)
+}
+
+async function fetchImageAsBase64(url: string): Promise<string | null> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    const blob = await res.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(reader.result as string)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch { return null }
 }
 
 function addCoverPage(doc: jsPDF, reportTitle: string, reportId: string, withWatermark: boolean, logoUrl?: string | null) {
-  if (withWatermark) {
-    addWatermark(doc)
-  }
+  if (withWatermark) addWatermark(doc)
   drawPageBorder(doc)
 
-  let titleY = 80
-
+  let y = MARGIN + 30
   if (logoUrl) {
     try {
-      doc.addImage(logoUrl, "PNG", MARGIN, MARGIN + 5, 35, 18, undefined, "FAST")
-      titleY = 90
-    } catch { /* ignore logo rendering error */ }
+      fetch(logoUrl).then(r => r.arrayBuffer()).then(buf => {
+        const b64 = Buffer.from(buf).toString("base64")
+        doc.addImage(b64, "PNG", MARGIN, MARGIN + 10, 30, 15)
+      }).catch(() => {})
+    } catch { /* ignore */ }
   }
 
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(36)
+  doc.setFontSize(32)
   doc.setTextColor(79, 70, 229)
-  doc.text("8D REPORT", PAGE_W / 2, titleY, { align: "center" })
+  doc.text("8D REPORT", MARGIN, y)
+  y += 20
 
-  drawHeaderLine(doc, titleY + 10)
-
-  doc.setFontSize(14)
-  doc.setTextColor(60, 60, 60)
-  doc.text(reportTitle || "Untitled Report", PAGE_W / 2, titleY + 30, { align: "center" })
+  doc.setFontSize(16)
+  doc.setTextColor(30, 30, 30)
+  doc.text(reportTitle, MARGIN, y)
+  y += 12
 
   doc.setFont("helvetica", "normal")
-  doc.setFontSize(11)
+  doc.setFontSize(10)
   doc.setTextColor(100, 100, 100)
-  doc.text(`Report ID: ${reportId}`, PAGE_W / 2, titleY + 45, { align: "center" })
-
-  const today = new Date().toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  })
-  doc.text(`Generated: ${today}`, PAGE_W / 2, titleY + 53, { align: "center" })
+  doc.text(`Report ID: ${reportId}`, MARGIN, y)
+  y += 8
+  doc.text(`Date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`, MARGIN, y)
+  y += 8
 
   if (withWatermark) {
     doc.setFont("helvetica", "bold")
-    doc.setFontSize(16)
-    doc.setTextColor(180, 50, 50)
-    doc.text("CONFIDENTIAL", PAGE_W / 2, 155, { align: "center" })
-    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(9)
+    doc.setTextColor(200, 50, 50)
+    doc.text("SAMPLE REPORT — DO NOT SUBMIT", MARGIN, y)
+    y += 8
   }
 
-  doc.setFontSize(9)
+  doc.setFontSize(8)
   doc.setTextColor(150, 150, 150)
-  doc.text(
-    "Generated by 8D Reports — Quality Management Software",
-    PAGE_W / 2,
-    PAGE_H - MARGIN - 5,
-    { align: "center" },
-  )
+  doc.text("Generated by 8D Reports (https://8d-reports.vercel.app)", PAGE_W / 2, PAGE_H - MARGIN - 5, { align: "center" })
   doc.setTextColor(0, 0, 0)
 }
 
-function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWatermark: boolean) {
-  if (withWatermark) {
-    addWatermark(doc)
-  }
+async function addStepPage(
+  doc: jsPDF,
+  step: ReportStep,
+  data: ReportData,
+  withWatermark: boolean,
+  stepImages: { url: string; filename: string; stepId?: string }[],
+  currentPage: number,
+) {
+  if (withWatermark) addWatermark(doc)
   drawPageBorder(doc)
 
   doc.setFont("helvetica", "bold")
@@ -153,7 +160,6 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
   drawHeaderLine(doc, headerY + 12)
 
   doc.setTextColor(0, 0, 0)
-
   let y = headerY + 22
   const fiveWhyFields = step.fields.filter((f) => f.name.startsWith("why"))
   const otherFields = step.fields.filter((f) => !f.name.startsWith("why"))
@@ -164,7 +170,6 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
 
   for (const field of otherFields) {
     y = checkPageBreak(doc, y, 20)
-
     const rawValue = (data[field.name as keyof ReportData] ?? "") as string
     const displayValue = formatDisplayValue(field, rawValue)
 
@@ -185,15 +190,12 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
         y += 5
       }
     } else if (field.type === "photo") {
-      doc.setTextColor(150, 150, 150)
-      doc.text(displayValue, valueX, y)
-      doc.setTextColor(30, 30, 30)
+      // Skip — photos are rendered as attachments below
     } else {
       doc.text(displayValue, valueX, y, { maxWidth: valueMaxW })
     }
 
     y += LINE_H + 2
-
     doc.setDrawColor(230, 230, 230)
     doc.setLineWidth(0.2)
     doc.line(labelX, y - 2, PAGE_W - MARGIN, y - 2)
@@ -201,9 +203,7 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
 
   if (fiveWhyFields.length > 0) {
     y = checkPageBreak(doc, y, 15)
-
     y += 6
-
     doc.setFont("helvetica", "bold")
     doc.setFontSize(11)
     doc.setTextColor(79, 70, 229)
@@ -218,7 +218,6 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
 
     doc.setFillColor(245, 245, 250)
     doc.rect(col1X, y - 5, CONTENT_W, 8, "F")
-
     doc.setFont("helvetica", "bold")
     doc.setFontSize(8)
     doc.setTextColor(100, 100, 100)
@@ -227,7 +226,6 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
     doc.text("Question / Answer", col3X, y)
     doc.setTextColor(0, 0, 0)
     y += 4
-
     doc.setDrawColor(220, 220, 220)
     doc.setLineWidth(0.3)
     doc.line(MARGIN, y, PAGE_W - MARGIN, y)
@@ -237,24 +235,19 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
       const field = fiveWhyFields[i]
       const rawValue = (data[field.name as keyof ReportData] ?? "") as string
       const displayValue = rawValue || "—"
-
       y = checkPageBreak(doc, y, 15)
-
       if (i % 2 === 0) {
         doc.setFillColor(250, 250, 252)
         doc.rect(MARGIN, y - 4, CONTENT_W, 8, "F")
       }
-
       doc.setFont("helvetica", "bold")
       doc.setFontSize(9)
       doc.setTextColor(79, 70, 229)
       doc.text(`${i + 1}`, col1X, y)
       doc.text(`Why ${i + 1}`, col2X, y)
-
       doc.setFont("helvetica", "normal")
       doc.setFontSize(9)
       doc.setTextColor(30, 30, 30)
-
       if (displayValue !== "—") {
         const lines = doc.splitTextToSize(displayValue, col3W)
         doc.text(lines[0] || "", col3X, y)
@@ -268,12 +261,40 @@ function addStepPage(doc: jsPDF, step: ReportStep, data: ReportData, withWaterma
         doc.text(displayValue, col3X, y)
         doc.setTextColor(30, 30, 30)
       }
-
       y += 8
-
       doc.setDrawColor(225, 225, 225)
       doc.setLineWidth(0.15)
       doc.line(MARGIN, y - 2, PAGE_W - MARGIN, y - 2)
+    }
+  }
+
+  if (stepImages.length > 0) {
+    y = checkPageBreak(doc, y, 20)
+    y += 4
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(9)
+    doc.setTextColor(120, 120, 120)
+    doc.text("Attached Images:", MARGIN, y)
+    y += 7
+
+    const imgW = (CONTENT_W - 8) / 2
+    const imgH = imgW * 0.75
+    let col = 0
+    for (const img of stepImages) {
+      const b64 = await fetchImageAsBase64(img.url)
+      if (!b64) continue
+      const imgX = MARGIN + col * (imgW + 8)
+      y = checkPageBreak(doc, y, imgH + 10)
+      try {
+        doc.addImage(b64, "JPEG", imgX, y, imgW, imgH, undefined, "FAST")
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(7)
+        doc.setTextColor(150, 150, 150)
+        doc.text(img.filename.length > 30 ? img.filename.substring(0, 28) + ".." : img.filename, imgX, y + imgH + 4)
+        doc.setTextColor(0, 0, 0)
+      } catch { /* skip broken image */ }
+      col++
+      if (col >= 2) { col = 0; y += imgH + 12 }
     }
   }
 }
@@ -290,23 +311,18 @@ function addPageNumbers(doc: jsPDF) {
   }
 }
 
-export function exportReportToPdf(
-  reportData: ReportData,
-  reportTitle: string,
-  reportId: string,
-  withWatermark: boolean,
-  logoUrl?: string | null,
-): jsPDF {
+export async function exportReportToPdf(options: PdfExportOptions): Promise<jsPDF> {
+  const { reportData, reportTitle, reportId, withWatermark, logoUrl, attachmentImages = [] } = options
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" })
 
   addCoverPage(doc, reportTitle, reportId, withWatermark, logoUrl)
 
   for (const step of STEPS) {
     doc.addPage()
-    addStepPage(doc, step, reportData, withWatermark)
+    const stepImages = attachmentImages.filter((img) => img.stepId === step.id)
+    await addStepPage(doc, step, reportData, withWatermark, stepImages, doc.getNumberOfPages())
   }
 
   addPageNumbers(doc)
-
   return doc
 }

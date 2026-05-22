@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports, userQuotas } from "@/lib/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -46,6 +46,26 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  const today = new Date();
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+
+  const todayReports = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(reports)
+    .where(and(
+      eq(reports.userId, user.id),
+      gte(reports.createdAt, startOfDay),
+      lte(reports.createdAt, endOfDay),
+    ));
+
+  const todayCount = (todayReports[0]?.count ?? 0) + 1;
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, "0");
+  const d = String(today.getDate()).padStart(2, "0");
+  const seq = String(todayCount).padStart(2, "0");
+  const reportNumber = `${y}-${m}-${d}-${seq}`;
+
   const [report] = await db
     .insert(reports)
     .values({
@@ -53,7 +73,7 @@ export async function POST(req: NextRequest) {
       title: "Untitled Report",
       reportType,
       priority,
-      data: {},
+      data: { reportNumber },
       stepStatus: {},
     })
     .returning();
