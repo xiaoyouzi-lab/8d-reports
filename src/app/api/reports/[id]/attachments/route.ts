@@ -59,12 +59,13 @@ export async function POST(
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const [existingCount] = await db
+  const existingRows = await db
     .select()
     .from(attachments)
     .where(eq(attachments.reportId, reportId));
 
-  if (existingCount && Array.isArray(existingCount) && existingCount.length >= 10) {
+  const currentCount = existingRows.length;
+  if (currentCount >= 10) {
     return NextResponse.json({ error: "Maximum 10 attachments per report" }, { status: 400 });
   }
 
@@ -79,7 +80,7 @@ export async function POST(
       fileType: fileType || "photo",
       mimeType: mimeType || null,
       fileSize: fileSize || null,
-      sortOrder: Array.isArray(existingCount) ? existingCount.length : 0,
+      sortOrder: currentCount,
     })
     .returning();
 

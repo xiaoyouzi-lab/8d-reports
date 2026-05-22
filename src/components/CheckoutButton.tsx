@@ -25,17 +25,17 @@ export function CheckoutButton({
   const router = useRouter();
 
   const handleClick = async () => {
-    if (loading) return
+    if (loading) return;
+
+    if (isPending) return;
+
+    if (!session?.user) {
+      router.push(`/signup?plan=pro&billing=${planType}`);
+      return;
+    }
+
     setLoading(true);
     try {
-      if (!session?.user && !isPending) {
-        router.push(`/signup?plan=pro&billing=${planType}`);
-        return;
-      }
-      if (isPending) {
-        return;
-      }
-
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,7 +44,7 @@ export function CheckoutButton({
 
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Checkout failed");
+        throw new Error(data.error || `Checkout failed (${res.status})`);
       }
 
       const session_data = await res.json();
@@ -61,7 +61,7 @@ export function CheckoutButton({
   return (
     <button
       onClick={handleClick}
-      disabled={loading}
+      disabled={loading || isPending}
       className={cn(buttonVariants({ variant, size }), className)}
     >
       {loading && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}

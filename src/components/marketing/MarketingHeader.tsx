@@ -10,15 +10,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
 
-const navLinks = [
-  { href: "#comparison", label: "Product" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
-  { href: "/docs", label: "Docs" },
+const navLinks = (t: ReturnType<typeof useTranslations<"marketing">>) => [
+  { href: "/pricing", label: t("pricingNav") || "Pricing" },
+  { href: "/faq", label: t("faqNav") || "FAQ" },
+  { href: "/docs", label: t("docsNav") || "Docs" },
 ]
 
 export function MarketingHeader() {
-  const t = useTranslations()
+  const t = useTranslations("marketing")
   const locale = useLocale()
   const [scrolled, setScrolled] = useState(false)
   const { data: session, isPending } = authClient.useSession()
@@ -26,6 +25,7 @@ export function MarketingHeader() {
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [ready, setReady] = useState(false)
+  const links = navLinks(t)
 
   useEffect(() => {
     if (!isPending) {
@@ -85,7 +85,7 @@ export function MarketingHeader() {
         </Link>
 
         <nav className="hidden md:flex md:items-center md:gap-1">
-          {navLinks.map((link) => (
+          {links.map((link) => (
             <Link
               key={link.label}
               href={link.href}

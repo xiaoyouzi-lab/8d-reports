@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { ArrowRight, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -16,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 export default function NewReportPage() {
+  const t = useTranslations("editor")
   const router = useRouter()
   const [reportType, setReportType] = useState("customer_8d")
   const [priority, setPriority] = useState("medium")
@@ -30,12 +32,12 @@ export default function NewReportPage() {
         body: JSON.stringify({ reportType, priority }),
       })
       if (res.status === 403) {
-        toast.error("Quota exhausted. Upgrade to Pro to create more reports.")
+        toast.error(t("quotaExhausted"))
         setIsSubmitting(false)
         return
       }
       if (!res.ok) {
-        toast.error("Failed to create report")
+        toast.error(t("createFailed"))
         setIsSubmitting(false)
         return
       }
@@ -57,21 +59,21 @@ export default function NewReportPage() {
           New 8D Report
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
-          Start a new quality issue investigation using the 8D methodology
+          {t("reportDetailsDesc")}
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Report Details</CardTitle>
+          <CardTitle>{t("reportDetails")}</CardTitle>
           <CardDescription>
-            Choose the type and priority for your 8D report.
+            {t("reportDetailsDesc")}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-1.5">
             <Label>
-              Report Type
+              {t("reportType")}
               <span className="ml-0.5 text-red-500">*</span>
             </Label>
             <Select value={reportType} onValueChange={(val) => setReportType(val ?? "customer_8d")}>
@@ -87,7 +89,7 @@ export default function NewReportPage() {
 
           <div className="space-y-1.5">
             <Label>
-              Priority
+              {t("priority")}
               <span className="ml-0.5 text-red-500">*</span>
             </Label>
             <Select value={priority} onValueChange={(val) => setPriority(val ?? "medium")}>
@@ -107,7 +109,7 @@ export default function NewReportPage() {
             onClick={handleStart}
             disabled={isSubmitting}
           >
-            {isSubmitting ? "Starting..." : "Start Report"}
+            {isSubmitting ? t("starting") : t("startReport")}
             {!isSubmitting && <ArrowRight className="size-4" />}
           </Button>
         </CardContent>

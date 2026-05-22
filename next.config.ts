@@ -9,7 +9,7 @@ const cspHeader = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
+  "img-src 'self' data: blob: https: https://*.r2.cloudflarestorage.com",
   "font-src 'self'",
   "connect-src 'self' https://*.neon.tech https://*.r2.cloudflarestorage.com",
   "frame-src 'self' https://accounts.google.com https://github.com",

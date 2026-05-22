@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, use, useRef } from "react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import {
   ArrowLeft,
   Save,
@@ -26,6 +27,8 @@ const statusStyles: Record<string, string> = {
   completed: "bg-emerald-100 text-emerald-700 ring-emerald-600/20",
 }
 
+const STATUS_KEY = { draft: "draft", in_progress: "inProgress", completed: "completed" } as const
+
 export default function ReportEditorPage({
   params,
 }: {
@@ -36,6 +39,7 @@ export default function ReportEditorPage({
   const plan = (session?.user as Record<string, unknown>)?.plan as string || "free"
   const isPro = plan === "pro"
   const hasConsumedQuotaRef = useRef(false)
+  const te = useTranslations("editor")
 
   const [reportData, setReportData] = useState<ReportData>({
     ...DEFAULT_REPORT_DATA,
@@ -164,7 +168,7 @@ export default function ReportEditorPage({
   if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-[#F8F9FB]">
-        <div className="text-sm text-muted-foreground">Loading report...</div>
+        <div className="text-sm text-muted-foreground">{te("loadingReport")}</div>
       </div>
     )
   }
@@ -179,7 +183,7 @@ export default function ReportEditorPage({
               className="flex shrink-0 items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               <ArrowLeft className="size-4" />
-              <span className="hidden sm:inline">Back</span>
+              <span className="hidden sm:inline">{te("back")}</span>
             </Link>
 
             <span className="hidden h-4 w-px bg-border sm:block" />
@@ -205,7 +209,7 @@ export default function ReportEditorPage({
               )}
               variant="outline"
             >
-              {status === "draft" ? "Draft" : status === "in_progress" ? "In Progress" : "Completed"}
+              {te(STATUS_KEY[status] || "draft")}
             </Badge>
 
             <ShareDialog reportId={reportId} reportTitle={reportTitle} />
@@ -225,7 +229,7 @@ export default function ReportEditorPage({
               disabled={saving}
             >
               <Save className="size-3.5" />
-              <span className="hidden sm:inline">{saving ? "Saving..." : "Save"}</span>
+              <span className="hidden sm:inline">{saving ? te("saving") : te("save")}</span>
             </Button>
           </div>
         </div>
@@ -274,13 +278,13 @@ export default function ReportEditorPage({
                 disabled={activeStepIndex === 0}
               >
                 <ChevronLeft className="size-4" />
-                Previous
+                {te("previous")}
               </Button>
 
               <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={handleSave} disabled={saving}>
                   <Save className="size-3.5" />
-                  Save Draft
+                  {te("saveDraft")}
                 </Button>
 
                 <Button
@@ -288,7 +292,7 @@ export default function ReportEditorPage({
                   onClick={handleNext}
                   disabled={activeStepIndex === STEPS.length - 1}
                 >
-                  Next
+                  {te("next")}
                   <ChevronRight className="size-4" />
                 </Button>
 
@@ -302,16 +306,16 @@ export default function ReportEditorPage({
                       setSaving(true)
                       try {
                         await saveToServer(reportData, next, reportTitle)
-                        toast.success("Report completed")
+                        toast.success(te("reportSaved"))
                       } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Failed to save")
+                        toast.error(err instanceof Error ? err.message : te("saveFailed"))
                       } finally {
                         setSaving(false)
                       }
                       consumeQuota()
                     }}
                   >
-                    Complete Report
+                    {te("completeReport")}
                   </Button>
                 )}
               </div>
