@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Share2, Copy, Check, Link, ExternalLink } from "lucide-react"
+import { Share2, Copy, Check, Link, ExternalLink, Eye, Edit3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -18,6 +18,7 @@ import { toast } from "sonner"
 interface ShareInfo {
   accessToken: string
   views: number
+  permissionLevel: string
   createdAt: string
 }
 
@@ -32,6 +33,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
   const [copied, setCopied] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [editMode, setEditMode] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -42,7 +44,10 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
       const res = await fetch(`/api/reports/${reportId}/share`)
       if (res.ok) {
         const data = await res.json()
-        setShareInfo(data)
+        if (data && data.accessToken) {
+          setShareInfo(data)
+          setEditMode(data.permissionLevel === "edit")
+        }
       }
     } catch {
       // ignore
@@ -50,7 +55,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
   }
 
   useEffect(() => {
-    if (!open) {
+    if (open) {
       fetchShare()
     }
   }, [open, reportId])
@@ -61,7 +66,12 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
   const handleCreateLink = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/reports/${reportId}/share`, { method: "POST" })
+      const permissionLevel = editMode ? "edit" : "view"
+      const res = await fetch(`/api/reports/${reportId}/share`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissionLevel }),
+      })
       if (res.ok) {
         const data = await res.json()
         setShareInfo(data)
@@ -76,11 +86,30 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
     }
   }
 
+  const handleUpdatePermission = async (newLevel: string) => {
+    try {
+      const res = await fetch(`/api/reports/${reportId}/share`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ permissionLevel: newLevel }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setShareInfo(data)
+        setEditMode(newLevel === "edit")
+        toast.success(newLevel === "edit" ? "Edit access enabled" : "View-only mode set")
+      }
+    } catch {
+      toast.error("Failed to update permissions")
+    }
+  }
+
   const handleDeleteLink = async () => {
     try {
       const res = await fetch(`/api/reports/${reportId}/share`, { method: "DELETE" })
       if (res.ok) {
         setShareInfo(null)
+        setEditMode(false)
         toast.success("Share link removed")
       } else {
         toast.error("Failed to remove share link")
@@ -134,6 +163,43 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
                 </span>
               </div>
 
+              <div className="space-y-2 rounded-lg border bg-muted/30 p-3">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Permission
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleUpdatePermission("view")}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      shareInfo.permissionLevel !== "edit"
+                        ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Eye className="size-3.5" />
+                    View only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdatePermission("edit")}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      shareInfo.permissionLevel === "edit"
+                        ? "bg-indigo-100 text-indigo-700 shadow-sm ring-1 ring-indigo-300"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Edit3 className="size-3.5" />
+                    Can edit
+                  </button>
+                </div>
+                {shareInfo.permissionLevel === "edit" && (
+                  <p className="text-xs text-amber-600">
+                    Recipients can edit and save — changes update the original report. No login required.
+                  </p>
+                )}
+              </div>
+
               <div className="space-y-1.5">
                 <span className="text-xs font-medium text-muted-foreground">
                   Share link
@@ -173,8 +239,45 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
                 Not shared
               </span>
               <p className="text-center text-xs text-muted-foreground">
-                Create a share link to allow anyone to view this report
+                Create a share link to allow anyone to view or edit this report
               </p>
+
+              <div className="w-full space-y-2 rounded-lg border bg-muted/30 p-3">
+                <span className="text-xs font-medium text-muted-foreground">
+                  Choose permission level
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditMode(false)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      !editMode
+                        ? "bg-white text-foreground shadow-sm ring-1 ring-border"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Eye className="size-3.5" />
+                    View only
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditMode(true)}
+                    className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
+                      editMode
+                        ? "bg-indigo-100 text-indigo-700 shadow-sm ring-1 ring-indigo-300"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <Edit3 className="size-3.5" />
+                    Can edit
+                  </button>
+                </div>
+                {editMode && (
+                  <p className="text-xs text-amber-600">
+                    Recipients can edit and save without logging in.
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

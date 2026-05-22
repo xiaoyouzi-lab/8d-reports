@@ -11,7 +11,10 @@ export async function GET(
 
   const [share] = await db
     .select({
-      share: reportShares,
+      accessToken: reportShares.accessToken,
+      views: reportShares.views,
+      permissionLevel: reportShares.permissionLevel,
+      createdAt: reportShares.createdAt,
       report: {
         id: reports.id,
         title: reports.title,
@@ -39,4 +42,52 @@ export async function GET(
     .where(eq(reportShares.accessToken, token));
 
   return NextResponse.json(share);
+}
+
+export async function PUT(
+  req: NextRequest,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params;
+
+  const [share] = await db
+    .select({
+      reportId: reportShares.reportId,
+      permissionLevel: reportShares.permissionLevel,
+    })
+    .from(reportShares)
+    .where(eq(reportShares.accessToken, token))
+    .limit(1);
+
+  if (!share) {
+    return NextResponse.json({ error: "Share link not found" }, { status: 404 });
+  }
+
+  if (share.permissionLevel !== "edit") {
+    return NextResponse.json(
+      { error: "This share link is view-only" },
+      { status: 403 }
+    );
+  }
+
+  const body = await req.json().catch(() => ({}));
+
+  const [updated] = await db
+    .update(reports)
+    .set({
+      title: body.title,
+      data: body.data,
+      stepStatus: body.stepStatus,
+      reportType: body.reportType,
+      priority: body.priority,
+      updatedAt: new Date(),
+    } as any)
+    .where(eq(reports.id, share.reportId))
+    .returning();
+
+  if (!updated) {
+    return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ success: true, report: updated });
 }

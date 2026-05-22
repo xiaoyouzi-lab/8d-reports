@@ -2,18 +2,18 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { ChevronDown, ChevronRight, ExternalLink } from "lucide-react"
+import { ChevronDown, ChevronRight, ExternalLink, Save, Eye } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { STEPS, type ReportData, DEFAULT_REPORT_DATA } from "@/lib/report-steps"
 
 interface ShareResponse {
-  share: {
-    accessToken: string
-    views: number
-    createdAt: string
-  }
+  accessToken: string
+  views: number
+  permissionLevel: string
+  createdAt: string
   report: {
     id: string
     title: string
@@ -35,12 +35,16 @@ export default function SharePage({
   const [expandedStep, setExpandedStep] = useState<string | null>(null)
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [permissionLevel, setPermissionLevel] = useState("view")
   const [report, setReport] = useState<{
     reportId: string
     data: ReportData
     title: string
     createdAt: string
   } | null>(null)
+  const [editData, setEditData] = useState<ReportData | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -51,22 +55,66 @@ export default function SharePage({
           setReport(null)
           return
         }
+        const data = {
+          ...DEFAULT_REPORT_DATA,
+          reportNumber: share.report.id,
+          reportType: share.report.reportType || DEFAULT_REPORT_DATA.reportType,
+          priority: share.report.priority || DEFAULT_REPORT_DATA.priority,
+          ...(share.report.data as Record<string, unknown>),
+        } as ReportData
+
         setReport({
           reportId: share.report.id,
           title: share.report.title,
           createdAt: share.report.createdAt,
-          data: {
-            ...DEFAULT_REPORT_DATA,
-            reportNumber: share.report.id,
-            reportType: share.report.reportType || DEFAULT_REPORT_DATA.reportType,
-            priority: share.report.priority || DEFAULT_REPORT_DATA.priority,
-            ...(share.report.data as Record<string, unknown>),
-          } as ReportData,
+          data,
         })
+        setEditData(data)
+        setPermissionLevel(share.permissionLevel || "view")
       })
       .catch(() => setReport(null))
       .finally(() => setLoading(false))
   }, [token])
+
+  const handleSave = async () => {
+    if (!editData || !report) return
+    setSaving(true)
+    try {
+      const body: Record<string, unknown> = {}
+      for (const [key, value] of Object.entries(editData)) {
+        if (key !== "reportNumber" && typeof value === "string" && value !== DEFAULT_REPORT_DATA[key as keyof ReportData]) {
+          body[key] = value
+        }
+      }
+      body.reportType = editData.reportType
+      body.priority = editData.priority
+      body.title = report.title
+
+      const res = await fetch(`/api/share/${token}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: report.title,
+          data: body,
+          reportType: editData.reportType,
+          priority: editData.priority,
+        }),
+      })
+      if (res.ok) {
+        setSaved(true)
+        setTimeout(() => setSaved(false), 3000)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleFieldChange = (name: string, value: string) => {
+    if (!editData) return
+    setEditData({ ...editData, [name]: value })
+  }
 
   if (!mounted || loading) {
     return (
@@ -99,6 +147,8 @@ export default function SharePage({
   }
 
   const { data, title, reportId } = report
+  const canEdit = permissionLevel === "edit"
+  const displayData = canEdit ? editData || data : data
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FB]">
@@ -119,9 +169,36 @@ export default function SharePage({
             <Badge variant="outline" className="text-xs">
               Shared Report
             </Badge>
+            {canEdit && (
+              <Badge className="bg-indigo-100 text-indigo-700 text-xs border-indigo-200">
+                Editable
+              </Badge>
+            )}
           </div>
         </div>
       </header>
+
+      {canEdit && (
+        <div className="mx-auto w-full max-w-3xl px-4 pt-4">
+          <div className="flex items-center justify-between rounded-lg bg-amber-50 border border-amber-200 px-4 py-2.5">
+            <div className="flex items-center gap-2">
+              <Eye className="size-4 text-amber-600" />
+              <span className="text-sm text-amber-800">
+                You are editing this report — changes will update the original.
+              </span>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={saving}
+              className={saved ? "bg-emerald-600 hover:bg-emerald-700" : "bg-indigo-600 hover:bg-indigo-700"}
+            >
+              <Save className="size-3.5" />
+              {saving ? "Saving..." : saved ? "Saved!" : "Save Changes"}
+            </Button>
+          </div>
+        </div>
+      )}
 
       <div className="mx-auto w-full max-w-3xl flex-1 px-4 py-8">
         <div className="mb-8">
@@ -143,7 +220,7 @@ export default function SharePage({
           {STEPS.map((step) => {
             const isExpanded = expandedStep === step.id
             const hasContent = step.fields.some((field) => {
-              const val = data[field.name as keyof ReportData]
+              const val = displayData[field.name as keyof ReportData]
               return val && String(val).trim() !== ""
             })
 
@@ -180,33 +257,65 @@ export default function SharePage({
 
                 {isExpanded && (
                   <CardContent className="border-t px-4 py-4">
-                    {step.fields.some((field) => {
-                      const val = data[field.name as keyof ReportData]
-                      return val && String(val).trim() !== ""
-                    }) ? (
-                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {step.fields.map((field) => {
-                          const val = data[field.name as keyof ReportData]
-                          if (!val || String(val).trim() === "") return null
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {step.fields.map((field) => {
+                        const val = displayData[field.name as keyof ReportData]
+                        if (canEdit) {
+                          if (field.type === "textarea") {
+                            return (
+                              <div key={field.name} className="sm:col-span-2">
+                                <span className="block text-xs font-medium text-muted-foreground mb-1">
+                                  {field.label}
+                                </span>
+                                <textarea
+                                  value={String(val || "")}
+                                  onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                                  placeholder={field.placeholder}
+                                  rows={3}
+                                  className="w-full resize-y rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300"
+                                />
+                              </div>
+                            )
+                          }
                           return (
-                            <div
-                              key={field.name}
-                              className={cn(
-                                (field.type === "textarea") &&
-                                  "sm:col-span-2"
-                              )}
-                            >
-                              <span className="block text-xs font-medium text-muted-foreground">
+                            <div key={field.name}>
+                              <span className="block text-xs font-medium text-muted-foreground mb-1">
                                 {field.label}
                               </span>
-                              <span className="mt-0.5 block text-sm text-foreground whitespace-pre-wrap">
-                                {String(val)}
-                              </span>
+                              <input
+                                type="text"
+                                value={String(val || "")}
+                                onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                                placeholder={field.placeholder}
+                                className="w-full rounded-lg border bg-white px-3 py-2 text-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300"
+                              />
                             </div>
                           )
-                        })}
-                      </div>
-                    ) : (
+                        }
+
+                        if (!val || String(val).trim() === "") return null
+                        return (
+                          <div
+                            key={field.name}
+                            className={cn(
+                              (field.type === "textarea") &&
+                                "sm:col-span-2"
+                            )}
+                          >
+                            <span className="block text-xs font-medium text-muted-foreground">
+                              {field.label}
+                            </span>
+                            <span className="mt-0.5 block text-sm text-foreground whitespace-pre-wrap">
+                              {String(val)}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    {step.fields.every((field) => {
+                      const val = displayData[field.name as keyof ReportData]
+                      return !val || String(val).trim() === ""
+                    }) && !canEdit && (
                       <p className="py-2 text-center text-sm text-muted-foreground">
                         No data filled for this step.
                       </p>

@@ -37,13 +37,15 @@ export async function GET(
 }
 
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
   const { id: reportId } = await params;
+  const body = await req.json().catch(() => ({}));
+  const permissionLevel = body.permissionLevel === "edit" ? "edit" : "view";
 
   const [report] = await db
     .select()
@@ -62,6 +64,14 @@ export async function POST(
     .limit(1);
 
   if (existingShare) {
+    if (existingShare.permissionLevel !== permissionLevel) {
+      const [updated] = await db
+        .update(reportShares)
+        .set({ permissionLevel } as any)
+        .where(eq(reportShares.reportId, reportId))
+        .returning();
+      return NextResponse.json(updated);
+    }
     return NextResponse.json(existingShare);
   }
 
@@ -71,12 +81,36 @@ export async function POST(
     .values({
       reportId,
       sharedBy: user.id,
-      permissionLevel: "view",
+      permissionLevel,
       accessToken: token,
     })
     .returning();
 
   return NextResponse.json(share, { status: 201 });
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const user = await getSessionUser();
+  if (!user) return unauthorizedResponse();
+
+  const { id: reportId } = await params;
+  const body = await req.json().catch(() => ({}));
+  const permissionLevel = body.permissionLevel === "edit" ? "edit" : "view";
+
+  const [updated] = await db
+    .update(reportShares)
+    .set({ permissionLevel } as any)
+    .where(and(eq(reportShares.reportId, reportId), eq(reportShares.sharedBy, user.id)))
+    .returning();
+
+  if (!updated) {
+    return NextResponse.json({ error: "Share not found" }, { status: 404 });
+  }
+
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(

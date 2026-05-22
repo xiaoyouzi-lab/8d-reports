@@ -29,16 +29,18 @@ export default function MarketingLayout({
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const [hasSession, setHasSession] = useState(false)
-  const loggedIn = !!session || hasSession
+  const [ready, setReady] = useState(false)
 
   useEffect(() => {
-    // Force session check on mount for public pages
-    fetch("/api/auth/get-session")
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => { if (data?.user) setHasSession(true) })
-      .catch(() => {})
-  }, [])
+    if (!isPending) {
+      setReady(true)
+      return
+    }
+    const timer = setTimeout(() => setReady(true), 1200)
+    return () => clearTimeout(timer)
+  }, [isPending])
+
+  const loggedIn = !!session
 
   useEffect(() => {
     if (!menuOpen) return
@@ -101,7 +103,7 @@ export default function MarketingLayout({
 
           <div className="flex items-center gap-2">
             <LangSwitcher />
-            {isPending ? (
+            {!ready ? (
               <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
             ) : loggedIn ? (
               <>
