@@ -23,6 +23,9 @@ export default function SignupPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
 
+  const [step, setStep] = useState<"signup" | "otp">("signup")
+  const [otp, setOtp] = useState("")
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
@@ -48,6 +51,28 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
+      setStep("otp")
+      setLoading(false)
+    } catch {
+      setError("An unexpected error occurred")
+      setLoading(false)
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+    try {
+      const result = await authClient.emailOtp.verifyEmail({
+        email,
+        otp,
+      })
+      if (result.error) {
+        setError(result.error.message || "Invalid verification code")
+        setLoading(false)
+        return
+      }
       fetch("/api/notify/welcome", { method: "POST" }).catch(() => {})
       router.push(callbackUrl)
       router.refresh()
@@ -63,6 +88,51 @@ export default function SignupPage() {
     } catch {
       setError("OAuth sign-up failed")
     }
+  }
+
+  if (step === "otp") {
+    return (
+      <Card className="shadow-sm">
+        <CardHeader className="space-y-1 text-center">
+          <CardTitle className="text-xl font-semibold tracking-tight">Verify your email</CardTitle>
+          <CardDescription className="text-sm">
+            A verification code has been generated for {email}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="otp">Verification code</Label>
+              <Input
+                id="otp"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="000000"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                required
+                className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Enter the 6-digit code shown in the server logs
+              </p>
+            </div>
+            {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">{error}</p>}
+            <Button type="submit" disabled={loading || otp.length < 6} className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700">
+              {loading ? "Verifying..." : "Verify & Continue"}
+            </Button>
+            <button
+              type="button"
+              onClick={() => setStep("signup")}
+              className="text-center text-sm text-muted-foreground hover:text-foreground"
+            >
+              Back to sign up
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
