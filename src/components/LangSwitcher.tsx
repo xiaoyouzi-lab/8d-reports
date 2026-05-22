@@ -16,8 +16,10 @@ export function LangSwitcher({ className }: { className?: string }) {
 
   const handleSwitch = () => {
     const nextLocale = config.next
+    // 设置持久化 cookie
     document.cookie = `NEXT_LOCALE=${nextLocale};path=/;max-age=31536000;sameSite=lax`
-    window.location.href = window.location.pathname + window.location.search
+    // 强制完整刷新以重新获取 SSR 翻译
+    window.location.reload()
   }
 
   return (

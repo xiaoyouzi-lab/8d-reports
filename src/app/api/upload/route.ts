@@ -90,6 +90,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       storagePath,
+      url: publicUrl, // 保持向后兼容
       publicUrl,
       filename: file.name,
       fileType: attachmentType,

@@ -19,7 +19,7 @@ export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
         onClick={() => setOpen(!open)}
         size="default"
         className={cn(
-          "fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-40 shadow-lg transition-all duration-200",
+          "fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-30 shadow-lg transition-all duration-200",
           "h-10 w-10 sm:h-auto sm:w-auto sm:px-4 rounded-full sm:rounded-md",
           open
             ? "bg-gray-700 hover:bg-gray-800"
