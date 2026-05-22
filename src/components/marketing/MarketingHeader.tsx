@@ -18,6 +18,7 @@ const navLinks = (t: ReturnType<typeof useTranslations<"marketing">>) => [
 
 export function MarketingHeader() {
   const t = useTranslations("marketing")
+  const tAuth = useTranslations("auth")
   const locale = useLocale()
   const [scrolled, setScrolled] = useState(false)
   const { data: session, isPending } = authClient.useSession()
@@ -163,7 +164,7 @@ export function MarketingHeader() {
                   buttonVariants({ variant: "ghost", size: "sm" })
                 )}
               >
-                {t("auth.signIn")}
+                {tAuth("signIn")}
               </Link>
               <Link
                 href="/signup"
@@ -172,7 +173,7 @@ export function MarketingHeader() {
                   "bg-[#4F46E5] hover:bg-[#4F46E5]/90"
                 )}
               >
-                {t("marketing.ctaStart")}
+                {t("ctaStart")}
               </Link>
             </>
           )}
