@@ -3,6 +3,9 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reportShares, reports } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { isUserPro } from "@/lib/subscription";
+
+type ReportShareUpdate = Partial<typeof reportShares.$inferInsert>;
 
 export async function GET(
   _req: NextRequest,
@@ -46,6 +49,14 @@ export async function POST(
   const { id: reportId } = await params;
   const body = await req.json().catch(() => ({}));
   const permissionLevel = body.permissionLevel === "edit" ? "edit" : "view";
+  const isPro = await isUserPro(user.id);
+
+  if (permissionLevel === "edit" && !isPro) {
+    return NextResponse.json(
+      { error: "Editable share links are a Pro feature" },
+      { status: 403 }
+    );
+  }
 
   const [report] = await db
     .select()
@@ -67,7 +78,7 @@ export async function POST(
     if (existingShare.permissionLevel !== permissionLevel) {
       const [updated] = await db
         .update(reportShares)
-        .set({ permissionLevel } as any)
+        .set({ permissionLevel } satisfies ReportShareUpdate)
         .where(eq(reportShares.reportId, reportId))
         .returning();
       return NextResponse.json(updated);
@@ -99,10 +110,18 @@ export async function PATCH(
   const { id: reportId } = await params;
   const body = await req.json().catch(() => ({}));
   const permissionLevel = body.permissionLevel === "edit" ? "edit" : "view";
+  const isPro = await isUserPro(user.id);
+
+  if (permissionLevel === "edit" && !isPro) {
+    return NextResponse.json(
+      { error: "Editable share links are a Pro feature" },
+      { status: 403 }
+    );
+  }
 
   const [updated] = await db
     .update(reportShares)
-    .set({ permissionLevel } as any)
+    .set({ permissionLevel } satisfies ReportShareUpdate)
     .where(and(eq(reportShares.reportId, reportId), eq(reportShares.sharedBy, user.id)))
     .returning();
 

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
-import { reports } from "@/lib/db/schema";
+import { reports, userQuotas } from "@/lib/db/schema";
+import { isUserPro } from "@/lib/subscription";
+import { eq } from "drizzle-orm";
 
 const SAMPLE_DATA = {
   d1_team: [
@@ -26,6 +28,19 @@ export async function POST(_req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
+  const isPro = await isUserPro(user.id);
+  const [quota] = await db
+    .select()
+    .from(userQuotas)
+    .where(eq(userQuotas.userId, user.id))
+    .limit(1);
+
+  const totalQuota = quota?.totalQuota ?? 5;
+  const usedQuota = quota?.usedQuota ?? 0;
+  if (!isPro && usedQuota >= totalQuota) {
+    return NextResponse.json({ error: "Quota exhausted" }, { status: 403 });
+  }
+
   const [report] = await db
     .insert(reports)
     .values({
@@ -45,9 +60,18 @@ export async function POST(_req: NextRequest) {
         d7: "completed",
         d8: "completed",
       },
-      hasConsumedQuota: false,
+      hasConsumedQuota: !isPro,
     })
     .returning();
+
+  if (!isPro && !quota) {
+    await db.insert(userQuotas).values({ userId: user.id, totalQuota: 5, usedQuota: 1 });
+  } else if (!isPro) {
+    await db
+      .update(userQuotas)
+      .set({ usedQuota: usedQuota + 1, updatedAt: new Date() })
+      .where(eq(userQuotas.userId, user.id));
+  }
 
   return NextResponse.json(report, { status: 201 });
 }

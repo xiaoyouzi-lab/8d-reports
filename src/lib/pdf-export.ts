@@ -88,6 +88,12 @@ async function fetchImageAsBase64(url: string): Promise<string | null> {
   } catch { return null }
 }
 
+function getImageFormat(dataUrl: string): "JPEG" | "PNG" | "WEBP" {
+  if (dataUrl.startsWith("data:image/png")) return "PNG"
+  if (dataUrl.startsWith("data:image/webp")) return "WEBP"
+  return "JPEG"
+}
+
 function addCoverPage(doc: jsPDF, reportTitle: string, reportId: string, withWatermark: boolean, logoUrl?: string | null) {
   if (withWatermark) addWatermark(doc)
   drawPageBorder(doc)
@@ -141,7 +147,6 @@ async function addStepPage(
   data: ReportData,
   withWatermark: boolean,
   stepImages: { url: string; filename: string; stepId?: string }[],
-  currentPage: number,
 ) {
   if (withWatermark) addWatermark(doc)
   drawPageBorder(doc)
@@ -286,7 +291,7 @@ async function addStepPage(
       const imgX = MARGIN + col * (imgW + 8)
       y = checkPageBreak(doc, y, imgH + 10)
       try {
-        doc.addImage(b64, "JPEG", imgX, y, imgW, imgH, undefined, "FAST")
+        doc.addImage(b64, getImageFormat(b64), imgX, y, imgW, imgH, undefined, "FAST")
         doc.setFont("helvetica", "normal")
         doc.setFontSize(7)
         doc.setTextColor(150, 150, 150)
@@ -320,7 +325,7 @@ export async function exportReportToPdf(options: PdfExportOptions): Promise<jsPD
   for (const step of STEPS) {
     doc.addPage()
     const stepImages = attachmentImages.filter((img) => img.stepId === step.id)
-    await addStepPage(doc, step, reportData, withWatermark, stepImages, doc.getNumberOfPages())
+    await addStepPage(doc, step, reportData, withWatermark, stepImages)
   }
 
   addPageNumbers(doc)

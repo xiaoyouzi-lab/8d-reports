@@ -13,18 +13,38 @@ function validatePassword(password: string): string | null {
   return null;
 }
 
+function getTrustedOrigins() {
+  const origins = new Set([
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://0.0.0.0:3000",
+  ]);
+
+  if (process.env.BETTER_AUTH_URL) {
+    try {
+      origins.add(new URL(process.env.BETTER_AUTH_URL).origin);
+    } catch {
+      // Ignore invalid env values and let Better Auth surface its own config warning.
+    }
+  }
+
+  return [...origins];
+}
+
 function createAuth() {
   const db = getDb();
   if (!db) {
-    const dummy = betterAuth({
+    const dummyConfig = {
       database: {},
       emailAndPassword: { enabled: true },
       socialProviders: {},
-    } as any);
+    } as Parameters<typeof betterAuth>[0];
+    const dummy = betterAuth(dummyConfig);
     return dummy;
   }
 
   return betterAuth({
+    trustedOrigins: getTrustedOrigins(),
     database: drizzleAdapter(db, {
       provider: "pg",
       schema: {

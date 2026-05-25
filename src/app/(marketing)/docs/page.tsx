@@ -35,7 +35,7 @@ export default async function DocsPage() {
 
           <h3 className="text-lg font-medium mt-4">{t("section2.signupTitle")}</h3>
           <ol className="list-decimal pl-5 space-y-1">
-            <li><Link href="/signup" className="text-indigo-600 hover:underline">{t("section2.signupLink")}</Link></li>
+            <li><Link href="/login" className="text-indigo-600 hover:underline">{t("section2.signupLink")}</Link></li>
             <li>{t("section2.signupStep2")}</li>
             <li>{t("section2.signupStep3")}</li>
             <li>{t("section2.signupStep4")}</li>
@@ -209,7 +209,7 @@ export default async function DocsPage() {
 
         <div className="mt-12 border-t pt-8 text-center">
           <Link
-            href="/signup"
+            href="/login"
             className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-700"
           >
             {t("cta")}

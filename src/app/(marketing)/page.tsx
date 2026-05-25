@@ -1,283 +1,409 @@
 import Link from "next/link"
-import { Car, Check, Cpu, Factory, Heart, Plane, X } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+import {
+  ArrowRight,
+  Check,
+  FileText,
+  LockKeyhole,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  Upload,
+} from "lucide-react"
 import { CheckoutButton } from "@/components/CheckoutButton"
+import { buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
-const industries = [
-  { name: "Automotive", desc: "IATF 16949 compliant", icon: Car },
-  { name: "Electronics", desc: "IPC-A-610 ready", icon: Cpu },
-  { name: "Medical Device", desc: "ISO 13485 aligned", icon: Heart },
-  { name: "Aerospace", desc: "AS9100 compatible", icon: Plane },
-  { name: "General Manufacturing", desc: "ISO 9001 ready", icon: Factory },
-]
-
-const painPoints = [
-  "Manual data entry across multiple Excel sheets",
-  "No version control — who changed what and when?",
-  "Collaboration means emailing files back and forth",
-  "Formatting takes longer than problem-solving",
-]
-
-const solutions = [
-  "Structured D0-D8 workflow guides every step",
-  "Built-in audit trail with timestamps and roles",
-  "Real-time team collaboration in the cloud",
-  "One-click PDF export, always perfectly formatted",
-]
-
-const steps = [
+const workflowSteps = [
   {
     number: "01",
-    title: "Create & document",
+    title: "Create the report",
     description:
-      "Start a new 8D report with guided prompts. Describe the problem, attach photos, and define your team — all in a structured workflow.",
+      "Start with guided D0-D8 sections, define the team, capture the problem, and keep every action tied to evidence.",
   },
   {
     number: "02",
-    title: "Analyze & complete",
+    title: "Attach proof and finish",
     description:
-      "Work through D0 to D8 with built-in tools for root cause analysis, containment actions, and corrective measures. Collaborate with your team in real time.",
+      "Upload photos, inspection records, and supporting files while the report stays structured enough for customer review.",
   },
   {
     number: "03",
-    title: "Export & share",
+    title: "Export, share, reuse",
     description:
-      "Generate a professional PDF report with one click. Share it with customers, auditors, or your quality management system — always audit-ready.",
+      "Free users can export watermarked PDFs. Pro users unlock no-watermark delivery, Word export, logo branding, and deep historical search.",
   },
+]
+
+const freeFeatures = [
+  "5 lifetime reports",
+  "Complete D0-D8 editor",
+  "PDF export with watermark",
+  "Basic dashboard search by title, report number, and status",
+  "View-only share links",
+]
+
+const proFeatures = [
+  "Unlimited reports",
+  "PDF export without watermark",
+  "Word export",
+  "Company logo on deliverables",
+  "Deep search across problem descriptions, root causes, actions, and lessons learned",
+  "Editable share links",
 ]
 
 const faqs = [
   {
-    q: "What is 8D problem-solving?",
-    a: "8D (Eight Disciplines) is a structured problem-solving methodology used in manufacturing and engineering to identify, correct, and eliminate recurring problems. It covers everything from team formation (D1) to congratulating the team (D8).",
+    q: "What can I do on the Free plan?",
+    a: "Free includes 5 lifetime reports, the full D0-D8 editing flow, attachment support, view-only sharing, basic dashboard search, and PDF export with a watermark.",
   },
   {
-    q: "Is this just another spreadsheet template?",
-    a: "No. 8D Reports is a full SaaS application with structured workflows, team collaboration, audit trails, and one-click PDF exports. It replaces your Excel template entirely.",
+    q: "Why would a quality team upgrade to Pro?",
+    a: "Pro is for teams that deliver reports regularly and want their 8D history to become searchable knowledge: unlimited reports, no watermark, Word export, company logo, and deep historical search.",
   },
   {
-    q: "Can I export to PDF?",
-    a: "Yes. Both Free and Pro plans include one-click PDF export with professional formatting suitable for customer submissions and quality audits.",
+    q: "How does dashboard search differ between Free and Pro?",
+    a: "Free searches basic report metadata. Pro searches the full report history, including problem descriptions, containment actions, root causes, corrective actions, prevention steps, and lessons learned.",
   },
   {
-    q: "How is my data secured?",
-    a: "All data is encrypted in transit and at rest. We use Neon serverless Postgres and Cloudflare R2 for secure, scalable storage. You own your data — export it anytime.",
+    q: "Is AI report drafting available now?",
+    a: "Not yet. The product keeps a lightweight interest entry in the editor so we can validate demand before building full AI drafting for D0-D8 reports.",
   },
   {
-    q: "What happens when I hit the 5-report limit?",
-    a: "On the Free plan, you can create up to 5 reports lifetime. After that, upgrade to Pro for unlimited reports. Your existing reports remain accessible and exportable.",
+    q: "Can I share reports with customers?",
+    a: "Yes. Free users can create view-only links. Pro users can also create editable links when a supplier or customer needs to contribute directly.",
   },
   {
-    q: "Do you support teams with multiple users?",
-    a: "The Pro plan includes team collaboration features. You can invite team members, assign roles, and work on 8D reports together in real time.",
+    q: "What happens after I create 5 reports?",
+    a: "Your existing Free reports remain accessible. Creating more reports requires Pro, which removes the report limit and unlocks formal delivery features.",
   },
 ]
 
+function HeroProductPreview() {
+  const steps = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"]
+
+  return (
+    <div className="relative pb-10 sm:pb-8">
+      <div className="rounded-lg border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+          <div>
+            <p className="text-xs font-medium text-slate-500">
+              Report #8D-2026-014
+            </p>
+            <p className="text-sm font-semibold text-slate-950">
+              Brake bracket coating failure
+            </p>
+          </div>
+          <div className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+            Saved
+          </div>
+        </div>
+
+        <div className="grid min-h-[420px] grid-cols-[78px_1fr] sm:grid-cols-[104px_1fr]">
+          <aside className="border-r border-slate-200 bg-slate-50/80 p-3">
+            <div className="space-y-1.5">
+              {steps.map((step) => (
+                <div
+                  key={step}
+                  className={cn(
+                    "rounded-md px-2 py-1.5 text-xs font-semibold",
+                    step === "D2"
+                      ? "bg-indigo-600 text-white"
+                      : "text-slate-500"
+                  )}
+                >
+                  {step}
+                </div>
+              ))}
+            </div>
+          </aside>
+
+          <div className="p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.16em] text-indigo-600">
+                  D2 Problem Description
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-slate-950">
+                  What happened, where, and how often?
+                </h3>
+              </div>
+              <div className="flex gap-2">
+                <span className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600">
+                  PDF
+                </span>
+                <span className="rounded-md bg-slate-950 px-2.5 py-1 text-xs text-white">
+                  Word Pro
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-4">
+              <div className="rounded-lg border border-slate-200 p-4">
+                <p className="text-xs font-medium text-slate-500">
+                  Problem statement
+                </p>
+                <p className="mt-2 text-sm leading-relaxed text-slate-700">
+                  Customer found coating peel-off on brake bracket batch
+                  B26-041 after salt spray validation. Initial rate: 18 / 500
+                  pcs.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ["Product / batch", "BRK-2009 / B26-041"],
+                  ["Customer", "Northline Motors"],
+                  ["Containment", "100% visual inspection started"],
+                  ["Owner", "Quality engineering"],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-lg bg-slate-50 p-3">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                      {label}
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-800">
+                      {value}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 px-3 py-3">
+                <Upload className="h-4 w-4 text-indigo-600" />
+                <span className="text-sm font-medium text-slate-700">
+                  3 evidence files attached
+                </span>
+                <span className="text-xs text-slate-500">
+                  inspection sheet, photo, coating log
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="absolute -bottom-8 left-5 right-5 rounded-lg border border-indigo-100 bg-white p-4 shadow-[0_18px_48px_rgba(79,70,229,0.18)] sm:left-auto sm:right-[-24px] sm:w-80">
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
+          <Search className="h-4 w-4 text-indigo-600" />
+          Pro deep search
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-slate-600">
+          Root Cause matched: coating fixture check skipped before line change.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+function DeepSearchPreview() {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+        <Search className="h-4 w-4 text-slate-500" />
+        <span className="text-sm text-slate-700">fixture check skipped</span>
+        <span className="ml-auto rounded bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
+          Pro
+        </span>
+      </div>
+
+      <div className="mt-4 space-y-3">
+        {[
+          {
+            title: "Brake bracket coating failure",
+            meta: "Root Cause matched",
+            text: "Operator skipped fixture check before line change; preventive action added sign-off control.",
+          },
+          {
+            title: "Housing seal leak after assembly",
+            meta: "Corrective Action matched",
+            text: "Fixture verification moved from weekly audit to every batch start.",
+          },
+          {
+            title: "Connector pin deformation",
+            meta: "Lessons Learned matched",
+            text: "Reuse fixture checklist for similar high-mix production lines.",
+          },
+        ].map((item) => (
+          <div
+            key={item.title}
+            className="rounded-lg border border-slate-200 p-3 transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
+          >
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-slate-950">
+                {item.title}
+              </p>
+              <span className="text-xs font-medium text-emerald-700">
+                {item.meta}
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-slate-600">
+              {item.text}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FeatureList({ features }: { features: string[] }) {
+  return (
+    <ul className="mt-6 space-y-3">
+      {features.map((feature) => (
+        <li
+          key={feature}
+          className="flex items-start gap-2.5 text-sm leading-relaxed text-slate-700"
+        >
+          <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          <span>{feature}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
 export default function LandingPage() {
   return (
-    <div className="font-sans">
-      {/* Hero */}
-      <section className="relative overflow-hidden">
-        <div className="mx-auto max-w-6xl px-4 pb-20 pt-20 sm:px-6 sm:pt-28 lg:pt-32">
-          <div className="mx-auto max-w-3xl text-center">
-            <div className="mb-6">
-              <Badge
-                variant="secondary"
-                className="border-[#4F46E5]/20 bg-[#4F46E5]/10 text-[#4F46E5]"
-              >
-                Now in public beta
-              </Badge>
-            </div>
-            <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-              Professional 8D reports.
-              <br />
-              <span className="bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] bg-clip-text text-transparent">
-                No spreadsheets.
-              </span>
+    <div className="bg-white font-sans text-slate-950">
+      <section className="border-b border-slate-200">
+        <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-24 pt-16 sm:px-6 sm:pt-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:pb-28">
+          <div>
+            <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
+              Create 8D reports today. Reuse quality knowledge tomorrow.
             </h1>
-            <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-muted-foreground">
-              Create, manage, and export 8D problem-solving reports directly
-              from the factory floor. Structured workflows, real-time
-              collaboration, and audit-ready PDFs.
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
+              Build customer-ready 8D reports with guided D0-D8 steps,
+              evidence uploads, PDF export, and Pro historical search across
+              root causes and corrective actions.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/signup"
+                href="/login"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
-                  "h-11 px-6 bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-base"
+                  "h-11 w-full bg-indigo-600 px-6 text-base hover:bg-indigo-700 sm:w-auto"
                 )}
               >
-                Start free — 5 reports
+                Create free report
+                <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="#comparison"
+                href="#pro-search"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 px-6 text-base"
+                  "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
                 )}
               >
-                See how it works
+                See Pro search
               </Link>
             </div>
 
-            <div className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-3">
               {[
-                {
-                  value: "D0–D8",
-                  label: "Complete workflow, every step covered",
-                  mono: true,
-                },
-                {
-                  value: "<30s",
-                  label: "to your first report",
-                  mono: true,
-                },
-                {
-                  value: "PDF",
-                  label: "one-click export, always audit-ready",
-                  mono: true,
-                },
-              ].map((metric) => (
-                <div
-                  key={metric.label}
-                  className="rounded-xl border border-border bg-card p-5"
-                >
-                  <div
-                    className={cn(
-                      "text-2xl font-bold text-foreground",
-                      metric.mono &&
-                        "font-mono"
-                    )}
-                  >
-                    {metric.value}
-                  </div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {metric.label}
-                  </div>
+                ["5", "free lifetime reports"],
+                ["D0-D8", "guided report flow"],
+                ["Pro", "deep history search"],
+              ].map(([value, label]) => (
+                <div key={label} className="border-l border-slate-200 pl-4">
+                  <p className="font-mono text-2xl font-semibold text-slate-950">
+                    {value}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    {label}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
-        </div>
 
-        <div
-          className="pointer-events-none absolute inset-0 -z-10"
-          aria-hidden="true"
-        >
-          <div className="absolute left-1/2 top-0 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-[#4F46E5]/5 blur-3xl" />
+          <HeroProductPreview />
         </div>
       </section>
 
-      {/* Industries */}
-      <section className="border-y border-border bg-muted/30 py-12">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <p className="mb-8 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Built for quality teams across industries
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-6">
-            {industries.map((industry) => (
-              <div
-                key={industry.name}
-                className="flex items-center gap-3 rounded-xl border border-border bg-card px-5 py-3"
-              >
-                <industry.icon className="h-5 w-5 shrink-0 text-[#4F46E5]" />
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
-                    {industry.name}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {industry.desc}
-                  </p>
+      <section className="border-b border-slate-200 bg-slate-50/70 py-12">
+        <div className="mx-auto grid max-w-6xl gap-5 px-4 sm:px-6 md:grid-cols-3">
+          {[
+            {
+              icon: FileText,
+              title: "Formal delivery",
+              text: "Move from scattered notes to one report your customer can review.",
+            },
+            {
+              icon: ShieldCheck,
+              title: "Controlled limits",
+              text: "Free users get the full editing experience, while Pro unlocks delivery polish and scale.",
+            },
+            {
+              icon: Search,
+              title: "Knowledge reuse",
+              text: "Turn completed 8D reports into searchable memory for recurring quality issues.",
+            },
+          ].map((item) => (
+            <div key={item.title} className="rounded-lg bg-white p-5 shadow-sm">
+              <item.icon className="h-5 w-5 text-indigo-600" />
+              <h2 className="mt-4 text-base font-semibold text-slate-950">
+                {item.title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                {item.text}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="pro-search" className="py-20 sm:py-24">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              Pro turns old reports into a quality knowledge base.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              The first version stays practical: no complex search engine, just
+              reliable server-side search across the fields that matter most to
+              quality engineers.
+            </p>
+            <div className="mt-8 space-y-4">
+              {[
+                "Free: search titles, report numbers, and status across the 5 included reports.",
+                "Pro: search all historical problem descriptions, root causes, corrective actions, prevention steps, and lessons learned.",
+                "Each result shows why it matched, so users can quickly reopen the right report.",
+              ].map((item) => (
+                <div key={item} className="flex gap-3">
+                  <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-600" />
+                  <p className="text-sm leading-6 text-slate-700">{item}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
+
+          <DeepSearchPreview />
         </div>
       </section>
 
-      {/* Comparison */}
-      <section id="comparison" className="py-20 sm:py-24">
+      <section className="border-y border-slate-200 bg-slate-50/70 py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              What changes when you stop using spreadsheets for 8D
+          <div className="max-w-2xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              From first report to repeatable 8D practice.
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              The difference between fighting your tools and letting them work
-              for you.
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              The main workflow is intentionally simple, because the first
+              business goal is clear: help users finish and export a real
+              report.
             </p>
           </div>
 
-          <div className="mt-14 grid gap-8 lg:grid-cols-2">
-            {/* Old way */}
-            <div className="rounded-xl border border-dashed border-muted-foreground/25 bg-muted/20 p-6 sm:p-8">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                The old way
-              </h3>
-              <ul className="mt-6 space-y-4">
-                {painPoints.map((point) => (
-                  <li key={point} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive">
-                      <X className="h-3 w-3" />
-                    </span>
-                    <span className="text-sm text-foreground/70">
-                      {point}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* With 8D Reports */}
-            <div className="rounded-xl border border-[#059669]/20 bg-[#059669]/5 p-6 sm:p-8">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-[#059669]">
-                With 8D Reports
-              </h3>
-              <ul className="mt-6 space-y-4">
-                {solutions.map((solution) => (
-                  <li key={solution} className="flex items-start gap-3">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#059669]/15 text-[#059669]">
-                      <Check className="h-3 w-3" />
-                    </span>
-                    <span className="text-sm text-foreground/80">
-                      {solution}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section className="border-t border-border bg-muted/20 py-20 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              How it works
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              Three steps from problem to professional report.
-            </p>
-          </div>
-
-          <div className="mt-14 grid gap-6 sm:grid-cols-3">
-            {steps.map((step) => (
-              <div
-                key={step.number}
-                className="rounded-xl border border-border bg-card p-6"
-              >
-                <span className="font-mono text-3xl font-bold text-muted-foreground/30">
+          <div className="mt-12 grid gap-5 md:grid-cols-3">
+            {workflowSteps.map((step) => (
+              <div key={step.number} className="rounded-lg bg-white p-6 shadow-sm">
+                <p className="font-mono text-sm font-semibold text-indigo-600">
                   {step.number}
-                </span>
-                <h3 className="mt-4 text-lg font-semibold text-foreground">
+                </p>
+                <h3 className="mt-5 text-lg font-semibold text-slate-950">
                   {step.title}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-3 text-sm leading-6 text-slate-600">
                   {step.description}
                 </p>
               </div>
@@ -286,120 +412,77 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
       <section id="pricing" className="py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Simple, transparent pricing
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
+              Free for evaluation. Pro for delivery and reuse.
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              Start for free. Upgrade when you need more.
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              The paywall is designed around visible value: no watermark,
+              unlimited reports, Word export, company logo, and deep search.
             </p>
           </div>
 
-          <div className="mx-auto mt-14 grid max-w-2xl gap-6 lg:grid-cols-2">
-            {/* Free */}
-            <div className="rounded-xl border border-border bg-card p-8">
-              <h3 className="text-lg font-semibold text-foreground">Free</h3>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="font-mono text-4xl font-bold text-foreground">
+          <div className="mx-auto mt-14 grid max-w-4xl gap-6 lg:grid-cols-2">
+            <div className="rounded-lg border border-slate-200 bg-white p-8">
+              <h3 className="text-xl font-semibold text-slate-950">Free</h3>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="font-mono text-4xl font-semibold text-slate-950">
                   $0
                 </span>
-                <span className="text-sm text-muted-foreground">/forever</span>
+                <span className="text-sm text-slate-500">/forever</span>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                5 lifetime reports, perfect for evaluation.
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                For trying the complete 8D workflow and producing occasional
+                reports.
               </p>
-              <ul className="mt-6 space-y-3">
-                {[
-                  "5 reports included",
-                  "Complete D0–D8 workflow",
-                  "PDF export",
-                  "Basic templates",
-                ].map((feat) => (
-                  <li
-                    key={feat}
-                    className="flex items-center gap-2.5 text-sm text-foreground/80"
-                  >
-                    <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                    {feat}
-                  </li>
-                ))}
-              </ul>
+              <FeatureList features={freeFeatures} />
               <Link
-                href="/signup"
+                href="/login"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
-                  "mt-8 w-full h-11"
+                  "mt-8 h-11 w-full border-slate-300"
                 )}
               >
-                Get started
+                Start free
               </Link>
             </div>
 
-            {/* Pro */}
-            <div className="relative rounded-xl border-2 border-[#4F46E5] bg-card p-8 shadow-[0_0_24px_rgba(79,70,229,0.12)]">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                <Badge className="border-[#4F46E5]/30 bg-[#4F46E5] text-white">
+            <div className="rounded-lg border-2 border-indigo-600 bg-white p-8 shadow-[0_24px_80px_rgba(79,70,229,0.16)]">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h3 className="text-xl font-semibold text-slate-950">Pro</h3>
+                <div className="rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
                   Recommended
-                </Badge>
+                </div>
               </div>
-              <h3 className="text-lg font-semibold text-foreground">Pro</h3>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="font-mono text-4xl font-bold text-foreground">
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="font-mono text-4xl font-semibold text-slate-950">
                   $9.99
                 </span>
-                <span className="text-sm text-muted-foreground">/month</span>
+                <span className="text-sm text-slate-500">/month</span>
               </div>
-              <p className="mt-1 text-sm text-[#059669] font-medium">
-                or $79/year — save 34%
+              <p className="mt-1 text-sm font-medium text-emerald-700">
+                or $79/year, save 34%
               </p>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Unlimited reports for quality professionals.
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                For quality professionals who need formal deliverables and a
+                reusable 8D history.
               </p>
-              <ul className="mt-6 space-y-3">
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                  Unlimited reports
-                </li>
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                  Everything in Free
-                </li>
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-amber-500" />
-                  <span>Team collaboration <span className="text-[10px] text-amber-600 font-normal">(coming soon)</span></span>
-                </li>
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-amber-500" />
-                  <span>Custom templates <span className="text-[10px] text-amber-600 font-normal">(coming soon)</span></span>
-                </li>
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                  Audit trail &amp; version history
-                </li>
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                  Priority support
-                </li>
-              </ul>
-              <div className="mt-6 space-y-2">
+              <FeatureList features={proFeatures} />
+              <div className="mt-8 space-y-2">
                 <CheckoutButton
                   planType="monthly"
-                  variant="default"
-                  size="lg"
-                  className="w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
+                  className="h-11 w-full bg-indigo-600 hover:bg-indigo-700"
                 >
-                  $9.99 / month
+                  Start Pro monthly
                 </CheckoutButton>
                 <CheckoutButton
                   planType="yearly"
                   variant="outline"
-                  size="lg"
-                  className="w-full h-11 border-[#4F46E5]/30 text-[#059669] hover:bg-[#059669]/5"
+                  className="h-11 w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
                 >
-                  $79 / year — save 34%
+                  Start Pro yearly
                 </CheckoutButton>
               </div>
             </div>
@@ -407,37 +490,68 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Testimonial placeholder — enable when customer stories are available */}
-      <section className="border-y border-border bg-muted/10 py-20 sm:py-24">
-        <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">
-          <p className="text-lg text-muted-foreground">
-            Customer stories coming soon
-          </p>
+      <section className="border-y border-slate-200 bg-slate-950 py-20 text-white sm:py-24">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
+          <div>
+            <Sparkles className="h-6 w-6 text-indigo-300" />
+            <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
+              AI report drafting is positioned as the next Pro expansion.
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-300">
+              The first month should validate report completion and paid
+              delivery. AI stays visible enough to measure interest without
+              slowing the launch.
+            </p>
+          </div>
+          <div className="rounded-lg border border-white/10 bg-white/5 p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <LockKeyhole className="h-4 w-4 text-indigo-300" />
+              AI report drafting coming soon
+            </div>
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              {[
+                "Customer complaint email",
+                "Inspection records",
+                "Photo descriptions",
+                "5Why draft",
+                "Containment notes",
+                "Responsible owner and dates",
+              ].map((item) => (
+                <div
+                  key={item}
+                  className="rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-200"
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+            <p className="mt-5 text-sm leading-6 text-slate-300">
+              Future goal: generate a D0-D8 draft for review, not automatic
+              approval.
+            </p>
+          </div>
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="py-20 sm:py-24">
+      <section className="py-20 sm:py-24">
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
               Frequently asked questions
             </h2>
-            <p className="mt-4 text-muted-foreground">
-              Everything you need to know about 8D Reports.
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              The current product boundary is intentionally clear so the first
+              30 days can focus on activation and paid conversion.
             </p>
           </div>
 
-          <div className="mt-14 grid gap-6 sm:grid-cols-2">
+          <div className="mt-14 grid gap-5 md:grid-cols-2">
             {faqs.map((faq) => (
-              <div
-                key={faq.q}
-                className="rounded-xl border border-border bg-card p-6"
-              >
-                <h3 className="text-sm font-semibold text-foreground">
+              <div key={faq.q} className="rounded-lg border border-slate-200 p-6">
+                <h3 className="text-base font-semibold text-slate-950">
                   {faq.q}
                 </h3>
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                <p className="mt-3 text-sm leading-6 text-slate-600">
                   {faq.a}
                 </p>
               </div>
@@ -446,63 +560,45 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Trust */}
-      <section className="border-y border-border bg-muted/20 py-12">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <p className="mb-6 text-center text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            Built on trusted infrastructure
-          </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
-            {["Vercel", "Neon", "Cloudflare R2", "Creem"].map((name) => (
-              <span
-                key={name}
-                className="text-lg font-bold text-muted-foreground/40"
-              >
-                {name}
-              </span>
-            ))}
+      <section className="border-y border-slate-200 bg-slate-50 py-14">
+        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+              Ready to finish the first real report?
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Start free, create up to 5 reports, and upgrade when formal
+              delivery or historical search becomes valuable.
+            </p>
           </div>
-        </div>
-      </section>
-
-      {/* CTA */}
-      <section className="py-20 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-            Ready to replace your Excel template?
-          </h2>
-          <p className="mx-auto mt-4 max-w-lg text-muted-foreground">
-            Start creating professional 8D reports in minutes. No credit card
-            required.
-          </p>
           <Link
-            href="/signup"
+            href="/login"
             className={cn(
               buttonVariants({ variant: "default", size: "lg" }),
-              "mt-8 h-11 px-8 bg-[#4F46E5] hover:bg-[#4F46E5]/90 text-base"
+              "h-11 shrink-0 bg-indigo-600 px-6 hover:bg-indigo-700"
             )}
           >
-            Start free — 5 reports
+            Create free report
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-10">
+      <footer className="border-t border-slate-200 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 sm:flex-row sm:px-6">
-          <p className="text-sm text-muted-foreground">
-            &copy; 2025 8D Reports. All rights reserved.
+          <p className="text-sm text-slate-500">
+            &copy; 2026 8D Reports. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
             {[
               { label: "Privacy", href: "/privacy" },
               { label: "Terms", href: "/terms" },
-              { label: "Contact", href: "mailto:support@8dreports.com" },
+              { label: "Contact", href: "/contact" },
             ].map((link) => (
               <Link
                 key={link.label}
                 href={link.href}
-                className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                className="text-sm text-slate-500 transition-colors hover:text-slate-950"
               >
                 {link.label}
               </Link>

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { trackEvent } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 
 const DEFAULT_QUOTA_TOTAL = 5
@@ -14,27 +15,28 @@ interface QuotaData {
 }
 
 interface QuotaIndicatorProps {
-  userId: string
   isPro: boolean
 }
 
-export function QuotaIndicator({ userId: _userId, isPro }: QuotaIndicatorProps) {
-  const [mounted, setMounted] = useState(false)
+export function QuotaIndicator({ isPro }: QuotaIndicatorProps) {
   const [quota, setQuota] = useState<QuotaData>({ total: DEFAULT_QUOTA_TOTAL, used: 0 })
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    setMounted(true)
     if (!isPro) {
-      fetch("/api/quota")
+      const timer = setTimeout(() => {
+        fetch("/api/quota")
         .then((res) => res.ok ? res.json() : null)
         .then((data) => {
           if (data) setQuota({ total: data.totalQuota ?? DEFAULT_QUOTA_TOTAL, used: data.usedQuota ?? 0 })
         })
         .catch(() => {})
         .finally(() => setLoading(false))
+      }, 0)
+      return () => clearTimeout(timer)
     } else {
-      setLoading(false)
+      const timer = setTimeout(() => setLoading(false), 0)
+      return () => clearTimeout(timer)
     }
   }, [isPro])
 
@@ -55,7 +57,7 @@ export function QuotaIndicator({ userId: _userId, isPro }: QuotaIndicatorProps) 
     )
   }
 
-  if (!mounted || loading) {
+  if (loading) {
     return (
       <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
         <p className="text-sm font-medium text-indigo-900">Free Quota</p>
@@ -119,7 +121,13 @@ export function QuotaIndicator({ userId: _userId, isPro }: QuotaIndicatorProps) 
           <p className="text-xs text-red-700/80">
             You have used all your free reports. Upgrade to Pro to create more reports.
           </p>
-          <Link href="/pricing">
+          <Link
+            href="/pricing"
+            onClick={() => {
+              trackEvent("quota_limit_seen", { source: "quota_indicator" })
+              trackEvent("upgrade_clicked", { source: "quota_indicator", plan: "free" })
+            }}
+          >
             <Button
               className="mt-2 w-full bg-indigo-600 text-white hover:bg-indigo-700"
               size="sm"

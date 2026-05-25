@@ -2,38 +2,30 @@
 
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
-import { useTranslations, useLocale } from "next-intl"
 import { LayoutDashboard, LogOut } from "lucide-react"
-import { LangSwitcher } from "@/components/LangSwitcher"
 import { buttonVariants } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
 
-const navLinks = (t: ReturnType<typeof useTranslations<"marketing">>) => [
-  { href: "/pricing", label: t("pricingNav") || "Pricing" },
-  { href: "/faq", label: t("faqNav") || "FAQ" },
-  { href: "/docs", label: t("docsNav") || "Docs" },
+const navLinks = [
+  { href: "/pricing", label: "Pricing" },
+  { href: "/faq", label: "FAQ" },
+  { href: "/docs", label: "Docs" },
 ]
 
 export function MarketingHeader() {
-  const t = useTranslations("marketing")
-  const tAuth = useTranslations("auth")
-  const locale = useLocale()
   const [scrolled, setScrolled] = useState(false)
   const { data: session, isPending } = authClient.useSession()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [ready, setReady] = useState(false)
-  const links = navLinks(t)
 
   useEffect(() => {
-    if (!isPending) {
+    const timer = setTimeout(() => {
       setReady(true)
-      return
-    }
-    const timer = setTimeout(() => setReady(true), 1200)
+    }, isPending ? 1200 : 0)
     return () => clearTimeout(timer)
   }, [isPending])
 
@@ -86,7 +78,7 @@ export function MarketingHeader() {
         </Link>
 
         <nav className="hidden md:flex md:items-center md:gap-1">
-          {links.map((link) => (
+          {navLinks.map((link) => (
             <Link
               key={link.label}
               href={link.href}
@@ -98,7 +90,6 @@ export function MarketingHeader() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <LangSwitcher />
           {!ready ? (
             <div className="h-8 w-8 animate-pulse rounded-full bg-muted" />
           ) : loggedIn ? (
@@ -164,16 +155,16 @@ export function MarketingHeader() {
                   buttonVariants({ variant: "ghost", size: "sm" })
                 )}
               >
-                {tAuth("signIn")}
+                Log in
               </Link>
               <Link
-                href="/signup"
+                href="/login"
                 className={cn(
                   buttonVariants({ variant: "default", size: "sm" }),
-                  "bg-[#4F46E5] hover:bg-[#4F46E5]/90"
+                  "bg-[#4F46E5] px-2 hover:bg-[#4F46E5]/90 sm:px-2.5"
                 )}
               >
-                {t("ctaStart")}
+                Start free
               </Link>
             </>
           )}

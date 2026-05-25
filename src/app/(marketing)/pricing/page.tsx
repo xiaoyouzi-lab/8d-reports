@@ -2,13 +2,14 @@ import Link from "next/link"
 import { Check } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { CheckoutButton } from "@/components/CheckoutButton"
 import { cn } from "@/lib/utils"
 
 const freeFeatures = [
   "5 reports included",
   "Complete D0–D8 workflow",
-  "PDF export",
-  "Basic templates",
+  "PDF export with watermark",
+  "Basic title/status search",
 ]
 
 export default function PricingPage() {
@@ -50,7 +51,7 @@ export default function PricingPage() {
                 ))}
               </ul>
               <Link
-                href="/sign-up"
+                href="/login"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "mt-8 w-full h-11"
@@ -87,44 +88,39 @@ export default function PricingPage() {
                 </li>
                 <li className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                  Everything in Free
-                </li>
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-amber-500" />
-                  <span>Team collaboration <span className="text-[10px] text-amber-600 font-normal">(coming soon)</span></span>
-                </li>
-                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
-                  <Check className="h-4 w-4 shrink-0 text-amber-500" />
-                  <span>Custom templates <span className="text-[10px] text-amber-600 font-normal">(coming soon)</span></span>
+                  Remove PDF watermark
                 </li>
                 <li className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                  Audit trail &amp; version history
+                  Word export
                 </li>
                 <li className="flex items-center gap-2.5 text-sm text-foreground/80">
                   <Check className="h-4 w-4 shrink-0 text-[#059669]" />
-                  Priority support
+                  Company logo on exports
+                </li>
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-[#059669]" />
+                  Deep historical 8D search
+                </li>
+                <li className="flex items-center gap-2.5 text-sm text-foreground/80">
+                  <Check className="h-4 w-4 shrink-0 text-amber-500" />
+                  <span>AI report drafting interest list <span className="text-[10px] text-amber-600 font-normal">(coming soon)</span></span>
                 </li>
               </ul>
               <div className="mt-6 space-y-2">
-                <Link
-                  href="/sign-up?plan=pro&billing=monthly"
-                  className={cn(
-                    buttonVariants({ variant: "default", size: "lg" }),
-                    "w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
-                  )}
+                <CheckoutButton
+                  planType="monthly"
+                  className="w-full h-11 bg-[#4F46E5] hover:bg-[#4F46E5]/90"
                 >
                   $9.99 / month
-                </Link>
-                <Link
-                  href="/sign-up?plan=pro&billing=yearly"
-                  className={cn(
-                    buttonVariants({ variant: "outline", size: "lg" }),
-                    "w-full h-11 border-[#4F46E5]/30 text-[#059669] hover:bg-[#059669]/5"
-                  )}
+                </CheckoutButton>
+                <CheckoutButton
+                  planType="yearly"
+                  variant="outline"
+                  className="w-full h-11 border-[#4F46E5]/30 text-[#059669] hover:bg-[#059669]/5"
                 >
                   $79 / year — save 34%
-                </Link>
+                </CheckoutButton>
               </div>
             </div>
           </div>

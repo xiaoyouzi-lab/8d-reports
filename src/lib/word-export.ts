@@ -1,8 +1,10 @@
 import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  HeadingLevel, AlignmentType, WidthType, ImageRun, Header,
+  AlignmentType, WidthType, ImageRun,
 } from "docx";
+import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { STEPS, type ReportData } from "./report-steps";
+import { getR2Client } from "./r2";
 
 interface WordExportOptions {
   reportData: ReportData;
@@ -11,14 +13,46 @@ interface WordExportOptions {
   withWatermark: boolean;
   logoUrl?: string | null;
   locale?: string;
-  attachmentImages?: { url: string; filename: string; stepId?: string }[];
+  attachmentImages?: { url: string; filename: string; stepId?: string; storagePath?: string; mimeType?: string | null }[];
+}
+
+async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<Buffer | null> {
+  if (img.storagePath) {
+    const client = getR2Client();
+    if (client) {
+      try {
+        const object = await client.send(
+          new GetObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME || "8d-reports",
+            Key: img.storagePath,
+          })
+        );
+        const bytes = await object.Body?.transformToByteArray();
+        if (bytes) return Buffer.from(bytes);
+      } catch {
+        // Fall back to URL fetch below.
+      }
+    }
+  }
+
+  try {
+    const res = await fetch(img.url);
+    if (!res.ok) return null;
+    return Buffer.from(await res.arrayBuffer());
+  } catch {
+    return null;
+  }
+}
+
+function getDocxImageType(mimeType?: string | null): "png" | "jpg" {
+  return mimeType === "image/jpeg" || mimeType === "image/jpg" ? "jpg" : "png";
 }
 
 export async function generateWordDocument(options: WordExportOptions): Promise<Buffer> {
   const { reportData, reportTitle, reportId, withWatermark, logoUrl, attachmentImages = [] } = options;
   const isZh = options.locale?.startsWith("zh");
 
-  const children: any[] = [];
+  const children: Array<Paragraph | Table> = [];
 
   // Cover page
   children.push(
@@ -99,11 +133,11 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
     );
 
     for (const field of step.fields) {
-      const val = (reportData as any)[field.name];
+      const val: unknown = reportData[field.name as keyof ReportData];
       if (!val || String(val).trim() === "") continue;
 
-      if ((field.type as string) === "table-5why") {
-        children.push(render5WhyTable(val as string[]));
+      if (Array.isArray(val)) {
+        children.push(render5WhyTable(val.map(String)));
       } else {
         children.push(
           new Paragraph({
@@ -127,8 +161,8 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       )
       for (const img of stepImages) {
         try {
-          const res = await fetch(img.url)
-          const buf = Buffer.from(await res.arrayBuffer())
+          const buf = await fetchImageBuffer(img)
+          if (!buf) continue
           children.push(
             new Paragraph({
               spacing: { after: 50 },
@@ -137,7 +171,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
           )
           children.push(
             new Paragraph({
-              children: [new ImageRun({ type: "png", data: buf, transformation: { width: 360, height: 270 } })],
+              children: [new ImageRun({ type: getDocxImageType(img.mimeType), data: buf, transformation: { width: 360, height: 270 } })],
             })
           )
         } catch { /* skip failed image fetch */ }

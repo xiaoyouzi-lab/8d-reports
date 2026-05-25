@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Plus, Filter, FileText, CheckCircle2, ArrowRight, Share2 } from "lucide-react"
+import { Search, Plus, FileText } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/table"
 import { QuotaIndicator } from "@/components/report/QuotaIndicator"
 import { authClient } from "@/lib/auth-client"
+import { trackEvent } from "@/lib/analytics"
+import { usePlan } from "@/lib/use-plan"
 import { cn } from "@/lib/utils"
 
 interface Report {
@@ -28,6 +30,7 @@ interface Report {
   priority: string
   source: string | null
   updatedAt: string
+  matchSnippet?: string
 }
 
 const statusStyles: Record<string, string> = {
@@ -57,12 +60,13 @@ const priorityLabel: Record<string, string> = {
 export default function DashboardPage() {
   const router = useRouter()
   const { data: session } = authClient.useSession()
-  const userId = session?.user?.id || ""
-  const plan = (session?.user as Record<string, unknown>)?.plan as string || "free"
-  const isPro = plan === "pro"
+  const { plan, isPro } = usePlan((session?.user as Record<string, unknown>)?.plan)
 
   const [reports, setReports] = useState<Report[]>([])
+  const [searchResults, setSearchResults] = useState<Report[] | null>(null)
+  const [query, setQuery] = useState("")
   const [loading, setLoading] = useState(true)
+  const [searching, setSearching] = useState(false)
   const [sampleLoading, setSampleLoading] = useState(false)
 
   const fetchReports = useCallback(async () => {
@@ -80,12 +84,61 @@ export default function DashboardPage() {
   }, [])
 
   useEffect(() => {
-    if (session) fetchReports()
+    if (!session) return
+    const timer = setTimeout(() => {
+      void fetchReports()
+    }, 0)
+    return () => clearTimeout(timer)
   }, [session, fetchReports])
 
   const totalReports = reports.length
   const inProgress = reports.filter((r) => r.status !== "completed").length
   const completed = reports.filter((r) => r.status === "completed").length
+  const normalizedQuery = query.trim().toLowerCase()
+  const freeVisibleReports = normalizedQuery
+    ? reports.filter((report) => {
+        return [
+          report.id,
+          report.title,
+          report.status,
+          report.priority,
+          report.source ?? "",
+        ].some((value) => value.toLowerCase().includes(normalizedQuery))
+      })
+    : reports
+  const visibleReports = isPro && searchResults ? searchResults : freeVisibleReports
+
+  useEffect(() => {
+    if (!session || !normalizedQuery) {
+      const timer = setTimeout(() => setSearchResults(null), 0)
+      return () => clearTimeout(timer)
+    }
+
+    if (!isPro) {
+      const timer = setTimeout(() => {
+        trackEvent("dashboard_search_used", { queryLength: normalizedQuery.length, plan })
+        setSearchResults(null)
+      }, 0)
+      return () => clearTimeout(timer)
+    }
+
+    const timer = setTimeout(() => {
+      trackEvent("dashboard_search_used", { queryLength: normalizedQuery.length, plan })
+      setSearching(true)
+      fetch(`/api/reports/search?q=${encodeURIComponent(normalizedQuery)}`)
+        .then((res) => (res.ok ? res.json() : []))
+        .then((data) => {
+          setSearchResults(data)
+          if (Array.isArray(data) && data.length === 0) {
+            trackEvent("search_no_results", { queryLength: normalizedQuery.length, plan })
+          }
+        })
+        .catch(() => setSearchResults([]))
+        .finally(() => setSearching(false))
+    }, 250)
+
+    return () => clearTimeout(timer)
+  }, [isPro, normalizedQuery, plan, session])
 
   const formatDate = (dateStr: string) => {
     try {
@@ -101,6 +154,7 @@ export default function DashboardPage() {
       const res = await fetch("/api/reports/sample", { method: "POST" })
       if (res.ok) {
         const report = await res.json()
+        trackEvent("report_created", { source: "sample", plan }, report.id)
         router.push(`/reports/${report.id}`)
       }
     } catch {
@@ -155,7 +209,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <QuotaIndicator userId={userId} isPro={isPro} />
+        <QuotaIndicator isPro={isPro} />
       </div>
 
       <div className="mb-4 flex items-center gap-3">
@@ -164,12 +218,10 @@ export default function DashboardPage() {
           <Input
             placeholder="Search reports..."
             className="h-9 pl-8 text-sm"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
           />
         </div>
-        <Button variant="outline" size="default">
-          <Filter className="size-4" />
-          <span className="hidden sm:inline">Filter</span>
-        </Button>
         <Link href="/reports/new">
           <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
             <Plus className="size-4" />
@@ -177,6 +229,24 @@ export default function DashboardPage() {
           </Button>
         </Link>
       </div>
+
+      {normalizedQuery && !isPro && (
+        <button
+          type="button"
+          onClick={() => {
+            trackEvent("deep_search_gate_clicked", { queryLength: normalizedQuery.length, plan })
+            trackEvent("upgrade_clicked", { source: "deep_search_gate", plan })
+            router.push("/pricing")
+          }}
+          className="mb-4 w-full rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-left text-xs text-indigo-700 transition-colors hover:bg-indigo-100"
+        >
+          Upgrade to search problem descriptions, root causes, corrective actions, and historical reports.
+        </button>
+      )}
+
+      {normalizedQuery && isPro && searching && (
+        <div className="mb-4 text-xs text-muted-foreground">Searching report history...</div>
+      )}
 
       {loading ? (
         <div className="py-12 text-center text-sm text-muted-foreground">
@@ -244,6 +314,12 @@ export default function DashboardPage() {
         </div>
       ) : (
         <>
+          {visibleReports.length === 0 ? (
+            <div className="py-12 text-center text-sm text-muted-foreground">
+              No reports match your search.
+            </div>
+          ) : (
+            <>
           <div className="hidden lg:block">
             <Card>
               <Table>
@@ -267,17 +343,30 @@ export default function DashboardPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {reports.map((report) => (
+                  {visibleReports.map((report) => (
                     <TableRow key={report.id} className="group">
                       <TableCell className="py-3 font-mono text-xs font-medium text-muted-foreground">
-                        <Link href={`/reports/${report.id}`} className="text-indigo-600 hover:underline">
+                        <Link
+                          href={`/reports/${report.id}`}
+                          className="text-indigo-600 hover:underline"
+                          onClick={() => trackEvent("search_result_clicked", { plan, hasQuery: Boolean(normalizedQuery) }, report.id)}
+                        >
                           {report.id.slice(0, 8)}
                         </Link>
                       </TableCell>
                       <TableCell className="py-3">
-                        <Link href={`/reports/${report.id}`} className="text-sm font-medium text-foreground hover:text-indigo-600">
+                        <Link
+                          href={`/reports/${report.id}`}
+                          className="text-sm font-medium text-foreground hover:text-indigo-600"
+                          onClick={() => trackEvent("search_result_clicked", { plan, hasQuery: Boolean(normalizedQuery) }, report.id)}
+                        >
                           {report.title}
                         </Link>
+                        {report.matchSnippet && (
+                          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                            {report.matchSnippet}
+                          </p>
+                        )}
                       </TableCell>
                       <TableCell className="py-3">
                         <Badge
@@ -319,8 +408,12 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-3 lg:hidden">
-            {reports.map((report) => (
-              <Link href={`/reports/${report.id}`} key={report.id}>
+            {visibleReports.map((report) => (
+              <Link
+                href={`/reports/${report.id}`}
+                key={report.id}
+                onClick={() => trackEvent("search_result_clicked", { plan, hasQuery: Boolean(normalizedQuery) }, report.id)}
+              >
                 <Card className="group cursor-pointer transition-shadow hover:shadow-sm">
                   <CardContent className="flex flex-col gap-3 p-4">
                     <div className="flex items-start justify-between">
@@ -340,6 +433,11 @@ export default function DashboardPage() {
                     <span className="text-sm font-medium text-foreground">
                       {report.title}
                     </span>
+                    {report.matchSnippet && (
+                      <p className="line-clamp-2 text-xs text-muted-foreground">
+                        {report.matchSnippet}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <span className={cn("inline-block size-2 rounded-full", priorityDot[report.priority] || priorityDot.medium)} />
@@ -356,6 +454,8 @@ export default function DashboardPage() {
               </Link>
             ))}
           </div>
+            </>
+          )}
         </>
       )}
     </div>

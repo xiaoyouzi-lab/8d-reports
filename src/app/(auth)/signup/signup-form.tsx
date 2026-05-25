@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { trackEvent } from "@/lib/analytics"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -51,6 +52,7 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
+      trackEvent("signup_success", { method: "email" })
       setStep("otp")
       setLoading(false)
     } catch {
@@ -85,6 +87,7 @@ export default function SignupPage() {
   async function handleOAuth(provider: "google" | "github") {
     try {
       await authClient.signIn.social({ provider, callbackURL: callbackUrl })
+      trackEvent("signup_success", { method: provider })
     } catch {
       setError("OAuth sign-up failed")
     }

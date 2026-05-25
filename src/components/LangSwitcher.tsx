@@ -1,7 +1,6 @@
 "use client"
 
 import { useLocale } from "next-intl"
-import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 
 const SWITCH = {
@@ -11,7 +10,6 @@ const SWITCH = {
 
 export function LangSwitcher({ className }: { className?: string }) {
   const locale = useLocale()
-  const router = useRouter()
   const config = SWITCH[locale as keyof typeof SWITCH] ?? SWITCH.en
 
   const handleSwitch = () => {

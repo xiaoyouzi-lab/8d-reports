@@ -51,15 +51,18 @@ export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
 
   useEffect(() => {
     if (open && messages.length === 0) {
-      const welcomeText = WELCOME_MESSAGES[resolvedLocale] || WELCOME_MESSAGES.en
-      setMessages([
-        {
-          id: "welcome",
-          role: "assistant",
-          content: welcomeText,
-          timestamp: Date.now(),
-        },
-      ])
+      const timer = setTimeout(() => {
+        const welcomeText = WELCOME_MESSAGES[resolvedLocale] || WELCOME_MESSAGES.en
+        setMessages([
+          {
+            id: "welcome",
+            role: "assistant",
+            content: welcomeText,
+            timestamp: Date.now(),
+          },
+        ])
+      }, 0)
+      return () => clearTimeout(timer)
     }
   }, [open, resolvedLocale, messages.length])
 

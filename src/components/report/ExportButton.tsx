@@ -5,7 +5,6 @@ import { FileDown, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { exportReportToPdf } from "@/lib/pdf-export"
-import { downloadBlob } from "@/lib/export-zip"
 import type { ReportData } from "@/lib/report-steps"
 
 interface ExportButtonProps {

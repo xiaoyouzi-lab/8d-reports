@@ -34,7 +34,7 @@ export default async function FaqPage() {
       <div className="mt-12 text-center">
         <p className="text-muted-foreground mb-4">Ready to get started?</p>
         <Link
-          href="/signup"
+          href="/login"
           className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-700"
         >
           {t("ctaStart")}

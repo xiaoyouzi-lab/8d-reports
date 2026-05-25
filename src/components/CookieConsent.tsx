@@ -7,8 +7,11 @@ export function CookieConsent() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const consented = document.cookie.includes("cookie-consent=true")
-    if (!consented) setVisible(true)
+    const timer = setTimeout(() => {
+      const consented = document.cookie.includes("cookie-consent=true")
+      if (!consented) setVisible(true)
+    }, 0)
+    return () => clearTimeout(timer)
   }, [])
 
   if (!visible) return null

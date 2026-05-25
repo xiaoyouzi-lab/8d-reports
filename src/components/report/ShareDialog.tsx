@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Share2, Copy, Check, Link, ExternalLink, Eye, Edit3 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { trackEvent } from "@/lib/analytics"
 
 interface ShareInfo {
   accessToken: string
@@ -25,21 +26,17 @@ interface ShareInfo {
 interface ShareDialogProps {
   reportId: string
   reportTitle: string
+  isPro?: boolean
 }
 
-export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
+export function ShareDialog({ reportId, reportTitle, isPro = false }: ShareDialogProps) {
   const [open, setOpen] = useState(false)
   const [shareInfo, setShareInfo] = useState<ShareInfo | null>(null)
   const [copied, setCopied] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [editMode, setEditMode] = useState(false)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  const fetchShare = async () => {
+  const fetchShare = useCallback(async () => {
     try {
       const res = await fetch(`/api/reports/${reportId}/share`)
       if (res.ok) {
@@ -52,13 +49,15 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
     } catch {
       // ignore
     }
-  }
+  }, [reportId])
 
   useEffect(() => {
-    if (open) {
-      fetchShare()
-    }
-  }, [open, reportId])
+    if (!open) return
+    const timer = setTimeout(() => {
+      void fetchShare()
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [open, fetchShare])
 
   const baseUrl = typeof window !== "undefined" ? window.location.origin : ""
   const shareUrl = shareInfo?.accessToken ? `${baseUrl}/share/${shareInfo.accessToken}` : ""
@@ -66,7 +65,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
   const handleCreateLink = async () => {
     setLoading(true)
     try {
-      const permissionLevel = editMode ? "edit" : "view"
+      const permissionLevel = isPro && editMode ? "edit" : "view"
       const res = await fetch(`/api/reports/${reportId}/share`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -75,6 +74,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
       if (res.ok) {
         const data = await res.json()
         setShareInfo(data)
+        trackEvent("share_link_created", { permissionLevel }, reportId)
         toast.success("Share link created!")
       } else {
         toast.error("Failed to create share link")
@@ -87,6 +87,13 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
   }
 
   const handleUpdatePermission = async (newLevel: string) => {
+    if (newLevel === "edit" && !isPro) {
+      trackEvent("upgrade_clicked", { source: "share_edit_gate", plan: "free" }, reportId)
+      toast("Editable share links are a Pro feature", {
+        description: "Upgrade to let recipients edit shared reports.",
+      })
+      return
+    }
     try {
       const res = await fetch(`/api/reports/${reportId}/share`, {
         method: "PATCH",
@@ -134,9 +141,9 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" size="sm" className="hidden sm:inline-flex">
+          <Button variant="outline" size="sm" className="inline-flex">
             <Share2 className="size-3.5" />
-            Share
+            <span className="hidden sm:inline">Share</span>
           </Button>
         }
       />
@@ -150,11 +157,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
         </DialogHeader>
 
         <div className="space-y-4">
-          {!mounted ? (
-            <div className="py-4 text-center text-sm text-muted-foreground">
-              Loading...
-            </div>
-          ) : shareInfo ? (
+          {shareInfo ? (
             <>
               <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2">
                 <Link className="size-4 shrink-0 text-emerald-600" />
@@ -261,7 +264,14 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setEditMode(true)}
+                    onClick={() => {
+                      if (!isPro) {
+                        trackEvent("upgrade_clicked", { source: "share_edit_gate", plan: "free" }, reportId)
+                        toast("Editable share links are a Pro feature")
+                        return
+                      }
+                      setEditMode(true)
+                    }}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
                       editMode
                         ? "bg-indigo-100 text-indigo-700 shadow-sm ring-1 ring-indigo-300"
@@ -283,7 +293,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
         </div>
 
         <DialogFooter>
-          {mounted && shareInfo ? (
+          {shareInfo ? (
             <>
               <Button
                 variant="destructive"
@@ -305,7 +315,7 @@ export function ShareDialog({ reportId, reportTitle }: ShareDialogProps) {
             <Button
               className="w-full bg-indigo-600 text-white hover:bg-indigo-700"
               onClick={handleCreateLink}
-              disabled={!mounted || loading}
+              disabled={loading}
             >
               <Link className="size-4" />
               {loading ? "Creating..." : "Create Share Link"}

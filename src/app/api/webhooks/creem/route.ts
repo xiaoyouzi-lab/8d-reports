@@ -1,7 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { subscriptions, plans } from "@/lib/db/schema";
+import { analyticsEvents, subscriptions, plans } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+
+interface CreemSubscriptionPayload {
+  id?: string;
+  product_id?: string;
+  status?: string;
+  current_period_start?: string;
+  current_period_end?: string;
+  customer?: {
+    external_id?: string;
+  };
+}
+
+interface CreemWebhookEvent {
+  type?: string;
+  event?: string;
+  subscription?: CreemSubscriptionPayload;
+  data?: CreemSubscriptionPayload;
+  customer?: {
+    id?: string;
+    external_id?: string;
+  };
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.text();
@@ -12,7 +34,7 @@ export async function POST(req: NextRequest) {
     // HMAC verification placeholder — implement proper HMAC-SHA256 in production
   }
 
-  let event: any;
+  let event: CreemWebhookEvent;
   try {
     event = JSON.parse(body);
   } catch {
@@ -76,6 +98,17 @@ export async function POST(req: NextRequest) {
             : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
         });
       }
+
+      await db.insert(analyticsEvents).values({
+        eventName: "checkout_completed",
+        userId: customerId,
+        plan: "pro",
+        metadata: {
+          subscriptionId,
+          productId: productId || null,
+          status,
+        },
+      }).catch(() => {});
     }
 
     if (eventType === "subscription.cancelled" || eventType === "subscription.expired") {

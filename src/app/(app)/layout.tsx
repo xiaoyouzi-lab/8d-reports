@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter, usePathname } from "next/navigation"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
 import { useTranslations, useLocale } from "next-intl"
@@ -8,15 +8,15 @@ import { LayoutDashboard, LogOut } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { LangSwitcher } from "@/components/LangSwitcher"
 import { QualityAgentFab } from "@/components/quality-agent/QualityAgentFab"
+import { usePlan } from "@/lib/use-plan"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations()
   const locale = useLocale()
   const router = useRouter()
-  const pathname = usePathname()
   const { data: session, isPending } = authClient.useSession()
+  const { plan } = usePlan((session?.user as Record<string, unknown> | undefined)?.plan)
 
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -71,8 +71,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const user = session.user
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"
-  const plan = (user as Record<string, unknown>)?.plan as string || "free"
-
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FB]">
       <header className="sticky top-0 z-40 border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -96,8 +94,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {plan === "pro" ? "Pro · Unlimited" : `Free · ${quotaLabel}`}
             </Badge>
 
-            <LangSwitcher />
-
             <div className="relative">
               <button
                 ref={triggerRef}
@@ -114,17 +110,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {menuOpen && (
                 <div
                   ref={menuRef}
-                  className="absolute right-0 top-full z-50 mt-1 w-48 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
+                  className="absolute right-0 top-full z-[100] mt-2 w-[min(18rem,calc(100vw-2rem))] rounded-lg border border-border bg-white p-1 text-popover-foreground shadow-xl"
                 >
-                  <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
-                    <div className="font-medium text-foreground">{user?.name || "User"}</div>
-                    <div className="text-xs font-normal text-muted-foreground">{user?.email || ""}</div>
+                  <div className="min-w-0 px-3 py-2 text-xs font-medium text-muted-foreground">
+                    <div className="truncate font-medium text-foreground">{user?.name || "User"}</div>
+                    <div className="truncate text-xs font-normal text-muted-foreground">{user?.email || ""}</div>
                   </div>
                   <div className="-mx-1 my-1 h-px bg-border" />
                   <button
                     type="button"
                     onClick={() => { router.push("/dashboard"); setMenuOpen(false) }}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <LayoutDashboard className="size-4" />
                     {t("dashboard.myReports")}
@@ -133,7 +129,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <button
                     type="button"
                     onClick={() => { authClient.signOut(); router.push("/login"); setMenuOpen(false) }}
-                    className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-destructive hover:bg-accent"
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-destructive hover:bg-accent"
                   >
                     <LogOut className="size-4" />
                     Sign out

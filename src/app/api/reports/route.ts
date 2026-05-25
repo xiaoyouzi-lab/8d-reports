@@ -3,6 +3,10 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports, userQuotas } from "@/lib/db/schema";
 import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
+import { isUserPro } from "@/lib/subscription";
+
+const REPORT_TYPES = new Set(["customer_8d", "internal_8d"]);
+const PRIORITIES = new Set(["low", "medium", "high"]);
 
 export async function GET() {
   const user = await getSessionUser();
@@ -31,7 +35,9 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorizedResponse();
 
   const body = await req.json().catch(() => ({}));
-  const { reportType = "customer_8d", priority = "medium" } = body;
+  const reportType = REPORT_TYPES.has(body.reportType) ? body.reportType : "customer_8d";
+  const priority = PRIORITIES.has(body.priority) ? body.priority : "medium";
+  const isPro = await isUserPro(user.id);
 
   const [quota] = await db
     .select()
@@ -39,7 +45,10 @@ export async function POST(req: NextRequest) {
     .where(eq(userQuotas.userId, user.id))
     .limit(1);
 
-  if (quota && (quota.usedQuota ?? 0) >= (quota.totalQuota ?? 5)) {
+  const totalQuota = quota?.totalQuota ?? 5;
+  const usedQuota = quota?.usedQuota ?? 0;
+
+  if (!isPro && usedQuota >= totalQuota) {
     return NextResponse.json(
       { error: "Quota exhausted. Upgrade to Pro to create more reports." },
       { status: 403 }
@@ -63,7 +72,7 @@ export async function POST(req: NextRequest) {
   const y = today.getFullYear();
   const m = String(today.getMonth() + 1).padStart(2, "0");
   const d = String(today.getDate()).padStart(2, "0");
-  const seq = String(todayCount).padStart(2, "0");
+  const seq = String(todayCount).padStart(3, "0");
   const reportNumber = `${y}-${m}-${d}-${seq}`;
 
   const [report] = await db
@@ -75,15 +84,23 @@ export async function POST(req: NextRequest) {
       priority,
       data: { reportNumber },
       stepStatus: {},
+      hasConsumedQuota: true,
     })
     .returning();
 
-  if (!quota) {
+  if (isPro) {
+    // Pro users have unlimited reports; keep quota rows informational only.
+  } else if (!quota) {
     await db.insert(userQuotas).values({
       userId: user.id,
       totalQuota: 5,
-      usedQuota: 0,
+      usedQuota: 1,
     });
+  } else {
+    await db
+      .update(userQuotas)
+      .set({ usedQuota: usedQuota + 1, updatedAt: new Date() })
+      .where(eq(userQuotas.userId, user.id));
   }
 
   return NextResponse.json(report, { status: 201 });

@@ -33,7 +33,6 @@ export default function SharePage({
 }) {
   const { token } = use(params)
   const [expandedStep, setExpandedStep] = useState<string | null>(null)
-  const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(true)
   const [permissionLevel, setPermissionLevel] = useState("view")
   const [report, setReport] = useState<{
@@ -47,8 +46,8 @@ export default function SharePage({
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
-    setMounted(true)
-    fetch(`/api/share/${token}`)
+    const timer = setTimeout(() => {
+      fetch(`/api/share/${token}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((share: ShareResponse | null) => {
         if (!share) {
@@ -74,21 +73,16 @@ export default function SharePage({
       })
       .catch(() => setReport(null))
       .finally(() => setLoading(false))
+    }, 0)
+    return () => clearTimeout(timer)
   }, [token])
 
   const handleSave = async () => {
     if (!editData || !report) return
     setSaving(true)
     try {
-      const body: Record<string, unknown> = {}
-      for (const [key, value] of Object.entries(editData)) {
-        if (key !== "reportNumber" && typeof value === "string" && value !== DEFAULT_REPORT_DATA[key as keyof ReportData]) {
-          body[key] = value
-        }
-      }
-      body.reportType = editData.reportType
-      body.priority = editData.priority
-      body.title = report.title
+      const body: Record<string, unknown> = { ...editData }
+      delete body.reportNumber
 
       const res = await fetch(`/api/share/${token}`, {
         method: "PUT",
@@ -116,7 +110,7 @@ export default function SharePage({
     setEditData({ ...editData, [name]: value })
   }
 
-  if (!mounted || loading) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F8F9FB]">
         <div className="text-sm text-muted-foreground">Loading...</div>

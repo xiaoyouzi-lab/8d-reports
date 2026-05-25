@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { trackEvent } from "@/lib/analytics"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -42,6 +43,7 @@ export default function LoginPage() {
         setLoading(false)
         return
       }
+      trackEvent("login_success", { method: "email" })
       router.push(callbackUrl)
       router.refresh()
     } catch {
@@ -56,6 +58,7 @@ export default function LoginPage() {
         provider,
         callbackURL: callbackUrl,
       })
+      trackEvent("login_success", { method: provider })
     } catch {
       setError("OAuth sign-in failed. Please try again.")
     }

@@ -1,12 +1,27 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { FileDown, FileText, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { exportReportToPdf } from "@/lib/pdf-export"
 import { createExportZip, downloadBlob } from "@/lib/export-zip"
 import { useTranslations } from "next-intl"
 import type { ReportData } from "@/lib/report-steps"
+import { trackEvent } from "@/lib/analytics"
+
+interface ExportAttachment {
+  id: string
+  url: string
+  filename: string
+  fileType: string
+  mimeType?: string | null
+  stepId?: string | null
+}
+
+function getAttachmentFileUrl(att: ExportAttachment): string {
+  return `/api/attachments/${att.id}/file`
+}
 
 interface ExportMenuProps {
   reportData: ReportData
@@ -19,6 +34,7 @@ interface ExportMenuProps {
 export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, logoUrl }: ExportMenuProps) {
   const t = useTranslations("export")
   const editorT = useTranslations("editor")
+  const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -41,7 +57,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
   const fetchAttachments = async () => {
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments`)
-      return res.ok ? await res.json() : []
+      return res.ok ? (await res.json() as ExportAttachment[]) : []
     } catch { return [] }
   }
 
@@ -49,6 +65,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
     setOpen(false)
     setLoading("pdf")
     try {
+      trackEvent("export_clicked", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
       const allAttachments = await fetchAttachments()
       const pdf = await exportReportToPdf({
         reportData,
@@ -57,17 +74,21 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
         withWatermark,
         logoUrl,
         attachmentImages: allAttachments
-          .filter((a: any) => a.fileType === "photo" || a.mimeType?.startsWith("image/"))
-          .map((a: any) => ({ url: a.url, filename: a.filename, stepId: a.stepId })),
+          .filter((a) => a.fileType === "photo" || a.mimeType?.startsWith("image/"))
+          .map((a) => ({ url: getAttachmentFileUrl(a), filename: a.filename, stepId: a.stepId ?? undefined })),
       })
 
-      const allAttachForZip = allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
+      const allAttachForZip = allAttachments.map((a) => ({ url: getAttachmentFileUrl(a), filename: a.filename }))
       if (allAttachForZip.length > 0) {
         const blob = new Blob([pdf.output("blob")], { type: "application/pdf" })
         const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.pdf`, allAttachForZip)
         downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
       } else {
         pdf.save(`${reportId.slice(0, 8)}_8D_Report.pdf`)
+      }
+      trackEvent("export_succeeded", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
+      if (withWatermark) {
+        trackEvent("watermark_exported", { format: "pdf", plan: "free" }, reportId)
       }
       toast.success(t("pdfSuccess"))
     } catch {
@@ -79,8 +100,23 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
 
   const handleExportDocx = async () => {
     setOpen(false)
+    if (withWatermark) {
+      trackEvent("word_export_gate_clicked", { plan: "free" }, reportId)
+      toast("Word export is a Pro feature", {
+        description: "Upgrade to Pro to export editable Word reports.",
+        action: {
+          label: "Upgrade",
+          onClick: () => {
+            trackEvent("upgrade_clicked", { source: "word_export_gate", plan: "free" }, reportId)
+            router.push("/pricing")
+          },
+        },
+      })
+      return
+    }
     setLoading("docx")
     try {
+      trackEvent("export_clicked", { format: "docx", plan: "pro" }, reportId)
       const res = await fetch(`/api/reports/${reportId}/export/docx`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -92,7 +128,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
       })
       if (!res.ok) throw new Error("Export failed")
       const allAttachments = await fetchAttachments()
-      const allAttachForZip = allAttachments.map((a: any) => ({ url: a.url, filename: a.filename }))
+      const allAttachForZip = allAttachments.map((a) => ({ url: getAttachmentFileUrl(a), filename: a.filename }))
       if (allAttachForZip.length > 0) {
         const blob = await res.blob()
         const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.docx`, allAttachForZip)
@@ -101,6 +137,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
         const blob = await res.blob()
         downloadBlob(blob, `${reportId.slice(0, 8)}_8D_Report.docx`)
       }
+      trackEvent("export_succeeded", { format: "docx", plan: "pro" }, reportId)
       toast.success(t("wordSuccess"))
     } catch {
       toast.error(t("exportFailed"))

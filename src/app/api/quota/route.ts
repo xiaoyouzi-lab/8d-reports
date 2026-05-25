@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { userQuotas, reports } from "@/lib/db/schema";
@@ -38,7 +38,7 @@ export async function GET() {
   });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     .from(reports)
     .where(eq(reports.userId, user.id));
 
-  const actualCount = (reportCountRow?.cnt ?? 0) + 1;
+  const actualCount = reportCountRow?.cnt ?? 0;
   const totalQuota = quota?.totalQuota ?? 5;
 
   if (!quota) {

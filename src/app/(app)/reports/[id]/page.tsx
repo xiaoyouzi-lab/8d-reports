@@ -8,6 +8,8 @@ import {
   Save,
   ChevronLeft,
   ChevronRight,
+  Sparkles,
+  Upload,
 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -19,6 +21,8 @@ import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
 import { STEPS, DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
+import { trackEvent } from "@/lib/analytics"
+import { usePlan } from "@/lib/use-plan"
 import { cn } from "@/lib/utils"
 
 const statusStyles: Record<string, string> = {
@@ -28,6 +32,33 @@ const statusStyles: Record<string, string> = {
 }
 
 const STATUS_KEY = { draft: "draft", in_progress: "inProgress", completed: "completed" } as const
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+function formatDefaultReportNumber(createdAt: string | Date | null | undefined, sequence: unknown) {
+  const date = createdAt ? new Date(createdAt) : new Date()
+  const safeDate = Number.isNaN(date.getTime()) ? new Date() : date
+  const y = safeDate.getFullYear()
+  const m = String(safeDate.getMonth() + 1).padStart(2, "0")
+  const d = String(safeDate.getDate()).padStart(2, "0")
+  const n = typeof sequence === "number" && Number.isFinite(sequence) ? sequence : 1
+  return `${y}-${m}-${d}-${String(n).padStart(3, "0")}`
+}
+
+function normalizeReportNumber(
+  value: unknown,
+  createdAt: string | Date | null | undefined,
+  sequence: unknown,
+) {
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (trimmed && !UUID_PATTERN.test(trimmed)) {
+      const twoDigitMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})-(\d{2})$/)
+      if (twoDigitMatch) return `${twoDigitMatch[1]}-0${twoDigitMatch[2]}`
+      return trimmed
+    }
+  }
+  return formatDefaultReportNumber(createdAt, sequence)
+}
 
 export default function ReportEditorPage({
   params,
@@ -36,10 +67,9 @@ export default function ReportEditorPage({
 }) {
   const { id: reportId } = use(params)
   const { data: session } = authClient.useSession()
-  const plan = (session?.user as Record<string, unknown>)?.plan as string || "free"
-  const isPro = plan === "pro"
-  const hasConsumedQuotaRef = useRef(false)
+  const { plan, isPro } = usePlan((session?.user as Record<string, unknown>)?.plan)
   const te = useTranslations("editor")
+  const logoInputRef = useRef<HTMLInputElement>(null)
 
   const [reportData, setReportData] = useState<ReportData>({
     ...DEFAULT_REPORT_DATA,
@@ -47,8 +77,19 @@ export default function ReportEditorPage({
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
   const [activeStepIndex, setActiveStepIndex] = useState(0)
   const [reportTitle, setReportTitle] = useState("Untitled Report")
+  const [logoUrl, setLogoUrl] = useState<string | null>(
+    ((session?.user as Record<string, unknown>)?.logoUrl as string | undefined) ?? null,
+  )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+
+  useEffect(() => {
+    const sessionLogo = (session?.user as Record<string, unknown> | undefined)?.logoUrl
+    if (typeof sessionLogo !== "string") return
+    const timer = setTimeout(() => setLogoUrl(sessionLogo), 0)
+    return () => clearTimeout(timer)
+  }, [session])
 
   useEffect(() => {
     async function load() {
@@ -58,9 +99,11 @@ export default function ReportEditorPage({
         const row = await res.json()
         setReportTitle(row.title || "Untitled Report")
         if (row.data && typeof row.data === "object") {
+          const rowData = row.data as Partial<ReportData>
           setReportData((prev) => ({
             ...prev,
-            ...row.data,
+            ...rowData,
+            reportNumber: normalizeReportNumber(rowData.reportNumber, row.createdAt, row.reportNumber),
             reportType: row.reportType || prev.reportType,
             priority: row.priority || prev.priority,
           }))
@@ -117,6 +160,7 @@ export default function ReportEditorPage({
     setSaving(true)
     try {
       await saveToServer(reportData, completedSteps, reportTitle)
+      trackEvent("report_saved", { plan, completedSteps: completedSteps.size }, reportId)
       toast.success("Report saved")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save")
@@ -125,20 +169,14 @@ export default function ReportEditorPage({
     }
   }
 
-  const handleMarkStepComplete = () => {
-    setCompletedSteps((prev) => {
-      const next = new Set(prev)
-      next.add(currentStep.id)
-      return next
-    })
-  }
-
   const handleNext = async () => {
     const next = new Set(completedSteps)
     next.add(currentStep.id)
     setCompletedSteps(next)
+    trackEvent("step_changed", { from: currentStep.id, direction: "next", plan }, reportId)
     try {
       await saveToServer(reportData, next, reportTitle)
+      trackEvent("report_saved", { plan, completedSteps: next.size, auto: true }, reportId)
     } catch { /* silently fail — explicit save handles errors */ }
     if (activeStepIndex < STEPS.length - 1) {
       setActiveStepIndex(activeStepIndex + 1)
@@ -147,22 +185,59 @@ export default function ReportEditorPage({
 
   const handlePrevious = () => {
     if (activeStepIndex > 0) {
+      trackEvent("step_changed", { from: currentStep.id, direction: "previous", plan }, reportId)
       setActiveStepIndex(activeStepIndex - 1)
     }
   }
 
   const handleStepClick = (index: number) => {
+    trackEvent("step_changed", { from: currentStep.id, to: STEPS[index]?.id, direction: "nav", plan }, reportId)
     setActiveStepIndex(index)
   }
 
-  const consumeQuota = async () => {
-    if (hasConsumedQuotaRef.current || plan === "pro") return
-    hasConsumedQuotaRef.current = true
-    try {
-      await fetch("/api/quota", { method: "POST" })
-    } catch {
-      // ignore
+  const handleLogoClick = () => {
+    if (!isPro) {
+      trackEvent("logo_upload_gate_clicked", { plan: "free" }, reportId)
+      toast("Company logo is a Pro feature", {
+        description: "Upgrade to add your company logo to exports.",
+        action: {
+          label: "Upgrade",
+          onClick: () => {
+            trackEvent("upgrade_clicked", { source: "logo_upload_gate", plan: "free" }, reportId)
+            window.location.href = "/pricing"
+          },
+        },
+      })
+      return
     }
+    logoInputRef.current?.click()
+  }
+
+  const handleLogoFile = async (file: File) => {
+    setUploadingLogo(true)
+    try {
+      const form = new FormData()
+      form.append("file", file)
+      const res = await fetch("/api/profile/logo", { method: "POST", body: form })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        throw new Error(err?.error || "Logo upload failed")
+      }
+      const data = await res.json()
+      setLogoUrl(data.logoUrl || null)
+      toast.success(te("logoUploaded"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Logo upload failed")
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  const handleAiInterest = () => {
+    trackEvent("ai_draft_interest_clicked", { plan }, reportId)
+    toast("AI report drafting coming soon", {
+      description: "Soon you will be able to provide source materials and generate a D0-D8 draft.",
+    })
   }
 
   if (loading) {
@@ -189,7 +264,7 @@ export default function ReportEditorPage({
             <span className="hidden h-4 w-px bg-border sm:block" />
 
             <span className="font-mono text-xs font-semibold text-indigo-600 tabular-nums">
-              {reportId.slice(0, 8)}
+              {reportData.reportNumber || reportId.slice(0, 8)}
             </span>
 
             <input
@@ -212,14 +287,47 @@ export default function ReportEditorPage({
               {te(STATUS_KEY[status] || "draft")}
             </Badge>
 
-            <ShareDialog reportId={reportId} reportTitle={reportTitle} />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleAiInterest}
+              className="hidden md:inline-flex"
+            >
+              <Sparkles className="size-3.5" />
+              AI
+            </Button>
+
+            <input
+              ref={logoInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) void handleLogoFile(file)
+                event.target.value = ""
+              }}
+            />
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleLogoClick}
+              disabled={uploadingLogo}
+              className="hidden md:inline-flex"
+            >
+              <Upload className="size-3.5" />
+              Logo
+            </Button>
+
+            <ShareDialog reportId={reportId} reportTitle={reportTitle} isPro={isPro} />
 
             <ExportMenu
               reportData={reportData}
               reportTitle={reportTitle}
               reportId={reportId}
               withWatermark={!isPro}
-              logoUrl={(session?.user as Record<string, unknown>)?.logoUrl as string || null}
+              logoUrl={logoUrl}
             />
 
             <Button
@@ -264,6 +372,7 @@ export default function ReportEditorPage({
                     data={reportData}
                     onChange={handleFieldChange}
                     reportId={reportId}
+                    isPro={isPro}
                   />
                 </CardContent>
               </Card>
@@ -306,14 +415,15 @@ export default function ReportEditorPage({
                       setSaving(true)
                       try {
                         await saveToServer(reportData, next, reportTitle)
+                        trackEvent("report_saved", { plan, completedSteps: next.size, completed: true }, reportId)
                         toast.success(te("reportSaved"))
                       } catch (err) {
                         toast.error(err instanceof Error ? err.message : te("saveFailed"))
                       } finally {
                         setSaving(false)
                       }
-                      consumeQuota()
                     }}
+                    disabled={saving}
                   >
                     {te("completeReport")}
                   </Button>

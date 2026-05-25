@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import { ArrowRight, FileText } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { trackEvent } from "@/lib/analytics"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -32,6 +33,7 @@ export default function NewReportPage() {
         body: JSON.stringify({ reportType, priority }),
       })
       if (res.status === 403) {
+        trackEvent("quota_limit_seen", { source: "new_report" })
         toast.error(t("quotaExhausted"))
         setIsSubmitting(false)
         return
@@ -42,6 +44,7 @@ export default function NewReportPage() {
         return
       }
       const report = await res.json()
+      trackEvent("report_created", { reportType, priority }, report.id)
       router.push(`/reports/${report.id}`)
     } catch {
       toast.error("An unexpected error occurred")
@@ -80,7 +83,7 @@ export default function NewReportPage() {
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent align="start" sideOffset={4} className="max-h-60 z-50">
+              <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
                 <SelectItem value="customer_8d">Customer 8D</SelectItem>
                 <SelectItem value="internal_8d">Internal 8D</SelectItem>
               </SelectContent>
@@ -96,7 +99,7 @@ export default function NewReportPage() {
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent align="start" sideOffset={4} className="max-h-60 z-50">
+              <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
                 <SelectItem value="low">Low</SelectItem>
                 <SelectItem value="medium">Medium</SelectItem>
                 <SelectItem value="high">High</SelectItem>

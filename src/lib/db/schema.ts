@@ -8,10 +8,8 @@ import {
   boolean,
   jsonb,
   serial,
-  uniqueIndex,
   index,
   cidr,
-  pgPolicy,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -199,3 +197,20 @@ export const feedback = pgTable("feedback", {
   locale: text("locale").default("en"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+export const analyticsEvents = pgTable("analytics_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventName: text("event_name").notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  reportId: uuid("report_id").references(() => reports.id, { onDelete: "set null" }),
+  plan: text("plan").default("free"),
+  locale: text("locale").default("en"),
+  deviceType: text("device_type").default("desktop"),
+  path: text("path"),
+  metadata: jsonb("metadata").default("{}"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_analytics_events_name").on(table.eventName),
+  index("idx_analytics_events_user_id").on(table.userId),
+  index("idx_analytics_events_created_at").on(table.createdAt.desc()),
+]);

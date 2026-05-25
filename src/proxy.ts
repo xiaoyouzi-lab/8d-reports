@@ -42,7 +42,7 @@ export default function proxy(request: NextRequest) {
 
   if (!sessionCookie?.value) {
     const loginUrl = new URL("/login", request.url)
-    loginUrl.searchParams.set("redirect", pathname)
+    loginUrl.searchParams.set("callbackUrl", pathname)
     const response = NextResponse.redirect(loginUrl)
     response.cookies.set(LANG_COOKIE, locale, {
       path: "/",

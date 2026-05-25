@@ -5,6 +5,7 @@ import { reports, attachments } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { generateWordDocument } from "@/lib/word-export";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
+import { isUserPro } from "@/lib/subscription";
 
 export async function POST(
   req: NextRequest,
@@ -15,6 +16,14 @@ export async function POST(
 
   const { id: reportId } = await params;
   const body = await req.json().catch(() => ({}));
+  const isPro = await isUserPro(user.id);
+
+  if (!isPro) {
+    return NextResponse.json(
+      { error: "Word export is a Pro feature" },
+      { status: 403 }
+    );
+  }
 
   const [report] = await db
     .select()
@@ -40,7 +49,6 @@ export async function POST(
     .where(eq(attachments.reportId, reportId))
     .orderBy(attachments.sortOrder);
 
-  const isPro = body.plan !== "free";
   const logoUrl = body.logoUrl || null;
   const locale = body.locale || "en";
 
@@ -48,12 +56,18 @@ export async function POST(
     reportData: data,
     reportTitle: report.title,
     reportId,
-    withWatermark: !isPro,
+    withWatermark: false,
     logoUrl,
     locale,
     attachmentImages: attachmentRows
       .filter((a) => a.fileType === "photo" || a.mimeType?.startsWith("image/"))
-      .map((a) => ({ url: a.url!, filename: a.filename!, stepId: a.stepId || undefined })),
+      .map((a) => ({
+        url: `${req.nextUrl.origin}/api/attachments/${a.id}/file`,
+        filename: a.filename!,
+        stepId: a.stepId || undefined,
+        storagePath: a.storagePath,
+        mimeType: a.mimeType,
+      })),
   });
 
   return new NextResponse(new Uint8Array(buffer), {

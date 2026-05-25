@@ -19,6 +19,7 @@ interface StepFormProps {
   data: ReportData
   onChange: (name: string, value: string) => void
   reportId: string
+  isPro?: boolean
 }
 
 function renderField(
@@ -67,7 +68,7 @@ function renderField(
           <SelectTrigger id={selectId} className="w-full">
             <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
           </SelectTrigger>
-          <SelectContent align="start" sideOffset={4} className="max-h-60 z-50">
+          <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
             {field.options.map((opt) => (
               <SelectItem key={opt.value} value={opt.value}>
                 {opt.label}
@@ -87,8 +88,6 @@ function renderField(
         ? "datetime-local"
         : "text"
 
-  const isReadonly = field.name === "reportNumber"
-
   return (
     <div className="space-y-1.5">
       <Label htmlFor={field.name}>
@@ -101,12 +100,11 @@ function renderField(
         placeholder={field.placeholder}
         value={value}
         onChange={(e) => onChange(field.name, e.target.value)}
-        readOnly={isReadonly}
         className={cn(
           inputType === "date" && "font-mono text-sm",
           inputType === "datetime-local" && "font-mono text-sm",
           inputType === "number" && "font-mono tabular-nums",
-          isReadonly && "cursor-not-allowed bg-muted/50 text-muted-foreground",
+          field.name === "reportNumber" && "font-mono tabular-nums",
         )}
       />
       {field.hint && (
@@ -118,7 +116,7 @@ function renderField(
 
 const ATTACHMENT_STEPS = new Set(["D2", "D3", "D5", "D6", "D7"])
 
-export function StepForm({ step, data, onChange, reportId }: StepFormProps) {
+export function StepForm({ step, data, onChange, reportId, isPro = false }: StepFormProps) {
   const hasFiveWhys = step.id === "D4"
   const fiveWhyFields = step.fields.filter((f) => f.name.startsWith("why"))
   const otherFields = step.fields.filter((f) => !f.name.startsWith("why"))
@@ -150,7 +148,7 @@ export function StepForm({ step, data, onChange, reportId }: StepFormProps) {
       </div>
 
       {showAttachments && (
-        <AttachmentArea reportId={reportId} stepId={step.id} />
+        <AttachmentArea reportId={reportId} stepId={step.id} isPro={isPro} />
       )}
 
       {hasFiveWhys && fiveWhyFields.length > 0 && (
@@ -159,8 +157,8 @@ export function StepForm({ step, data, onChange, reportId }: StepFormProps) {
             <h3 className="mb-3 text-sm font-semibold text-foreground">
               5-Why Analysis
             </h3>
-            <div className="overflow-hidden rounded-lg border">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="min-w-[520px] w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/50">
                     <th className="w-[80px] px-3 py-2 text-left text-xs font-semibold text-muted-foreground">

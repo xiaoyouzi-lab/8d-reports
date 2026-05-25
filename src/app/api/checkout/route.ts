@@ -14,7 +14,10 @@ export async function POST(req: NextRequest) {
     : process.env.CREEM_PRODUCT_MONTHLY;
 
   if (!productId) {
-    return NextResponse.json({ error: "Product not configured" }, { status: 500 });
+    return NextResponse.json(
+      { error: `${planType === "yearly" ? "Yearly" : "Monthly"} product is not configured` },
+      { status: 503 }
+    );
   }
 
   try {

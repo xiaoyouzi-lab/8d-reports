@@ -140,7 +140,7 @@ export const STEPS: ReportStep[] = [
     label: "D0: Prepare",
     description: "Prepare for the 8D process — define the problem and assemble the preliminary information.",
     fields: [
-      { name: "reportNumber", label: "Report Number", type: "text", placeholder: "Auto-generated", hint: "Auto-generated report number" },
+      { name: "reportNumber", label: "Report Number", type: "text", placeholder: "YYYY-MM-DD-001", hint: "Default report number, editable" },
       { name: "reportType", label: "Report Type", type: "select", required: true, options: reportTypeOptions },
       { name: "problemSource", label: "Problem Source", type: "text", placeholder: "e.g. Customer complaint, Internal audit" },
       { name: "customerName", label: "Customer Name", type: "text", placeholder: "Customer or department name" },

@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { attachments, reports } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
+import { isUserPro } from "@/lib/subscription";
 
 export async function GET(
   _req: NextRequest,
@@ -65,8 +66,13 @@ export async function POST(
     .where(eq(attachments.reportId, reportId));
 
   const currentCount = existingRows.length;
-  if (currentCount >= 10) {
-    return NextResponse.json({ error: "Maximum 10 attachments per report" }, { status: 400 });
+  const isPro = await isUserPro(user.id);
+  const maxAttachments = isPro ? 30 : 10;
+  if (currentCount >= maxAttachments) {
+    return NextResponse.json(
+      { error: `Maximum ${maxAttachments} attachments per report` },
+      { status: 400 }
+    );
   }
 
   const [attachment] = await db

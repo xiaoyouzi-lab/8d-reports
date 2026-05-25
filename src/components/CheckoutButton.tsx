@@ -2,9 +2,11 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { trackEvent } from "@/lib/analytics"
 import { Loader2 } from "lucide-react"
 
 export function CheckoutButton({
@@ -28,28 +30,34 @@ export function CheckoutButton({
     if (loading || isPending) return
 
     if (!session?.user) {
-      router.push(`/signup?plan=pro&billing=${planType}`)
+      trackEvent("upgrade_clicked", { source: "pricing", planType })
+      router.push(`/login?plan=pro&billing=${planType}`)
       return
     }
 
     setLoading(true)
     try {
+      trackEvent("checkout_started", { planType })
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ planType }),
       })
 
+      const session_data = await res.json().catch(() => null)
+
       if (!res.ok) {
-        throw new Error("Failed to create checkout session")
+        throw new Error(session_data?.error || "Failed to create checkout session")
       }
 
-      const session_data = await res.json()
-      if (session_data.checkout_url) {
+      if (session_data?.checkout_url) {
         window.location.href = session_data.checkout_url
+        return
       }
+      throw new Error("Checkout URL missing")
     } catch (err) {
       console.error("Checkout error:", err)
+      toast.error(err instanceof Error ? err.message : "Checkout failed")
     } finally {
       setLoading(false)
     }
