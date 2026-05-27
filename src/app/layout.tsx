@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { cookies } from "next/headers";
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
 import { CookieConsent } from "@/components/CookieConsent";
@@ -41,26 +40,13 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-const SUPPORTED = ["en", "zh-CN"] as const;
-
 export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  let locale: string = "en";
-
-  try {
-    const store = await cookies();
-    const val = store.get("NEXT_LOCALE")?.value;
-    if (val && SUPPORTED.includes(val as "en" | "zh-CN")) {
-      locale = val;
-    }
-  } catch {
-    locale = "en";
-  }
-
-  const messages = (await import(`../messages/${locale}.json`)).default;
+  const locale = "en";
+  const messages = (await import("../messages/en.json")).default;
 
   return (
     <html lang={locale} className="h-full antialiased">

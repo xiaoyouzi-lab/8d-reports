@@ -1,21 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 
 const LANG_COOKIE = "NEXT_LOCALE"
-const SUPPORTED = ["en", "zh-CN"]
-
-function detectLocale(request: NextRequest): string {
-  const cookieLocale = request.cookies.get(LANG_COOKIE)?.value
-  if (cookieLocale && SUPPORTED.includes(cookieLocale)) return cookieLocale
-  const accept = request.headers.get("accept-language") || ""
-  if (accept.split(",")[0]?.trim()?.toLowerCase().startsWith("zh")) return "zh-CN"
-  return "en"
-}
+const PUBLIC_LOCALE = "en"
 
 const protectedPaths = ["/dashboard", "/reports"]
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const locale = detectLocale(request)
+  const locale = PUBLIC_LOCALE
 
   const headers = new Headers(request.headers)
   headers.set("x-locale", locale)
@@ -28,7 +20,7 @@ export default function proxy(request: NextRequest) {
     const response = NextResponse.next({
       request: { headers },
     })
-    response.cookies.set(LANG_COOKIE, locale, {
+    response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
       path: "/",
       maxAge: 31536000,
       sameSite: "lax",
@@ -44,7 +36,7 @@ export default function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("callbackUrl", pathname)
     const response = NextResponse.redirect(loginUrl)
-    response.cookies.set(LANG_COOKIE, locale, {
+    response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
       path: "/",
       maxAge: 31536000,
       sameSite: "lax",
@@ -55,7 +47,7 @@ export default function proxy(request: NextRequest) {
   const response = NextResponse.next({
     request: { headers },
   })
-  response.cookies.set(LANG_COOKIE, locale, {
+  response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
     path: "/",
     maxAge: 31536000,
     sameSite: "lax",
