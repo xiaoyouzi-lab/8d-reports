@@ -1,7 +1,7 @@
 # Phase 1 MVP — 运营合规与产品风险审核报告
 
 **审核日期**: 2026年5月20日  
-**审核对象**: [https://8d-reports.vercel.app](https://8d-reports.vercel.app)  
+**审核对象**: [https://8d-reports.com](https://8d-reports.com)  
 **审核人**:  
 - **运营经理** (Operations Manager — Ops)  
 - **产品风险经理** (Product Risk Manager — Risk)  
@@ -149,7 +149,7 @@
 |----|------|
 | M1 | 报告数据仅在 localStorage 存储，无服务端持久化 |
 | M2 | 无请求体验证框架 (Zod/Valibot) |
-| M3 | 分享 URL 硬编码 `8dreports.com`（开发环境显示错误域名） |
+| M3 | 分享 URL 硬编码生产域名（开发环境显示错误域名） |
 | M4 | 无显式 CORS 策略配置 |
 
 ### 🟢 低风险 (Low) — 3 项

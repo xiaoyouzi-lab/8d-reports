@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server"
 import Link from "next/link"
 
 export default async function FaqPage() {
-  const t = await getTranslations("marketing")
+  const t = await getTranslations({ locale: "en", namespace: "marketing" })
 
   const faqs = [
     { q: t("faq1Q"), a: t("faq1A") },

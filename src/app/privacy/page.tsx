@@ -24,7 +24,7 @@ export default function PrivacyPage() {
           <p>You can export your report data at any time (PDF/Word export). You can request account deletion by contacting support. Under GDPR, you have the right to access, rectify, and erase your personal data.</p>
           
           <h2>6. Contact</h2>
-          <p>For privacy-related inquiries, contact us at support@8d-reports.com</p>
+          <p>For privacy-related inquiries, contact us at 19857345237@163.com</p>
         </CardContent>
       </Card>
     </div>

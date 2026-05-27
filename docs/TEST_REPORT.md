@@ -1,7 +1,7 @@
 # Phase 1 MVP — 线上部署测试报告
 
 **测试日期**: 2026年5月20日  
-**部署地址**: `https://8d-reports.vercel.app`  
+**部署地址**: `https://8d-reports.com`  
 **产品经理**: Quality PM  
 **代码版本**: commit `cbfe7bd`
 
@@ -28,7 +28,7 @@
 
 | # | 测试项 | 状态 | 详情 |
 |---|--------|------|------|
-| 1.1 | Vercel 域名可访问 | ✅ | `https://8d-reports.vercel.app` 正常响应 |
+| 1.1 | Vercel 域名可访问 | ✅ | `https://8d-reports.com` 正常响应 |
 | 1.2 | Neon 数据库连通 | ✅ | 注册写入 users/sessions/accounts 三表成功 |
 
 ---
@@ -59,7 +59,7 @@
 
 | # | 测试项 | 状态 | 详情 |
 |---|--------|------|------|
-| 4.1 | Google OAuth 回调 | ✅ | 正确跳转 `accounts.google.com`，`redirect_uri` 指向 `8d-reports.vercel.app` |
+| 4.1 | Google OAuth 回调 | ✅ | 正确跳转 `accounts.google.com`，`redirect_uri` 指向 `8d-reports.com` |
 | 4.2 | GitHub OAuth 回调 | ✅ | 正确跳转 `github.com/login`，显示 "8D reports" App 授权页 |
 
 ---
@@ -107,7 +107,7 @@
 ## 认证流程完整链路验证
 
 ```
-用户访问 https://8d-reports.vercel.app
+用户访问 https://8d-reports.com
     → 点击 "Start free" → /signup
     → 填写 Name/Email/Password → 点击 "Create account"
     → POST /api/auth/sign-up/email → 200 ✅ (写入 Neon users/sessions/accounts)
@@ -121,11 +121,11 @@
     
 用户点击 "Google" 按钮
     → redirect → accounts.google.com ✅
-    → client_id + redirect_uri 正确指向 8d-reports.vercel.app ✅
+    → client_id + redirect_uri 正确指向 8d-reports.com ✅
 
 用户点击 "GitHub" 按钮
     → redirect → github.com/login/oauth ✅
-    → client_id + redirect_uri 正确指向 8d-reports.vercel.app ✅
+    → client_id + redirect_uri 正确指向 8d-reports.com ✅
 ```
 
 ---
@@ -163,4 +163,4 @@
 ---
 
 *报告时间: 2026年5月20日*
-*Vercel: https://8d-reports.vercel.app*
+*Vercel: https://8d-reports.com*

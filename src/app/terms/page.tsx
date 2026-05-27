@@ -27,7 +27,7 @@ export default function TermsPage() {
           <p>You may stop using the Service at any time. We reserve the right to terminate accounts that violate these terms.</p>
           
           <h2>7. Contact</h2>
-          <p>For legal inquiries, billing questions, or account support: support@8d-reports.com</p>
+          <p>For legal inquiries, billing questions, or account support: 19857345237@163.com</p>
         </CardContent>
       </Card>
     </div>

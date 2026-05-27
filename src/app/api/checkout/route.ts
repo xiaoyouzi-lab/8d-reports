@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const origin = req.headers.get("origin") || process.env.BETTER_AUTH_URL || "https://8d-reports.vercel.app";
+    const origin = req.headers.get("origin") || process.env.BETTER_AUTH_URL || "https://8d-reports.com";
     const session = await createCheckoutSession({
       productId,
       userId: user.id,

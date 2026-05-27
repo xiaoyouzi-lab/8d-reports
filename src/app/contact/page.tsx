@@ -2,7 +2,7 @@ import Link from "next/link"
 import { Mail, MessageSquare, ShieldCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 
-const supportEmail = "support@8d-reports.com"
+const supportEmail = "19857345237@163.com"
 
 export default function ContactPage() {
   return (

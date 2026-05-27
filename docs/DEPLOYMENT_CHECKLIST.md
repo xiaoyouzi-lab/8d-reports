@@ -29,7 +29,7 @@
 | 项目 | 值 |
 |------|-----|
 | 地址 | [vercel.com](https://vercel.com) |
-| 部署域名 | `https://8d-reports.vercel.app` |
+| 部署域名 | `https://8d-reports.com` |
 | 框架 | Next.js (Turbopack) |
 | 构建命令 | `npm run build` |
 | **⚠️ 环境变量** | 见下方第四节 |
@@ -71,8 +71,8 @@
 |------|-----|
 | 地址 | [console.cloud.google.com](https://console.cloud.google.com) |
 | App 类型 | Web application |
-| **⚠️ Authorized JavaScript Origins** | `https://8d-reports.vercel.app` + `http://localhost:3001` |
-| **⚠️ Authorized Redirect URIs** | `https://8d-reports.vercel.app/api/auth/callback/google` + `http://localhost:3001/api/auth/callback/google` |
+| **⚠️ Authorized JavaScript Origins** | `https://8d-reports.com` + `http://localhost:3001` |
+| **⚠️ Authorized Redirect URIs** | `https://8d-reports.com/api/auth/callback/google` + `http://localhost:3001/api/auth/callback/google` |
 | Scopes | `.../auth/userinfo.email`, `.../auth/userinfo.profile` |
 | **⚠️ 环境变量** | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` |
 | **⚠️ 验证** | 用 Google 账户登录 → 成功则配置正确 |
@@ -84,8 +84,8 @@
 | 项目 | 值 |
 |------|-----|
 | 地址 | [github.com/settings/developers](https://github.com/settings/developers) |
-| Homepage URL | `https://8d-reports.vercel.app` |
-| **⚠️ Authorization Callback URL** | `https://8d-reports.vercel.app/api/auth/callback/github` + `http://localhost:3001/api/auth/callback/github` |
+| Homepage URL | `https://8d-reports.com` |
+| **⚠️ Authorization Callback URL** | `https://8d-reports.com/api/auth/callback/github` + `http://localhost:3001/api/auth/callback/github` |
 | **⚠️ 环境变量** | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` |
 | **⚠️ 验证** | 用 GitHub 账户登录 → 成功则配置正确 |
 
@@ -97,7 +97,7 @@
 |------|-----|
 | 地址 | [creem.io](https://www.creem.io) |
 | **⚠️ Product IDs** | 需要创建 Pro Monthly ($9.99) + Pro Yearly ($79) 两个产品，记录各自 Product ID |
-| **⚠️ Webhook URL** | `https://8d-reports.vercel.app/api/webhooks/creem` |
+| **⚠️ Webhook URL** | `https://8d-reports.com/api/webhooks/creem` |
 | Webhook Events | `subscription.created`, `subscription.updated`, `subscription.cancelled` |
 | 模式 | sandbox 测试模式 |
 | **⚠️ 环境变量** | `CREEM_API_KEY` / `CREEM_WEBHOOK_SECRET` |
@@ -123,7 +123,7 @@
 |---|--------|------|---------|
 | 1 | `DATABASE_URL` | Neon 后台复制 | `npm run build` 成功 |
 | 2 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` 生成 | 注册/登录成功 |
-| 3 | `BETTER_AUTH_URL` | `https://8d-reports.vercel.app` | 必须等于 Vercel 实际域名 |
+| 3 | `BETTER_AUTH_URL` | `https://8d-reports.com` | 必须等于 Vercel 实际域名 |
 | 4 | `GOOGLE_CLIENT_ID` | Google Cloud Console | Google 登录成功 |
 | 5 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console | Google 登录成功 |
 | 6 | `GITHUB_CLIENT_ID` | GitHub Developer Settings | GitHub 登录成功 |
@@ -149,17 +149,17 @@
 
 | 名称 | 值 |
 |------|-----|
-| Authorized JavaScript Origin (生产) | `https://8d-reports.vercel.app` |
+| Authorized JavaScript Origin (生产) | `https://8d-reports.com` |
 | Authorized JavaScript Origin (开发) | `http://localhost:3001` |
-| Authorized Redirect URI (生产) | `https://8d-reports.vercel.app/api/auth/callback/google` |
+| Authorized Redirect URI (生产) | `https://8d-reports.com/api/auth/callback/google` |
 | Authorized Redirect URI (开发) | `http://localhost:3001/api/auth/callback/google` |
 
 ### GitHub OAuth
 
 | 名称 | 值 |
 |------|-----|
-| Homepage URL | `https://8d-reports.vercel.app` |
-| Callback URL (生产) | `https://8d-reports.vercel.app/api/auth/callback/github` |
+| Homepage URL | `https://8d-reports.com` |
+| Callback URL (生产) | `https://8d-reports.com/api/auth/callback/github` |
 | Callback URL (开发) | `http://localhost:3001/api/auth/callback/github` |
 
 ### ⚠️ 高危提醒
@@ -207,12 +207,12 @@ Creem Webhook URL 同样需要同步更新。
 1. 网络恢复 → git push origin main
 2. 等待 90 秒 Vercel 自动部署
 3. 浏览器验证：
-   - https://8d-reports.vercel.app → 首页正常
+   - https://8d-reports.com → 首页正常
    - 右上角点击 "中文" → 全站语言切换
    - D2 步骤上传照片/文件 → 附件区域正常
    - 导出菜单 → PDF + Word 两个选项
 4. 命令行快速验证：
-   curl -sI https://8d-reports.vercel.app | grep -i "x-frame\|content-security\|strict-transport"
+   curl -sI https://8d-reports.com | grep -i "x-frame\|content-security\|strict-transport"
 ```
 
 ---
