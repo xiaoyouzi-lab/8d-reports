@@ -71,8 +71,8 @@
 |------|-----|
 | 地址 | [console.cloud.google.com](https://console.cloud.google.com) |
 | App 类型 | Web application |
-| **⚠️ Authorized JavaScript Origins** | `https://8d-reports.com` + `http://localhost:3001` |
-| **⚠️ Authorized Redirect URIs** | `https://8d-reports.com/api/auth/callback/google` + `http://localhost:3001/api/auth/callback/google` |
+| **⚠️ Authorized JavaScript Origins** | `https://www.8d-reports.com` + `https://8d-reports.com` + `http://localhost:3001` |
+| **⚠️ Authorized Redirect URIs** | `https://www.8d-reports.com/api/auth/callback/google` + `https://8d-reports.com/api/auth/callback/google` + `http://localhost:3001/api/auth/callback/google` |
 | Scopes | `.../auth/userinfo.email`, `.../auth/userinfo.profile` |
 | **⚠️ 环境变量** | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` |
 | **⚠️ 验证** | 用 Google 账户登录 → 成功则配置正确 |
@@ -149,9 +149,9 @@
 
 | 名称 | 值 |
 |------|-----|
-| Authorized JavaScript Origin (生产) | `https://8d-reports.com` |
+| Authorized JavaScript Origin (生产) | `https://www.8d-reports.com` + `https://8d-reports.com` |
 | Authorized JavaScript Origin (开发) | `http://localhost:3001` |
-| Authorized Redirect URI (生产) | `https://8d-reports.com/api/auth/callback/google` |
+| Authorized Redirect URI (生产) | `https://www.8d-reports.com/api/auth/callback/google` + `https://8d-reports.com/api/auth/callback/google` |
 | Authorized Redirect URI (开发) | `http://localhost:3001/api/auth/callback/google` |
 
 ### GitHub OAuth

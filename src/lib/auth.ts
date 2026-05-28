@@ -16,8 +16,11 @@ function validatePassword(password: string): string | null {
 function getTrustedOrigins() {
   const origins = new Set([
     "http://localhost:3000",
+    "http://localhost:3001",
     "http://127.0.0.1:3000",
     "http://0.0.0.0:3000",
+    "https://8d-reports.com",
+    "https://www.8d-reports.com",
   ]);
 
   if (process.env.BETTER_AUTH_URL) {
@@ -29,6 +32,28 @@ function getTrustedOrigins() {
   }
 
   return [...origins];
+}
+
+function getAllowedAuthHosts() {
+  const hosts = new Set([
+    "localhost:3000",
+    "localhost:3001",
+    "127.0.0.1:3000",
+    "0.0.0.0:3000",
+    "8d-reports.com",
+    "www.8d-reports.com",
+    "8d-reports.vercel.app",
+  ]);
+
+  if (process.env.BETTER_AUTH_URL) {
+    try {
+      hosts.add(new URL(process.env.BETTER_AUTH_URL).host);
+    } catch {
+      // Ignore invalid env values and keep the explicit production hosts.
+    }
+  }
+
+  return [...hosts];
 }
 
 function createAuth() {
@@ -44,6 +69,11 @@ function createAuth() {
   }
 
   return betterAuth({
+    baseURL: {
+      allowedHosts: getAllowedAuthHosts(),
+      fallback: "https://www.8d-reports.com",
+      protocol: process.env.NODE_ENV === "production" ? "https" : undefined,
+    },
     trustedOrigins: getTrustedOrigins(),
     database: drizzleAdapter(db, {
       provider: "pg",
