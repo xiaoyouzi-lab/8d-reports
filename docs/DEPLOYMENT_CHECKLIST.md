@@ -123,7 +123,7 @@
 |---|--------|------|---------|
 | 1 | `DATABASE_URL` | Neon 后台复制 | `npm run build` 成功 |
 | 2 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` 生成 | 注册/登录成功 |
-| 3 | `BETTER_AUTH_URL` | `https://8d-reports.com` | 必须等于 Vercel 实际域名 |
+| 3 | `BETTER_AUTH_URL` | `https://www.8d-reports.com` | 必须等于 Vercel 实际域名 |
 | 4 | `GOOGLE_CLIENT_ID` | Google Cloud Console | Google 登录成功 |
 | 5 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console | Google 登录成功 |
 | 6 | `GITHUB_CLIENT_ID` | GitHub Developer Settings | GitHub 登录成功 |

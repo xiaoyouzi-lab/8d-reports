@@ -23,7 +23,14 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawCallback = searchParams.get("callbackUrl")
-  const callbackUrl = rawCallback && rawCallback.startsWith("/") ? rawCallback : "/dashboard"
+  const billing = searchParams.get("billing")
+  const legacyPlanCallback =
+    searchParams.get("plan") === "pro" && (billing === "monthly" || billing === "yearly")
+      ? `/pricing?checkout=${billing}`
+      : null
+  const callbackUrl = rawCallback && rawCallback.startsWith("/")
+    ? rawCallback
+    : legacyPlanCallback ?? "/dashboard"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")

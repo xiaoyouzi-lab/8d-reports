@@ -31,7 +31,7 @@ export function CheckoutButton({
 
     if (!session?.user) {
       trackEvent("upgrade_clicked", { source: "pricing", planType })
-      router.push(`/login?plan=pro&billing=${planType}`)
+      router.push(`/login?callbackUrl=${encodeURIComponent(`/pricing?checkout=${planType}`)}`)
       return
     }
 

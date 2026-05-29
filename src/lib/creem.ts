@@ -10,17 +10,19 @@ export async function createCheckoutSession(params: {
   const key = process.env.CREEM_API_KEY;
   if (!key) throw new Error("CREEM_API_KEY not configured");
 
-  const res = await fetch(`${CREEM_API_URL}/checkout-sessions`, {
+  const res = await fetch(`${CREEM_API_URL}/checkouts`, {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${key}`,
+      "x-api-key": key,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       product_id: params.productId,
-      customer: { external_id: params.userId, email: params.customerEmail },
+      request_id: params.userId,
+      customer: { email: params.customerEmail },
       success_url: params.successUrl,
       cancel_url: params.cancelUrl,
+      metadata: { userId: params.userId },
     }),
   });
   if (!res.ok) throw new Error(`Creem checkout failed: ${await res.text()}`);

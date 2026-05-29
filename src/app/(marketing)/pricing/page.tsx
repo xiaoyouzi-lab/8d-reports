@@ -1,8 +1,10 @@
 import Link from "next/link"
+import { Suspense } from "react"
 import { Check } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CheckoutButton } from "@/components/CheckoutButton"
+import { AutoCheckout } from "@/components/AutoCheckout"
 import { cn } from "@/lib/utils"
 
 const freeFeatures = [
@@ -25,6 +27,10 @@ export default function PricingPage() {
               Start for free. Upgrade when you need more.
             </p>
           </div>
+
+          <Suspense fallback={null}>
+            <AutoCheckout />
+          </Suspense>
 
           <div className="mx-auto mt-14 grid max-w-2xl gap-6 lg:grid-cols-2">
             {/* Free */}

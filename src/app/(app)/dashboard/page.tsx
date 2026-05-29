@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Plus, FileText } from "lucide-react"
+import { Search, Plus, FileText, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { QuotaIndicator } from "@/components/report/QuotaIndicator"
+import { CheckoutButton } from "@/components/CheckoutButton"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
@@ -167,12 +168,35 @@ export default function DashboardPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 lg:px-6 lg:py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          My Reports
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Quality issue tracking & 8D problem solving
-        </p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+              My Reports
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Quality issue tracking & 8D problem solving
+            </p>
+          </div>
+          {!isPro && (
+            <div className="flex flex-col gap-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3 sm:w-72">
+              <div className="flex items-start gap-2">
+                <Sparkles className="mt-0.5 size-4 shrink-0 text-indigo-600" />
+                <div>
+                  <p className="text-sm font-medium text-indigo-950">Upgrade to Pro</p>
+                  <p className="text-xs text-indigo-700">
+                    Unlimited reports, no watermarks, Word export, and deep search.
+                  </p>
+                </div>
+              </div>
+              <CheckoutButton planType="monthly" size="sm" className="h-8 bg-indigo-600 text-white hover:bg-indigo-700">
+                Start Pro monthly
+              </CheckoutButton>
+              <Link href="/pricing" className="text-center text-xs font-medium text-indigo-700 underline underline-offset-4">
+                View all plans
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
