@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { reportShares, reports } from "@/lib/db/schema";
+import { attachments, reportShares, reports } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -40,12 +40,27 @@ export async function GET(
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
+  const attachmentRows = await db
+    .select({
+      id: attachments.id,
+      filename: attachments.filename,
+      fileType: attachments.fileType,
+      mimeType: attachments.mimeType,
+      fileSize: attachments.fileSize,
+      stepId: attachments.stepId,
+      sortOrder: attachments.sortOrder,
+      createdAt: attachments.createdAt,
+    })
+    .from(attachments)
+    .where(eq(attachments.reportId, share.report.id))
+    .orderBy(attachments.sortOrder, attachments.createdAt);
+
   await db
     .update(reportShares)
     .set({ views: sql`COALESCE(views, 0) + 1` })
     .where(eq(reportShares.accessToken, token));
 
-  return NextResponse.json(share);
+  return NextResponse.json({ ...share, attachments: attachmentRows });
 }
 
 export async function PUT(

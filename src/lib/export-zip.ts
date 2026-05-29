@@ -14,10 +14,10 @@ export async function createExportZip(
     if (attachFolder) {
       for (const att of attachments) {
         try {
-          const res = await fetch(att.url);
+          const res = await fetch(att.url, { credentials: "same-origin" });
           if (res.ok) {
-            const data = await res.blob();
-            attachFolder.file(att.filename, data);
+            const data = await res.arrayBuffer();
+            attachFolder.file(att.filename.replace(/[\\/]/g, "_"), data);
           }
         } catch { /* skip failed attachment */ }
       }

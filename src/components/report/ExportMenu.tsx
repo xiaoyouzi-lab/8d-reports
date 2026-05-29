@@ -83,9 +83,13 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
         reportId,
         withWatermark,
         logoUrl,
-        attachmentImages: allAttachments
-          .filter((a) => a.fileType === "photo" || a.mimeType?.startsWith("image/"))
-          .map((a) => ({ url: getAttachmentFileUrl(a), filename: a.filename, stepId: a.stepId ?? undefined })),
+        attachments: allAttachments.map((a) => ({
+          url: getAttachmentFileUrl(a),
+          filename: a.filename,
+          stepId: a.stepId ?? undefined,
+          fileType: a.fileType,
+          mimeType: a.mimeType,
+        })),
       })
 
       const allAttachForZip = allAttachments.map((a) => ({ url: getAttachmentFileUrl(a), filename: a.filename }))

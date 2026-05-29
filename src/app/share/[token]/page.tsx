@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react"
 import Link from "next/link"
-import { ChevronDown, ChevronRight, ExternalLink, Save, Eye } from "lucide-react"
+import { ChevronDown, ChevronRight, ExternalLink, FileText, Save, Eye } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,16 @@ interface ShareResponse {
     source: string | null
     createdAt: string
   }
+  attachments: ShareAttachment[]
+}
+
+interface ShareAttachment {
+  id: string
+  filename: string
+  fileType: string
+  mimeType?: string | null
+  fileSize?: number | null
+  stepId?: string | null
 }
 
 export default function SharePage({
@@ -40,6 +50,7 @@ export default function SharePage({
     data: ReportData
     title: string
     createdAt: string
+    attachments: ShareAttachment[]
   } | null>(null)
   const [editData, setEditData] = useState<ReportData | null>(null)
   const [saving, setSaving] = useState(false)
@@ -67,6 +78,7 @@ export default function SharePage({
           title: share.report.title,
           createdAt: share.report.createdAt,
           data,
+          attachments: share.attachments || [],
         })
         setEditData(data)
         setPermissionLevel(share.permissionLevel || "view")
@@ -143,6 +155,12 @@ export default function SharePage({
   const { data, title, reportId } = report
   const canEdit = permissionLevel === "edit"
   const displayData = canEdit ? editData || data : data
+  const attachmentUrl = (attachmentId: string) => `/api/share/${token}/attachments/${attachmentId}`
+  const formatFileSize = (size?: number | null) => {
+    if (!size) return ""
+    if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FB]">
@@ -213,10 +231,11 @@ export default function SharePage({
         <div className="space-y-3">
           {STEPS.map((step) => {
             const isExpanded = expandedStep === step.id
+            const stepAttachments = report.attachments.filter((attachment) => attachment.stepId === step.id)
             const hasContent = step.fields.some((field) => {
               const val = displayData[field.name as keyof ReportData]
               return val && String(val).trim() !== ""
-            })
+            }) || stepAttachments.length > 0
 
             return (
               <Card key={step.id}>
@@ -309,10 +328,55 @@ export default function SharePage({
                     {step.fields.every((field) => {
                       const val = displayData[field.name as keyof ReportData]
                       return !val || String(val).trim() === ""
-                    }) && !canEdit && (
+                    }) && stepAttachments.length === 0 && !canEdit && (
                       <p className="py-2 text-center text-sm text-muted-foreground">
                         No data filled for this step.
                       </p>
+                    )}
+                    {stepAttachments.length > 0 && (
+                      <div className="mt-5 border-t pt-4">
+                        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                          Attachments
+                        </h3>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {stepAttachments.map((attachment) => {
+                            const isImage = attachment.fileType === "photo" || attachment.mimeType?.startsWith("image/")
+                            return (
+                              <a
+                                key={attachment.id}
+                                href={attachmentUrl(attachment.id)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="overflow-hidden rounded-lg border bg-white transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
+                              >
+                                {isImage ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={attachmentUrl(attachment.id)}
+                                    alt={attachment.filename}
+                                    className="aspect-[4/3] w-full object-cover"
+                                    loading="lazy"
+                                  />
+                                ) : (
+                                  <div className="flex aspect-[4/3] items-center justify-center bg-slate-50">
+                                    <FileText className="size-8 text-slate-500" />
+                                  </div>
+                                )}
+                                <div className="p-2">
+                                  <p className="truncate text-xs font-medium text-foreground">
+                                    {attachment.filename}
+                                  </p>
+                                  {attachment.fileSize && (
+                                    <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                      {formatFileSize(attachment.fileSize)}
+                                    </p>
+                                  )}
+                                </div>
+                              </a>
+                            )
+                          })}
+                        </div>
+                      </div>
                     )}
                   </CardContent>
                 )}
