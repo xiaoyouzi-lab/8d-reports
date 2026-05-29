@@ -5,7 +5,6 @@ export async function createCheckoutSession(params: {
   userId: string;
   customerEmail: string;
   successUrl: string;
-  cancelUrl: string;
 }) {
   const key = process.env.CREEM_API_KEY;
   if (!key) throw new Error("CREEM_API_KEY not configured");
@@ -21,7 +20,6 @@ export async function createCheckoutSession(params: {
       request_id: params.userId,
       customer: { email: params.customerEmail },
       success_url: params.successUrl,
-      cancel_url: params.cancelUrl,
       metadata: { userId: params.userId },
     }),
   });

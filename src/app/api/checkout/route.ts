@@ -27,7 +27,6 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       customerEmail: user.email,
       successUrl: `${origin}/dashboard?checkout=success`,
-      cancelUrl: `${origin}/pricing?checkout=cancelled`,
     });
     return NextResponse.json(session);
   } catch (err) {
