@@ -20,6 +20,7 @@ export async function GET() {
       reportType: reports.reportType,
       priority: reports.priority,
       source: reports.source,
+      data: reports.data,
       createdAt: reports.createdAt,
       updatedAt: reports.updatedAt,
     })
@@ -27,7 +28,22 @@ export async function GET() {
     .where(eq(reports.userId, user.id))
     .orderBy(desc(reports.updatedAt));
 
-  return NextResponse.json(rows);
+  return NextResponse.json(rows.map((report) => {
+    const data = typeof report.data === "object" && report.data
+      ? report.data as Record<string, unknown>
+      : {};
+    return {
+      id: report.id,
+      title: report.title,
+      status: report.status,
+      reportType: report.reportType,
+      priority: report.priority,
+      source: report.source,
+      reportNumber: typeof data.reportNumber === "string" ? data.reportNumber : null,
+      createdAt: report.createdAt,
+      updatedAt: report.updatedAt,
+    };
+  }));
 }
 
 export async function POST(req: NextRequest) {

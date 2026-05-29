@@ -30,6 +30,7 @@ interface Report {
   reportType: string
   priority: string
   source: string | null
+  reportNumber: string | null
   updatedAt: string
   matchSnippet?: string
 }
@@ -100,6 +101,7 @@ export default function DashboardPage() {
     ? reports.filter((report) => {
         return [
           report.id,
+          report.reportNumber ?? "",
           report.title,
           report.status,
           report.priority,
@@ -375,7 +377,7 @@ export default function DashboardPage() {
                           className="text-indigo-600 hover:underline"
                           onClick={() => trackEvent("search_result_clicked", { plan, hasQuery: Boolean(normalizedQuery) }, report.id)}
                         >
-                          {report.id.slice(0, 8)}
+                          {report.reportNumber || report.id.slice(0, 8)}
                         </Link>
                       </TableCell>
                       <TableCell className="py-3">
@@ -442,7 +444,7 @@ export default function DashboardPage() {
                   <CardContent className="flex flex-col gap-3 p-4">
                     <div className="flex items-start justify-between">
                       <span className="font-mono text-xs font-medium text-indigo-600">
-                        {report.id.slice(0, 8)}
+                        {report.reportNumber || report.id.slice(0, 8)}
                       </span>
                       <Badge
                         className={cn(

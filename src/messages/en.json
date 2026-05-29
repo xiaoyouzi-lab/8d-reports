@@ -294,11 +294,11 @@
     "lastUpdated": "For all users · Last updated May 2026",
     "section1": {
       "title": "1. Product Overview",
-      "intro": "8D Reports is a cloud-based 8D (Eight Disciplines) problem-solving report management platform, designed for manufacturing quality engineers, supplier quality managers, and system auditors. It replaces traditional Excel templates with structured D0–D8 workflows, real-time team collaboration, one-click PDF/Word export, and complete audit traceability.",
+      "intro": "8D Reports is a cloud-based 8D (Eight Disciplines) problem-solving report platform for manufacturing quality engineers, supplier quality managers, and system auditors. It replaces scattered notes and Excel templates with structured D0–D8 workflows, evidence uploads, PDF delivery, Pro Word export, and reusable quality knowledge.",
       "scenariosTitle": "1.1 Applicable Scenarios",
       "scenario1": "Customer complaint 8D reports (Customer 8D)",
       "scenario2": "Internal quality anomaly 8D reports (Internal 8D)",
-      "scenario3": "Supplier Corrective Action Requests (SCAR)",
+      "scenario3": "Recurring defect review using historical 8D report search",
       "scenario4": "IATF 16949 / ISO 9001 / AS9100 audit preparation",
       "requirementsTitle": "1.2 System Requirements",
       "requirements": "Supports all modern browsers (Chrome, Edge, Safari, Firefox). Chrome latest version is recommended for best experience. Mobile browser supports basic operations; camera upload requires a device with camera."
@@ -351,7 +351,7 @@
       "exportTitle": "4.1 Exporting Report",
       "exportIntro": "On report editor top bar, click Export button and choose format:",
       "pdfDesc": "Generate A4 professional layout PDF with cover, step content, attachment images, and page numbers",
-      "wordDesc": "Generate .docx format document for further editing",
+      "wordDesc": "Pro only: generate .docx format documents for further editing",
       "attachment": "With Attachments: Export with attachments auto-packaged as ZIP file with report document and attachments folder",
       "watermarkNote": "Free plan exports have SAMPLE watermark; Pro plan exports have no watermark.",
       "shareTitle": "4.2 Sharing Report",
@@ -362,13 +362,13 @@
       "shareStep5": "Can delete share link anytime to revoke access"
     },
     "section5": {
-      "title": "5. AI Quality Advisor (Quality Agent)",
-      "intro": "The AI Quality Advisor floating button at bottom right opens a quality expert chat window at any time. You can:",
-      "item1": "Ask questions about 8D methodology",
-      "item2": "Get IATF 16949 / ISO 9001 standard explanations",
-      "item3": "Request root cause analysis suggestions",
-      "item4": "Learn quality tools (FMEA, SPC, MSA) usage",
-      "item5": "Get report writing suggestions and template references"
+      "title": "5. AI Report Drafting (Coming Soon)",
+      "intro": "AI drafting is not part of the current production workflow yet. The editor includes a lightweight interest entry so we can validate demand before building full D0–D8 draft generation. The future direction is:",
+      "item1": "Provide customer emails, inspection records, photos, containment notes, and 5-Why drafts",
+      "item2": "Generate a structured D0–D8 draft for user review",
+      "item3": "Keep the quality engineer responsible for approval and evidence",
+      "item4": "Use Pro or usage-based AI limits when the feature launches",
+      "item5": "Avoid automatic approval or unsupported claims"
     },
     "section6": {
       "title": "6. Account & Quota",
@@ -381,11 +381,13 @@
       "rowPdf": "PDF Export",
       "rowWord": "Word Export",
       "rowAttach": "Attachment Upload",
-      "rowAi": "AI Quality Advisor",
+      "rowAi": "AI Drafting Interest Entry",
       "rowAudit": "Audit Traceability",
       "rowSupport": "Priority Support",
       "withWatermark": "✓ (with watermark)",
       "noWatermark": "✓ (no watermark)",
+      "proOnly": "Pro only",
+      "comingSoon": "Coming soon",
       "upgradeTitle": "6.2 Upgrading to Pro",
       "upgradeLink": "Go to pricing page to choose monthly ($9.99/mo) or annual ($79/year — save 34%)."
     },

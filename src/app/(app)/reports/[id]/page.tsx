@@ -19,7 +19,7 @@ import { ReportStepsNav } from "@/components/report/ReportStepsNav"
 import { StepForm } from "@/components/report/StepForm"
 import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
-import { STEPS, DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps"
+import { STEPS, DEFAULT_REPORT_DATA, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
@@ -240,6 +240,16 @@ export default function ReportEditorPage({
     })
   }
 
+  const validateCompletion = () => {
+    const issues = getReportCompletionIssues(reportData)
+    if (issues.length === 0) return true
+
+    toast.error("Complete key report fields before closing", {
+      description: issues.slice(0, 4).join("; ") + (issues.length > 4 ? `; +${issues.length - 4} more` : ""),
+    })
+    return false
+  }
+
   if (loading) {
     return (
       <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-[#F8F9FB]">
@@ -409,8 +419,8 @@ export default function ReportEditorPage({
                   <Button
                     className="bg-emerald-600 text-white hover:bg-emerald-700"
                     onClick={async () => {
-                      const next = new Set(completedSteps)
-                      next.add(currentStep.id)
+                      if (!validateCompletion()) return
+                      const next = new Set(STEPS.map((step) => step.id))
                       setCompletedSteps(next)
                       setSaving(true)
                       try {

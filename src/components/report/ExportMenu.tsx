@@ -7,7 +7,7 @@ import { toast } from "sonner"
 import { exportReportToPdf } from "@/lib/pdf-export"
 import { createExportZip, downloadBlob } from "@/lib/export-zip"
 import { useTranslations } from "next-intl"
-import type { ReportData } from "@/lib/report-steps"
+import { getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { trackEvent } from "@/lib/analytics"
 
 interface ExportAttachment {
@@ -61,8 +61,18 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
     } catch { return [] }
   }
 
+  const warnIfReportNeedsWork = () => {
+    const issues = getReportCompletionIssues(reportData)
+    if (issues.length === 0) return
+
+    toast.warning("This report may need more detail before delivery", {
+      description: issues.slice(0, 3).join("; ") + (issues.length > 3 ? `; +${issues.length - 3} more` : ""),
+    })
+  }
+
   const handleExportPdf = async () => {
     setOpen(false)
+    warnIfReportNeedsWork()
     setLoading("pdf")
     try {
       trackEvent("export_clicked", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
@@ -100,6 +110,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
 
   const handleExportDocx = async () => {
     setOpen(false)
+    warnIfReportNeedsWork()
     if (withWatermark) {
       trackEvent("word_export_gate_clicked", { plan: "free" }, reportId)
       toast("Word export is a Pro feature", {

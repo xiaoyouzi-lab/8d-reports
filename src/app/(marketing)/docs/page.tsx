@@ -176,9 +176,9 @@ export default async function DocsPage() {
                 { f: t("section6.rowReports"), free: t("section6.free5"), pro: t("section6.unlimited") },
                 { f: t("section6.rowWorkflow"), free: "✓", pro: "✓" },
                 { f: t("section6.rowPdf"), free: t("section6.withWatermark"), pro: t("section6.noWatermark") },
-                { f: t("section6.rowWord"), free: t("section6.withWatermark"), pro: t("section6.noWatermark") },
+                { f: t("section6.rowWord"), free: t("section6.proOnly"), pro: "✓" },
                 { f: t("section6.rowAttach"), free: "✓", pro: "✓" },
-                { f: t("section6.rowAi"), free: "✓", pro: "✓" },
+                { f: t("section6.rowAi"), free: t("section6.comingSoon"), pro: t("section6.comingSoon") },
                 { f: t("section6.rowAudit"), free: "—", pro: "✓" },
                 { f: t("section6.rowSupport"), free: "—", pro: "✓" },
               ].map((row, i) => (

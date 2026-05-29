@@ -3,11 +3,12 @@ import { subscriptions } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function isUserPro(userId: string): Promise<boolean> {
-  const [subscription] = await db
+  const rows = await db
     .select({ status: subscriptions.status })
     .from(subscriptions)
-    .where(eq(subscriptions.userId, userId))
-    .limit(1);
+    .where(eq(subscriptions.userId, userId));
 
-  return subscription?.status === "active" || subscription?.status === "trialing";
+  return rows.some((subscription) =>
+    subscription.status === "active" || subscription.status === "trialing"
+  );
 }

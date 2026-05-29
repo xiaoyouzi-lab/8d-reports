@@ -87,6 +87,11 @@ export async function GET(req: NextRequest) {
         ? report.data as Record<string, unknown>
         : {};
 
+      const reportNumber = typeof data.reportNumber === "string" ? data.reportNumber : "";
+      if (reportNumber.toLowerCase().includes(query)) {
+        return { ...report, matchSnippet: getSnippet("Report Number", reportNumber, query) };
+      }
+
       for (const field of SEARCH_FIELDS) {
         const value = data[field.key];
         if (typeof value === "string" && value.toLowerCase().includes(query)) {
@@ -108,6 +113,9 @@ export async function GET(req: NextRequest) {
       priority: result.priority,
       source: result.source,
       updatedAt: result.updatedAt,
+      reportNumber: typeof (result.data as Record<string, unknown>)?.reportNumber === "string"
+        ? (result.data as Record<string, unknown>).reportNumber
+        : null,
       matchSnippet: result.matchSnippet,
     }));
 

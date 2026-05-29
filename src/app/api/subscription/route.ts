@@ -8,7 +8,7 @@ export async function GET() {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
-  const [sub] = await db
+  const rows = await db
     .select({
       id: subscriptions.id,
       userId: subscriptions.userId,
@@ -27,8 +27,10 @@ export async function GET() {
     })
     .from(subscriptions)
     .leftJoin(plans, eq(subscriptions.planId, plans.id))
-    .where(eq(subscriptions.userId, user.id))
-    .limit(1);
+    .where(eq(subscriptions.userId, user.id));
+
+  const sub = rows.find((row) => row.status === "active" || row.status === "trialing")
+    || rows[0];
 
   return NextResponse.json(sub || null);
 }

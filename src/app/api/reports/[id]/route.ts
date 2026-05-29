@@ -3,6 +3,7 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
+import { DEFAULT_REPORT_DATA, getReportCompletionIssues, type ReportData } from "@/lib/report-steps";
 
 type ReportUpdate = Partial<typeof reports.$inferInsert>;
 
@@ -60,6 +61,25 @@ export async function PUT(
   if (["customer_8d", "internal_8d"].includes(body.reportType)) updates.reportType = body.reportType;
   if (typeof body.source === "string") updates.source = body.source;
   if (typeof body.hasConsumedQuota === "boolean") updates.hasConsumedQuota = body.hasConsumedQuota;
+
+  if (updates.status === "completed") {
+    const existingData = isPlainObject(existing.data) ? existing.data : {};
+    const incomingData = isPlainObject(body.data) ? body.data : {};
+    const data = {
+      ...DEFAULT_REPORT_DATA,
+      ...existingData,
+      ...incomingData,
+      reportType: updates.reportType || existing.reportType,
+      priority: updates.priority || existing.priority,
+    } as ReportData;
+    const issues = getReportCompletionIssues(data);
+    if (issues.length > 0) {
+      return NextResponse.json(
+        { error: "Complete key report fields before closing", issues },
+        { status: 400 }
+      );
+    }
+  }
 
   const [updated] = await db
     .update(reports)

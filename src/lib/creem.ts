@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+
 const CREEM_API_URL = "https://api.creem.io/v1";
 
 export async function createCheckoutSession(params: {
@@ -17,7 +19,7 @@ export async function createCheckoutSession(params: {
     },
     body: JSON.stringify({
       product_id: params.productId,
-      request_id: params.userId,
+      request_id: `${params.userId}-${randomUUID()}`,
       customer: { email: params.customerEmail },
       success_url: params.successUrl,
       metadata: { userId: params.userId },

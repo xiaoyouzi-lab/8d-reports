@@ -123,6 +123,38 @@ export const DEFAULT_REPORT_DATA: ReportData = {
   approverDate: "",
 }
 
+const COMPLETION_REQUIREMENTS: Array<{
+  stepId: string
+  label: string
+  fields: Array<keyof ReportData>
+  mode?: "any" | "all"
+}> = [
+  { stepId: "D0", label: "D0 report number and type", fields: ["reportNumber", "reportType"], mode: "all" },
+  { stepId: "D1", label: "D1 team leader and members", fields: ["teamLeader", "teamMembers"], mode: "all" },
+  { stepId: "D2", label: "D2 problem description", fields: ["problemDescription"], mode: "all" },
+  { stepId: "D3", label: "D3 containment action", fields: ["containmentDescription"], mode: "all" },
+  { stepId: "D4", label: "D4 root cause", fields: ["rootCauseOccurrence", "confirmedRootCause"], mode: "any" },
+  { stepId: "D5", label: "D5 corrective action", fields: ["selectedCorrectiveAction"], mode: "all" },
+  { stepId: "D6", label: "D6 implementation plan", fields: ["implementationPlan"], mode: "all" },
+  { stepId: "D7", label: "D7 prevention action", fields: ["systemChanges", "processUpdates", "horizontalDeployment"], mode: "any" },
+  { stepId: "D8", label: "D8 closure or lessons learned", fields: ["closureDate", "lessonsLearned", "approverName"], mode: "any" },
+]
+
+function hasValue(value: unknown) {
+  return typeof value === "string" ? value.trim().length > 0 : Boolean(value)
+}
+
+export function getReportCompletionIssues(data: ReportData): string[] {
+  return COMPLETION_REQUIREMENTS
+    .filter((requirement) => {
+      const values = requirement.fields.map((field) => data[field])
+      return requirement.mode === "any"
+        ? !values.some(hasValue)
+        : !values.every(hasValue)
+    })
+    .map((requirement) => requirement.label)
+}
+
 const reportTypeOptions = [
   { value: "customer_8d", label: "Customer 8D" },
   { value: "internal_8d", label: "Internal 8D" },
