@@ -92,7 +92,11 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
         })),
       })
 
-      const allAttachForZip = allAttachments.map((a) => ({ url: getAttachmentFileUrl(a), filename: a.filename }))
+      const allAttachForZip = allAttachments.map((a) => ({
+        url: getAttachmentFileUrl(a),
+        fallbackUrl: a.url,
+        filename: a.filename,
+      }))
       if (allAttachForZip.length > 0) {
         const blob = new Blob([pdf.output("blob")], { type: "application/pdf" })
         const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.pdf`, allAttachForZip)
@@ -143,7 +147,11 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
       })
       if (!res.ok) throw new Error("Export failed")
       const allAttachments = await fetchAttachments()
-      const allAttachForZip = allAttachments.map((a) => ({ url: getAttachmentFileUrl(a), filename: a.filename }))
+      const allAttachForZip = allAttachments.map((a) => ({
+        url: getAttachmentFileUrl(a),
+        fallbackUrl: a.url,
+        filename: a.filename,
+      }))
       if (allAttachForZip.length > 0) {
         const blob = await res.blob()
         const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.docx`, allAttachForZip)

@@ -59,11 +59,7 @@ function isImageAttachment(att: PdfAttachment) {
 }
 
 function needsCanvasText(text: string) {
-  return /[^\u0000-\u00ff]/.test(text)
-}
-
-function fontPx(fontSize: number) {
-  return Math.max(10, Math.round(fontSize * 3.2))
+  return /[\u3400-\u9fff\uf900-\ufaff]/.test(text)
 }
 
 function textColorToCss(color: number | string) {
@@ -90,28 +86,31 @@ function wrapCanvasText(ctx: CanvasRenderingContext2D, text: string, maxPx: numb
 }
 
 function renderTextImage(text: string, fontSize: number, maxWidthMm: number, color: string, bold = false) {
-  const scale = 4
-  const widthPx = Math.max(1, Math.round(maxWidthMm * scale))
+  const mmPerCssPx = 25.4 / 96
+  const dpr = 2
+  const widthCssPx = Math.max(1, Math.round(maxWidthMm / mmPerCssPx))
+  const fontCssPx = Math.max(10, fontSize * 96 / 72)
   const canvas = document.createElement("canvas")
   const ctx = canvas.getContext("2d")
   if (!ctx) return null
-  const px = fontPx(fontSize)
-  const font = `${bold ? "700" : "400"} ${px}px Arial, "PingFang SC", "Microsoft YaHei", sans-serif`
+  const font = `${bold ? "700" : "400"} ${fontCssPx}px Arial, "PingFang SC", "Microsoft YaHei", sans-serif`
   ctx.font = font
-  const lines = wrapCanvasText(ctx, text, widthPx)
-  const lineHeight = Math.round(px * 1.35)
-  canvas.width = widthPx
-  canvas.height = Math.max(lineHeight, lines.length * lineHeight)
+  const lines = wrapCanvasText(ctx, text, widthCssPx)
+  const lineHeightCssPx = fontCssPx * 1.25
+  const heightCssPx = Math.max(lineHeightCssPx, lines.length * lineHeightCssPx)
+  canvas.width = Math.ceil(widthCssPx * dpr)
+  canvas.height = Math.ceil(heightCssPx * dpr)
   const ctx2 = canvas.getContext("2d")
   if (!ctx2) return null
+  ctx2.scale(dpr, dpr)
   ctx2.font = font
   ctx2.fillStyle = color
   ctx2.textBaseline = "top"
-  lines.forEach((line, index) => ctx2.fillText(line, 0, index * lineHeight))
+  lines.forEach((line, index) => ctx2.fillText(line, 0, index * lineHeightCssPx))
   return {
     dataUrl: canvas.toDataURL("image/png"),
     widthMm: maxWidthMm,
-    heightMm: canvas.height / scale,
+    heightMm: heightCssPx * mmPerCssPx,
   }
 }
 
@@ -123,10 +122,11 @@ function drawText(
   options: { maxWidth?: number; fontSize?: number; color?: number | string; bold?: boolean; align?: "left" | "center" } = {},
 ) {
   if (!needsCanvasText(text)) {
+    const normalizedText = text.replace(/\u2014/g, "-")
     const textOptions = options.maxWidth
       ? { maxWidth: options.maxWidth, align: options.align }
       : { align: options.align }
-    doc.text(text, x, y, textOptions)
+    doc.text(normalizedText, x, y, textOptions)
     return 0
   }
 
@@ -139,7 +139,7 @@ function drawText(
   }
 
   const drawX = options.align === "center" ? x - image.widthMm / 2 : x
-  doc.addImage(image.dataUrl, "PNG", drawX, y - fontSize * 0.35, image.widthMm, image.heightMm, undefined, "FAST")
+  doc.addImage(image.dataUrl, "PNG", drawX, y - fontSize * 0.25, image.widthMm, image.heightMm, undefined, "FAST")
   return image.heightMm
 }
 
