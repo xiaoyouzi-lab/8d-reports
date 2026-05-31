@@ -8,7 +8,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const cspHeader = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https: https://*.r2.cloudflarestorage.com",
   "font-src 'self'",

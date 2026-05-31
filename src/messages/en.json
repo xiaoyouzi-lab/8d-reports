@@ -415,8 +415,7 @@
       "D7": { "name": "D7: Prevent", "fields": "Prevention measures, Standard document updates, Attachments" },
       "D8": { "name": "D8: Close", "fields": "Team acknowledgment, Management sign-off, Close date" }
     },
-    "cta": "Get Started with 8D Reports — Free Registration",
-    "section6.upgradeLink": "Go to pricing page"
+    "cta": "Get Started with 8D Reports — Free Registration"
   },
   "common": {
     "close": "Close",

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
 
 const navLinks = [
+  { href: "/sample-report", label: "Sample" },
   { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
   { href: "/docs", label: "Docs" },

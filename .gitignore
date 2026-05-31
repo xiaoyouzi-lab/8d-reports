@@ -19,6 +19,7 @@
 
 # production
 /build
+/metrics-dashboard.html
 
 # misc
 .DS_Store

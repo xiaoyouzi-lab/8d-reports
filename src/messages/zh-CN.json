@@ -413,8 +413,7 @@
       "D7": { "name": "D7: 预防 (Prevent)", "fields": "预防措施、标准化文件更新、附件" },
       "D8": { "name": "D8: 关闭 (Close)", "fields": "团队确认、管理层签字、关闭日期" }
     },
-    "cta": "开始使用 8D Reports — 免费注册",
-    "section6.upgradeLink": "前往定价页面"
+    "cta": "开始使用 8D Reports — 免费注册"
   },
   "common": {
     "close": "关闭",

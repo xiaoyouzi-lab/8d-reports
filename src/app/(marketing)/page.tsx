@@ -78,6 +78,17 @@ const faqs = [
   },
 ]
 
+const seoResources = [
+  { href: "/8d-report-template", label: "8D Report Template" },
+  { href: "/8d-report-example", label: "8D Report Example" },
+  { href: "/supplier-8d-report", label: "Supplier 8D Report" },
+  {
+    href: "/corrective-action-report-template",
+    label: "Corrective Action Report Template",
+  },
+  { href: "/5-why-root-cause-template", label: "5-Why Root Cause Template" },
+]
+
 function HeroProductPreview() {
   const steps = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"]
 
@@ -288,13 +299,13 @@ export default function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="#pro-search"
+                href="/sample-report"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
                 )}
               >
-                See Pro search
+                View sample report
               </Link>
             </div>
 
@@ -529,6 +540,39 @@ export default function LandingPage() {
               Future goal: generate a D0-D8 draft for review, not automatic
               approval.
             </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-slate-200 bg-slate-50/70 py-16">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
+                Free 8D and corrective action resources
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Practical pages for quality engineers comparing 8D templates,
+                supplier corrective action workflows, and root cause tools.
+              </p>
+            </div>
+            <Link
+              href="/8d-report-template"
+              className="text-sm font-semibold text-indigo-700 transition-colors hover:text-indigo-900"
+            >
+              Start with the template
+            </Link>
+          </div>
+          <div className="mt-8 grid gap-3 md:grid-cols-5">
+            {seoResources.map((resource) => (
+              <Link
+                key={resource.href}
+                href={resource.href}
+                className="rounded-lg border border-slate-200 bg-white p-4 text-sm font-medium text-slate-800 shadow-sm transition-colors hover:border-indigo-200 hover:bg-indigo-50"
+              >
+                {resource.label}
+              </Link>
+            ))}
           </div>
         </div>
       </section>
