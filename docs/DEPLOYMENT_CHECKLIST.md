@@ -73,6 +73,8 @@
 | App 类型 | Web application |
 | **⚠️ Authorized JavaScript Origins** | `https://www.8d-reports.com` + `https://8d-reports.com` + `http://localhost:3001` |
 | **⚠️ Authorized Redirect URIs** | `https://www.8d-reports.com/api/auth/callback/google` + `https://8d-reports.com/api/auth/callback/google` + `http://localhost:3001/api/auth/callback/google` |
+| **⚠️ OAuth Consent Screen** | User type 必须为 `External`，Publishing status 建议为 `In production`；如果仍是 `Testing`，必须把测试账号加入 Test users，否则会出现 Google 禁止登录 / access blocked |
+| **⚠️ Authorized Domains** | `8d-reports.com` |
 | Scopes | `.../auth/userinfo.email`, `.../auth/userinfo.profile` |
 | **⚠️ 环境变量** | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` |
 | **⚠️ 验证** | 用 Google 账户登录 → 成功则配置正确 |
@@ -84,8 +86,9 @@
 | 项目 | 值 |
 |------|-----|
 | 地址 | [github.com/settings/developers](https://github.com/settings/developers) |
-| Homepage URL | `https://8d-reports.com` |
-| **⚠️ Authorization Callback URL** | `https://8d-reports.com/api/auth/callback/github` + `http://localhost:3001/api/auth/callback/github` |
+| Homepage URL | `https://www.8d-reports.com` |
+| **⚠️ Authorization Callback URL** | `https://www.8d-reports.com/api/auth/callback/github` |
+| 开发 Callback URL | GitHub OAuth App 通常只支持一个 callback。如需本地开发，另建一个 Development OAuth App，填 `http://localhost:3001/api/auth/callback/github` |
 | **⚠️ 环境变量** | `GITHUB_CLIENT_ID` / `GITHUB_CLIENT_SECRET` |
 | **⚠️ 验证** | 用 GitHub 账户登录 → 成功则配置正确 |
 
@@ -153,14 +156,15 @@
 | Authorized JavaScript Origin (开发) | `http://localhost:3001` |
 | Authorized Redirect URI (生产) | `https://www.8d-reports.com/api/auth/callback/google` + `https://8d-reports.com/api/auth/callback/google` |
 | Authorized Redirect URI (开发) | `http://localhost:3001/api/auth/callback/google` |
+| 禁止登录排查 | OAuth consent screen 必须是 External；如果状态是 Testing，测试 Gmail 必须加入 Test users；Authorized domains 必须包含 `8d-reports.com` |
 
 ### GitHub OAuth
 
 | 名称 | 值 |
 |------|-----|
-| Homepage URL | `https://8d-reports.com` |
-| Callback URL (生产) | `https://8d-reports.com/api/auth/callback/github` |
-| Callback URL (开发) | `http://localhost:3001/api/auth/callback/github` |
+| Homepage URL | `https://www.8d-reports.com` |
+| Callback URL (生产) | `https://www.8d-reports.com/api/auth/callback/github` |
+| Callback URL (开发) | 建议使用单独的 Development OAuth App：`http://localhost:3001/api/auth/callback/github` |
 
 ### ⚠️ 高危提醒
 

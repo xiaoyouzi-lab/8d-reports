@@ -8,11 +8,11 @@ const isProduction = process.env.NODE_ENV === "production";
 
 const cspHeader = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com",
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://va.vercel-scripts.com https://static.cloudflareinsights.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https: https://*.r2.cloudflarestorage.com",
   "font-src 'self'",
-  "connect-src 'self' https://*.neon.tech https://*.r2.cloudflarestorage.com",
+  "connect-src 'self' https://*.neon.tech https://*.r2.cloudflarestorage.com https://cloudflareinsights.com",
   "frame-src 'self' https://accounts.google.com https://github.com",
   "object-src 'none'",
   "base-uri 'self'",
