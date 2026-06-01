@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next"
 import { seoPages } from "@/lib/seo-pages"
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://8d-reports.com"
+  const baseUrl = "https://www.8d-reports.com"
 
   return [
     { url: baseUrl, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },

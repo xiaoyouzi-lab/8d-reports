@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://8d-reports.com",
+    url: "https://www.8d-reports.com",
     siteName: "8D Reports",
     title: "8D Reports — Professional 8D Problem-Solving Software",
     description:

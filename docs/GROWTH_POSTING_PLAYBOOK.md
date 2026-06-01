@@ -37,13 +37,13 @@ When doing growth work, do not send traffic to a vague page. Prefer these paths:
 
 ## Core Links
 
-- Home: `https://8d-reports.com/`
-- Sample report: `https://8d-reports.com/sample-report`
-- 8D template: `https://8d-reports.com/8d-report-template`
-- 8D example: `https://8d-reports.com/8d-report-example`
-- Supplier 8D: `https://8d-reports.com/supplier-8d-report`
-- Corrective action template: `https://8d-reports.com/corrective-action-report-template`
-- 5-Why template: `https://8d-reports.com/5-why-root-cause-template`
+- Home: `https://www.8d-reports.com/`
+- Sample report: `https://www.8d-reports.com/sample-report`
+- 8D template: `https://www.8d-reports.com/8d-report-template`
+- 8D example: `https://www.8d-reports.com/8d-report-example`
+- Supplier 8D: `https://www.8d-reports.com/supplier-8d-report`
+- Corrective action template: `https://www.8d-reports.com/corrective-action-report-template`
+- 5-Why template: `https://www.8d-reports.com/5-why-root-cause-template`
 
 ## Positioning Rules
 
@@ -210,7 +210,7 @@ Post:
 >
 > It made me wonder how practical this would be in supplier quality work. In your company, would customers accept a supplier completing 8D reports in a web tool, or do they still require a specific Excel/Word template?
 >
-> The sample page I looked at: https://8d-reports.com/sample-report?utm_source=community&utm_medium=discussion&utm_campaign=supplier_8d_sample
+> The sample page I looked at: https://www.8d-reports.com/sample-report?utm_source=community&utm_medium=discussion&utm_campaign=supplier_8d_sample
 >
 > Curious where people see the biggest blocker: customer format requirements, data privacy, supplier adoption, or just habit?
 
@@ -226,7 +226,7 @@ Post:
 >
 > In theory, that sounds useful for repeated defects or similar supplier issues. In practice, I wonder how often teams actually search historical 8Ds before writing a new one.
 >
-> Example of the kind of product positioning I saw: https://8d-reports.com/?utm_source=community&utm_medium=discussion&utm_campaign=historical_search
+> Example of the kind of product positioning I saw: https://www.8d-reports.com/?utm_source=community&utm_medium=discussion&utm_campaign=historical_search
 >
 > For people working in quality, would searchable 8D history be valuable, or is the bigger pain still getting the first report completed correctly?
 
@@ -242,7 +242,7 @@ Post:
 >
 > I recently found a web-based 8D template that keeps D0-D8 structured, supports evidence uploads, and exports reports. It seems aimed at reducing scattered attachments and making old reports easier to find.
 >
-> Template page: https://8d-reports.com/8d-report-template?utm_source=community&utm_medium=discussion&utm_campaign=excel_template_pain
+> Template page: https://www.8d-reports.com/8d-report-template?utm_source=community&utm_medium=discussion&utm_campaign=excel_template_pain
 >
 > What would make you switch from a spreadsheet template to a web tool? Or is the spreadsheet still the most practical choice?
 
