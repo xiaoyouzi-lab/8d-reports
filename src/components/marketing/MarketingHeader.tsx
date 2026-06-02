@@ -10,6 +10,7 @@ import { authClient } from "@/lib/auth-client"
 
 const navLinks = [
   { href: "/sample-report", label: "Sample" },
+  { href: "/resources", label: "Resources" },
   { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
   { href: "/docs", label: "Docs" },
@@ -171,6 +172,24 @@ export function MarketingHeader() {
           )}
         </div>
       </div>
+      <nav className="border-t border-border/70 px-4 py-2 md:hidden">
+        <div className="mx-auto flex max-w-6xl items-center gap-2 overflow-x-auto">
+          {navLinks.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className={cn(
+                "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                link.href === "/resources"
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      </nav>
     </header>
   )
 }

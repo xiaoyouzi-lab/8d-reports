@@ -563,10 +563,10 @@ export default function LandingPage() {
               </p>
             </div>
             <Link
-              href="/8d-report-template"
+              href="/resources"
               className="text-sm font-semibold text-indigo-700 transition-colors hover:text-indigo-900"
             >
-              Start with the template
+              Browse all resources
             </Link>
           </div>
           <div className="mt-8 grid gap-3 md:grid-cols-5">

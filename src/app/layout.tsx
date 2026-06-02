@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { FeedbackWrapper } from "@/components/feedback/FeedbackWrapper";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ export default async function RootLayout({
           {children}
           <CookieConsent />
           <Analytics />
+          <GoogleAnalytics />
           <Toaster />
           <FeedbackWrapper />
         </NextIntlClientProvider>

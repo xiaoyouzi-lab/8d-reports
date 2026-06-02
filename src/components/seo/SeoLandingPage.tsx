@@ -10,6 +10,23 @@ function displayPath(slug: string) {
   return `/${slug}`;
 }
 
+function pageTypeLabel(page: SeoPage) {
+  switch (page.type) {
+    case "8d-example":
+      return "complete 8D example";
+    case "8d-template":
+      return "template guidance";
+    case "5why-example":
+      return "5 Why chain";
+    case "fishbone-example":
+      return "fishbone analysis";
+    case "corrective-action":
+      return "corrective action plan";
+    case "preventive-action":
+      return "preventive action plan";
+  }
+}
+
 function buildJsonLd(page: SeoPage) {
   const pageUrl = `${baseUrl}/${page.slug}`;
 
@@ -221,6 +238,198 @@ export function SeoLandingPage({ page }: { page: SeoPage }) {
           </div>
         </div>
       </section>
+
+      <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">
+              Professional quality details
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+              Evidence a quality reviewer would expect to see
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              This {pageTypeLabel(page)} includes the measurable scope,
+              detection method, escape point, customer risk, and verification
+              criteria that usually decide whether an 8D is accepted or sent
+              back for rework.
+            </p>
+          </div>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              ["Affected scope", page.professional.affectedScope],
+              ["Measured evidence", page.professional.metric],
+              ["Detection method", page.professional.detection],
+              ["Escape point", page.professional.escapePoint],
+              ["Customer impact", page.professional.customerImpact],
+              ["Verification criteria", page.professional.verification],
+            ].map(([label, text]) => (
+              <article key={label} className="rounded-lg border border-slate-200 p-5">
+                <h3 className="text-sm font-semibold text-slate-950">{label}</h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-50 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-3xl">
+            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+              D0-D8 example wording
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              A professional 8D should separate containment from permanent
+              correction, show both root cause and escape point, and close only
+              after verification evidence is attached.
+            </p>
+          </div>
+          <div className="mt-8 grid gap-3 md:grid-cols-2">
+            {page.professional.eightD.map((item) => (
+              <article key={item.step} className="rounded-lg bg-white p-5 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <span className="rounded bg-indigo-50 px-2 py-1 font-mono text-xs font-semibold text-indigo-700">
+                    {item.step}
+                  </span>
+                  <h3 className="text-base font-semibold text-slate-950">
+                    {item.title}
+                  </h3>
+                </div>
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {item.content}
+                </p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {(page.type === "5why-example" || page.type === "8d-example") && (
+        <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+                5 Why chain
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                The chain below keeps the logic visible. It avoids jumping from
+                symptom to action without showing why the selected correction
+                addresses the actual process weakness.
+              </p>
+            </div>
+            <div className="mt-8 overflow-hidden rounded-lg border border-slate-200">
+              {page.professional.fiveWhy.map((item, index) => (
+                <article
+                  key={item.why}
+                  className="grid gap-3 border-b border-slate-200 bg-white p-5 last:border-b-0 md:grid-cols-[160px_1fr]"
+                >
+                  <div>
+                    <p className="font-mono text-xs font-semibold text-indigo-700">
+                      Why {index + 1}
+                    </p>
+                    <h3 className="mt-1 text-sm font-semibold text-slate-950">
+                      {item.why}
+                    </h3>
+                  </div>
+                  <p className="text-sm leading-6 text-slate-600">{item.answer}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {(page.type === "fishbone-example" || page.type === "8d-example") && (
+        <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+                Fishbone 6M analysis
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                A fishbone page should show more than a final root cause. These
+                6M prompts help the team check competing causes before locking
+                the 8D conclusion.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {page.professional.fishbone.map((item) => (
+                <article key={item.category} className="rounded-lg border border-slate-200 p-5">
+                  <h3 className="text-base font-semibold text-slate-950">
+                    {item.category}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 text-slate-600">
+                    {item.possibleCause}
+                  </p>
+                  <p className="mt-3 rounded bg-slate-50 p-3 text-xs leading-5 text-slate-600">
+                    Check: {item.check}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {(page.type === "corrective-action" ||
+        page.type === "preventive-action" ||
+        page.type === "8d-template") && (
+        <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <div className="max-w-3xl">
+              <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
+                Action ownership and effectiveness checks
+              </h2>
+              <p className="mt-4 text-base leading-7 text-slate-600">
+                Corrective and preventive actions need owners, due dates, and
+                evidence. Otherwise the report is only a statement of intent.
+              </p>
+            </div>
+            <div className="mt-8 grid gap-6 lg:grid-cols-2">
+              <div className="overflow-hidden rounded-lg border border-slate-200">
+                <div className="bg-slate-50 px-5 py-3">
+                  <h3 className="text-base font-semibold text-slate-950">
+                    Corrective action plan
+                  </h3>
+                </div>
+                {page.professional.actionPlan.map((item) => (
+                  <article key={item.action} className="border-t border-slate-200 p-5">
+                    <p className="text-sm font-semibold text-slate-950">
+                      {item.action}
+                    </p>
+                    <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-3">
+                      <p>Owner: {item.owner}</p>
+                      <p>Due: {item.due}</p>
+                      <p>Verify: {item.verification}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <div className="overflow-hidden rounded-lg border border-slate-200">
+                <div className="bg-slate-50 px-5 py-3">
+                  <h3 className="text-base font-semibold text-slate-950">
+                    Preventive controls
+                  </h3>
+                </div>
+                {page.professional.preventionPlan.map((item) => (
+                  <article key={item.control} className="border-t border-slate-200 p-5">
+                    <p className="text-sm font-semibold text-slate-950">
+                      {item.control}
+                    </p>
+                    <div className="mt-3 grid gap-2 text-xs leading-5 text-slate-600 sm:grid-cols-3">
+                      <p>Frequency: {item.frequency}</p>
+                      <p>Owner: {item.owner}</p>
+                      <p>Evidence: {item.evidence}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="border-y border-slate-200 bg-slate-50 py-16 sm:py-20">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">

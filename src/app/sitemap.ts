@@ -21,6 +21,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const staticEntries = [
     entry("/", "weekly", 1),
     entry("/sample-report", "weekly", 0.95),
+    entry("/resources", "weekly", 0.9),
     entry("/pricing", "weekly", 0.9),
     entry("/faq", "monthly", 0.75),
     entry("/docs", "monthly", 0.75),
