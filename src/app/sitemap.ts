@@ -1,22 +1,47 @@
 import type { MetadataRoute } from "next"
-import { seoPages } from "@/lib/seo-pages"
+import { seoPages as legacySeoPages } from "@/lib/seo-pages"
+import { seoPages as programmaticSeoPages } from "@/content/seo-pages"
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://www.8d-reports.com"
+  const now = new Date()
+  const seen = new Set<string>()
+
+  function entry(
+    path: string,
+    changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"],
+    priority: number,
+  ): MetadataRoute.Sitemap[number] | null {
+    const url = path.startsWith("https://") ? path : `${baseUrl}${path}`
+    if (seen.has(url)) return null
+    seen.add(url)
+    return { url, lastModified: now, changeFrequency, priority }
+  }
+
+  const staticEntries = [
+    entry("/", "weekly", 1),
+    entry("/sample-report", "weekly", 0.95),
+    entry("/pricing", "weekly", 0.9),
+    entry("/faq", "monthly", 0.75),
+    entry("/docs", "monthly", 0.75),
+    entry("/contact", "monthly", 0.45),
+    entry("/signup", "monthly", 0.8),
+    entry("/login", "monthly", 0.5),
+    entry("/privacy", "monthly", 0.3),
+    entry("/terms", "monthly", 0.3),
+  ].filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
+  const legacyEntries = legacySeoPages
+    .map((page) => entry(`/${page.slug}`, "weekly", 0.85))
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
+  const programmaticEntries = programmaticSeoPages
+    .map((page) => entry(`/${page.slug}`, "weekly", 0.82))
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   return [
-    { url: baseUrl, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
-    { url: `${baseUrl}/sample-report`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
-    ...seoPages.map((page) => ({
-      url: `${baseUrl}/${page.slug}`,
-      lastModified: new Date(),
-      changeFrequency: "weekly" as const,
-      priority: 0.85,
-    })),
-    { url: `${baseUrl}/pricing`, lastModified: new Date(), changeFrequency: "weekly", priority: 0.9 },
-    { url: `${baseUrl}/login`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
-    { url: `${baseUrl}/signup`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.8 },
-    { url: `${baseUrl}/privacy`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
-    { url: `${baseUrl}/terms`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.3 },
+    ...staticEntries,
+    ...legacyEntries,
+    ...programmaticEntries,
   ]
 }
