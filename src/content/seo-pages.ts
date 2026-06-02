@@ -431,10 +431,48 @@ export function getSeoPagesByType(type: SeoPageType) {
 }
 
 export function getRelatedSeoPages(page: SeoPage) {
-  return page.relatedSlugs
-    .map((slug) => seoPages.find((candidate) => candidate.slug === slug))
-    .filter((candidate): candidate is SeoPage => Boolean(candidate))
-    .slice(0, 8);
+  const related: SeoPage[] = [];
+  const push = (candidate: SeoPage | undefined) => {
+    if (!candidate) return;
+    if (candidate.slug === page.slug) return;
+    if (related.some((item) => item.slug === candidate.slug)) return;
+    related.push(candidate);
+  };
+  const pageWords = new Set(
+    `${page.industry || ""} ${page.problemType || ""} ${page.title}`
+      .toLowerCase()
+      .split(/[^a-z0-9]+/)
+      .filter((word) => word.length > 3)
+  );
+
+  page.relatedSlugs.forEach((slug) => push(getSeoPage(slug)));
+
+  seoPages
+    .filter((candidate) => candidate.industry === page.industry)
+    .forEach(push);
+
+  seoPages
+    .filter((candidate) => {
+      const candidateWords = `${candidate.industry || ""} ${candidate.problemType || ""} ${candidate.title}`
+        .toLowerCase()
+        .split(/[^a-z0-9]+/);
+      return candidateWords.some((word) => pageWords.has(word));
+    })
+    .forEach(push);
+
+  if (page.type === "8d-example") {
+    seoPages.filter((candidate) => candidate.type === "5why-example").forEach(push);
+  }
+  if (page.type === "5why-example") {
+    seoPages.filter((candidate) => candidate.type === "corrective-action").forEach(push);
+  }
+  if (page.type === "8d-template") {
+    seoPages.filter((candidate) => candidate.type === "8d-example").forEach(push);
+  }
+
+  seoPages.forEach(push);
+
+  return related.slice(0, 8);
 }
 
 export function getSeoPathPrefix(type: SeoPageType) {

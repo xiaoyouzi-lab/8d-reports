@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { authClient } from "@/lib/auth-client";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import type { SeoPage } from "@/content/seo-pages";
@@ -31,14 +32,20 @@ export function SeoPageViewTracker({ page }: SeoTrackingProps) {
 }
 
 export function SeoPrimaryCta({ page, label = "Create Free 8D Report" }: SeoTrackingProps & { label?: string }) {
-  const href = `/signup?intent=create-report&source=seo&slug=${encodeURIComponent(page.slug)}`;
+  const { data: session } = authClient.useSession();
+  const encodedSlug = encodeURIComponent(page.slug);
+  const href = session?.user
+    ? `/reports/new?template=${encodedSlug}&source=seo&slug=${encodedSlug}`
+    : `/signup?intent=create-report&source=seo&slug=${encodedSlug}`;
 
   return (
     <Link
       href={href}
       onClick={() => {
         trackEvent("seo_cta_click", eventMetadata(page, "create_report"));
-        trackEvent("seo_signup_click", eventMetadata(page, "create_report"));
+        if (!session?.user) {
+          trackEvent("seo_signup_click", eventMetadata(page, "create_report"));
+        }
       }}
       className={cn(
         buttonVariants({ variant: "default", size: "lg" }),
@@ -52,14 +59,20 @@ export function SeoPrimaryCta({ page, label = "Create Free 8D Report" }: SeoTrac
 }
 
 export function SeoTemplateCta({ page, label = "Use This Template" }: SeoTrackingProps & { label?: string }) {
-  const href = `/signup?intent=use-template&source=seo&slug=${encodeURIComponent(page.slug)}`;
+  const { data: session } = authClient.useSession();
+  const encodedSlug = encodeURIComponent(page.slug);
+  const href = session?.user
+    ? `/reports/new?template=${encodedSlug}&source=seo&slug=${encodedSlug}`
+    : `/signup?intent=use-template&source=seo&slug=${encodedSlug}`;
 
   return (
     <Link
       href={href}
       onClick={() => {
         trackEvent("seo_template_click", eventMetadata(page, "use_template"));
-        trackEvent("seo_signup_click", eventMetadata(page, "use_template"));
+        if (!session?.user) {
+          trackEvent("seo_signup_click", eventMetadata(page, "use_template"));
+        }
       }}
       className={cn(
         buttonVariants({ variant: "outline", size: "lg" }),
@@ -70,4 +83,3 @@ export function SeoTemplateCta({ page, label = "Use This Template" }: SeoTrackin
     </Link>
   );
 }
-
