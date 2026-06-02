@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Search, ShieldCheck } from "lucide-react";
+import { ClipboardCheck, FileText, Paperclip, Search, ShieldCheck } from "lucide-react";
 import type { SeoPage } from "@/content/seo-pages";
 import { getRelatedSeoPages } from "@/content/seo-pages";
 import { SeoPageViewTracker, SeoPrimaryCta, SeoTemplateCta } from "./SeoTracking";
@@ -67,6 +67,53 @@ function buildJsonLd(page: SeoPage) {
   };
 }
 
+function evidenceForStep(page: SeoPage, step: string) {
+  switch (step) {
+    case "D0":
+      return `case opening record, scope list, ${page.professional.affectedScope}`;
+    case "D1":
+      return "team roster, roles, contact list, reviewer assignment";
+    case "D2":
+      return `${page.professional.detection}; quantified as ${page.professional.metric}`;
+    case "D3":
+      return "containment log, blocked stock list, sort record, customer notice";
+    case "D4":
+      return `5 Why, fishbone, process evidence, escape point: ${page.professional.escapePoint}`;
+    case "D5":
+      return "approved action plan, updated procedure, release-gate change";
+    case "D6":
+      return page.professional.verification;
+    case "D7":
+      return "control-plan update, layered audit, lessons learned, recurrence monitor";
+    case "D8":
+      return "closure approval, customer acceptance, final exported report package";
+    default:
+      return "step-specific supporting evidence";
+  }
+}
+
+function ownerForStep(step: string) {
+  switch (step) {
+    case "D0":
+    case "D2":
+    case "D8":
+      return "Quality engineer";
+    case "D1":
+      return "Quality manager";
+    case "D3":
+      return "Production / SQE owner";
+    case "D4":
+      return "Cross-functional team";
+    case "D5":
+    case "D6":
+      return "Process owner";
+    case "D7":
+      return "Quality system owner";
+    default:
+      return "Quality team";
+  }
+}
+
 export function SeoLandingPage({ page }: { page: SeoPage }) {
   const relatedPages = getRelatedSeoPages(page);
   const jsonLd = buildJsonLd(page);
@@ -94,10 +141,10 @@ export function SeoLandingPage({ page }: { page: SeoPage }) {
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <SeoPrimaryCta page={page} />
               <Link
-                href="/sample-report"
+                href="/resources"
                 className="inline-flex h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-6 text-sm font-medium text-slate-950 transition-colors hover:bg-slate-50"
               >
-                View Sample
+                Browse Resources
               </Link>
             </div>
           </div>
@@ -105,17 +152,17 @@ export function SeoLandingPage({ page }: { page: SeoPage }) {
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
             <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
               <div className="border-b border-slate-200 pb-4">
-                <p className="text-xs font-medium text-slate-500">Quality scenario</p>
+                <p className="text-xs font-medium text-slate-500">Complete report snapshot</p>
                 <p className="mt-1 text-base font-semibold text-slate-950">
                   {page.example?.problemDescription || page.title}
                 </p>
               </div>
               <div className="mt-5 space-y-3">
                 {[
-                  ["D3", "Containment", page.example?.containmentAction],
-                  ["D4", "Root cause", page.example?.rootCause],
-                  ["D5", "Corrective action", page.example?.correctiveAction],
-                  ["D7", "Prevention", page.example?.preventiveAction],
+                  ["No.", "Report number", "8D-2026-014"],
+                  ["Scope", "Affected scope", page.professional.affectedScope],
+                  ["Risk", "Customer impact", page.professional.customerImpact],
+                  ["Verify", "Closure evidence", page.professional.verification],
                 ].map(([step, label, text]) => (
                   <div key={step} className="rounded-lg border border-slate-200 p-3">
                     <div className="flex items-center gap-2">
@@ -235,6 +282,136 @@ export function SeoLandingPage({ page }: { page: SeoPage }) {
               <SeoPrimaryCta page={page} label="Create Your 8D Report" />
               <SeoTemplateCta page={page} />
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-slate-200 bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">
+              Complete 8D sample
+            </p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
+              A full report example, not a heading-only template
+            </h2>
+            <p className="mt-4 text-base leading-7 text-slate-600">
+              A real 8D needs more than D-step labels. This sample includes
+              report metadata, D0-D8 content, owner, evidence, containment,
+              root cause, corrective action, preventive control, verification,
+              and closure expectations.
+            </p>
+          </div>
+
+          <div className="mt-8 overflow-hidden rounded-lg border border-slate-200">
+            <div className="grid bg-slate-50 text-sm md:grid-cols-4">
+              {[
+                ["Report no.", "8D-2026-014"],
+                ["Report type", page.type === "8d-template" ? "Template-ready 8D" : "Customer-ready 8D"],
+                ["Status", "Completed sample"],
+                ["Review level", "Customer / SQE review"],
+              ].map(([label, value]) => (
+                <div key={label} className="border-b border-slate-200 p-4 md:border-r md:last:border-r-0">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {label}
+                  </p>
+                  <p className="mt-1 font-medium text-slate-950">{value}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="divide-y divide-slate-200">
+              {page.professional.eightD.map((item) => (
+                <article
+                  key={item.step}
+                  className="grid gap-4 bg-white p-5 lg:grid-cols-[72px_1fr_180px_1.1fr]"
+                >
+                  <div>
+                    <span className="rounded bg-indigo-50 px-2 py-1 font-mono text-xs font-semibold text-indigo-700">
+                      {item.step}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-semibold text-slate-950">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {item.content}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Owner
+                    </p>
+                    <p className="mt-1 text-sm font-medium text-slate-800">
+                      {ownerForStep(item.step)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Evidence required
+                    </p>
+                    <p className="mt-1 text-sm leading-6 text-slate-600">
+                      {evidenceForStep(page, item.step)}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            <article className="rounded-lg border border-slate-200 bg-slate-50 p-6">
+              <div className="flex items-center gap-2">
+                <Paperclip className="h-5 w-5 text-indigo-600" />
+                <h3 className="text-lg font-semibold text-slate-950">
+                  Attachment package expected
+                </h3>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                A reviewer should be able to open the exported package and see
+                the evidence behind the conclusion. For this case, include:
+              </p>
+              <ul className="mt-4 space-y-2 text-sm leading-6 text-slate-700">
+                {[
+                  page.professional.detection,
+                  page.professional.metric,
+                  page.example?.containmentAction || "containment records and suspect stock list",
+                  page.professional.verification,
+                ].map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-600" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </article>
+
+            <article className="rounded-lg border border-slate-200 bg-slate-50 p-6">
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="h-5 w-5 text-indigo-600" />
+                <h3 className="text-lg font-semibold text-slate-950">
+                  Closure checklist
+                </h3>
+              </div>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                Do not close the 8D until these items are visible in the report:
+              </p>
+              <div className="mt-4 grid gap-2 text-sm leading-6 text-slate-700 sm:grid-cols-2">
+                {[
+                  "Problem is quantified with date, lot, product, and risk.",
+                  "Containment protects customer and internal stock.",
+                  "Occurrence root cause and escape point are both explained.",
+                  "Corrective action removes the verified process cause.",
+                  "Verification evidence proves the fix is effective.",
+                  "Prevention is added to the control system, not just the report.",
+                ].map((item) => (
+                  <div key={item} className="rounded-md bg-white p-3 shadow-sm">
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </article>
           </div>
         </div>
       </section>

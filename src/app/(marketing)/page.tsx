@@ -2,11 +2,11 @@ import Link from "next/link"
 import {
   ArrowRight,
   Check,
-  FileText,
   LockKeyhole,
   Search,
-  ShieldCheck,
+  Share2,
   Sparkles,
+  Smartphone,
   Upload,
 } from "lucide-react"
 import { CheckoutButton } from "@/components/CheckoutButton"
@@ -16,21 +16,21 @@ import { cn } from "@/lib/utils"
 const workflowSteps = [
   {
     number: "01",
-    title: "Create the report",
+    title: "Walk the floor with your phone",
     description:
-      "Start with guided D0-D8 sections, define the team, capture the problem, and keep every action tied to evidence.",
+      "Open the report at the line, capture D0-D8 information while the issue is fresh, and avoid rebuilding notes later from photos and chat messages.",
   },
   {
     number: "02",
-    title: "Attach proof and finish",
+    title: "Attach photos and evidence on the spot",
     description:
-      "Upload photos, inspection records, and supporting files while the report stays structured enough for customer review.",
+      "Take photos, upload inspection records, and keep every file tied to the right D-step so the exported report still tells the full story.",
   },
   {
     number: "03",
-    title: "Export, share, reuse",
+    title: "Share, edit, export, and reuse",
     description:
-      "Free users can export watermarked PDFs. Pro users unlock no-watermark delivery, Word export, logo branding, and deep historical search.",
+      "Share a view-only or editable link with suppliers, customers, or internal owners, then export a customer-ready PDF or Word report.",
   },
 ]
 
@@ -79,14 +79,14 @@ const faqs = [
 ]
 
 const seoResources = [
-  { href: "/8d-report-template", label: "8D Report Template" },
-  { href: "/8d-report-example", label: "8D Report Example" },
-  { href: "/supplier-8d-report", label: "Supplier 8D Report" },
+  { href: "/resources", label: "All Resources" },
+  { href: "/8d-report-example/automotive", label: "Automotive 8D Example" },
+  { href: "/8d-report-example/supplier-quality", label: "Supplier 8D Example" },
   {
-    href: "/corrective-action-report-template",
-    label: "Corrective Action Report Template",
+    href: "/fishbone-diagram-example/manufacturing-defect",
+    label: "Fishbone Example",
   },
-  { href: "/5-why-root-cause-template", label: "5-Why Root Cause Template" },
+  { href: "/5-why-example/customer-complaint", label: "5 Why Example" },
 ]
 
 function HeroProductPreview() {
@@ -279,12 +279,13 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-24 pt-16 sm:px-6 sm:pt-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:pb-28">
           <div>
             <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Create 8D reports today. Reuse quality knowledge tomorrow.
+              Finish 8D reports from the factory floor.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-              Build customer-ready 8D reports with guided D0-D8 steps,
-              evidence uploads, PDF export, and Pro historical search across
-              root causes and corrective actions.
+              Bring your phone to the line, capture photos and inspection
+              records on the spot, guide the team through D0-D8, share the
+              report for review, and export a customer-ready 8D without
+              rebuilding everything in a spreadsheet.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -299,6 +300,15 @@ export default function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
+                href="/resources"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
+                )}
+              >
+                Browse complete samples
+              </Link>
+              <Link
                 href="/login"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
@@ -311,9 +321,9 @@ export default function LandingPage() {
 
             <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-3">
               {[
-                ["5", "free lifetime reports"],
-                ["D0-D8", "guided report flow"],
-                ["Pro", "deep history search"],
+                ["Mobile", "capture evidence at the source"],
+                ["D0-D8", "guided factory-floor workflow"],
+                ["Share", "view or editable review links"],
               ].map(([value, label]) => (
                 <div key={label} className="border-l border-slate-200 pl-4">
                   <p className="font-mono text-2xl font-semibold text-slate-950">
@@ -335,19 +345,19 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-5 px-4 sm:px-6 md:grid-cols-3">
           {[
             {
-              icon: FileText,
-              title: "Formal delivery",
-              text: "Move from scattered notes to one report your customer can review.",
+              icon: Smartphone,
+              title: "Built for the shop floor",
+              text: "Use a phone or tablet to capture the issue, photos, containment, and owners while standing near the process.",
             },
             {
-              icon: ShieldCheck,
-              title: "Controlled limits",
-              text: "Free users get the full editing experience, while Pro unlocks delivery polish and scale.",
+              icon: Upload,
+              title: "Evidence stays attached",
+              text: "Photos, inspection records, and files stay linked to the exact D-step instead of getting lost in chat threads.",
             },
             {
-              icon: Search,
-              title: "Knowledge reuse",
-              text: "Turn completed 8D reports into searchable memory for recurring quality issues.",
+              icon: Share2,
+              title: "Shared review links",
+              text: "Send a report to suppliers, customers, or internal owners for view-only review or editable collaboration.",
             },
           ].map((item) => (
             <div key={item.title} className="rounded-lg bg-white p-5 shadow-sm">
@@ -555,16 +565,18 @@ export default function LandingPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <h2 className="text-2xl font-semibold tracking-tight text-slate-950">
-                Free 8D and corrective action resources
+                Complete 8D examples and quality resources
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Practical pages for quality engineers comparing 8D templates,
-                supplier corrective action workflows, and root cause tools.
+                Practical pages for quality engineers who need full examples,
+                not heading-only templates: D0-D8 wording, attachments,
+                containment, root cause, corrective action, prevention, and
+                closure evidence.
               </p>
             </div>
             <Link
               href="/resources"
-              className="text-sm font-semibold text-indigo-700 transition-colors hover:text-indigo-900"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white transition-colors hover:bg-indigo-700"
             >
               Browse all resources
             </Link>
