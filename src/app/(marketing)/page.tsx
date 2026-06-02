@@ -289,23 +289,23 @@ export default function LandingPage() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/login"
+                href="/sample-report"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "h-11 w-full bg-indigo-600 px-6 text-base hover:bg-indigo-700 sm:w-auto"
                 )}
               >
-                Create free report
+                View sample 8D report
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/sample-report"
+                href="/login"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
                 )}
               >
-                View sample report
+                Create free report
               </Link>
             </div>
 
@@ -450,13 +450,19 @@ export default function LandingPage() {
               </p>
               <FeatureList features={freeFeatures} />
               <Link
-                href="/login"
+                href="/sample-report"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "mt-8 h-11 w-full border-slate-300"
                 )}
               >
-                Start free
+                View sample first
+              </Link>
+              <Link
+                href="/login"
+                className="mt-3 block text-center text-sm font-medium text-indigo-700 underline underline-offset-4 hover:text-indigo-900"
+              >
+                Start free with 5 reports
               </Link>
             </div>
 
@@ -615,16 +621,27 @@ export default function LandingPage() {
               delivery or historical search becomes valuable.
             </p>
           </div>
-          <Link
-            href="/login"
-            className={cn(
-              buttonVariants({ variant: "default", size: "lg" }),
-              "h-11 shrink-0 bg-indigo-600 px-6 hover:bg-indigo-700"
-            )}
-          >
-            Create free report
-            <ArrowRight className="h-4 w-4" />
-          </Link>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              href="/sample-report"
+              className={cn(
+                buttonVariants({ variant: "default", size: "lg" }),
+                "h-11 shrink-0 bg-indigo-600 px-6 hover:bg-indigo-700"
+              )}
+            >
+              View sample report
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/login"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-11 shrink-0 border-slate-300 px-6"
+              )}
+            >
+              Create free report
+            </Link>
+          </div>
         </div>
       </section>
 

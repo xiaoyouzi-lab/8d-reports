@@ -103,6 +103,44 @@ Every week, Codex should execute this sequence when the user asks for growth wor
 
 ## First 14 Days Execution Plan
 
+### Current Baseline: 2026-06-02
+
+Use this as the first growth baseline until Search Console starts returning query data.
+
+- Vercel Analytics, last 7 days:
+  - 69 visitors.
+  - 154 page views.
+  - 72% bounce rate.
+  - Top pages: `/` 62 visitors, `/faq` 6, `/login` 6, `/sample-report` 5, `/docs` 4, `/pricing` 3.
+  - Referrers: google.com 1, bing.com 1, vercel.com 2.
+  - Countries: United States 57%, Canada 7%, China 6%, Germany 6%, India 4%.
+  - Devices: Desktop 86%, Mobile 14%.
+- Product events, last 30 days:
+  - 5 registered users.
+  - 6 reports created.
+  - 2 report creators.
+  - 3 successful exports.
+  - 4 upgrade clicks.
+  - 8 checkout starts.
+  - 0 active Pro users.
+- Search Console:
+  - Domain property is connected, but performance data is still processing.
+
+Current diagnosis:
+
+- The bottleneck is qualified external traffic, not the in-product workflow.
+- Most visitors stop at the homepage; `/sample-report` is underused.
+- The next experiment should push traffic to the sample report, not directly to signup.
+
+7-day target:
+
+- 200+ visitors.
+- 50+ visits to `/sample-report`.
+- 20+ visits to `/login`.
+- 5 new signups.
+- 3 report creators.
+- 2 successful exports.
+
 ### Day 1: Baseline And Sample Report
 
 Codex actions:
@@ -197,6 +235,111 @@ Codex actions:
 ## Community Post Templates
 
 Use these as drafts. Before publishing, Codex should adapt wording to the target community and remove anything that feels promotional.
+
+## 7-Day Posting Batch: Execute In This Order
+
+Rules for Codex:
+
+- Publish links should point to the page listed in each post.
+- Keep the tone neutral and discussion-oriented.
+- Do not claim to be an unrelated customer if posting from the owner account. Use "I came across / I have been testing / I am curious" language.
+- If the user posts personally as the founder, disclose when asked.
+- Measure after 24, 48, and 72 hours:
+  - Vercel visitors by page.
+  - Referrers and UTM parameters if available.
+  - `/sample-report` visits.
+  - `/login` visits.
+  - `signup_success`, `report_created`, `export_succeeded`, `upgrade_clicked`.
+
+### Post A: Supplier 8D Tool Discussion
+
+Best channels:
+
+- Reddit `r/Quality`.
+- Reddit `r/manufacturing`.
+- Elsmar Quality Forum if the user has or creates an account.
+
+Title options:
+
+- Would you ask suppliers to fill out 8D reports in an online tool instead of Excel?
+- Are supplier 8D reports still better in Excel/Word?
+- Would customers accept a web-generated 8D report from a supplier?
+
+Final post:
+
+> I came across an online 8D reporting workflow and tried the sample report briefly. It lets users fill D0-D8, attach evidence, export a PDF, and keep old reports searchable.
+>
+> It made me wonder how practical this would be in supplier quality work. In your company, would customers accept a supplier completing 8D reports in a web tool, or do they still require a specific Excel/Word template?
+>
+> Sample page I looked at: https://www.8d-reports.com/sample-report?utm_source=community&utm_medium=discussion&utm_campaign=supplier_8d_sample
+>
+> Curious where people see the biggest blocker: customer format requirements, data privacy, supplier adoption, or just habit?
+
+How to reply:
+
+- If someone says customers require their own template: ask whether PDF plus Word export would be enough, or if exact template matching is mandatory.
+- If someone worries about data privacy: ask whether anonymized reports or customer-owned accounts would change their view.
+- If someone says suppliers will not adopt it: ask whether customers mandating a shared tool would make adoption realistic.
+
+### Post B: Historical 8D Search Discussion
+
+Best channels:
+
+- Reddit `r/Quality`.
+- Reddit `r/SixSigma`.
+- myASQ discussion if accessible.
+
+Title options:
+
+- Do quality teams actually reuse old 8D reports?
+- Is searchable 8D history useful, or do teams always start over?
+- Would root-cause search across old 8Ds help repeated defects?
+
+Final post:
+
+> One thing I noticed while looking at newer 8D tools is the idea of searching old reports by problem description, root cause, corrective action, and lessons learned.
+>
+> In theory, that sounds useful for repeated defects or similar supplier issues. In practice, I wonder how often teams actually search historical 8Ds before writing a new one.
+>
+> Example of the kind of workflow I saw: https://www.8d-reports.com/sample-report?utm_source=community&utm_medium=discussion&utm_campaign=historical_search_sample
+>
+> For people working in quality, would searchable 8D history be valuable, or is the bigger pain still getting the first report completed correctly?
+
+How to reply:
+
+- If someone says old reports are never reused: ask whether the issue is poor search, poor report quality, or culture.
+- If someone says it would help repeated defects: ask which fields should be searchable first: problem description, root cause, containment, corrective action, product, customer, or batch.
+- If someone mentions AI: position AI as draft support only, not automatic approval.
+
+### Post C: Excel Template Pain Discussion
+
+Best channels:
+
+- Reddit `r/manufacturing`.
+- Reddit `r/industrialengineering`.
+- Indie maker feedback communities only if framed as product feedback.
+
+Title options:
+
+- Are 8D templates in Excel still the most practical option?
+- What would make a quality team move away from Excel 8D templates?
+- Is a web-based 8D report better than an Excel template?
+
+Final post:
+
+> I have seen a lot of teams still using Excel or Word for 8D reports because the format is familiar and easy to send to customers.
+>
+> I recently found a web-based 8D template that keeps D0-D8 structured, supports evidence uploads, and exports reports. It seems aimed at reducing scattered attachments and making old reports easier to find.
+>
+> Template page: https://www.8d-reports.com/8d-report-template?utm_source=community&utm_medium=discussion&utm_campaign=excel_template_pain
+>
+> What would make you switch from a spreadsheet template to a web tool? Or is the spreadsheet still the most practical choice?
+
+How to reply:
+
+- If someone says Excel is easiest: ask what makes it easiest: customer acceptance, offline editing, flexibility, or habit.
+- If someone says web tools are risky: ask what minimum controls would be needed: export, data ownership, permissions, or audit trail.
+- If someone asks for a concrete example: link to the sample report, not the pricing page.
 
 ### Template 1: Supplier 8D Discussion
 
