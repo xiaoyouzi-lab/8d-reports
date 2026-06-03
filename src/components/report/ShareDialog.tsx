@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Share2, Copy, Check, Link, ExternalLink, Eye, Edit3 } from "lucide-react"
+import { Share2, Copy, Check, Link, ExternalLink, Eye, Edit3, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -186,16 +186,24 @@ export function ShareDialog({ reportId, reportTitle, isPro = false }: ShareDialo
                   <button
                     type="button"
                     onClick={() => handleUpdatePermission("edit")}
+                    disabled={!isPro}
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
                       shareInfo.permissionLevel === "edit"
                         ? "bg-indigo-100 text-indigo-700 shadow-sm ring-1 ring-indigo-300"
-                        : "text-muted-foreground hover:text-foreground"
+                        : !isPro
+                          ? "cursor-not-allowed bg-white/60 text-muted-foreground opacity-70"
+                          : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <Edit3 className="size-3.5" />
+                    {isPro ? <Edit3 className="size-3.5" /> : <Lock className="size-3.5" />}
                     Can edit
                   </button>
                 </div>
+                {!isPro && (
+                  <p className="text-xs text-muted-foreground">
+                    Editable share links require Pro or Team.
+                  </p>
+                )}
                 {shareInfo.permissionLevel === "edit" && (
                   <p className="text-xs text-amber-600">
                     Recipients can edit and save — changes update the original report. No login required.
@@ -275,13 +283,20 @@ export function ShareDialog({ reportId, reportTitle, isPro = false }: ShareDialo
                     className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition-colors ${
                       editMode
                         ? "bg-indigo-100 text-indigo-700 shadow-sm ring-1 ring-indigo-300"
-                        : "text-muted-foreground hover:text-foreground"
+                        : !isPro
+                          ? "cursor-not-allowed bg-white/60 text-muted-foreground opacity-70"
+                          : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
-                    <Edit3 className="size-3.5" />
+                    {isPro ? <Edit3 className="size-3.5" /> : <Lock className="size-3.5" />}
                     Can edit
                   </button>
                 </div>
+                {!isPro && (
+                  <p className="text-xs text-muted-foreground">
+                    Editable sharing is available on Pro and Team.
+                  </p>
+                )}
                 {editMode && (
                   <p className="text-xs text-amber-600">
                     Recipients can edit and save without logging in.

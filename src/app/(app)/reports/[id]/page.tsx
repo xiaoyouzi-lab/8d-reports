@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, use, useRef } from "react"
+import { useState, useEffect, useCallback, use, useMemo, useRef } from "react"
 import Link from "next/link"
 import { useTranslations } from "next-intl"
 import {
@@ -19,7 +19,7 @@ import { ReportStepsNav } from "@/components/report/ReportStepsNav"
 import { StepForm } from "@/components/report/StepForm"
 import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
-import { STEPS, DEFAULT_REPORT_DATA, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
+import { STEPS, DEFAULT_REPORT_DATA, getCompletedStepIds, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
@@ -74,7 +74,6 @@ export default function ReportEditorPage({
   const [reportData, setReportData] = useState<ReportData>({
     ...DEFAULT_REPORT_DATA,
   })
-  const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set())
   const [activeStepIndex, setActiveStepIndex] = useState(0)
   const [reportTitle, setReportTitle] = useState("Untitled Report")
   const [logoUrl, setLogoUrl] = useState<string | null>(
@@ -122,13 +121,6 @@ export default function ReportEditorPage({
             priority: row.priority || prev.priority,
           }))
         }
-        if (row.stepStatus && typeof row.stepStatus === "object") {
-          const completed = new Set<string>()
-          for (const [stepId, done] of Object.entries(row.stepStatus)) {
-            if (done) completed.add(stepId)
-          }
-          setCompletedSteps(completed)
-        }
       } catch {
         // ignore
       } finally {
@@ -137,6 +129,8 @@ export default function ReportEditorPage({
     }
     load()
   }, [reportId])
+
+  const completedSteps = useMemo(() => new Set(getCompletedStepIds(reportData)), [reportData])
 
   const status = completedSteps.size === STEPS.length
     ? "completed"
@@ -171,10 +165,11 @@ export default function ReportEditorPage({
   }, [reportId])
 
   const handleSave = async () => {
+    const currentCompletedSteps = new Set(getCompletedStepIds(reportData))
     setSaving(true)
     try {
-      await saveToServer(reportData, completedSteps, reportTitle)
-      trackEvent("report_saved", { plan, completedSteps: completedSteps.size }, reportId)
+      await saveToServer(reportData, currentCompletedSteps, reportTitle)
+      trackEvent("report_saved", { plan, completedSteps: currentCompletedSteps.size }, reportId)
       toast.success("Report saved")
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Failed to save")
@@ -184,9 +179,7 @@ export default function ReportEditorPage({
   }
 
   const handleNext = async () => {
-    const next = new Set(completedSteps)
-    next.add(currentStep.id)
-    setCompletedSteps(next)
+    const next = new Set(getCompletedStepIds(reportData))
     trackEvent("step_changed", { from: currentStep.id, direction: "next", plan }, reportId)
     try {
       await saveToServer(reportData, next, reportTitle)
@@ -436,7 +429,6 @@ export default function ReportEditorPage({
                     onClick={async () => {
                       if (!validateCompletion()) return
                       const next = new Set(STEPS.map((step) => step.id))
-                      setCompletedSteps(next)
                       setSaving(true)
                       try {
                         await saveToServer(reportData, next, reportTitle)

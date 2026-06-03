@@ -54,6 +54,9 @@ function renderField(
 
   if (field.type === "select" && field.options) {
     const selectId = `select-${field.name}`
+    const displayValue = field.options.find((opt) => opt.value === value)?.label
+      || field.placeholder
+      || `Select ${field.label.toLowerCase()}`
     return (
       <div className="space-y-1.5">
         <Label htmlFor={selectId}>
@@ -66,7 +69,10 @@ function renderField(
           name={field.name}
         >
           <SelectTrigger id={selectId} className="w-full">
-            <SelectValue placeholder={field.placeholder || `Select ${field.label.toLowerCase()}`} />
+            <SelectValue className="sr-only" />
+            <span className={cn("truncate", !value && "text-muted-foreground")}>
+              {displayValue}
+            </span>
           </SelectTrigger>
           <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
             {field.options.map((opt) => (

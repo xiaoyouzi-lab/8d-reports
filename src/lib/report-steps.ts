@@ -181,6 +181,17 @@ export function getReportCompletionIssues(data: ReportData): string[] {
     .map((requirement) => requirement.label)
 }
 
+export function getCompletedStepIds(data: ReportData): string[] {
+  return COMPLETION_REQUIREMENTS
+    .filter((requirement) => {
+      const values = requirement.fields.map((field) => data[field])
+      return requirement.mode === "any"
+        ? values.some(hasValue)
+        : values.every(hasValue)
+    })
+    .map((requirement) => requirement.stepId)
+}
+
 const reportTypeOptions = [
   { value: "customer_8d", label: "Customer 8D" },
   { value: "internal_8d", label: "Internal 8D" },

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import { MessageSquareText, Star, X, Send, Loader2 } from "lucide-react"
 
 interface FeedbackButtonProps {
@@ -50,6 +51,8 @@ const TEXTS: Record<string, {
 export function FeedbackButton({ locale = "en" }: FeedbackButtonProps) {
   const isZh = locale === "zh-CN"
   const texts = TEXTS[isZh ? "zh-CN" : "en"]
+  const pathname = usePathname()
+  const inReportEditor = pathname?.startsWith("/reports/")
 
   const [open, setOpen] = useState(false)
   const [rating, setRating] = useState(0)
@@ -99,7 +102,7 @@ export function FeedbackButton({ locale = "en" }: FeedbackButtonProps) {
         ref={triggerRef}
         type="button"
         onClick={() => { setOpen(!open); setSent(false) }}
-        className="fixed bottom-16 sm:bottom-6 left-4 sm:left-6 z-40 inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-2 sm:px-3.5 sm:py-2 text-sm font-medium text-muted-foreground shadow-lg ring-1 ring-black/5 transition-all hover:text-foreground hover:shadow-xl"
+        className={`fixed left-4 sm:left-6 z-40 inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-2 sm:px-3.5 sm:py-2 text-sm font-medium text-muted-foreground shadow-lg ring-1 ring-black/5 transition-all hover:text-foreground hover:shadow-xl ${inReportEditor ? "bottom-28 sm:bottom-24" : "bottom-16 sm:bottom-6"}`}
       >
         <MessageSquareText className="size-4" />
         <span className="hidden sm:inline">{texts.button}</span>
@@ -108,7 +111,7 @@ export function FeedbackButton({ locale = "en" }: FeedbackButtonProps) {
       {open && (
         <div
           ref={panelRef}
-          className="fixed bottom-24 left-2 right-2 sm:left-4 sm:right-auto sm:w-[340px] z-40 rounded-xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden"
+          className={`fixed left-2 right-2 sm:left-4 sm:right-auto sm:w-[340px] z-40 rounded-xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden ${inReportEditor ? "bottom-40" : "bottom-24"}`}
         >
           <div className="flex items-center justify-between border-b px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-400">
             <span className="text-sm font-semibold text-white">{texts.title}</span>

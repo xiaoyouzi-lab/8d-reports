@@ -9,6 +9,7 @@ interface ChatDialogProps {
   open: boolean
   onClose: () => void
   locale?: string
+  avoidBottomBar?: boolean
 }
 
 interface LocalMessage {
@@ -39,7 +40,7 @@ function resolveLocale(propLocale: string): string {
   return "en"
 }
 
-export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
+export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = false }: ChatDialogProps) {
   const [messages, setMessages] = useState<LocalMessage[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -152,7 +153,7 @@ export function ChatDialog({ open, onClose, locale = "en" }: ChatDialogProps) {
   if (!open) return null
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 flex flex-col w-[400px] max-w-[calc(100vw-2rem)] h-[580px] max-h-[calc(100vh-8rem)] rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden">
+    <div className={`fixed right-4 z-50 flex flex-col w-[400px] max-w-[calc(100vw-2rem)] h-[580px] rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 overflow-hidden ${avoidBottomBar ? "bottom-32 max-h-[calc(100vh-12rem)]" : "bottom-20 max-h-[calc(100vh-8rem)]"}`}>
       <div className="flex items-center justify-between border-b px-4 py-3 bg-gradient-to-r from-indigo-600 to-indigo-500">
         <div className="flex items-center gap-2.5">
           <div className="flex size-8 items-center justify-center rounded-full bg-white/20">

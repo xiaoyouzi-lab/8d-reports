@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { usePathname } from "next/navigation"
 import { Sparkles, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ChatDialog } from "./ChatDialog"
@@ -12,6 +13,8 @@ interface QualityAgentFabProps {
 
 export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
   const [open, setOpen] = useState(false)
+  const pathname = usePathname()
+  const inReportEditor = pathname?.startsWith("/reports/")
 
   return (
     <>
@@ -21,6 +24,7 @@ export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
         className={cn(
           "fixed bottom-16 sm:bottom-6 right-4 sm:right-6 z-30 shadow-lg transition-all duration-200",
           "h-10 w-10 sm:h-auto sm:w-auto sm:px-4 rounded-full sm:rounded-md",
+          inReportEditor && "bottom-28 sm:bottom-24",
           open
             ? "bg-gray-700 hover:bg-gray-800"
             : "bg-indigo-600 hover:bg-indigo-700"
@@ -45,7 +49,7 @@ export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
         )}
       </Button>
 
-      <ChatDialog open={open} onClose={() => setOpen(false)} locale={locale} />
+      <ChatDialog open={open} onClose={() => setOpen(false)} locale={locale} avoidBottomBar={inReportEditor} />
     </>
   )
 }

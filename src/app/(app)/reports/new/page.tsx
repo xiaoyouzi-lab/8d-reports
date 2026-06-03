@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { ArrowRight, FileText } from "lucide-react"
+import Link from "next/link"
+import { ArrowRight, FileText, Lock } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { trackEvent } from "@/lib/analytics"
@@ -16,13 +17,46 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { authClient } from "@/lib/auth-client"
+import { usePlan } from "@/lib/use-plan"
+
+const reportTypeLabels: Record<string, string> = {
+  customer_8d: "Customer 8D",
+  internal_8d: "Internal 8D",
+}
+
+const priorityLabels: Record<string, string> = {
+  low: "Low",
+  medium: "Medium",
+  high: "High",
+}
 
 export default function NewReportPage() {
   const t = useTranslations("editor")
   const router = useRouter()
+  const { data: session } = authClient.useSession()
+  const { entitlements } = usePlan((session?.user as Record<string, unknown>)?.plan)
   const [reportType, setReportType] = useState("customer_8d")
   const [priority, setPriority] = useState("medium")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [quota, setQuota] = useState<{ totalQuota: number; usedQuota: number } | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch("/api/quota")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setQuota(data)
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const quotaExhausted = !entitlements.unlimitedReports
+    && quota !== null
+    && quota.usedQuota >= quota.totalQuota
 
   const handleStart = async () => {
     setIsSubmitting(true)
@@ -66,6 +100,27 @@ export default function NewReportPage() {
         </p>
       </div>
 
+      {quotaExhausted ? (
+        <Card className="border-indigo-200 bg-indigo-50/70">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full bg-white text-indigo-600">
+              <Lock className="size-5" />
+            </div>
+            <CardTitle>Free report limit reached</CardTitle>
+            <CardDescription>
+              You have used {quota.usedQuota} of {quota.totalQuota} free reports. Upgrade to Pro or Team to create more reports.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Link href="/pricing" className="inline-flex h-10 w-full items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700">
+              View upgrade options
+            </Link>
+            <Link href="/dashboard" className="inline-flex h-10 w-full items-center justify-center rounded-md border border-indigo-200 bg-white px-4 text-sm font-medium text-indigo-700 hover:bg-indigo-50">
+              Back to dashboard
+            </Link>
+          </CardContent>
+        </Card>
+      ) : (
       <Card>
         <CardHeader>
           <CardTitle>{t("reportDetails")}</CardTitle>
@@ -81,7 +136,8 @@ export default function NewReportPage() {
             </Label>
             <Select value={reportType} onValueChange={(val) => setReportType(val ?? "customer_8d")}>
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue className="sr-only" />
+                <span>{reportTypeLabels[reportType] || "Customer 8D"}</span>
               </SelectTrigger>
               <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
                 <SelectItem value="customer_8d">Customer 8D</SelectItem>
@@ -97,7 +153,8 @@ export default function NewReportPage() {
             </Label>
             <Select value={priority} onValueChange={(val) => setPriority(val ?? "medium")}>
               <SelectTrigger className="w-full">
-                <SelectValue />
+                <SelectValue className="sr-only" />
+                <span>{priorityLabels[priority] || "Medium"}</span>
               </SelectTrigger>
               <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
                 <SelectItem value="low">Low</SelectItem>
@@ -117,6 +174,7 @@ export default function NewReportPage() {
           </Button>
         </CardContent>
       </Card>
+      )}
     </div>
   )
 }
