@@ -12,7 +12,7 @@ const cspHeader = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https: https://*.r2.cloudflarestorage.com",
   "font-src 'self'",
-  "connect-src 'self' https://*.neon.tech https://*.r2.cloudflarestorage.com https://cloudflareinsights.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com",
+  "connect-src 'self' https://*.neon.tech https://*.r2.cloudflarestorage.com https://cloudflareinsights.com https://www.google-analytics.com https://region1.google-analytics.com https://analytics.google.com https://www.google.com",
   "frame-src 'self' https://accounts.google.com https://github.com",
   "object-src 'none'",
   "base-uri 'self'",

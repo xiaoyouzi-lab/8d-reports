@@ -57,7 +57,7 @@ export default async function RootLayout({
           <CookieConsent />
           <Analytics />
           <GoogleAnalytics />
-          <Toaster />
+          <Toaster position="top-center" offset={72} />
           <FeedbackWrapper />
         </NextIntlClientProvider>
       </body>

@@ -11,16 +11,25 @@ import { Label } from "@/components/ui/label"
 export function CustomTemplateRequestForm() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [fileNames, setFileNames] = useState<string[]>([])
+  const [fileError, setFileError] = useState("")
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setLoading(true)
     try {
       const form = new FormData(event.currentTarget)
+      const files = form.getAll("files").filter((item): item is File => item instanceof File && item.size > 0)
+      if (files.length === 0) {
+        setFileError("Please upload at least one Word, Excel, PDF, image, or ZIP file.")
+        return
+      }
+      setFileError("")
       const res = await fetch("/api/custom-template-requests", { method: "POST", body: form })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || "Request failed")
       setSubmitted(true)
+      setFileNames([])
       toast.success("Template request submitted")
       event.currentTarget.reset()
     } catch (err) {
@@ -69,8 +78,28 @@ export function CustomTemplateRequestForm() {
             <UploadCloud className="h-6 w-6 text-indigo-600" />
             <span className="mt-2 text-sm font-medium text-slate-950">Upload Word, Excel, PDF, image, or ZIP files</span>
             <span className="mt-1 text-xs text-slate-500">Up to 5 files, 15MB each</span>
-            <input id="files" name="files" type="file" multiple required className="hidden" accept=".doc,.docx,.xls,.xlsx,.pdf,.zip,.png,.jpg,.jpeg,.webp" />
+            <input
+              id="files"
+              name="files"
+              type="file"
+              multiple
+              className="hidden"
+              accept=".doc,.docx,.xls,.xlsx,.pdf,.zip,.png,.jpg,.jpeg,.webp"
+              onChange={(event) => {
+                const names = Array.from(event.target.files || []).map((file) => file.name)
+                setFileNames(names)
+                if (names.length > 0) setFileError("")
+              }}
+            />
           </label>
+          {fileNames.length > 0 && (
+            <div className="rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              Selected: {fileNames.join(", ")}
+            </div>
+          )}
+          {fileError && (
+            <p className="text-sm text-red-600">{fileError}</p>
+          )}
         </div>
       </div>
       <Button type="submit" className="mt-5 bg-indigo-600 hover:bg-indigo-700" disabled={loading}>

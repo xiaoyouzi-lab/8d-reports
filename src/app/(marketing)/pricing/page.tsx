@@ -92,6 +92,15 @@ const addOns = [
   },
 ]
 
+const teamTrustItems = [
+  "Owner-managed members with 5 seats included",
+  "Team members can open, edit, share, export, and search team reports",
+  "View-only and editable share links can be revoked",
+  "Report save history and completed-step tracking are already recorded",
+  "Security / Data Privacy page explains storage, AI handling, deletion, and sharing",
+  "Enterprise requests such as DPA, SSO, audit-log exports, and support SLA should be scoped before company-wide rollout",
+]
+
 export default function PricingPage() {
   return (
     <div className="font-sans">
@@ -186,6 +195,31 @@ export default function PricingPage() {
             {" · "}
             <Link href="/api/sample-reports/automotive" className="font-medium text-indigo-600 hover:text-indigo-700">Download sample PDF</Link>
           </p>
+
+          <div className="mx-auto mt-12 max-w-5xl rounded-xl border border-slate-200 bg-slate-50 p-6">
+            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+              <div>
+                <h2 className="text-xl font-semibold text-slate-950">
+                  What Team means today
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Team is suitable for small quality teams that need a shared report workspace now. Larger companies can evaluate the workflow, but procurement requirements such as DPA, SSO, audit exports, and formal support terms should be discussed before broad deployment.
+                </p>
+                <Link href="/security" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700">
+                  Review security details
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Link>
+              </div>
+              <ul className="grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
+                {teamTrustItems.map((item) => (
+                  <li key={item} className="flex gap-2 rounded-lg bg-white p-3">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         </div>
       </section>
     </div>
