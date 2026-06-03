@@ -6,6 +6,15 @@ import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { STEPS, type ReportData } from "./report-steps";
 import { getR2Client } from "./r2";
 
+const FISHBONE_FIELD_NAMES = new Set([
+  "fishboneMan",
+  "fishboneMachine",
+  "fishboneMaterial",
+  "fishboneMethod",
+  "fishboneMeasurement",
+  "fishboneEnvironment",
+]);
+
 interface WordExportOptions {
   reportData: ReportData;
   reportTitle: string;
@@ -132,22 +141,51 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       })
     );
 
-    for (const field of step.fields) {
+    const fishboneFields = step.fields.filter((field) => FISHBONE_FIELD_NAMES.has(field.name));
+    const fiveWhyFields = step.fields.filter((field) => field.name.startsWith("why"));
+    const regularFields = step.fields.filter((field) => !FISHBONE_FIELD_NAMES.has(field.name) && !field.name.startsWith("why"));
+
+    for (const field of regularFields) {
       const val: unknown = reportData[field.name as keyof ReportData];
       if (!val || String(val).trim() === "") continue;
 
-      if (Array.isArray(val)) {
-        children.push(render5WhyTable(val.map(String)));
-      } else {
+      children.push(
+        new Paragraph({
+          spacing: { after: 100 },
+          children: [
+            new TextRun({ text: field.label + ": ", bold: true, size: 22 }),
+            new TextRun({ text: String(val), size: 22 }),
+          ],
+        })
+      );
+    }
+
+    if (fishboneFields.length > 0) {
+      const values = fishboneFields.map((field) => ({
+        label: field.label.replace("Fishbone 6M — ", ""),
+        value: String(reportData[field.name as keyof ReportData] || ""),
+      }));
+      if (values.some((item) => item.value.trim() !== "")) {
         children.push(
           new Paragraph({
-            spacing: { after: 100 },
-            children: [
-              new TextRun({ text: field.label + ": ", bold: true, size: 22 }),
-              new TextRun({ text: String(val), size: 22 }),
-            ],
+            spacing: { before: 200, after: 100 },
+            children: [new TextRun({ text: "Fishbone / Ishikawa 6M Analysis", bold: true, size: 22, color: "1e40af" })],
           })
         );
+        children.push(renderFishboneTable(values));
+      }
+    }
+
+    if (fiveWhyFields.length > 0) {
+      const values = fiveWhyFields.map((field) => String(reportData[field.name as keyof ReportData] || ""));
+      if (values.some((value) => value.trim() !== "")) {
+        children.push(
+          new Paragraph({
+            spacing: { before: 200, after: 100 },
+            children: [new TextRun({ text: "5-Why Analysis", bold: true, size: 22, color: "1e40af" })],
+          })
+        );
+        children.push(render5WhyTable(values));
       }
     }
 
@@ -193,8 +231,7 @@ function render5WhyTable(values: string[]) {
   const headerRow = new TableRow({
     children: [
       new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Step", bold: true, size: 20 })] })] }),
-      new TableCell({ width: { size: 4000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Question / Observation", bold: true, size: 20 })] })] }),
-      new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Answer / Root Cause", bold: true, size: 20 })] })] }),
+      new TableCell({ width: { size: 7000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Question / Answer", bold: true, size: 20 })] })] }),
     ],
   });
 
@@ -205,12 +242,32 @@ function render5WhyTable(values: string[]) {
       new TableRow({
         children: [
           new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: labels[i], size: 20 })] })] }),
-          new TableCell({ width: { size: 4000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: values[i * 2] || "", size: 20 })] })] }),
-          new TableCell({ width: { size: 3000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: values[i * 2 + 1] || "", size: 20 })] })] }),
+          new TableCell({ width: { size: 7000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: values[i] || "-", size: 20 })] })] }),
         ],
       })
     );
   }
+
+  return new Table({ rows, width: { size: 9000, type: WidthType.DXA } });
+}
+
+function renderFishboneTable(values: Array<{ label: string; value: string }>) {
+  const headerRow = new TableRow({
+    children: [
+      new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "6M Category", bold: true, size: 20 })] })] }),
+      new TableCell({ width: { size: 6500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Possible Causes / Evidence Checked", bold: true, size: 20 })] })] }),
+    ],
+  });
+
+  const rows = [
+    headerRow,
+    ...values.map((item) => new TableRow({
+      children: [
+        new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: item.label, bold: true, size: 20 })] })] }),
+        new TableCell({ width: { size: 6500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: item.value || "-", size: 20 })] })] }),
+      ],
+    })),
+  ];
 
   return new Table({ rows, width: { size: 9000, type: WidthType.DXA } });
 }

@@ -42,6 +42,12 @@ export interface ReportData {
   rootCauseOccurrence: string
   rootCauseEscape: string
   rootCauseSystem: string
+  fishboneMan: string
+  fishboneMachine: string
+  fishboneMaterial: string
+  fishboneMethod: string
+  fishboneMeasurement: string
+  fishboneEnvironment: string
   why1: string
   why2: string
   why3: string
@@ -95,6 +101,12 @@ export const DEFAULT_REPORT_DATA: ReportData = {
   rootCauseOccurrence: "",
   rootCauseEscape: "",
   rootCauseSystem: "",
+  fishboneMan: "",
+  fishboneMachine: "",
+  fishboneMaterial: "",
+  fishboneMethod: "",
+  fishboneMeasurement: "",
+  fishboneEnvironment: "",
   why1: "",
   why2: "",
   why3: "",
@@ -133,7 +145,21 @@ const COMPLETION_REQUIREMENTS: Array<{
   { stepId: "D1", label: "D1 team leader and members", fields: ["teamLeader", "teamMembers"], mode: "all" },
   { stepId: "D2", label: "D2 problem description", fields: ["problemDescription"], mode: "all" },
   { stepId: "D3", label: "D3 containment action", fields: ["containmentDescription"], mode: "all" },
-  { stepId: "D4", label: "D4 root cause", fields: ["rootCauseOccurrence", "confirmedRootCause"], mode: "any" },
+  {
+    stepId: "D4",
+    label: "D4 root cause",
+    fields: [
+      "rootCauseOccurrence",
+      "confirmedRootCause",
+      "fishboneMan",
+      "fishboneMachine",
+      "fishboneMaterial",
+      "fishboneMethod",
+      "fishboneMeasurement",
+      "fishboneEnvironment",
+    ],
+    mode: "any",
+  },
   { stepId: "D5", label: "D5 corrective action", fields: ["selectedCorrectiveAction"], mode: "all" },
   { stepId: "D6", label: "D6 implementation plan", fields: ["implementationPlan"], mode: "all" },
   { stepId: "D7", label: "D7 prevention action", fields: ["systemChanges", "processUpdates", "horizontalDeployment"], mode: "any" },
@@ -221,11 +247,17 @@ export const STEPS: ReportStep[] = [
   {
     id: "D4",
     label: "D4: Root Cause",
-    description: "Identify root causes — use tools like 5-Why, Ishikawa, or FMEA to determine why the problem occurred.",
+    description: "Identify root causes — use Fishbone 6M, 5-Why, testing evidence, or FMEA to determine why the problem occurred and why it escaped.",
     fields: [
       { name: "rootCauseOccurrence", label: "Root Cause — Occurrence", type: "textarea", required: true, placeholder: "Why did the problem occur in the first place?" },
       { name: "rootCauseEscape", label: "Root Cause — Escape", type: "textarea", placeholder: "Why did the problem escape detection?" },
       { name: "rootCauseSystem", label: "Root Cause — System", type: "textarea", placeholder: "What systemic issue allowed this to happen?" },
+      { name: "fishboneMan", label: "Fishbone 6M — Man / People", type: "textarea", placeholder: "Operator skill, training, staffing, handover, fatigue, or responsibility factors." },
+      { name: "fishboneMachine", label: "Fishbone 6M — Machine / Equipment", type: "textarea", placeholder: "Machine condition, tooling, fixture, maintenance, calibration, or equipment capability factors." },
+      { name: "fishboneMaterial", label: "Fishbone 6M — Material", type: "textarea", placeholder: "Incoming material, lot variation, supplier change, storage, shelf life, or contamination factors." },
+      { name: "fishboneMethod", label: "Fishbone 6M — Method / Process", type: "textarea", placeholder: "Work instruction, process parameters, setup sequence, inspection method, or control plan gaps." },
+      { name: "fishboneMeasurement", label: "Fishbone 6M — Measurement / Inspection", type: "textarea", placeholder: "Gauge accuracy, sample size, detection limit, inspection frequency, MSA, or data recording factors." },
+      { name: "fishboneEnvironment", label: "Fishbone 6M — Environment", type: "textarea", placeholder: "Temperature, humidity, dust, lighting, ESD, vibration, or other environmental contributors." },
       { name: "why1", label: "5-Why — Why 1", type: "text", placeholder: "Why did this happen?" },
       { name: "why2", label: "5-Why — Why 2", type: "text", placeholder: "Answering the previous why..." },
       { name: "why3", label: "5-Why — Why 3", type: "text", placeholder: "Answering the previous why..." },

@@ -274,7 +274,7 @@ export function SeoLandingPage({ page }: { page: SeoPage }) {
               Create the first report free
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Free includes 5 lifetime reports and the complete editor. Upgrade
+              Free includes 3 lifetime reports and the complete editor. Upgrade
               when no-watermark export, Word export, company logo, editable
               sharing, or deep historical search becomes valuable.
             </p>

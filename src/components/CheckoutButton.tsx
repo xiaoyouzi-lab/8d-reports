@@ -8,15 +8,18 @@ import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
 import { Loader2 } from "lucide-react"
+import type { CheckoutType } from "@/lib/plans"
 
 export function CheckoutButton({
   planType,
+  reportId,
   className,
   children,
   variant = "default",
   size = "lg",
 }: {
-  planType: "monthly" | "yearly"
+  planType: CheckoutType
+  reportId?: string
   className?: string
   children: React.ReactNode
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive" | "link"
@@ -31,7 +34,10 @@ export function CheckoutButton({
 
     if (!session?.user) {
       trackEvent("upgrade_clicked", { source: "pricing", planType })
-      router.push(`/login?callbackUrl=${encodeURIComponent(`/pricing?checkout=${planType}`)}`)
+      const checkoutUrl = reportId
+        ? `/pricing?checkout=${planType}&reportId=${encodeURIComponent(reportId)}`
+        : `/pricing?checkout=${planType}`
+      router.push(`/login?callbackUrl=${encodeURIComponent(checkoutUrl)}`)
       return
     }
 
@@ -41,7 +47,7 @@ export function CheckoutButton({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planType }),
+        body: JSON.stringify({ planType, reportId }),
       })
 
       const session_data = await res.json().catch(() => null)

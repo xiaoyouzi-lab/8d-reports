@@ -1,11 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
-import { db } from "@/lib/db";
-import { reports } from "@/lib/db/schema";
 import { S3Client } from "@aws-sdk/client-s3";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { and, eq } from "drizzle-orm";
-import { isUserPro } from "@/lib/subscription";
+import { getUserEntitlements } from "@/lib/subscription";
+import { getAccessibleReport } from "@/lib/report-access";
 
 function getR2Client(): S3Client | null {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -33,9 +31,6 @@ const ALLOWED_FILE_TYPES = [
   "application/zip",
 ];
 
-const FREE_MAX_FILE_SIZE = 5 * 1024 * 1024;
-const PRO_MAX_FILE_SIZE = 10 * 1024 * 1024;
-
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
@@ -56,22 +51,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing file or reportId" }, { status: 400 });
     }
 
-    const [report] = await db
-      .select({ id: reports.id })
-      .from(reports)
-      .where(and(eq(reports.id, reportId), eq(reports.userId, user.id)))
-      .limit(1);
+    const report = await getAccessibleReport(reportId, user.id);
 
     if (!report) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
-    const isPro = await isUserPro(user.id);
-    const maxFileSize = isPro ? PRO_MAX_FILE_SIZE : FREE_MAX_FILE_SIZE;
+    const entitlements = await getUserEntitlements(user.id);
+    const maxFileSize = entitlements.maxAttachmentSizeMb * 1024 * 1024;
 
     if (file.size > maxFileSize) {
       return NextResponse.json(
-        { error: `File exceeds ${isPro ? "10MB" : "5MB"} limit` },
+        { error: `File exceeds ${entitlements.maxAttachmentSizeMb}MB limit` },
         { status: 413 }
       );
     }

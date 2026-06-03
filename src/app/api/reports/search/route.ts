@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
-import { isUserPro } from "@/lib/subscription";
-import { desc, eq } from "drizzle-orm";
+import { getUserEntitlements } from "@/lib/subscription";
+import { getAccessibleUserIds } from "@/lib/report-access";
+import { desc, inArray } from "drizzle-orm";
 
 const SEARCH_FIELDS: Array<{ key: string; label: string }> = [
   { key: "problemDescription", label: "Problem Description" },
@@ -14,6 +15,12 @@ const SEARCH_FIELDS: Array<{ key: string; label: string }> = [
   { key: "rootCauseOccurrence", label: "Root Cause" },
   { key: "rootCauseEscape", label: "Escape Cause" },
   { key: "rootCauseSystem", label: "System Cause" },
+  { key: "fishboneMan", label: "Fishbone Man / People" },
+  { key: "fishboneMachine", label: "Fishbone Machine / Equipment" },
+  { key: "fishboneMaterial", label: "Fishbone Material" },
+  { key: "fishboneMethod", label: "Fishbone Method / Process" },
+  { key: "fishboneMeasurement", label: "Fishbone Measurement / Inspection" },
+  { key: "fishboneEnvironment", label: "Fishbone Environment" },
   { key: "confirmedRootCause", label: "Confirmed Root Cause" },
   { key: "selectedCorrectiveAction", label: "Corrective Action" },
   { key: "systemChanges", label: "Prevention" },
@@ -48,10 +55,10 @@ export async function GET(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
-  const pro = await isUserPro(user.id);
-  if (!pro) {
+  const entitlements = await getUserEntitlements(user.id);
+  if (!entitlements.deepSearch) {
     return NextResponse.json(
-      { error: "Deep historical search is a Pro feature" },
+      { error: "Deep historical search is a Pro or Team feature" },
       { status: 403 }
     );
   }
@@ -61,6 +68,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([]);
   }
 
+  const accessibleUserIds = await getAccessibleUserIds(user.id);
   const rows = await db
     .select({
       id: reports.id,
@@ -73,7 +81,7 @@ export async function GET(req: NextRequest) {
       updatedAt: reports.updatedAt,
     })
     .from(reports)
-    .where(eq(reports.userId, user.id))
+    .where(inArray(reports.userId, accessibleUserIds))
     .orderBy(desc(reports.updatedAt));
 
   const results = rows

@@ -99,7 +99,7 @@
 | 项目 | 值 |
 |------|-----|
 | 地址 | [creem.io](https://www.creem.io) |
-| **⚠️ Product IDs** | 需要创建 Pro Monthly ($9.99) + Pro Yearly ($79) 两个产品，记录各自 Product ID |
+| **⚠️ Product IDs** | 需要创建 Pro Monthly ($19) + Team Monthly ($99) + Single Report Export ($4.99) 三个产品，记录各自 Product ID |
 | **⚠️ Webhook URL** | `https://8d-reports.com/api/webhooks/creem` |
 | Webhook Events | `subscription.created`, `subscription.updated`, `subscription.cancelled` |
 | 模式 | sandbox 测试模式 |
@@ -118,7 +118,7 @@
 
 ---
 
-## 三、完整环境变量清单（17 个变量）
+## 三、完整环境变量清单（18 个变量）
 
 ### ⚠️ 以下变量必须全部在 Vercel Settings > Environment Variables 中填写
 
@@ -137,10 +137,11 @@
 | 11 | `R2_BUCKET_NAME` | 固定值 `8d-reports` | 上传附件成功 |
 | 12 | `CREEM_API_KEY` | Creem 后台 | 支付功能正常 |
 | 13 | `CREEM_WEBHOOK_SECRET` | 🔴 当前为空 | 必须去 Creem 后台生成 |
-| 14 | `CREEM_PRODUCT_MONTHLY` | 🔴 当前为空 | Creem 后台 Pro Monthly 产品的 ID |
-| 15 | `CREEM_PRODUCT_YEARLY` | 🔴 当前为空 | Creem 后台 Pro Yearly 产品的 ID |
-| 16 | `RESEND_API_KEY` | 🔴 当前为空 | 注册 Resend → API Keys → 创建 新 Key |
-| 17 | `DEEPSEEK_API_KEY` | 🔴 当前为空 | 注册 platform.deepseek.com → API Keys → 创建新 Key |
+| 14 | `CREEM_PRODUCT_PRO_MONTHLY` | 🔴 当前为空 | Creem 后台 Pro Monthly 产品的 ID |
+| 15 | `CREEM_PRODUCT_TEAM_MONTHLY` | 🔴 当前为空 | Creem 后台 Team Monthly 产品的 ID |
+| 16 | `CREEM_PRODUCT_SINGLE_REPORT_EXPORT` | 🔴 当前为空 | Creem 后台 Single Report Export 产品的 ID |
+| 17 | `RESEND_API_KEY` | 🔴 当前为空 | 注册 Resend → API Keys → 创建 新 Key |
+| 18 | `DEEPSEEK_API_KEY` | 🔴 当前为空 | 注册 platform.deepseek.com → API Keys → 创建新 Key |
 
 > **实际值参考 `.env` 文件**（不在本文档中复制，避免 git push protection 拦截）
 

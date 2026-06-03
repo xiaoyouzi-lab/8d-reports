@@ -6,6 +6,14 @@ const PAGE_H = 297
 const MARGIN = 20
 const CONTENT_W = PAGE_W - 2 * MARGIN
 const LINE_H = 7
+const FISHBONE_FIELD_NAMES = new Set([
+  "fishboneMan",
+  "fishboneMachine",
+  "fishboneMaterial",
+  "fishboneMethod",
+  "fishboneMeasurement",
+  "fishboneEnvironment",
+])
 
 interface PdfAttachment {
   url: string
@@ -267,7 +275,8 @@ async function addStepPage(
   doc.setTextColor(0, 0, 0)
   let y = headerY + 22
   const fiveWhyFields = step.fields.filter((f) => f.name.startsWith("why"))
-  const otherFields = step.fields.filter((f) => !f.name.startsWith("why"))
+  const fishboneFields = step.fields.filter((f) => FISHBONE_FIELD_NAMES.has(f.name))
+  const otherFields = step.fields.filter((f) => !f.name.startsWith("why") && !FISHBONE_FIELD_NAMES.has(f.name))
   const labelX = MARGIN
   const valueX = MARGIN + 68
   const valueMaxW = CONTENT_W - 72
@@ -306,6 +315,37 @@ async function addStepPage(
     doc.setDrawColor(230, 230, 230)
     doc.setLineWidth(0.2)
     doc.line(labelX, y - 2, PAGE_W - MARGIN, y - 2)
+  }
+
+  if (fishboneFields.length > 0) {
+    y = checkPageBreak(doc, y, 18)
+    y += 6
+    doc.setFont("helvetica", "bold")
+    doc.setFontSize(11)
+    doc.setTextColor(79, 70, 229)
+    doc.text("Fishbone / Ishikawa 6M Analysis", MARGIN, y)
+    doc.setTextColor(0, 0, 0)
+    y += 8
+
+    for (const field of fishboneFields) {
+      const rawValue = (data[field.name as keyof ReportData] ?? "") as string
+      const displayValue = rawValue || "-"
+      y = checkPageBreak(doc, y, 16)
+
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(8)
+      doc.setTextColor(100, 100, 100)
+      drawText(doc, field.label.replace("Fishbone 6M — ", ""), labelX, y, { maxWidth: 62, fontSize: 8, color: 100, bold: true })
+
+      doc.setFont("helvetica", "normal")
+      doc.setFontSize(9)
+      doc.setTextColor(30, 30, 30)
+      const renderedHeight = drawText(doc, displayValue, valueX, y, { maxWidth: valueMaxW, fontSize: 9, color: 30 })
+      y += Math.max(8, renderedHeight + 2)
+      doc.setDrawColor(225, 225, 225)
+      doc.setLineWidth(0.15)
+      doc.line(MARGIN, y - 2, PAGE_W - MARGIN, y - 2)
+    }
   }
 
   if (fiveWhyFields.length > 0) {

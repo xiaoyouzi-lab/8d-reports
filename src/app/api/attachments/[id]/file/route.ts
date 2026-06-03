@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { GetObjectCommand } from "@aws-sdk/client-s3"
-import { and, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers"
 import { db } from "@/lib/db"
-import { attachments, reports } from "@/lib/db/schema"
+import { attachments } from "@/lib/db/schema"
 import { getR2Client } from "@/lib/r2"
+import { getAccessibleReport } from "@/lib/report-access"
 
 export async function GET(
   _req: NextRequest,
@@ -23,11 +24,10 @@ export async function GET(
       reportId: attachments.reportId,
     })
     .from(attachments)
-    .innerJoin(reports, eq(attachments.reportId, reports.id))
-    .where(and(eq(attachments.id, id), eq(reports.userId, user.id)))
+    .where(eq(attachments.id, id))
     .limit(1)
 
-  if (!attachment) {
+  if (!attachment || !(await getAccessibleReport(attachment.reportId, user.id))) {
     return NextResponse.json({ error: "Attachment not found" }, { status: 404 })
   }
 

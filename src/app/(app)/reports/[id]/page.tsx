@@ -67,7 +67,7 @@ export default function ReportEditorPage({
 }) {
   const { id: reportId } = use(params)
   const { data: session } = authClient.useSession()
-  const { plan, isPro } = usePlan((session?.user as Record<string, unknown>)?.plan)
+  const { plan, isPro, entitlements } = usePlan((session?.user as Record<string, unknown>)?.plan)
   const te = useTranslations("editor")
   const logoInputRef = useRef<HTMLInputElement>(null)
 
@@ -83,6 +83,12 @@ export default function ReportEditorPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [reportPermissions, setReportPermissions] = useState({
+    canExportWithoutWatermark: false,
+    canExportWord: false,
+    canUseLogo: false,
+    canUseEditableShare: false,
+  })
 
   useEffect(() => {
     const sessionLogo = (session?.user as Record<string, unknown> | undefined)?.logoUrl
@@ -97,6 +103,14 @@ export default function ReportEditorPage({
         const res = await fetch(`/api/reports/${reportId}`)
         if (!res.ok) return
         const row = await res.json()
+        if (row.permissions && typeof row.permissions === "object") {
+          setReportPermissions({
+            canExportWithoutWatermark: Boolean(row.permissions.canExportWithoutWatermark),
+            canExportWord: Boolean(row.permissions.canExportWord),
+            canUseLogo: Boolean(row.permissions.canUseLogo),
+            canUseEditableShare: Boolean(row.permissions.canUseEditableShare),
+          })
+        }
         setReportTitle(row.title || "Untitled Report")
         if (row.data && typeof row.data === "object") {
           const rowData = row.data as Partial<ReportData>
@@ -196,9 +210,9 @@ export default function ReportEditorPage({
   }
 
   const handleLogoClick = () => {
-    if (!isPro) {
+    if (!entitlements.companyLogo && !reportPermissions.canUseLogo) {
       trackEvent("logo_upload_gate_clicked", { plan: "free" }, reportId)
-      toast("Company logo is a Pro feature", {
+      toast("Company logo is a Pro or Team feature", {
         description: "Upgrade to add your company logo to exports.",
         action: {
           label: "Upgrade",
@@ -330,13 +344,14 @@ export default function ReportEditorPage({
               Logo
             </Button>
 
-            <ShareDialog reportId={reportId} reportTitle={reportTitle} isPro={isPro} />
+            <ShareDialog reportId={reportId} reportTitle={reportTitle} isPro={reportPermissions.canUseEditableShare || entitlements.editableShare} />
 
             <ExportMenu
               reportData={reportData}
               reportTitle={reportTitle}
               reportId={reportId}
-              withWatermark={!isPro}
+              withWatermark={!reportPermissions.canExportWithoutWatermark}
+              canExportWord={reportPermissions.canExportWord}
               logoUrl={logoUrl}
             />
 

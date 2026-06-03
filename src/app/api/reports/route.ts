@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports, userQuotas } from "@/lib/db/schema";
-import { eq, desc, and, gte, lte, sql } from "drizzle-orm";
-import { isUserPro } from "@/lib/subscription";
+import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { getUserEntitlements } from "@/lib/subscription";
+import { FREE_REPORT_LIMIT } from "@/lib/plans";
+import { getAccessibleUserIds } from "@/lib/report-access";
 
 const REPORT_TYPES = new Set(["customer_8d", "internal_8d"]);
 const PRIORITIES = new Set(["low", "medium", "high"]);
@@ -11,6 +13,7 @@ const PRIORITIES = new Set(["low", "medium", "high"]);
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
+  const accessibleUserIds = await getAccessibleUserIds(user.id);
 
   const rows = await db
     .select({
@@ -25,7 +28,7 @@ export async function GET() {
       updatedAt: reports.updatedAt,
     })
     .from(reports)
-    .where(eq(reports.userId, user.id))
+    .where(inArray(reports.userId, accessibleUserIds))
     .orderBy(desc(reports.updatedAt));
 
   return NextResponse.json(rows.map((report) => {
@@ -53,7 +56,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const reportType = REPORT_TYPES.has(body.reportType) ? body.reportType : "customer_8d";
   const priority = PRIORITIES.has(body.priority) ? body.priority : "medium";
-  const isPro = await isUserPro(user.id);
+  const entitlements = await getUserEntitlements(user.id);
 
   const [quota] = await db
     .select()
@@ -61,12 +64,12 @@ export async function POST(req: NextRequest) {
     .where(eq(userQuotas.userId, user.id))
     .limit(1);
 
-  const totalQuota = quota?.totalQuota ?? 5;
+  const totalQuota = quota?.totalQuota ?? FREE_REPORT_LIMIT;
   const usedQuota = quota?.usedQuota ?? 0;
 
-  if (!isPro && usedQuota >= totalQuota) {
+  if (!entitlements.unlimitedReports && usedQuota >= totalQuota) {
     return NextResponse.json(
-      { error: "Quota exhausted. Upgrade to Pro to create more reports." },
+      { error: "Quota exhausted. Upgrade to Pro or Team to create more reports." },
       { status: 403 }
     );
   }
@@ -104,12 +107,12 @@ export async function POST(req: NextRequest) {
     })
     .returning();
 
-  if (isPro) {
-    // Pro users have unlimited reports; keep quota rows informational only.
+  if (entitlements.unlimitedReports) {
+    // Paid plans have unlimited reports; keep quota rows informational only.
   } else if (!quota) {
     await db.insert(userQuotas).values({
       userId: user.id,
-      totalQuota: 5,
+      totalQuota: FREE_REPORT_LIMIT,
       usedQuota: 1,
     });
   } else {

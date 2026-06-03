@@ -24,9 +24,12 @@ export default function LoginPage() {
   const searchParams = useSearchParams()
   const rawCallback = searchParams.get("callbackUrl")
   const billing = searchParams.get("billing")
+  const plan = searchParams.get("plan")
   const legacyPlanCallback =
-    searchParams.get("plan") === "pro" && (billing === "monthly" || billing === "yearly")
-      ? `/pricing?checkout=${billing}`
+    plan === "pro" && billing === "monthly"
+      ? "/pricing?checkout=pro_monthly"
+      : plan === "team" && billing === "monthly"
+        ? "/pricing?checkout=team_monthly"
       : null
   const callbackUrl = rawCallback && rawCallback.startsWith("/")
     ? rawCallback

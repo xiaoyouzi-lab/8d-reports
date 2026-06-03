@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
-import { reports, attachments } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { attachments } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
 import { generateWordDocument } from "@/lib/word-export";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
-import { isUserPro } from "@/lib/subscription";
+import { canExportReportWithoutWatermark } from "@/lib/subscription";
+import { getAccessibleReport } from "@/lib/report-access";
 
 export async function POST(
   req: NextRequest,
@@ -16,20 +17,16 @@ export async function POST(
 
   const { id: reportId } = await params;
   const body = await req.json().catch(() => ({}));
-  const isPro = await isUserPro(user.id);
+  const canExport = await canExportReportWithoutWatermark(user.id, reportId);
 
-  if (!isPro) {
+  if (!canExport) {
     return NextResponse.json(
-      { error: "Word export is a Pro feature" },
+      { error: "Word export requires Pro, Team, or a single-report export purchase" },
       { status: 403 }
     );
   }
 
-  const [report] = await db
-    .select()
-    .from(reports)
-    .where(and(eq(reports.id, reportId), eq(reports.userId, user.id)))
-    .limit(1);
+  const report = await getAccessibleReport(reportId, user.id);
 
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });

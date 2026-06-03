@@ -4,7 +4,7 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { getPublicUrl, getR2Client } from "@/lib/r2";
-import { isUserPro } from "@/lib/subscription";
+import { getUserEntitlements } from "@/lib/subscription";
 import { eq } from "drizzle-orm";
 
 const ALLOWED_LOGO_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -14,10 +14,10 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
-  const pro = await isUserPro(user.id);
-  if (!pro) {
+  const entitlements = await getUserEntitlements(user.id);
+  if (!entitlements.companyLogo) {
     return NextResponse.json(
-      { error: "Company logo is a Pro feature" },
+      { error: "Company logo is a Pro or Team feature" },
       { status: 403 }
     );
   }

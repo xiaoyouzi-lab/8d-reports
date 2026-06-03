@@ -6,8 +6,9 @@ import { ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { trackEvent } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
+import { FREE_REPORT_LIMIT, type PlanKey } from "@/lib/plans"
 
-const DEFAULT_QUOTA_TOTAL = 5
+const DEFAULT_QUOTA_TOTAL = FREE_REPORT_LIMIT
 
 interface QuotaData {
   total: number
@@ -16,9 +17,10 @@ interface QuotaData {
 
 interface QuotaIndicatorProps {
   isPro: boolean
+  plan?: PlanKey
 }
 
-export function QuotaIndicator({ isPro }: QuotaIndicatorProps) {
+export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
   const [quota, setQuota] = useState<QuotaData>({ total: DEFAULT_QUOTA_TOTAL, used: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -45,13 +47,16 @@ export function QuotaIndicator({ isPro }: QuotaIndicatorProps) {
   const isExhausted = remaining === 0
 
   if (isPro) {
+    const isTeam = plan === "team"
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
         <p className="text-sm font-medium text-emerald-900">
-          Pro Plan — Unlimited reports
+          {isTeam ? "Team Plan — 5 seats" : "Pro Plan — Unlimited reports"}
         </p>
         <p className="mt-0.5 text-xs text-emerald-700/80">
-          You have unlimited reports and premium features.
+          {isTeam
+            ? "Unlimited reports, team workspace, and premium export features."
+            : "You have unlimited reports and premium features."}
         </p>
       </div>
     )
@@ -112,14 +117,14 @@ export function QuotaIndicator({ isPro }: QuotaIndicatorProps) {
 
       {!isExhausted && (
         <p className="mt-1.5 text-xs text-indigo-700/80">
-          Upgrade to Pro for unlimited reports and no watermarks.
+          Upgrade to Pro for unlimited reports and no watermarks, or buy a single report export when you only need one delivery.
         </p>
       )}
 
       {isExhausted && (
         <div className="mt-3">
           <p className="text-xs text-red-700/80">
-            You have used all your free reports. Upgrade to Pro to create more reports.
+            You have used all 3 free reports. Upgrade to Pro or Team to create more reports.
           </p>
           <Link
             href="/pricing"

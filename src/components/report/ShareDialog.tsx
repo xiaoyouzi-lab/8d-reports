@@ -89,7 +89,7 @@ export function ShareDialog({ reportId, reportTitle, isPro = false }: ShareDialo
   const handleUpdatePermission = async (newLevel: string) => {
     if (newLevel === "edit" && !isPro) {
       trackEvent("upgrade_clicked", { source: "share_edit_gate", plan: "free" }, reportId)
-      toast("Editable share links are a Pro feature", {
+      toast("Editable share links require Pro or Team", {
         description: "Upgrade to let recipients edit shared reports.",
       })
       return
@@ -267,7 +267,7 @@ export function ShareDialog({ reportId, reportTitle, isPro = false }: ShareDialo
                     onClick={() => {
                       if (!isPro) {
                         trackEvent("upgrade_clicked", { source: "share_edit_gate", plan: "free" }, reportId)
-                        toast("Editable share links are a Pro feature")
+                        toast("Editable share links require Pro or Team")
                         return
                       }
                       setEditMode(true)

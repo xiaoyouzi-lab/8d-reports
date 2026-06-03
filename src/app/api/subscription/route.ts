@@ -3,6 +3,7 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { subscriptions, plans } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getUserEntitlements } from "@/lib/subscription";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -32,5 +33,12 @@ export async function GET() {
   const sub = rows.find((row) => row.status === "active" || row.status === "trialing")
     || rows[0];
 
-  return NextResponse.json(sub || null);
+  const entitlements = await getUserEntitlements(user.id);
+
+  return NextResponse.json({
+    ...(sub || {}),
+    status: sub?.status ?? "free",
+    plan: entitlements.plan,
+    entitlements,
+  });
 }

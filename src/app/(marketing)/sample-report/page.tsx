@@ -278,9 +278,10 @@ export default function SampleReportPage() {
             </p>
             <div className="mt-6 space-y-3">
               {[
-                "Free: 5 lifetime reports and basic dashboard search.",
+                "Free: 3 lifetime reports and basic dashboard search.",
                 "Pro: unlimited reports, Word export, no watermark, company logo, editable sharing, and deep history search.",
-                "AI drafting stays positioned as a later Pro expansion, not the first-month dependency.",
+                "Team: 5 seats, shared report workspace, and team-wide search/export permissions.",
+                "Single export: $4.99 unlocks no-watermark PDF and Word export for one selected report.",
               ].map((item) => (
                 <div key={item} className="flex gap-3">
                   <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-600" />

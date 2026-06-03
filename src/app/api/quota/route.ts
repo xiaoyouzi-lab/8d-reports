@@ -3,6 +3,7 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { userQuotas, reports } from "@/lib/db/schema";
 import { eq, count } from "drizzle-orm";
+import { FREE_REPORT_LIMIT } from "@/lib/plans";
 
 export async function GET() {
   const user = await getSessionUser();
@@ -21,7 +22,7 @@ export async function GET() {
 
   const actualReportCount = reportCountRow?.cnt ?? 0;
 
-  const totalQuota = quota?.totalQuota ?? 5;
+  const totalQuota = quota?.totalQuota ?? FREE_REPORT_LIMIT;
   const usedQuota = Math.max(quota?.usedQuota ?? 0, actualReportCount);
 
   if (quota && (quota.usedQuota ?? 0) < actualReportCount) {
@@ -54,12 +55,12 @@ export async function POST() {
     .where(eq(reports.userId, user.id));
 
   const actualCount = reportCountRow?.cnt ?? 0;
-  const totalQuota = quota?.totalQuota ?? 5;
+  const totalQuota = quota?.totalQuota ?? FREE_REPORT_LIMIT;
 
   if (!quota) {
     const [newQuota] = await db
       .insert(userQuotas)
-      .values({ userId: user.id, totalQuota: 5, usedQuota: actualCount })
+      .values({ userId: user.id, totalQuota: FREE_REPORT_LIMIT, usedQuota: actualCount })
       .returning();
     return NextResponse.json(newQuota, { status: 201 });
   }

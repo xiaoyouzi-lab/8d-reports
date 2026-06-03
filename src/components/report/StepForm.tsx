@@ -114,12 +114,21 @@ function renderField(
   )
 }
 
-const ATTACHMENT_STEPS = new Set(["D2", "D3", "D5", "D6", "D7"])
+const ATTACHMENT_STEPS = new Set(["D2", "D3", "D4", "D5", "D6", "D7"])
+const FISHBONE_FIELDS = new Set([
+  "fishboneMan",
+  "fishboneMachine",
+  "fishboneMaterial",
+  "fishboneMethod",
+  "fishboneMeasurement",
+  "fishboneEnvironment",
+])
 
 export function StepForm({ step, data, onChange, reportId, isPro = false }: StepFormProps) {
-  const hasFiveWhys = step.id === "D4"
+  const isRootCauseStep = step.id === "D4"
   const fiveWhyFields = step.fields.filter((f) => f.name.startsWith("why"))
-  const otherFields = step.fields.filter((f) => !f.name.startsWith("why"))
+  const fishboneFields = step.fields.filter((f) => FISHBONE_FIELDS.has(f.name))
+  const otherFields = step.fields.filter((f) => !f.name.startsWith("why") && !FISHBONE_FIELDS.has(f.name))
   const showAttachments = ATTACHMENT_STEPS.has(step.id)
 
   return (
@@ -147,11 +156,29 @@ export function StepForm({ step, data, onChange, reportId, isPro = false }: Step
         ))}
       </div>
 
-      {showAttachments && (
-        <AttachmentArea reportId={reportId} stepId={step.id} isPro={isPro} />
+      {isRootCauseStep && fishboneFields.length > 0 && (
+        <div className="space-y-3 border-t pt-4">
+          <div>
+            <h3 className="text-sm font-semibold text-foreground">
+              Fishbone / Ishikawa 6M Analysis
+            </h3>
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
+              Use these prompts to check competing causes before confirming the
+              final root cause. Attach a whiteboard photo or analysis file below
+              if the team used a separate fishbone diagram.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            {fishboneFields.map((field) => (
+              <div key={field.name}>
+                {renderField(field, data[field.name as keyof ReportData] as string, onChange)}
+              </div>
+            ))}
+          </div>
+        </div>
       )}
 
-      {hasFiveWhys && fiveWhyFields.length > 0 && (
+      {isRootCauseStep && fiveWhyFields.length > 0 && (
         <div className="space-y-3">
           <div className="border-t pt-4">
             <h3 className="mb-3 text-sm font-semibold text-foreground">
@@ -199,6 +226,10 @@ export function StepForm({ step, data, onChange, reportId, isPro = false }: Step
             </div>
           </div>
         </div>
+      )}
+
+      {showAttachments && (
+        <AttachmentArea reportId={reportId} stepId={step.id} isPro={isPro} />
       )}
     </div>
   )

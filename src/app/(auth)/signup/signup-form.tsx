@@ -142,7 +142,7 @@ export default function SignupPage() {
     <Card className="shadow-sm">
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-xl font-semibold tracking-tight">Create an account</CardTitle>
-        <CardDescription className="text-sm">Get started with 5 free 8D reports</CardDescription>
+        <CardDescription className="text-sm">Get started with 3 free 8D reports</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 import { db } from "@/lib/db";
-import { analyticsEvents, subscriptions, plans, users } from "@/lib/db/schema";
+import { analyticsEvents, subscriptions, plans, users, reportPurchases, teamMembers, teamWorkspaces } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
+import { getConfiguredProductId, getPlanFromName, isCheckoutType, type CheckoutType } from "@/lib/plans";
 
 export const runtime = "nodejs";
 
@@ -74,6 +75,14 @@ function getMetadataUserId(event: CreemPayload, sub?: CreemPayload) {
     || asString(object?.metadata?.userId)
     || asString(event.subscription?.metadata?.userId)
     || asString(sub?.metadata?.userId);
+}
+
+function getMetadataValue(event: CreemPayload, key: string) {
+  const object = event.object;
+  return asString(event.metadata?.[key])
+    || asString(event.data?.metadata?.[key])
+    || asString(object?.metadata?.[key])
+    || asString(event.subscription?.metadata?.[key]);
 }
 
 function getUserIdFromRequestId(event: CreemPayload) {
@@ -175,6 +184,63 @@ function isCancellationEvent(eventType: string, status?: string) {
   ].includes(eventType) || ["cancelled", "canceled", "expired"].includes(status || "");
 }
 
+function getCheckoutTypeFromProduct(productId?: string): CheckoutType | null {
+  if (!productId) return null;
+  if (productId === getConfiguredProductId("team_monthly")) return "team_monthly";
+  if (productId === getConfiguredProductId("single_report_export")) return "single_report_export";
+  if (productId === getConfiguredProductId("pro_monthly")) return "pro_monthly";
+  return null;
+}
+
+async function ensurePlan(productId: string, checkoutType: CheckoutType) {
+  const existing = (await db.select().from(plans).where(eq(plans.creemProductId, productId)).limit(1))[0];
+  if (existing) return existing;
+
+  const isTeam = checkoutType === "team_monthly";
+  const [created] = await db
+    .insert(plans)
+    .values({
+      creemProductId: productId,
+      name: isTeam ? "Team" : "Pro",
+      description: isTeam ? "Team plan with 5 seats" : "Pro monthly plan",
+      priceMonthly: isTeam ? "99.00" : "19.00",
+      reportsPerMonth: -1,
+      maxTeamMembers: isTeam ? 5 : 1,
+      features: isTeam
+        ? ["unlimited_reports", "no_watermark", "word_export", "company_logo", "editable_share", "deep_search", "team_workspace"]
+        : ["unlimited_reports", "no_watermark", "word_export", "company_logo", "editable_share", "deep_search"],
+    })
+    .returning();
+
+  return created;
+}
+
+async function ensureTeamWorkspace(userId: string) {
+  const existing = (await db
+    .select()
+    .from(teamWorkspaces)
+    .where(eq(teamWorkspaces.ownerId, userId))
+    .limit(1))[0];
+  if (existing) return existing;
+
+  const [team] = await db
+    .insert(teamWorkspaces)
+    .values({
+      ownerId: userId,
+      name: "8D Reports Team",
+      maxSeats: 5,
+    })
+    .returning();
+
+  await db.insert(teamMembers).values({
+    teamId: team.id,
+    userId,
+    role: "owner",
+  }).catch(() => {});
+
+  return team;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = req.headers.get("creem-signature")
@@ -198,23 +264,65 @@ export async function POST(req: NextRequest) {
     const sub = getSubscriptionPayload(event);
     const subscriptionId = asString(sub?.id) || asString(event.subscription_id) || asString(event.id);
     const status = asString(sub?.status) || asString(event.status) || "active";
+    const productId = getProductId(event, sub);
+    const metadataCheckoutType = getMetadataValue(event, "checkoutType");
+    const checkoutType = isCheckoutType(metadataCheckoutType)
+      ? metadataCheckoutType
+      : getCheckoutTypeFromProduct(productId);
 
     if (isActivationEvent(eventType || "", status)) {
       const userId = await resolveUserId(event, sub);
-      const productId = getProductId(event, sub);
       const periodStart = asString(sub?.current_period_start) || asString(sub?.current_period_start_date);
       const periodEnd = asString(sub?.current_period_end) || asString(sub?.current_period_end_date);
 
-      if (!userId || !subscriptionId) {
+      if (!userId) {
         return NextResponse.json(
-          { error: "Missing user/subscription id" },
+          { error: "Missing user id" },
           { status: 400 }
         );
       }
 
-      const planRow = productId
-        ? (await db.select().from(plans).where(eq(plans.creemProductId, productId)).limit(1))[0]
-        : null;
+      if (checkoutType === "single_report_export") {
+        const reportId = getMetadataValue(event, "reportId");
+        const checkoutId = asString(event.id) || subscriptionId || randomUUID();
+        if (!reportId) {
+          return NextResponse.json({ error: "Missing report id" }, { status: 400 });
+        }
+
+        await db.insert(reportPurchases).values({
+          userId,
+          reportId,
+          creemCheckoutId: checkoutId,
+          creemProductId: productId || null,
+          status: "active",
+          purchaseType: "single_report_export",
+        }).catch(async () => {
+          await db
+            .update(reportPurchases)
+            .set({ status: "active", updatedAt: new Date() })
+            .where(eq(reportPurchases.creemCheckoutId, checkoutId));
+        });
+
+        await db.insert(analyticsEvents).values({
+          eventName: "checkout_completed",
+          userId,
+          reportId,
+          plan: "single_report_export",
+          metadata: { checkoutId, productId: productId || null, status },
+        }).catch(() => {});
+
+        return NextResponse.json({ received: true });
+      }
+
+      if (!subscriptionId) {
+        return NextResponse.json({ error: "Missing subscription id" }, { status: 400 });
+      }
+
+      const planRow = productId && checkoutType
+        ? await ensurePlan(productId, checkoutType)
+        : productId
+          ? (await db.select().from(plans).where(eq(plans.creemProductId, productId)).limit(1))[0]
+          : null;
 
       const [existing] = await db
         .select()
@@ -256,13 +364,17 @@ export async function POST(req: NextRequest) {
       await db.insert(analyticsEvents).values({
         eventName: "checkout_completed",
         userId,
-        plan: "pro",
+        plan: getPlanFromName(planRow?.name),
         metadata: {
           subscriptionId,
           productId: productId || null,
           status,
         },
       }).catch(() => {});
+
+      if (getPlanFromName(planRow?.name) === "team") {
+        await ensureTeamWorkspace(userId);
+      }
     }
 
     if (isCancellationEvent(eventType || "", status)) {

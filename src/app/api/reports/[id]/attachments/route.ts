@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
-import { attachments, reports } from "@/lib/db/schema";
+import { attachments } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
-import { isUserPro } from "@/lib/subscription";
+import { getUserEntitlements } from "@/lib/subscription";
+import { getAccessibleReport } from "@/lib/report-access";
 
 export async function GET(
   _req: NextRequest,
@@ -15,13 +16,8 @@ export async function GET(
 
   const { id: reportId } = await params;
 
-  const [report] = await db
-    .select({ userId: reports.userId })
-    .from(reports)
-    .where(eq(reports.id, reportId))
-    .limit(1);
-
-  if (!report || report.userId !== user.id) {
+  const report = await getAccessibleReport(reportId, user.id);
+  if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
@@ -43,13 +39,8 @@ export async function POST(
 
   const { id: reportId } = await params;
 
-  const [report] = await db
-    .select({ userId: reports.userId })
-    .from(reports)
-    .where(eq(reports.id, reportId))
-    .limit(1);
-
-  if (!report || report.userId !== user.id) {
+  const report = await getAccessibleReport(reportId, user.id);
+  if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
@@ -66,8 +57,8 @@ export async function POST(
     .where(eq(attachments.reportId, reportId));
 
   const currentCount = existingRows.length;
-  const isPro = await isUserPro(user.id);
-  const maxAttachments = isPro ? 30 : 10;
+  const entitlements = await getUserEntitlements(user.id);
+  const maxAttachments = entitlements.maxAttachmentsPerReport;
   if (currentCount >= maxAttachments) {
     return NextResponse.json(
       { error: `Maximum ${maxAttachments} attachments per report` },
@@ -108,13 +99,8 @@ export async function DELETE(
     return NextResponse.json({ error: "attachmentId required" }, { status: 400 });
   }
 
-  const [report] = await db
-    .select({ userId: reports.userId })
-    .from(reports)
-    .where(eq(reports.id, reportId))
-    .limit(1);
-
-  if (!report || report.userId !== user.id) {
+  const report = await getAccessibleReport(reportId, user.id);
+  if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 

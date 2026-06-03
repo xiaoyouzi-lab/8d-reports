@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { DEFAULT_REPORT_DATA, getReportCompletionIssues, type ReportData } from "@/lib/report-steps";
+import { getAccessibleReport } from "@/lib/report-access";
+import { canExportReportWithoutWatermark, getUserEntitlements } from "@/lib/subscription";
 
 type ReportUpdate = Partial<typeof reports.$inferInsert>;
 
@@ -19,17 +21,27 @@ export async function GET(
   if (!user) return unauthorizedResponse();
 
   const { id } = await params;
-  const [report] = await db
-    .select()
-    .from(reports)
-    .where(and(eq(reports.id, id), eq(reports.userId, user.id)))
-    .limit(1);
+  const report = await getAccessibleReport(id, user.id);
 
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
-  return NextResponse.json(report);
+  const [entitlements, canExportWithoutWatermark] = await Promise.all([
+    getUserEntitlements(user.id),
+    canExportReportWithoutWatermark(user.id, id),
+  ]);
+
+  return NextResponse.json({
+    ...report,
+    permissions: {
+      plan: entitlements.plan,
+      canExportWithoutWatermark,
+      canExportWord: entitlements.wordExport || canExportWithoutWatermark,
+      canUseLogo: entitlements.companyLogo,
+      canUseEditableShare: entitlements.editableShare,
+    },
+  });
 }
 
 export async function PUT(
@@ -42,11 +54,7 @@ export async function PUT(
   const { id } = await params;
   const body = await req.json().catch(() => ({}));
 
-  const [existing] = await db
-    .select()
-    .from(reports)
-    .where(and(eq(reports.id, id), eq(reports.userId, user.id)))
-    .limit(1);
+  const existing = await getAccessibleReport(id, user.id);
 
   if (!existing) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });

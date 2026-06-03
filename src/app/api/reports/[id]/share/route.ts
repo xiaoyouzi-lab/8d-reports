@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
-import { reportShares, reports } from "@/lib/db/schema";
+import { reportShares } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
-import { isUserPro } from "@/lib/subscription";
+import { getUserEntitlements } from "@/lib/subscription";
+import { getAccessibleReport } from "@/lib/report-access";
 
 type ReportShareUpdate = Partial<typeof reportShares.$inferInsert>;
 
@@ -16,11 +17,7 @@ export async function GET(
 
   const { id: reportId } = await params;
 
-  const [report] = await db
-    .select()
-    .from(reports)
-    .where(and(eq(reports.id, reportId), eq(reports.userId, user.id)))
-    .limit(1);
+  const report = await getAccessibleReport(reportId, user.id);
 
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
@@ -49,20 +46,16 @@ export async function POST(
   const { id: reportId } = await params;
   const body = await req.json().catch(() => ({}));
   const permissionLevel = body.permissionLevel === "edit" ? "edit" : "view";
-  const isPro = await isUserPro(user.id);
+  const entitlements = await getUserEntitlements(user.id);
 
-  if (permissionLevel === "edit" && !isPro) {
+  if (permissionLevel === "edit" && !entitlements.editableShare) {
     return NextResponse.json(
-      { error: "Editable share links are a Pro feature" },
+      { error: "Editable share links are a Pro or Team feature" },
       { status: 403 }
     );
   }
 
-  const [report] = await db
-    .select()
-    .from(reports)
-    .where(and(eq(reports.id, reportId), eq(reports.userId, user.id)))
-    .limit(1);
+  const report = await getAccessibleReport(reportId, user.id);
 
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
@@ -110,11 +103,11 @@ export async function PATCH(
   const { id: reportId } = await params;
   const body = await req.json().catch(() => ({}));
   const permissionLevel = body.permissionLevel === "edit" ? "edit" : "view";
-  const isPro = await isUserPro(user.id);
+  const entitlements = await getUserEntitlements(user.id);
 
-  if (permissionLevel === "edit" && !isPro) {
+  if (permissionLevel === "edit" && !entitlements.editableShare) {
     return NextResponse.json(
-      { error: "Editable share links are a Pro feature" },
+      { error: "Editable share links are a Pro or Team feature" },
       { status: 403 }
     );
   }

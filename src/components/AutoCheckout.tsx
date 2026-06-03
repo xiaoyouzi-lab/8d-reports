@@ -5,23 +5,24 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
-
-function isPlanType(value: string | null): value is "monthly" | "yearly" {
-  return value === "monthly" || value === "yearly"
-}
+import { isCheckoutType } from "@/lib/plans"
 
 export function AutoCheckout() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const planType = searchParams.get("checkout")
+  const reportId = searchParams.get("reportId")
   const { data: session, isPending } = authClient.useSession()
   const startedRef = useRef(false)
 
   useEffect(() => {
-    if (!isPlanType(planType) || isPending || startedRef.current) return
+    if (!isCheckoutType(planType) || isPending || startedRef.current) return
 
     if (!session?.user) {
-      router.replace(`/login?callbackUrl=${encodeURIComponent(`/pricing?checkout=${planType}`)}`)
+      const checkoutPath = reportId
+        ? `/pricing?checkout=${planType}&reportId=${encodeURIComponent(reportId)}`
+        : `/pricing?checkout=${planType}`
+      router.replace(`/login?callbackUrl=${encodeURIComponent(checkoutPath)}`)
       return
     }
 
@@ -33,7 +34,7 @@ export function AutoCheckout() {
         const res = await fetch("/api/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ planType }),
+          body: JSON.stringify({ planType, reportId }),
         })
         const data = await res.json().catch(() => null)
         if (!res.ok) {
@@ -51,9 +52,9 @@ export function AutoCheckout() {
     }
 
     void startCheckout()
-  }, [isPending, planType, router, session?.user])
+  }, [isPending, planType, reportId, router, session?.user])
 
-  if (!isPlanType(planType)) return null
+  if (!isCheckoutType(planType)) return null
 
   return (
     <div className="mx-auto mt-6 max-w-2xl rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 text-sm text-indigo-800">

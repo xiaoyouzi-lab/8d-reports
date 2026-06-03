@@ -88,6 +88,28 @@ export const subscriptions = pgTable("subscriptions", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const teamWorkspaces = pgTable("team_workspaces", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ownerId: text("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  maxSeats: integer("max_seats").default(5),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_team_workspaces_owner_id").on(table.ownerId),
+]);
+
+export const teamMembers = pgTable("team_members", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  teamId: uuid("team_id").notNull().references(() => teamWorkspaces.id, { onDelete: "cascade" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  role: text("role").notNull().default("member"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_team_members_team_id").on(table.teamId),
+  index("idx_team_members_user_id").on(table.userId),
+]);
+
 export const templates = pgTable("templates", {
   id: uuid("id").defaultRandom().primaryKey(),
   creatorId: text("creator_id").references(() => users.id),
@@ -124,6 +146,20 @@ export const reports = pgTable("reports", {
   index("idx_reports_user_id").on(table.userId),
   index("idx_reports_status").on(table.status),
   index("idx_reports_created_at").on(table.createdAt.desc()),
+]);
+
+export const reportPurchases = pgTable("report_purchases", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  reportId: uuid("report_id").notNull().references(() => reports.id, { onDelete: "cascade" }),
+  creemCheckoutId: text("creem_checkout_id").unique(),
+  creemProductId: text("creem_product_id"),
+  status: text("status").notNull().default("active"),
+  purchaseType: text("purchase_type").notNull().default("single_report_export"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_report_purchases_user_report").on(table.userId, table.reportId),
 ]);
 
 export const attachments = pgTable("attachments", {

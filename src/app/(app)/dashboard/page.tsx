@@ -35,6 +35,21 @@ interface Report {
   matchSnippet?: string
 }
 
+interface TeamMember {
+  id: string
+  email: string
+  name: string
+  role: string
+}
+
+interface TeamState {
+  maxSeats: number
+  team: {
+    role: string
+    members: TeamMember[]
+  } | null
+}
+
 const statusStyles: Record<string, string> = {
   draft: "bg-amber-100 text-amber-700 ring-amber-600/20",
   in_progress: "bg-blue-100 text-blue-700 ring-blue-600/20",
@@ -62,7 +77,7 @@ const priorityLabel: Record<string, string> = {
 export default function DashboardPage() {
   const router = useRouter()
   const { data: session } = authClient.useSession()
-  const { plan, isPro } = usePlan((session?.user as Record<string, unknown>)?.plan)
+  const { plan, isPro, entitlements } = usePlan((session?.user as Record<string, unknown>)?.plan)
 
   const [reports, setReports] = useState<Report[]>([])
   const [searchResults, setSearchResults] = useState<Report[] | null>(null)
@@ -70,6 +85,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [searching, setSearching] = useState(false)
   const [sampleLoading, setSampleLoading] = useState(false)
+  const [teamState, setTeamState] = useState<TeamState | null>(null)
+  const [teamEmail, setTeamEmail] = useState("")
+  const [teamSaving, setTeamSaving] = useState(false)
 
   const fetchReports = useCallback(async () => {
     try {
@@ -93,6 +111,19 @@ export default function DashboardPage() {
     return () => clearTimeout(timer)
   }, [session, fetchReports])
 
+  useEffect(() => {
+    if (!session || plan !== "team") return
+    const timer = setTimeout(() => {
+      fetch("/api/team")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data) setTeamState({ maxSeats: data.maxSeats ?? 5, team: data.team ?? null })
+        })
+        .catch(() => {})
+    }, 0)
+    return () => clearTimeout(timer)
+  }, [plan, session])
+
   const totalReports = reports.length
   const inProgress = reports.filter((r) => r.status !== "completed").length
   const completed = reports.filter((r) => r.status === "completed").length
@@ -109,7 +140,7 @@ export default function DashboardPage() {
         ].some((value) => value.toLowerCase().includes(normalizedQuery))
       })
     : reports
-  const visibleReports = isPro && searchResults ? searchResults : freeVisibleReports
+  const visibleReports = entitlements.deepSearch && searchResults ? searchResults : freeVisibleReports
 
   useEffect(() => {
     if (!session || !normalizedQuery) {
@@ -117,7 +148,7 @@ export default function DashboardPage() {
       return () => clearTimeout(timer)
     }
 
-    if (!isPro) {
+    if (!entitlements.deepSearch) {
       const timer = setTimeout(() => {
         trackEvent("dashboard_search_used", { queryLength: normalizedQuery.length, plan })
         setSearchResults(null)
@@ -141,7 +172,7 @@ export default function DashboardPage() {
     }, 250)
 
     return () => clearTimeout(timer)
-  }, [isPro, normalizedQuery, plan, session])
+  }, [entitlements.deepSearch, normalizedQuery, plan, session])
 
   const formatDate = (dateStr: string) => {
     try {
@@ -167,6 +198,26 @@ export default function DashboardPage() {
     }
   }
 
+  async function addTeamMember() {
+    if (!teamEmail.trim()) return
+    setTeamSaving(true)
+    try {
+      const res = await fetch("/api/team", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: teamEmail }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || "Failed to add member")
+      setTeamState((prev) => ({ maxSeats: prev?.maxSeats ?? 5, team: data }))
+      setTeamEmail("")
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to add member")
+    } finally {
+      setTeamSaving(false)
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 lg:px-6 lg:py-8">
       <div className="mb-6">
@@ -179,7 +230,7 @@ export default function DashboardPage() {
               Quality issue tracking & 8D problem solving
             </p>
           </div>
-          {!isPro && (
+          {!entitlements.unlimitedReports && (
             <div className="flex flex-col gap-2 rounded-lg border border-indigo-200 bg-indigo-50 p-3 sm:w-72">
               <div className="flex items-start gap-2">
                 <Sparkles className="mt-0.5 size-4 shrink-0 text-indigo-600" />
@@ -190,7 +241,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <CheckoutButton planType="monthly" size="sm" className="h-8 bg-indigo-600 text-white hover:bg-indigo-700">
+              <CheckoutButton planType="pro_monthly" size="sm" className="h-8 bg-indigo-600 text-white hover:bg-indigo-700">
                 Start Pro monthly
               </CheckoutButton>
               <Link href="/pricing" className="text-center text-xs font-medium text-indigo-700 underline underline-offset-4">
@@ -235,8 +286,41 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <QuotaIndicator isPro={isPro} />
+        <QuotaIndicator isPro={isPro} plan={plan} />
       </div>
+
+      {plan === "team" && (
+        <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-foreground">Team workspace</h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {teamState?.team?.members?.length ?? 1} of {teamState?.maxSeats ?? 5} seats used. Team members can open, edit, share, export, and search team reports.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(teamState?.team?.members ?? []).map((member) => (
+                  <span key={member.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
+                    {member.name || member.email} · {member.role}
+                  </span>
+                ))}
+              </div>
+            </div>
+            {teamState?.team?.role === "owner" && (
+              <div className="flex w-full gap-2 md:w-80">
+                <Input
+                  value={teamEmail}
+                  onChange={(event) => setTeamEmail(event.target.value)}
+                  placeholder="member@company.com"
+                  className="h-9 text-sm"
+                />
+                <Button size="sm" disabled={teamSaving} onClick={addTeamMember}>
+                  {teamSaving ? "Adding..." : "Add"}
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="mb-4 flex items-center gap-3">
         <div className="relative flex-1">
@@ -256,7 +340,7 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {normalizedQuery && !isPro && (
+      {normalizedQuery && !entitlements.deepSearch && (
         <button
           type="button"
           onClick={() => {
@@ -270,7 +354,7 @@ export default function DashboardPage() {
         </button>
       )}
 
-      {normalizedQuery && isPro && searching && (
+      {normalizedQuery && entitlements.deepSearch && searching && (
         <div className="mb-4 text-xs text-muted-foreground">Searching report history...</div>
       )}
 

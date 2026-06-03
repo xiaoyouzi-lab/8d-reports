@@ -40,7 +40,7 @@ export const seoPages: SeoPage[] = [
       {
         title: "Free and Pro usage",
         body:
-          "Free users can create up to 5 lifetime reports and export watermarked PDFs. Pro unlocks unlimited reports, no-watermark PDF export, Word export, company logo, editable sharing, and deep historical search.",
+          "Free users can create up to 3 lifetime reports and export watermarked PDFs. Pro unlocks unlimited reports, no-watermark PDF export, Word export, company logo, editable sharing, and deep historical search.",
       },
     ],
     checklist: [
@@ -148,12 +148,12 @@ export const seoPages: SeoPage[] = [
       {
         question: "Can a supplier use this without Pro?",
         answer:
-          "A supplier can complete reports on Free within the 5-report limit. Pro is better for teams that manage recurring supplier reports.",
+          "A supplier can complete reports on Free within the 3-report limit. Pro is better for teams that manage recurring supplier reports.",
       },
       {
         question: "Can suppliers edit a shared 8D report?",
         answer:
-          "Editable sharing is a Pro feature. Free sharing is view-only.",
+          "Editable sharing requires Pro or Team. Free sharing is view-only.",
       },
     ],
   },

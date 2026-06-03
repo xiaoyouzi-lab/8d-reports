@@ -35,7 +35,7 @@ const workflowSteps = [
 ]
 
 const freeFeatures = [
-  "5 lifetime reports",
+  "3 lifetime reports",
   "Complete D0-D8 editor",
   "PDF export with watermark",
   "Basic dashboard search by title, report number, and status",
@@ -51,14 +51,21 @@ const proFeatures = [
   "Editable share links",
 ]
 
+const teamFeatures = [
+  "Everything in Pro",
+  "5 seats included",
+  "Team report workspace",
+  "Team members can edit, share, export, and search team reports",
+]
+
 const faqs = [
   {
     q: "What can I do on the Free plan?",
-    a: "Free includes 5 lifetime reports, the full D0-D8 editing flow, attachment support, view-only sharing, basic dashboard search, and PDF export with a watermark.",
+    a: "Free includes 3 lifetime reports, the full D0-D8 editing flow, attachment support, view-only sharing, basic dashboard search, and PDF export with a watermark.",
   },
   {
-    q: "Why would a quality team upgrade to Pro?",
-    a: "Pro is for teams that deliver reports regularly and want their 8D history to become searchable knowledge: unlimited reports, no watermark, Word export, company logo, and deep historical search.",
+    q: "Why would a quality engineer upgrade to Pro?",
+    a: "Pro is for individual users who deliver reports regularly and want their 8D history to become searchable knowledge: unlimited reports, no watermark, Word export, company logo, and deep historical search.",
   },
   {
     q: "How does dashboard search differ between Free and Pro?",
@@ -73,8 +80,8 @@ const faqs = [
     a: "Yes. Free users can create view-only links. Pro users can also create editable links when a supplier or customer needs to contribute directly.",
   },
   {
-    q: "What happens after I create 5 reports?",
-    a: "Your existing Free reports remain accessible. Creating more reports requires Pro, which removes the report limit and unlocks formal delivery features.",
+    q: "What happens after I create 3 reports?",
+    a: "Your existing Free reports remain accessible. Creating more reports requires Pro or Team. If you only need to deliver one report, you can buy a single report export for $4.99.",
   },
 ]
 
@@ -386,8 +393,8 @@ export default function LandingPage() {
             </p>
             <div className="mt-8 space-y-4">
               {[
-                "Free: search titles, report numbers, and status across the 5 included reports.",
-                "Pro: search all historical problem descriptions, root causes, corrective actions, prevention steps, and lessons learned.",
+                "Free: search titles, report numbers, and status across the 3 included reports.",
+                "Pro and Team: search all historical problem descriptions, root causes, corrective actions, prevention steps, and lessons learned.",
                 "Each result shows why it matched, so users can quickly reopen the right report.",
               ].map((item) => (
                 <div key={item} className="flex gap-3">
@@ -437,15 +444,15 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl px-4 sm:px-6">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">
-              Free for evaluation. Pro for delivery and reuse.
+              Free for evaluation. Pro and Team for delivery and reuse.
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600">
               The paywall is designed around visible value: no watermark,
-              unlimited reports, Word export, company logo, and deep search.
+              unlimited reports, Word export, company logo, team access, and deep search.
             </p>
           </div>
 
-          <div className="mx-auto mt-14 grid max-w-4xl gap-6 lg:grid-cols-2">
+          <div className="mx-auto mt-14 grid max-w-6xl gap-6 lg:grid-cols-3">
             <div className="rounded-lg border border-slate-200 bg-white p-8">
               <h3 className="text-xl font-semibold text-slate-950">Free</h3>
               <div className="mt-4 flex items-baseline gap-1">
@@ -472,7 +479,7 @@ export default function LandingPage() {
                 href="/login"
                 className="mt-3 block text-center text-sm font-medium text-indigo-700 underline underline-offset-4 hover:text-indigo-900"
               >
-                Start free with 5 reports
+                Start free with 3 reports
               </Link>
             </div>
 
@@ -485,35 +492,49 @@ export default function LandingPage() {
               </div>
               <div className="mt-4 flex items-baseline gap-1">
                 <span className="font-mono text-4xl font-semibold text-slate-950">
-                  $9.99
+                  $19
                 </span>
                 <span className="text-sm text-slate-500">/month</span>
               </div>
-              <p className="mt-1 text-sm font-medium text-emerald-700">
-                or $79/year, save 34%
-              </p>
               <p className="mt-3 text-sm leading-6 text-slate-600">
                 For quality professionals who need formal deliverables and a
                 reusable 8D history.
               </p>
               <FeatureList features={proFeatures} />
-              <div className="mt-8 space-y-2">
-                <CheckoutButton
-                  planType="monthly"
-                  className="h-11 w-full bg-indigo-600 hover:bg-indigo-700"
-                >
-                  Start Pro monthly
-                </CheckoutButton>
-                <CheckoutButton
-                  planType="yearly"
-                  variant="outline"
-                  className="h-11 w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                >
-                  Start Pro yearly
-                </CheckoutButton>
+              <CheckoutButton
+                planType="pro_monthly"
+                className="mt-8 h-11 w-full bg-indigo-600 hover:bg-indigo-700"
+              >
+                Start Pro monthly
+              </CheckoutButton>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-8">
+              <h3 className="text-xl font-semibold text-slate-950">Team</h3>
+              <div className="mt-4 flex items-baseline gap-1">
+                <span className="font-mono text-4xl font-semibold text-slate-950">
+                  $99
+                </span>
+                <span className="text-sm text-slate-500">/month</span>
               </div>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                For small quality teams that need shared access to 8D reports.
+              </p>
+              <FeatureList features={teamFeatures} />
+              <CheckoutButton
+                planType="team_monthly"
+                className="mt-8 h-11 w-full bg-slate-950 hover:bg-slate-800"
+              >
+                Start Team monthly
+              </CheckoutButton>
             </div>
           </div>
+          <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-slate-600">
+            Need one formal delivery without a subscription? Single report export is $4.99 and unlocks no-watermark PDF plus Word for that report only.{" "}
+            <Link href="/custom-8d-template-setup" className="font-medium text-indigo-600 hover:text-indigo-700">
+              Custom 8D template setup starts at $299.
+            </Link>
+          </p>
         </div>
       </section>
 
@@ -629,7 +650,7 @@ export default function LandingPage() {
               Ready to finish the first real report?
             </h2>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Start free, create up to 5 reports, and upgrade when formal
+              Start free, create up to 3 reports, and upgrade when formal
               delivery or historical search becomes valuable.
             </p>
           </div>

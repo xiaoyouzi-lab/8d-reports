@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { FileDown, FileText, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { exportReportToPdf } from "@/lib/pdf-export"
@@ -28,13 +27,13 @@ interface ExportMenuProps {
   reportTitle: string
   reportId: string
   withWatermark: boolean
+  canExportWord?: boolean
   logoUrl?: string | null
 }
 
-export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, logoUrl }: ExportMenuProps) {
+export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, canExportWord = false, logoUrl }: ExportMenuProps) {
   const t = useTranslations("export")
   const editorT = useTranslations("editor")
-  const router = useRouter()
   const [loading, setLoading] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -59,6 +58,26 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
       const res = await fetch(`/api/reports/${reportId}/attachments`)
       return res.ok ? (await res.json() as ExportAttachment[]) : []
     } catch { return [] }
+  }
+
+  const startSingleExportCheckout = async () => {
+    setLoading("single_export")
+    try {
+      trackEvent("checkout_started", { planType: "single_report_export", source: "export_menu" }, reportId)
+      const res = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planType: "single_report_export", reportId }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || "Failed to create checkout session")
+      if (!data?.checkout_url) throw new Error("Checkout URL missing")
+      window.location.href = data.checkout_url
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Checkout failed")
+    } finally {
+      setLoading(null)
+    }
   }
 
   const warnIfReportNeedsWork = () => {
@@ -121,16 +140,20 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
     warnIfReportNeedsWork()
     if (withWatermark) {
       trackEvent("word_export_gate_clicked", { plan: "free" }, reportId)
-      toast("Word export is a Pro feature", {
-        description: "Upgrade to Pro to export editable Word reports.",
+      toast("Word export requires Pro, Team, or a single-report export", {
+        description: "Export this report once for $4.99, including Word and no-watermark PDF.",
         action: {
-          label: "Upgrade",
+          label: "Export for $4.99",
           onClick: () => {
-            trackEvent("upgrade_clicked", { source: "word_export_gate", plan: "free" }, reportId)
-            router.push("/pricing")
+            trackEvent("upgrade_clicked", { source: "single_export_gate", plan: "free" }, reportId)
+            void startSingleExportCheckout()
           },
         },
       })
+      return
+    }
+    if (!canExportWord) {
+      toast.error("Word export is not available for this account")
       return
     }
     setLoading("docx")
@@ -204,6 +227,19 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, l
             <FileSpreadsheet className="size-4" />
             {t("word")}
           </button>
+          {withWatermark && (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false)
+                void startSingleExportCheckout()
+              }}
+              className="mt-1 flex w-full items-center gap-2 rounded-md bg-indigo-50 px-2 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
+            >
+              <FileDown className="size-4" />
+              Export this report — $4.99
+            </button>
+          )}
         </div>
       )}
     </div>
