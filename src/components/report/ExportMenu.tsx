@@ -95,7 +95,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     setLoading("pdf")
     try {
       trackEvent("export_clicked", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
-      const allAttachments = await fetchAttachments()
+      const allAttachments = (await fetchAttachments()).filter((a) => a.fileType !== "signature")
       const pdf = await exportReportToPdf({
         reportData,
         reportTitle,
@@ -169,7 +169,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         }),
       })
       if (!res.ok) throw new Error("Export failed")
-      const allAttachments = await fetchAttachments()
+      const allAttachments = (await fetchAttachments()).filter((a) => a.fileType !== "signature")
       const allAttachForZip = allAttachments.map((a) => ({
         url: getAttachmentFileUrl(a),
         fallbackUrl: a.url,

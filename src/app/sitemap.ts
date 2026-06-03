@@ -24,6 +24,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     entry("/resources", "weekly", 0.9),
     entry("/pricing", "weekly", 0.9),
     entry("/custom-8d-template-setup", "monthly", 0.8),
+    entry("/8d-report-review-service", "monthly", 0.75),
+    entry("/security", "monthly", 0.6),
     entry("/faq", "monthly", 0.75),
     entry("/docs", "monthly", 0.75),
     entry("/contact", "monthly", 0.45),

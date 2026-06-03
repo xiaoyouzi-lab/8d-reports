@@ -192,7 +192,7 @@ export const reportShares = pgTable("report_shares", {
 export const userQuotas = pgTable("user_quotas", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
-  totalQuota: integer("total_quota").default(5),
+  totalQuota: integer("total_quota").default(3),
   usedQuota: integer("used_quota").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -249,4 +249,39 @@ export const analyticsEvents = pgTable("analytics_events", {
   index("idx_analytics_events_name").on(table.eventName),
   index("idx_analytics_events_user_id").on(table.userId),
   index("idx_analytics_events_created_at").on(table.createdAt.desc()),
+]);
+
+export const aiTasks = pgTable("ai_tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  reportId: uuid("report_id").references(() => reports.id, { onDelete: "set null" }),
+  taskType: text("task_type").notNull(),
+  inputSummary: text("input_summary"),
+  output: jsonb("output").default("{}"),
+  status: text("status").notNull().default("completed"),
+  error: text("error"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_ai_tasks_user_id").on(table.userId),
+  index("idx_ai_tasks_report_id").on(table.reportId),
+  index("idx_ai_tasks_type").on(table.taskType),
+]);
+
+export const customTemplateRequests = pgTable("custom_template_requests", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  companyName: text("company_name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  templateUseCase: text("template_use_case").notNull(),
+  customerRequirements: text("customer_requirements"),
+  languageRequirement: text("language_requirement"),
+  expectedExportFormat: text("expected_export_format"),
+  uploadedFiles: jsonb("uploaded_files").default("[]"),
+  aiEvaluation: jsonb("ai_evaluation").default("{}"),
+  status: text("status").notNull().default("submitted"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_custom_template_requests_user_id").on(table.userId),
+  index("idx_custom_template_requests_created_at").on(table.createdAt.desc()),
 ]);

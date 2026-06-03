@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowRight, Check, FileSpreadsheet, FileText, Workflow, Wrench } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { CustomTemplateRequestForm } from "@/components/marketing/CustomTemplateRequestForm"
 
 export const metadata: Metadata = {
   title: "Custom 8D Template Setup | Convert Word and Excel 8D Templates",
@@ -90,7 +91,7 @@ export default function Custom8DTemplateSetupPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="mailto:19857345237@163.com?subject=Custom%208D%20template%20setup"
+                href="#request"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "h-11 bg-[#4F46E5] px-6 hover:bg-[#4338CA]",
@@ -130,6 +131,12 @@ export default function Custom8DTemplateSetupPage() {
               </ul>
             </div>
           </div>
+        </div>
+      </section>
+
+      <section id="request" className="border-b border-slate-200 bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-4xl px-4 sm:px-6">
+          <CustomTemplateRequestForm />
         </div>
       </section>
 
@@ -220,10 +227,14 @@ export default function Custom8DTemplateSetupPage() {
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-300">
               Send the template you use today. We will confirm whether it fits
               the base setup or needs a separate custom scope.
+              {" "}
+              <Link href="/security" className="font-medium text-white underline underline-offset-4">
+                Review security and data privacy.
+              </Link>
             </p>
           </div>
           <Link
-            href="mailto:19857345237@163.com?subject=Custom%208D%20template%20setup"
+            href="#request"
             className={cn(
               buttonVariants({ variant: "default", size: "lg" }),
               "h-11 shrink-0 bg-white px-6 text-slate-950 hover:bg-slate-100",

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select"
 import { cn } from "@/lib/utils"
 import { AttachmentArea } from "@/components/report/AttachmentArea"
+import { SignatureApprovalArea } from "@/components/report/SignatureApprovalArea"
 import type { ReportStep, ReportField, ReportData } from "@/lib/report-steps"
 
 interface StepFormProps {
@@ -236,6 +237,10 @@ export function StepForm({ step, data, onChange, reportId, isPro = false }: Step
 
       {showAttachments && (
         <AttachmentArea reportId={reportId} stepId={step.id} isPro={isPro} />
+      )}
+
+      {step.id === "D8" && (
+        <SignatureApprovalArea reportId={reportId} data={data} onChange={onChange} />
       )}
     </div>
   )

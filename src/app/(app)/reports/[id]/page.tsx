@@ -8,7 +8,6 @@ import {
   Save,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
   Upload,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -19,6 +18,7 @@ import { ReportStepsNav } from "@/components/report/ReportStepsNav"
 import { StepForm } from "@/components/report/StepForm"
 import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
+import { AiReportTools } from "@/components/report/AiReportTools"
 import { STEPS, DEFAULT_REPORT_DATA, getCompletedStepIds, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
@@ -240,13 +240,6 @@ export default function ReportEditorPage({
     }
   }
 
-  const handleAiInterest = () => {
-    trackEvent("ai_draft_interest_clicked", { plan }, reportId)
-    toast("AI report drafting coming soon", {
-      description: "Soon you will be able to provide source materials and generate a D0-D8 draft.",
-    })
-  }
-
   const validateCompletion = () => {
     const issues = getReportCompletionIssues(reportData)
     if (issues.length === 0) return true
@@ -304,15 +297,21 @@ export default function ReportEditorPage({
               {te(STATUS_KEY[status] || "draft")}
             </Badge>
 
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleAiInterest}
-              className="hidden md:inline-flex"
-            >
-              <Sparkles className="size-3.5" />
-              AI
-            </Button>
+            <AiReportTools
+              reportId={reportId}
+              reportData={reportData}
+              onApplyDraft={(fields) => {
+                setReportData((prev) => {
+                  const next = { ...prev }
+                  for (const [key, value] of Object.entries(fields)) {
+                    if (!value) continue
+                    if (String(next[key as keyof ReportData] || "").trim()) continue
+                    next[key as keyof ReportData] = String(value)
+                  }
+                  return next
+                })
+              }}
+            />
 
             <input
               ref={logoInputRef}

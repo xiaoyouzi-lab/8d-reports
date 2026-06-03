@@ -40,6 +40,12 @@ export async function POST(
     ...(typeof report.data === "object" && report.data ? (report.data as Record<string, unknown>) : {}),
   } as ReportData;
 
+  for (const key of ["preparedSignatureUrl", "reviewedSignatureUrl", "approvedSignatureUrl"] as const) {
+    if (data[key]?.startsWith("/")) {
+      data[key] = `${req.nextUrl.origin}${data[key]}`;
+    }
+  }
+
   const attachmentRows = await db
     .select()
     .from(attachments)
@@ -57,7 +63,7 @@ export async function POST(
     logoUrl,
     locale,
     attachmentImages: attachmentRows
-      .filter((a) => a.fileType === "photo" || a.mimeType?.startsWith("image/"))
+      .filter((a) => a.fileType !== "signature")
       .map((a) => ({
         url: `${req.nextUrl.origin}/api/attachments/${a.id}/file`,
         filename: a.filename!,

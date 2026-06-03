@@ -316,6 +316,15 @@ export default function LandingPage() {
                 Browse complete samples
               </Link>
               <Link
+                href="/api/sample-reports/automotive"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
+                )}
+              >
+                Download sample PDF
+              </Link>
+              <Link
                 href="/login"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
@@ -686,6 +695,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-6">
             {[
               { label: "Privacy", href: "/privacy" },
+              { label: "Security", href: "/security" },
               { label: "Terms", href: "/terms" },
               { label: "Contact", href: "/contact" },
             ].map((link) => (

@@ -156,6 +156,11 @@ export default function SharePage({
   const canEdit = permissionLevel === "edit"
   const displayData = canEdit ? editData || data : data
   const attachmentUrl = (attachmentId: string) => `/api/share/${token}/attachments/${attachmentId}`
+  const signatureUrl = (url: unknown) => {
+    const value = String(url || "")
+    const match = value.match(/\/api\/attachments\/([^/]+)\/file/)
+    return match ? attachmentUrl(match[1]) : value
+  }
   const formatFileSize = (size?: number | null) => {
     if (!size) return ""
     if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`
@@ -231,7 +236,7 @@ export default function SharePage({
         <div className="space-y-3">
           {STEPS.map((step) => {
             const isExpanded = expandedStep === step.id
-            const stepAttachments = report.attachments.filter((attachment) => attachment.stepId === step.id)
+            const stepAttachments = report.attachments.filter((attachment) => attachment.stepId === step.id && attachment.fileType !== "signature")
             const hasContent = step.fields.some((field) => {
               const val = displayData[field.name as keyof ReportData]
               return val && String(val).trim() !== ""
@@ -384,6 +389,36 @@ export default function SharePage({
             )
           })}
         </div>
+
+        <Card className="mt-4">
+          <CardContent className="px-4 py-4">
+            <h2 className="text-sm font-semibold text-foreground">Approval</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Signature images are used for report presentation and are not a legal electronic signature.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                { label: "Prepared by", name: displayData.preparedBy, date: displayData.preparedDate, url: displayData.preparedSignatureUrl },
+                { label: "Reviewed by", name: displayData.reviewedBy, date: displayData.reviewedDate, url: displayData.reviewedSignatureUrl },
+                { label: "Approved by", name: displayData.approverName, date: displayData.approverDate, url: displayData.approvedSignatureUrl },
+              ].map((item) => (
+                <div key={item.label} className="rounded-lg border bg-white p-3">
+                  <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{item.label}</div>
+                  <div className="mt-1 text-sm font-medium text-foreground">{String(item.name || "-")}</div>
+                  <div className="text-xs text-muted-foreground">{String(item.date || "-")}</div>
+                  <div className="mt-3 flex h-20 items-center justify-center rounded border border-dashed bg-slate-50">
+                    {item.url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={signatureUrl(item.url)} alt={`${item.label} signature`} className="max-h-16 max-w-full object-contain" />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Signature line</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <footer className="border-t border-border/40 bg-white">

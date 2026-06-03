@@ -72,8 +72,18 @@ export interface ReportData {
   closureDate: string
   lessonsLearned: string
   teamAcknowledgment: string
+  preparedBy: string
+  preparedDate: string
+  preparedSignatureId: string
+  preparedSignatureUrl: string
+  reviewedBy: string
+  reviewedDate: string
+  reviewedSignatureId: string
+  reviewedSignatureUrl: string
   approverName: string
   approverDate: string
+  approvedSignatureId: string
+  approvedSignatureUrl: string
 }
 
 export const DEFAULT_REPORT_DATA: ReportData = {
@@ -131,8 +141,18 @@ export const DEFAULT_REPORT_DATA: ReportData = {
   closureDate: "",
   lessonsLearned: "",
   teamAcknowledgment: "",
+  preparedBy: "",
+  preparedDate: "",
+  preparedSignatureId: "",
+  preparedSignatureUrl: "",
+  reviewedBy: "",
+  reviewedDate: "",
+  reviewedSignatureId: "",
+  reviewedSignatureUrl: "",
   approverName: "",
   approverDate: "",
+  approvedSignatureId: "",
+  approvedSignatureUrl: "",
 }
 
 const COMPLETION_REQUIREMENTS: Array<{
@@ -163,7 +183,7 @@ const COMPLETION_REQUIREMENTS: Array<{
   { stepId: "D5", label: "D5 corrective action", fields: ["selectedCorrectiveAction"], mode: "all" },
   { stepId: "D6", label: "D6 implementation plan", fields: ["implementationPlan"], mode: "all" },
   { stepId: "D7", label: "D7 prevention action", fields: ["systemChanges", "processUpdates", "horizontalDeployment"], mode: "any" },
-  { stepId: "D8", label: "D8 closure or lessons learned", fields: ["closureDate", "lessonsLearned", "approverName"], mode: "any" },
+  { stepId: "D8", label: "D8 closure or approval", fields: ["closureDate", "lessonsLearned", "preparedBy", "reviewedBy", "approverName"], mode: "any" },
 ]
 
 function hasValue(value: unknown) {
@@ -322,8 +342,12 @@ export const STEPS: ReportStep[] = [
       { name: "closureDate", label: "Closure Date", type: "date", placeholder: "" },
       { name: "lessonsLearned", label: "Lessons Learned", type: "textarea", placeholder: "What did the team learn from this process?" },
       { name: "teamAcknowledgment", label: "Team Acknowledgment", type: "textarea", placeholder: "Recognition and acknowledgment of the team's efforts" },
-      { name: "approverName", label: "Approver Name", type: "text", placeholder: "Name of the person approving closure" },
-      { name: "approverDate", label: "Approver Date", type: "date", placeholder: "" },
+      { name: "preparedBy", label: "Prepared By", type: "text", placeholder: "Name of the report preparer" },
+      { name: "preparedDate", label: "Prepared Date", type: "date", placeholder: "" },
+      { name: "reviewedBy", label: "Reviewed By", type: "text", placeholder: "Name of the reviewer" },
+      { name: "reviewedDate", label: "Reviewed Date", type: "date", placeholder: "" },
+      { name: "approverName", label: "Approved By", type: "text", placeholder: "Name of the person approving closure" },
+      { name: "approverDate", label: "Approval Date", type: "date", placeholder: "" },
     ],
   },
 ]

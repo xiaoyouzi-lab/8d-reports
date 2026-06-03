@@ -25,6 +25,20 @@ interface WordExportOptions {
   attachmentImages?: { url: string; filename: string; stepId?: string; storagePath?: string; mimeType?: string | null }[];
 }
 
+function isImageAttachment(att: { mimeType?: string | null; storagePath?: string; url: string }) {
+  return att.mimeType?.startsWith("image/") ?? false;
+}
+
+function addMetaRow(label: string, value: string) {
+  return new Paragraph({
+    spacing: { after: 80 },
+    children: [
+      new TextRun({ text: `${label}: `, bold: true, size: 22 }),
+      new TextRun({ text: value || "-", size: 22 }),
+    ],
+  });
+}
+
 async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<Buffer | null> {
   if (img.storagePath) {
     const client = getR2Client();
@@ -102,6 +116,10 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       children: [new TextRun({ text: reportId, size: 24, color: "4b5563" })],
     })
   );
+  children.push(addMetaRow("Report Number", reportData.reportNumber || reportId));
+  children.push(addMetaRow("Customer", reportData.customerName));
+  children.push(addMetaRow("Product / Model", reportData.productName));
+  children.push(addMetaRow("Batch / Lot", reportData.batchNumber));
   children.push(
     new Paragraph({
       spacing: { before: 100 },
@@ -125,6 +143,45 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       children: [],
     })
   );
+
+  children.push(
+    new Paragraph({
+      spacing: { before: 300, after: 100 },
+      children: [new TextRun({ text: "D0-D8 Contents", size: 28, bold: true, color: "1e40af" })],
+    })
+  );
+  for (const step of STEPS) {
+    children.push(
+      new Paragraph({
+        spacing: { after: 80 },
+        children: [
+          new TextRun({ text: `${step.label}: `, bold: true, size: 20 }),
+          new TextRun({ text: step.description, size: 18, color: "6b7280" }),
+        ],
+      })
+    );
+  }
+
+  const normalAttachments = attachmentImages.filter((att) => att.stepId?.startsWith("signature_") !== true);
+  if (normalAttachments.length > 0) {
+    children.push(
+      new Paragraph({
+        spacing: { before: 300, after: 100 },
+        children: [new TextRun({ text: "Attachment List", size: 28, bold: true, color: "1e40af" })],
+      })
+    );
+    for (const att of normalAttachments) {
+      children.push(
+        new Paragraph({
+          spacing: { after: 60 },
+          children: [
+            new TextRun({ text: `${att.stepId || "General"}: `, bold: true, size: 18 }),
+            new TextRun({ text: `${att.filename} (${att.mimeType || "file"})`, size: 18 }),
+          ],
+        })
+      );
+    }
+  }
 
   // Steps
   for (const step of STEPS) {
@@ -189,7 +246,8 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       }
     }
 
-    const stepImages = attachmentImages.filter((img) => img.stepId === step.id)
+    const stepImages = attachmentImages.filter((img) => img.stepId === step.id && isImageAttachment(img))
+    const stepFiles = attachmentImages.filter((img) => img.stepId === step.id && !isImageAttachment(img))
     if (stepImages.length > 0) {
       children.push(
         new Paragraph({
@@ -215,7 +273,60 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
         } catch { /* skip failed image fetch */ }
       }
     }
+    if (stepFiles.length > 0) {
+      children.push(
+        new Paragraph({
+          spacing: { before: 160, after: 80 },
+          children: [new TextRun({ text: "Attached Files:", bold: true, size: 20, italics: true, color: "6b7280" })],
+        })
+      )
+      for (const file of stepFiles) {
+        children.push(
+          new Paragraph({
+            spacing: { after: 50 },
+            children: [new TextRun({ text: `${file.filename} (${file.mimeType || "file"})`, size: 18, color: "4b5563" })],
+          })
+        )
+      }
+    }
   }
+
+  children.push(
+    new Paragraph({
+      spacing: { before: 400, after: 120 },
+      children: [new TextRun({ text: "Approval", size: 28, bold: true, color: "1e40af" })],
+    })
+  )
+  const signatureRows = [
+    { label: "Prepared by", name: reportData.preparedBy, date: reportData.preparedDate, url: reportData.preparedSignatureUrl },
+    { label: "Reviewed by", name: reportData.reviewedBy, date: reportData.reviewedDate, url: reportData.reviewedSignatureUrl },
+    { label: "Approved by", name: reportData.approverName, date: reportData.approverDate, url: reportData.approvedSignatureUrl },
+  ]
+  for (const row of signatureRows) {
+    children.push(addMetaRow(row.label, `${row.name || "-"}    Date: ${row.date || "-"}`))
+    if (row.url) {
+      const isWebp = row.url.toLowerCase().includes(".webp")
+      const buf = isWebp ? null : await fetchImageBuffer({ url: row.url })
+      if (buf) {
+        children.push(
+          new Paragraph({
+            spacing: { after: 120 },
+            children: [new ImageRun({ type: getDocxImageType(row.url.endsWith(".jpg") ? "image/jpeg" : "image/png"), data: buf, transformation: { width: 160, height: 60 } })],
+          })
+        )
+      } else {
+        children.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Signature: ______________________________", size: 18 })] }))
+      }
+    } else {
+      children.push(new Paragraph({ spacing: { after: 120 }, children: [new TextRun({ text: "Signature: ______________________________", size: 18 })] }))
+    }
+  }
+  children.push(
+    new Paragraph({
+      spacing: { before: 100 },
+      children: [new TextRun({ text: "Signature images are used for report presentation and are not a legal electronic signature.", size: 16, color: "6b7280" })],
+    })
+  )
 
   const doc = new Document({
     sections: [{

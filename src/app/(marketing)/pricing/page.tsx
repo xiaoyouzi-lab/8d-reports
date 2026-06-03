@@ -179,6 +179,12 @@ export default function PricingPage() {
 
           <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-5 text-muted-foreground">
             Team access is implemented as a shared team workspace with owner-managed members. Single report export unlocks only the selected report.
+            {" "}
+            <Link href="/security" className="font-medium text-indigo-600 hover:text-indigo-700">Security and data privacy</Link>
+            {" · "}
+            <Link href="/8d-report-review-service" className="font-medium text-indigo-600 hover:text-indigo-700">8D report review service</Link>
+            {" · "}
+            <Link href="/api/sample-reports/automotive" className="font-medium text-indigo-600 hover:text-indigo-700">Download sample PDF</Link>
           </p>
         </div>
       </section>

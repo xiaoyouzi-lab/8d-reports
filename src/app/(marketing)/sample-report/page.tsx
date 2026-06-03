@@ -126,6 +126,15 @@ export default function SampleReportPage() {
               >
                 Compare Free vs Pro
               </Link>
+              <Link
+                href="/api/sample-reports/automotive"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-11 border-slate-300 px-6"
+                )}
+              >
+                Download sample PDF
+              </Link>
             </div>
           </div>
 
