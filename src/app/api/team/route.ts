@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { teamMembers, teamWorkspaces, users } from "@/lib/db/schema";
 import { eq, and, ne } from "drizzle-orm";
 import { getUserEntitlements } from "@/lib/subscription";
+import { normalizeTeamRole } from "@/lib/report-workflow";
 
 async function getOwnedTeam(userId: string) {
   return (await db
@@ -94,6 +95,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
+  const role = normalizeTeamRole(body.role);
   if (!email) {
     return NextResponse.json({ error: "Missing email" }, { status: 400 });
   }
@@ -119,10 +121,27 @@ export async function POST(req: NextRequest) {
 
   const existing = memberRows.find((member) => member.userId === invited.id);
   if (!existing) {
-    await db.insert(teamMembers).values({ teamId: team.id, userId: invited.id, role: "member" });
+    await db.insert(teamMembers).values({ teamId: team.id, userId: invited.id, role });
   }
 
   return NextResponse.json(await getTeamWithMembers(user.id), { status: existing ? 200 : 201 });
+}
+
+export async function PATCH(req: NextRequest) {
+  const user = await getSessionUser();
+  if (!user) return unauthorizedResponse();
+  const team = await getOwnedTeam(user.id);
+  if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
+  const body = await req.json().catch(() => ({}));
+  const memberId = typeof body.memberId === "string" ? body.memberId : "";
+  const role = normalizeTeamRole(body.role);
+  if (!memberId) return NextResponse.json({ error: "memberId required" }, { status: 400 });
+
+  const [updated] = await db.update(teamMembers).set({ role })
+    .where(and(eq(teamMembers.id, memberId), eq(teamMembers.teamId, team.id), ne(teamMembers.userId, user.id)))
+    .returning();
+  if (!updated) return NextResponse.json({ error: "Member not found" }, { status: 404 });
+  return NextResponse.json(await getTeamWithMembers(user.id));
 }
 
 export async function DELETE(req: NextRequest) {

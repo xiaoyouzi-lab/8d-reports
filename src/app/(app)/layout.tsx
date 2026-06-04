@@ -88,10 +88,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           <div className="flex items-center gap-3">
             <Badge
-              variant={plan === "pro" ? "default" : "outline"}
+              variant={plan === "pro" || plan === "team" ? "default" : "outline"}
               className="hidden sm:inline-flex"
             >
-              {plan === "pro" ? "Pro · Unlimited" : `Free · ${quotaLabel}`}
+              {plan === "team" ? "Team · 5 seats" : plan === "pro" ? "Pro · Unlimited" : `Free · ${quotaLabel}`}
             </Badge>
 
             <div className="relative">

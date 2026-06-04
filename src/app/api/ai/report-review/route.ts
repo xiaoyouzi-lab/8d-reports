@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     }).catch(() => {});
     return NextResponse.json({ output });
   } catch (err) {
+    console.error("AI Quality Check failed", { reportId, userId: user.id, err });
     await db.insert(aiTasks).values({
       userId: user.id,
       reportId,
@@ -48,6 +49,8 @@ export async function POST(req: NextRequest) {
       status: "failed",
       error: err instanceof Error ? err.message : "AI failed",
     }).catch(() => {});
-    return NextResponse.json({ error: err instanceof Error ? err.message : "AI failed" }, { status: 502 });
+    return NextResponse.json({
+      error: "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.",
+    }, { status: 503 });
   }
 }

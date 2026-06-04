@@ -4,9 +4,9 @@ import { eq } from "drizzle-orm";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { attachments, reports } from "@/lib/db/schema";
-import { getAccessibleReport } from "@/lib/report-access";
 import { getPublicUrl, getR2Client } from "@/lib/r2";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
+import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
 const SIGNATURE_ROLES = ["prepared", "reviewed", "approved"] as const;
 type SignatureRole = (typeof SIGNATURE_ROLES)[number];
@@ -36,10 +36,12 @@ export async function POST(
   if (!user) return unauthorizedResponse();
 
   const { id: reportId } = await params;
-  const report = await getAccessibleReport(reportId, user.id);
+  const access = await getReportAccess(reportId, user.id);
+  const report = access?.report;
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
+  if (!access.canEdit) return NextResponse.json({ error: access.locked ? "This report is locked" : "You do not have permission to replace signatures" }, { status: 403 });
 
   const form = await req.formData().catch(() => null);
   const file = form?.get("file") as File | null;
@@ -102,6 +104,7 @@ export async function POST(
     .update(reports)
     .set({ data: nextData, updatedAt: new Date() })
     .where(eq(reports.id, reportId));
+  await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "signature_uploaded", entityType: "signature", entityId: attachment.id, metadata: { role } });
 
   return NextResponse.json({
     role,

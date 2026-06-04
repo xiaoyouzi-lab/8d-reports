@@ -60,6 +60,14 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     } catch { return [] }
   }
 
+  const logExport = (format: "pdf" | "word" | "zip") => {
+    void fetch(`/api/reports/${reportId}/activity`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ format }),
+    })
+  }
+
   const startSingleExportCheckout = async () => {
     setLoading("single_export")
     try {
@@ -120,8 +128,10 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         const blob = new Blob([pdf.output("blob")], { type: "application/pdf" })
         const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.pdf`, allAttachForZip)
         downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
+        logExport("zip")
       } else {
         pdf.save(`${reportId.slice(0, 8)}_8D_Report.pdf`)
+        logExport("pdf")
       }
       trackEvent("export_succeeded", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
       if (withWatermark) {
@@ -179,6 +189,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         const blob = await res.blob()
         const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.docx`, allAttachForZip)
         downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
+        logExport("zip")
       } else {
         const blob = await res.blob()
         downloadBlob(blob, `${reportId.slice(0, 8)}_8D_Report.docx`)

@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 import { generateWordDocument } from "@/lib/word-export";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
 import { canExportReportWithoutWatermark } from "@/lib/subscription";
-import { getAccessibleReport } from "@/lib/report-access";
+import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
 export async function POST(
   req: NextRequest,
@@ -26,11 +26,13 @@ export async function POST(
     );
   }
 
-  const report = await getAccessibleReport(reportId, user.id);
+  const access = await getReportAccess(reportId, user.id);
+  const report = access?.report;
 
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
+  if (!access.canExportDraft) return NextResponse.json({ error: "You do not have permission to export reports" }, { status: 403 });
 
   const data: ReportData = {
     ...DEFAULT_REPORT_DATA,
@@ -72,6 +74,7 @@ export async function POST(
         mimeType: a.mimeType,
       })),
   });
+  await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "report_exported", metadata: { format: "word" } });
 
   return new NextResponse(new Uint8Array(buffer), {
     headers: {

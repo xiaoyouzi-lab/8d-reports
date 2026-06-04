@@ -54,8 +54,10 @@ const proFeatures = [
 const teamFeatures = [
   "Everything in Pro",
   "5 seats included",
-  "Team report workspace",
-  "Team members can edit, share, export, and search team reports",
+  "Owner / Editor / Viewer roles",
+  "Approval workflow and report locking",
+  "Revision tracking and Activity Log",
+  "Shared reports and customer-ready export packages",
 ]
 
 const faqs = [
@@ -286,13 +288,12 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-24 pt-16 sm:px-6 sm:pt-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:pb-28">
           <div>
             <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Finish 8D reports from the factory floor.
+              Create, approve, lock, and deliver customer-ready 8D reports.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-              Bring your phone to the line, capture photos and inspection
-              records on the spot, guide the team through D0-D8, share the
-              report for review, and export a customer-ready 8D without
-              rebuilding everything in a spreadsheet.
+              Give your quality team one workflow for factory-floor evidence,
+              D0-D8 collaboration, internal approval, controlled revisions,
+              and formal PDF, Word, and ZIP delivery.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -314,6 +315,15 @@ export default function LandingPage() {
                 )}
               >
                 Browse complete samples
+              </Link>
+              <Link
+                href="/demo-reports"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
+                )}
+              >
+                View Team workflow demos
               </Link>
               <Link
                 href="/api/sample-reports/automotive"
@@ -339,7 +349,7 @@ export default function LandingPage() {
               {[
                 ["Mobile", "capture evidence at the source"],
                 ["D0-D8", "guided factory-floor workflow"],
-                ["Share", "view or editable review links"],
+                ["Team", "approve, lock, and track revisions"],
               ].map(([value, label]) => (
                 <div key={label} className="border-l border-slate-200 pl-4">
                   <p className="font-mono text-2xl font-semibold text-slate-950">
@@ -372,8 +382,8 @@ export default function LandingPage() {
             },
             {
               icon: Share2,
-              title: "Shared review links",
-              text: "Send a report to suppliers, customers, or internal owners for view-only review or editable collaboration.",
+              title: "Governed Team delivery",
+              text: "Use Owner, Editor, and Viewer roles, approve completed work, lock submitted reports, and retain a clear Activity Log.",
             },
           ].map((item) => (
             <div key={item.title} className="rounded-lg bg-white p-5 shadow-sm">
@@ -541,7 +551,7 @@ export default function LandingPage() {
           <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-slate-600">
             Need one formal delivery without a subscription? Single report export is $4.99 and unlocks no-watermark PDF plus Word for that report only.{" "}
             <Link href="/custom-8d-template-setup" className="font-medium text-indigo-600 hover:text-indigo-700">
-              Custom 8D template setup starts at $299.
+              Custom 8D template setup starts at $499.
             </Link>
           </p>
         </div>

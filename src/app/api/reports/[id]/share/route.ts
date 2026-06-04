@@ -5,6 +5,7 @@ import { reportShares } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getUserEntitlements } from "@/lib/subscription";
 import { getAccessibleReport } from "@/lib/report-access";
+import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
 type ReportShareUpdate = Partial<typeof reportShares.$inferInsert>;
 
@@ -17,11 +18,12 @@ export async function GET(
 
   const { id: reportId } = await params;
 
-  const report = await getAccessibleReport(reportId, user.id);
+  const access = await getReportAccess(reportId, user.id);
 
-  if (!report) {
+  if (!access) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
+  if (!access.canShare) return NextResponse.json({ error: "You do not have permission to create share links" }, { status: 403 });
 
   const [existingShare] = await db
     .select()
@@ -74,6 +76,7 @@ export async function POST(
         .set({ permissionLevel } satisfies ReportShareUpdate)
         .where(eq(reportShares.reportId, reportId))
         .returning();
+      await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "share_link_updated", entityType: "share", entityId: updated.id, metadata: { permissionLevel } });
       return NextResponse.json(updated);
     }
     return NextResponse.json(existingShare);
@@ -89,6 +92,7 @@ export async function POST(
       accessToken: token,
     })
     .returning();
+  await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "share_link_created", entityType: "share", entityId: share.id, metadata: { permissionLevel } });
 
   return NextResponse.json(share, { status: 201 });
 }
@@ -101,6 +105,9 @@ export async function PATCH(
   if (!user) return unauthorizedResponse();
 
   const { id: reportId } = await params;
+  const access = await getReportAccess(reportId, user.id);
+  if (!access) return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  if (!access.canShare) return NextResponse.json({ error: "You do not have permission to update share links" }, { status: 403 });
   const body = await req.json().catch(() => ({}));
   const permissionLevel = body.permissionLevel === "edit" ? "edit" : "view";
   const entitlements = await getUserEntitlements(user.id);
@@ -121,6 +128,7 @@ export async function PATCH(
   if (!updated) {
     return NextResponse.json({ error: "Share not found" }, { status: 404 });
   }
+  await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "share_link_updated", entityType: "share", entityId: updated.id, metadata: { permissionLevel } });
 
   return NextResponse.json(updated);
 }
@@ -133,10 +141,14 @@ export async function DELETE(
   if (!user) return unauthorizedResponse();
 
   const { id: reportId } = await params;
+  const access = await getReportAccess(reportId, user.id);
+  if (!access) return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  if (!access.canShare) return NextResponse.json({ error: "You do not have permission to revoke share links" }, { status: 403 });
 
   await db
     .delete(reportShares)
     .where(and(eq(reportShares.reportId, reportId), eq(reportShares.sharedBy, user.id)));
+  await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "share_link_revoked", entityType: "share" });
 
   return NextResponse.json({ success: true });
 }

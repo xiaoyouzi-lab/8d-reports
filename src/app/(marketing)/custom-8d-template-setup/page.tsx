@@ -119,7 +119,7 @@ export default function Custom8DTemplateSetupPage() {
               </div>
               <div>
                 <p className="text-sm text-slate-500">Starting at</p>
-                <p className="font-mono text-3xl font-semibold text-slate-950">$299</p>
+                <p className="font-mono text-3xl font-semibold text-slate-950">From $499</p>
               </div>
             </div>
             <div className="mt-6 rounded-lg bg-slate-50 p-4">

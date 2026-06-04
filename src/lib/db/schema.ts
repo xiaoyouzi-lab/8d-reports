@@ -132,6 +132,10 @@ export const reports = pgTable("reports", {
   templateId: uuid("template_id").references(() => templates.id),
   title: text("title").notNull(),
   status: text("status").notNull().default("draft"),
+  workflowStatus: text("workflow_status").notNull().default("draft"),
+  revision: integer("revision").notNull().default(0),
+  lockedAt: timestamp("locked_at"),
+  lockedBy: text("locked_by").references(() => users.id, { onDelete: "set null" }),
   reportType: text("report_type").notNull().default("customer_8d"),
   priority: text("priority").notNull().default("medium"),
   source: text("source"),
@@ -210,6 +214,25 @@ export const reportEditHistory = pgTable("report_edit_history", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
+
+export const reportActivities = pgTable("report_activities", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  reportId: uuid("report_id").notNull().references(() => reports.id, { onDelete: "cascade" }),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  actorName: text("actor_name"),
+  actionType: text("action_type").notNull(),
+  entityType: text("entity_type").notNull().default("report"),
+  entityId: text("entity_id"),
+  fieldName: text("field_name"),
+  oldValuePreview: text("old_value_preview"),
+  newValuePreview: text("new_value_preview"),
+  metadata: jsonb("metadata").default("{}"),
+  reason: text("reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_report_activities_report_id").on(table.reportId),
+  index("idx_report_activities_created_at").on(table.createdAt.desc()),
+]);
 
 export const registrationRateLimits = pgTable("registration_rate_limits", {
   ipAddress: cidr("ip_address").primaryKey(),

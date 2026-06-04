@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { attachments, reportShares, reports } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
+import { LOCKED_WORKFLOW_STATUSES, logReportActivity } from "@/lib/report-workflow";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -26,6 +27,8 @@ export async function GET(
         stepStatus: reports.stepStatus,
         reportType: reports.reportType,
         priority: reports.priority,
+        workflowStatus: reports.workflowStatus,
+        lockedAt: reports.lockedAt,
         source: reports.source,
         createdAt: reports.createdAt,
         updatedAt: reports.updatedAt,
@@ -79,6 +82,8 @@ export async function PUT(
         stepStatus: reports.stepStatus,
         reportType: reports.reportType,
         priority: reports.priority,
+        workflowStatus: reports.workflowStatus,
+        lockedAt: reports.lockedAt,
       },
     })
     .from(reportShares)
@@ -95,6 +100,9 @@ export async function PUT(
       { error: "This share link is view-only" },
       { status: 403 }
     );
+  }
+  if (share.report.lockedAt || LOCKED_WORKFLOW_STATUSES.has(share.report.workflowStatus as "approved" | "submitted" | "closed")) {
+    return NextResponse.json({ error: "This report is locked and cannot be edited through a share link" }, { status: 403 });
   }
 
   const body = await req.json().catch(() => ({}));
@@ -130,6 +138,12 @@ export async function PUT(
   if (!updated) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
+  await logReportActivity({
+    reportId: share.reportId,
+    actorName: "External collaborator",
+    actionType: "shared_report_updated",
+    entityType: "share",
+  });
 
   return NextResponse.json({ success: true, report: updated });
 }

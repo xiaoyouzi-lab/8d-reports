@@ -19,6 +19,7 @@ import { StepForm } from "@/components/report/StepForm"
 import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
 import { AiReportTools } from "@/components/report/AiReportTools"
+import { ReportWorkflowPanel } from "@/components/report/ReportWorkflowPanel"
 import { STEPS, DEFAULT_REPORT_DATA, getCompletedStepIds, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
@@ -82,11 +83,18 @@ export default function ReportEditorPage({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [workflowStatus, setWorkflowStatus] = useState("draft")
+  const [revision, setRevision] = useState(0)
   const [reportPermissions, setReportPermissions] = useState({
     canExportWithoutWatermark: false,
     canExportWord: false,
     canUseLogo: false,
     canUseEditableShare: false,
+    locked: false,
+    canEdit: true,
+    canManageWorkflow: false,
+    canShare: true,
+    canExportDraft: true,
   })
 
   useEffect(() => {
@@ -108,8 +116,15 @@ export default function ReportEditorPage({
             canExportWord: Boolean(row.permissions.canExportWord),
             canUseLogo: Boolean(row.permissions.canUseLogo),
             canUseEditableShare: Boolean(row.permissions.canUseEditableShare),
+            locked: Boolean(row.permissions.locked),
+            canEdit: Boolean(row.permissions.canEdit),
+            canManageWorkflow: Boolean(row.permissions.canManageWorkflow),
+            canShare: Boolean(row.permissions.canShare),
+            canExportDraft: Boolean(row.permissions.canExportDraft),
           })
         }
+        setWorkflowStatus(row.workflowStatus || "draft")
+        setRevision(Number(row.revision) || 0)
         setReportTitle(row.title || "Untitled Report")
         if (row.data && typeof row.data === "object") {
           const rowData = row.data as Partial<ReportData>
@@ -141,8 +156,9 @@ export default function ReportEditorPage({
   const currentStep = STEPS[activeStepIndex]
 
   const handleFieldChange = useCallback((name: string, value: string) => {
+    if (!reportPermissions.canEdit) return
     setReportData((prev) => ({ ...prev, [name]: value }))
-  }, [])
+  }, [reportPermissions.canEdit])
 
   const saveToServer = useCallback(async (data: ReportData, steps: Set<string>, title: string) => {
     const stepStatusObj: Record<string, boolean> = {}
@@ -165,6 +181,10 @@ export default function ReportEditorPage({
   }, [reportId])
 
   const handleSave = async () => {
+    if (!reportPermissions.canEdit) {
+      toast.error(reportPermissions.locked ? "This report is locked" : "You do not have permission to edit this report")
+      return
+    }
     const currentCompletedSteps = new Set(getCompletedStepIds(reportData))
     setSaving(true)
     try {
@@ -281,6 +301,7 @@ export default function ReportEditorPage({
               type="text"
               value={reportTitle}
               onChange={(e) => setReportTitle(e.target.value)}
+              readOnly={!reportPermissions.canEdit}
               className="min-w-0 bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
               placeholder="Untitled Report"
             />
@@ -313,6 +334,20 @@ export default function ReportEditorPage({
               }}
             />
 
+            <ReportWorkflowPanel
+              reportId={reportId}
+              workflowStatus={workflowStatus}
+              revision={revision}
+              locked={reportPermissions.locked}
+              canManageWorkflow={reportPermissions.canManageWorkflow}
+              onUpdated={(report) => {
+                setWorkflowStatus(report.workflowStatus)
+                setRevision(report.revision)
+                const locked = Boolean(report.lockedAt)
+                setReportPermissions((prev) => ({ ...prev, locked, canEdit: !locked && prev.canManageWorkflow }))
+              }}
+            />
+
             <input
               ref={logoInputRef}
               type="file"
@@ -338,20 +373,22 @@ export default function ReportEditorPage({
 
             <ShareDialog reportId={reportId} reportTitle={reportTitle} isPro={reportPermissions.canUseEditableShare || entitlements.editableShare} />
 
-            <ExportMenu
-              reportData={reportData}
-              reportTitle={reportTitle}
-              reportId={reportId}
-              withWatermark={!reportPermissions.canExportWithoutWatermark}
-              canExportWord={reportPermissions.canExportWord}
-              logoUrl={logoUrl}
-            />
+            {reportPermissions.canExportDraft && (
+              <ExportMenu
+                reportData={reportData}
+                reportTitle={reportTitle}
+                reportId={reportId}
+                withWatermark={!reportPermissions.canExportWithoutWatermark}
+                canExportWord={reportPermissions.canExportWord}
+                logoUrl={logoUrl}
+              />
+            )}
 
             <Button
               size="sm"
               className="bg-indigo-600 text-white hover:bg-indigo-700"
               onClick={handleSave}
-              disabled={saving}
+              disabled={saving || !reportPermissions.canEdit}
             >
               <Save className="size-3.5" />
               <span className="hidden sm:inline">{saving ? te("saving") : te("save")}</span>
@@ -382,7 +419,7 @@ export default function ReportEditorPage({
 
           <div className="flex-1 overflow-y-auto px-4 py-5 lg:px-8 lg:py-6">
             <div className="mx-auto max-w-3xl">
-              <Card>
+              <Card className={cn(!reportPermissions.canEdit && "pointer-events-none opacity-75")}>
                 <CardContent className="p-5 lg:p-6">
                   <StepForm
                     step={currentStep}
@@ -408,7 +445,7 @@ export default function ReportEditorPage({
               </Button>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleSave} disabled={saving}>
+                <Button variant="outline" onClick={handleSave} disabled={saving || !reportPermissions.canEdit}>
                   <Save className="size-3.5" />
                   {te("saveDraft")}
                 </Button>
@@ -439,7 +476,7 @@ export default function ReportEditorPage({
                         setSaving(false)
                       }
                     }}
-                    disabled={saving}
+                    disabled={saving || !reportPermissions.canEdit}
                   >
                     {te("completeReport")}
                   </Button>

@@ -84,31 +84,44 @@ export async function callDeepSeekJson<T>(taskType: AiTaskType, input: string): 
   if (!apiKey) throw new Error("AI service not configured");
   if (input.length > 12000) throw new Error("AI input is too long");
 
-  const res = await fetch(DEEPSEEK_API_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: DEEPSEEK_MODEL,
-      messages: [
-        { role: "system", content: AI_PROMPTS[taskType] },
-        { role: "user", content: input },
-      ],
-      max_tokens: 2200,
-      temperature: 0.2,
-      response_format: { type: "json_object" },
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(DEEPSEEK_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(25_000),
+      body: JSON.stringify({
+        model: DEEPSEEK_MODEL,
+        messages: [
+          { role: "system", content: AI_PROMPTS[taskType] },
+          { role: "user", content: input },
+        ],
+        max_tokens: 2200,
+        temperature: 0.2,
+        response_format: { type: "json_object" },
+      }),
+    });
+  } catch (error) {
+    console.error("DeepSeek request failed", { taskType, error });
+    throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
+  }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    throw new Error(`AI service temporarily unavailable${errText ? `: ${errText.slice(0, 160)}` : ""}`);
+    console.error("DeepSeek returned an error", { taskType, status: res.status, detail: errText.slice(0, 300) });
+    throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
   }
 
   const data = await res.json();
   const content = data.choices?.[0]?.message?.content;
-  if (!content || typeof content !== "string") throw new Error("AI response was empty");
-  return JSON.parse(content) as T;
+  if (!content || typeof content !== "string") throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
+  try {
+    return JSON.parse(content) as T;
+  } catch (error) {
+    console.error("DeepSeek returned invalid JSON", { taskType, error });
+    throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
+  }
 }

@@ -6,6 +6,7 @@ import { eq, and } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
 import { getUserEntitlements } from "@/lib/subscription";
 import { getAccessibleReport } from "@/lib/report-access";
+import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
 export async function GET(
   _req: NextRequest,
@@ -16,10 +17,11 @@ export async function GET(
 
   const { id: reportId } = await params;
 
-  const report = await getAccessibleReport(reportId, user.id);
-  if (!report) {
+  const access = await getReportAccess(reportId, user.id);
+  if (!access) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
+  if (!access.canEdit) return NextResponse.json({ error: access.locked ? "This report is locked" : "You do not have permission to upload attachments" }, { status: 403 });
 
   const rows = await db
     .select()
@@ -80,6 +82,15 @@ export async function POST(
       sortOrder: currentCount,
     })
     .returning();
+  await logReportActivity({
+    reportId,
+    actorId: user.id,
+    actorName: user.name,
+    actionType: "attachment_uploaded",
+    entityType: "attachment",
+    entityId: attachment.id,
+    metadata: { filename: attachment.filename, stepId: attachment.stepId, fileSize: attachment.fileSize },
+  });
 
   return NextResponse.json(attachment, { status: 201 });
 }
@@ -99,10 +110,11 @@ export async function DELETE(
     return NextResponse.json({ error: "attachmentId required" }, { status: 400 });
   }
 
-  const report = await getAccessibleReport(reportId, user.id);
-  if (!report) {
+  const access = await getReportAccess(reportId, user.id);
+  if (!access) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
+  if (!access.canEdit) return NextResponse.json({ error: access.locked ? "This report is locked" : "You do not have permission to delete attachments" }, { status: 403 });
 
   const [attachment] = await db
     .select()
@@ -119,6 +131,15 @@ export async function DELETE(
   await db
     .delete(attachments)
     .where(eq(attachments.id, attachmentId));
+  await logReportActivity({
+    reportId,
+    actorId: user.id,
+    actorName: user.name,
+    actionType: "attachment_deleted",
+    entityType: "attachment",
+    entityId: attachment.id,
+    metadata: { filename: attachment.filename, stepId: attachment.stepId, fileSize: attachment.fileSize },
+  });
 
   return NextResponse.json({ success: true });
 }

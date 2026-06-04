@@ -6,6 +6,7 @@ import { eq, desc, and, gte, lte, sql, inArray } from "drizzle-orm";
 import { getUserEntitlements } from "@/lib/subscription";
 import { FREE_REPORT_LIMIT } from "@/lib/plans";
 import { getAccessibleUserIds } from "@/lib/report-access";
+import { getUserWorkspaceRole, logReportActivity } from "@/lib/report-workflow";
 
 const REPORT_TYPES = new Set(["customer_8d", "internal_8d"]);
 const PRIORITIES = new Set(["low", "medium", "high"]);
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
   const reportType = REPORT_TYPES.has(body.reportType) ? body.reportType : "customer_8d";
   const priority = PRIORITIES.has(body.priority) ? body.priority : "medium";
   const entitlements = await getUserEntitlements(user.id);
+  if (entitlements.plan === "team" && await getUserWorkspaceRole(user.id) === "viewer") {
+    return NextResponse.json({ error: "Viewers cannot create reports. Ask the Team owner to change your role." }, { status: 403 });
+  }
 
   const [quota] = await db
     .select()
@@ -121,6 +125,7 @@ export async function POST(req: NextRequest) {
       .set({ usedQuota: usedQuota + 1, updatedAt: new Date() })
       .where(eq(userQuotas.userId, user.id));
   }
+  await logReportActivity({ reportId: report.id, actorId: user.id, actorName: user.name, actionType: "report_created" });
 
   return NextResponse.json(report, { status: 201 });
 }

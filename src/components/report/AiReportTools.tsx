@@ -84,15 +84,15 @@ export function AiReportTools({ reportId, reportData, onApplyDraft }: AiReportTo
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Quality Expert beta</DialogTitle>
+          <DialogTitle>AI Quality Check — Beta</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="rounded-lg border bg-indigo-50 p-3 text-sm text-indigo-950">
-            AI review and draft generation are beta-only. Suggestions must be reviewed by a quality owner before customer submission.
+            AI Quality Check helps identify missing information and logic risks. It does not approve or certify the report.
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border p-3">
-              <h3 className="text-sm font-semibold">Review report quality</h3>
+              <h3 className="text-sm font-semibold">AI Quality Check — Beta</h3>
               <p className="mt-1 text-xs text-muted-foreground">
                 Check problem clarity, containment, root cause, corrective action, verification, prevention, and customer rejection risk.
               </p>
@@ -104,7 +104,7 @@ export function AiReportTools({ reportId, reportData, onApplyDraft }: AiReportTo
             <div className="rounded-lg border p-3">
               <h3 className="text-sm font-semibold">Generate draft from materials</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Paste complaint emails, inspection notes, defect photo descriptions, containment notes, or old 8Ds.
+                AI Draft uses only your current report fields and the material you provide in this session.
               </p>
               <Button className="mt-3" size="sm" onClick={runDraft} disabled={!!loading}>
                 {loading === "draft" && <Loader2 className="size-3.5 animate-spin" />}

@@ -3,9 +3,9 @@ import { eq } from "drizzle-orm";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { attachments, reports } from "@/lib/db/schema";
-import { getAccessibleReport } from "@/lib/report-access";
 import { deleteR2Object } from "@/lib/r2";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
+import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
 const SIGNATURE_ROLES = ["prepared", "reviewed", "approved"] as const;
 type SignatureRole = (typeof SIGNATURE_ROLES)[number];
@@ -36,10 +36,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Invalid signature role" }, { status: 400 });
   }
 
-  const report = await getAccessibleReport(reportId, user.id);
+  const access = await getReportAccess(reportId, user.id);
+  const report = access?.report;
   if (!report) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
+  if (!access.canEdit) return NextResponse.json({ error: access.locked ? "This report is locked" : "You do not have permission to delete signatures" }, { status: 403 });
 
   const fields = signatureFields(role);
   const existingData = {
@@ -70,6 +72,7 @@ export async function DELETE(
     .update(reports)
     .set({ data: nextData, updatedAt: new Date() })
     .where(eq(reports.id, reportId));
+  await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "signature_deleted", entityType: "signature", metadata: { role } });
 
   return NextResponse.json({ success: true });
 }

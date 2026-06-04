@@ -61,9 +61,11 @@ const plans = [
       "Everything in Pro",
       "5 seats included",
       "Team report workspace",
-      "Team members can open, edit, share, and export team reports",
+      "Owner / Editor / Viewer roles",
+      "Approval status, report locking, and revisions",
+      "Activity log for report changes and delivery",
       "Shared deep search across team reports",
-      "Owner-managed team access",
+      "Owner-managed team access and formal exports",
     ],
     cta: (
       <CheckoutButton
@@ -86,17 +88,24 @@ const addOns = [
   {
     icon: Wrench,
     title: "Enterprise template customization",
-    price: "From $299",
+    price: "From $499",
     text: "Custom 8D format, customer-specific fields, branded export layout, and supplier-facing template setup.",
     href: "/custom-8d-template-setup",
+  },
+  {
+    icon: Wrench,
+    title: "Team Launch",
+    price: "From $999",
+    text: "We configure your template, Team workspace, roles, first real 8D report, and team training.",
+    href: "/team-launch",
   },
 ]
 
 const teamTrustItems = [
   "Owner-managed members with 5 seats included",
-  "Team members can open, edit, share, export, and search team reports",
+  "Owner / Editor / Viewer roles with owner-controlled approval and unlock",
   "View-only and editable share links can be revoked",
-  "Report save history and completed-step tracking are already recorded",
+  "Report locking, revisions, and a lightweight activity log",
   "Security / Data Privacy page explains storage, AI handling, deletion, and sharing",
   "Enterprise requests such as DPA, SSO, audit-log exports, and support SLA should be scoped before company-wide rollout",
 ]
@@ -158,6 +167,15 @@ export default function PricingPage() {
                 {plan.cta}
               </div>
             ))}
+          </div>
+          <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-5 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div>
+              <p className="font-semibold text-indigo-950">Need help launching the workflow?</p>
+              <p className="mt-1 text-sm text-indigo-700">We convert your template, configure roles, and help complete the first customer-ready report.</p>
+            </div>
+            <Link href="/team-launch" className={cn(buttonVariants({ size: "lg" }), "shrink-0 bg-indigo-600 text-white hover:bg-indigo-700")}>
+              Book Team Launch
+            </Link>
           </div>
 
           <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-2">

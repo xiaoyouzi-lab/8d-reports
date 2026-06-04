@@ -88,6 +88,7 @@ export default function DashboardPage() {
   const [teamState, setTeamState] = useState<TeamState | null>(null)
   const [teamEmail, setTeamEmail] = useState("")
   const [teamSaving, setTeamSaving] = useState(false)
+  const [teamRole, setTeamRole] = useState<"editor" | "viewer">("editor")
 
   const fetchReports = useCallback(async () => {
     try {
@@ -205,7 +206,7 @@ export default function DashboardPage() {
       const res = await fetch("/api/team", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: teamEmail }),
+        body: JSON.stringify({ email: teamEmail, role: teamRole }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || "Failed to add member")
@@ -216,6 +217,17 @@ export default function DashboardPage() {
     } finally {
       setTeamSaving(false)
     }
+  }
+
+  async function updateTeamRole(memberId: string, role: "editor" | "viewer") {
+    const res = await fetch("/api/team", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ memberId, role }),
+    })
+    const data = await res.json().catch(() => null)
+    if (!res.ok) return alert(data?.error || "Failed to update member role")
+    setTeamState((prev) => ({ maxSeats: prev?.maxSeats ?? 5, team: data }))
   }
 
   return (
@@ -295,13 +307,19 @@ export default function DashboardPage() {
             <div>
               <h2 className="text-sm font-semibold text-foreground">Team workspace</h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                {teamState?.team?.members?.length ?? 1} of {teamState?.maxSeats ?? 5} seats used. Team members can open, edit, share, export, and search team reports.
+                {teamState?.team?.members?.length ?? 1} of {teamState?.maxSeats ?? 5} seats used. Owners manage approval and revisions; Editors prepare reports; Viewers have read-only access.
               </p>
               <div className="mt-3 flex flex-wrap gap-2">
                 {(teamState?.team?.members ?? []).map((member) => (
-                  <span key={member.id} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
-                    {member.name || member.email} · {member.role}
-                  </span>
+                  <div key={member.id} className="flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
+                    <span>{member.name || member.email}</span>
+                    {teamState?.team?.role === "owner" && member.role !== "owner" ? (
+                      <select value={member.role === "viewer" ? "viewer" : "editor"} onChange={(event) => void updateTeamRole(member.id, event.target.value as "editor" | "viewer")} className="bg-transparent font-medium outline-none">
+                        <option value="editor">Editor</option>
+                        <option value="viewer">Viewer</option>
+                      </select>
+                    ) : <span>· {member.role}</span>}
+                  </div>
                 ))}
               </div>
             </div>
@@ -313,6 +331,10 @@ export default function DashboardPage() {
                   placeholder="member@company.com"
                   className="h-9 text-sm"
                 />
+                <select value={teamRole} onChange={(event) => setTeamRole(event.target.value as "editor" | "viewer")} className="h-9 rounded-md border bg-white px-2 text-xs">
+                  <option value="editor">Editor</option>
+                  <option value="viewer">Viewer</option>
+                </select>
                 <Button size="sm" disabled={teamSaving} onClick={addTeamMember}>
                   {teamSaving ? "Adding..." : "Add"}
                 </Button>
