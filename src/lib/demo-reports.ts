@@ -8,7 +8,13 @@ export interface DemoReport {
   revision: string;
   workflowSummary: string;
   reportData: ReportData;
-  evidenceFiles: Array<{ filename: string; content: string; stepId: string }>;
+  evidenceFiles: Array<{
+    filename: string;
+    content?: string;
+    stepId: string;
+    publicPath?: string;
+    mimeType?: string;
+  }>;
 }
 
 function reportData(overrides: Partial<ReportData>): ReportData {
@@ -86,6 +92,12 @@ export const DEMO_REPORTS: Record<string, DemoReport> = {
       approverDate: "2026-05-12",
     }),
     evidenceFiles: [
+      {
+        filename: "D2-customer-burr-evidence.jpg",
+        stepId: "D2",
+        publicPath: "/demo-evidence/automotive-burr-evidence.jpg",
+        mimeType: "image/jpeg",
+      },
       { filename: "D2-customer-defect-photo-description.txt", stepId: "D2", content: "Photo set documents the sharp cross-hole burr on customer sample 4 of 7 and includes scale reference." },
       { filename: "D4-brush-wear-study.csv", stepId: "D4", content: "cycle_count,burr_height_mm\n7000,0.04\n7500,0.05\n8000,0.07\n8500,0.10\n9000,0.13\n" },
       { filename: "D6-validation-summary.txt", stepId: "D6", content: "Three consecutive lots, 1,440 total pieces, zero burr defects. Seeded defect challenge: 20/20 detected." },
@@ -160,6 +172,12 @@ export const DEMO_REPORTS: Record<string, DemoReport> = {
       approverDate: "2026-04-02",
     }),
     evidenceFiles: [
+      {
+        filename: "D2-sink-mark-evidence.jpg",
+        stepId: "D2",
+        publicPath: "/demo-evidence/molding-sink-mark-evidence.jpg",
+        mimeType: "image/jpeg",
+      },
       { filename: "D2-cosmetic-boundary-sample.txt", stepId: "D2", content: "Boundary sample confirms sink visibility at 800 lux from 45 cm viewing distance." },
       { filename: "D4-cooling-flow-comparison.csv", stepId: "D4", content: "cavity,flow_lpm\n1,8.1\n2_before,5.6\n2_after,8.0\n" },
       { filename: "D6-validation-results.txt", stepId: "D6", content: "Three 400-piece runs completed. Zero sink marks and no dimensional or flash regressions." },
@@ -234,6 +252,12 @@ export const DEMO_REPORTS: Record<string, DemoReport> = {
       approverDate: "2026-05-24",
     }),
     evidenceFiles: [
+      {
+        filename: "D4-led-joint-inspection.jpg",
+        stepId: "D4",
+        publicPath: "/demo-evidence/electronics-led-evidence.jpg",
+        mimeType: "image/jpeg",
+      },
       { filename: "D2-burn-in-failure-log.csv", stepId: "D2", content: "serial,failure_hour,recovery_after_power_cycle\nLDM-041,6,yes\nLDM-118,11,yes\nLDM-204,14,yes\n" },
       { filename: "D4-cross-section-findings.txt", stepId: "D4", content: "Failed J4 joints showed incomplete heel fillet and micro-crack initiation. Passing controls met the approved geometry." },
       { filename: "D6-reliability-validation.txt", stepId: "D6", content: "1,800 modules passed 48-hour burn-in. Sixty modules passed thermal cycling. Twelve cross-sections met acceptance criteria." },

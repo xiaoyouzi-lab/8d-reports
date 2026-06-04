@@ -379,11 +379,11 @@ erDiagram
 - Neon Serverless Postgres is the system of record. Drizzle ORM maps application code to database tables.
 - Cloudflare R2 stores report attachments and user company logos through S3-compatible APIs.
 - Creem handles checkout and payment events. The webhook updates `subscriptions` and records `checkout_completed`.
-- Free vs Pro gates are enforced in both UI and API routes:
-  - Free: 5 lifetime reports, PDF watermark, basic search, view-only sharing.
+- Free, Pro, and Team gates are enforced in both UI and API routes:
+  - Free: 3 lifetime reports, PDF watermark, basic search, view-only sharing.
   - Pro: unlimited reports, no-watermark PDF, Word export, logo, editable sharing, deep search.
+  - Team: 5-seat workspace, Owner / Editor / Viewer roles, approval statuses, locking, revisions, Activity Log, and Pro delivery features.
 - PDF export is generated client-side with `jsPDF`; Word export is generated server-side with `docx`.
 - ZIP export packages report files plus attachments with `JSZip`.
 - Product analytics are first-party events stored in `analytics_events`; Vercel Analytics is used for anonymous traffic.
-- AI routes and DeepSeek configuration are present for future quality-agent/social-agent features, but AI report drafting is not yet the core product flow.
-
+- DeepSeek-backed AI Quality Check and AI Draft are beta assistance tools. They do not approve or certify reports.

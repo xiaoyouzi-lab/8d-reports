@@ -140,9 +140,10 @@ git push -u origin main
 1. 访问 [https://www.creem.io](https://www.creem.io)，注册/登录
 2. 进入 Dashboard → **API Keys**
 3. 创建 API Key → 保存 **Secret Key**
-4. 进入 **Products** → 创建两个产品:
-   - **Pro Monthly**: $9.99 USD, recurring monthly
-   - **Pro Yearly**: $79.00 USD, recurring yearly
+4. 进入 **Products** → 创建三个产品:
+   - **Pro Monthly**: $19.00 USD, recurring monthly
+   - **Team Monthly**: $99.00 USD, recurring monthly
+   - **Single Report Export**: $4.99 USD, one-time
 5. 记录每个产品的 **Product ID**
 6. Webhooks: 进入 **Developers** → **Webhooks**
    - URL: `https://你的域名.vercel.app/api/webhooks/creem`
@@ -390,7 +391,7 @@ https://你的域名.vercel.app/api/auth/[...all]  # Auth API (返回 200)
 |---|--------|---------|---------|------|
 | 19 | 仪表盘加载 | 登录后访问 `/dashboard` | 显示 4 个统计卡片 + 报告表格 | |
 | 20 | 统计卡片 | 查看卡片数值 | Total/In Progress/Completed/Quota 正常 | |
-| 21 | 配额显示 | 免费用户查看配额 | 显示 "X/5 free reports used" + 进度条 | |
+| 21 | 配额显示 | 免费用户查看配额 | 显示 "X/3 lifetime reports used" + 进度条 | |
 | 22 | 升级横幅 | 免费用户查看 | 显示升级提示横幅 | |
 | 23 | 搜索功能 | 输入关键字搜索 | 报告列表过滤 | |
 | 24 | 新建报告按钮 | 点击 "New Report" | 跳转 `/reports/new` | |

@@ -8,6 +8,7 @@ import {
   isWorkflowStatus,
   LOCKED_WORKFLOW_STATUSES,
   logReportActivity,
+  type WorkflowStatus,
 } from "@/lib/report-workflow";
 import { DEFAULT_REPORT_DATA, getReportCompletionIssues, type ReportData } from "@/lib/report-steps";
 import { getUserEntitlements } from "@/lib/subscription";
@@ -57,6 +58,15 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   if (!isWorkflowStatus(body.workflowStatus)) {
     return NextResponse.json({ error: "Invalid workflow status" }, { status: 400 });
+  }
+  if (
+    LOCKED_WORKFLOW_STATUSES.has(access.report.workflowStatus as WorkflowStatus)
+    && !LOCKED_WORKFLOW_STATUSES.has(body.workflowStatus)
+  ) {
+    return NextResponse.json(
+      { error: "Locked reports must use Unlock for revision and include a reason." },
+      { status: 400 },
+    );
   }
 
   if (LOCKED_WORKFLOW_STATUSES.has(body.workflowStatus)) {

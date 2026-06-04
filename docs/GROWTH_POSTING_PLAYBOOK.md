@@ -7,7 +7,7 @@ The user has approved this direction:
 - Do SEO first.
 - Use neutral third-party-style discussion posts instead of direct LinkedIn outreach.
 - Avoid cold DMs.
-- Keep the product promise focused on the current version: complete 8D reports, attachments, export, sharing, Free vs Pro, and historical search.
+- Keep the product promise focused on the current version: customer-ready 8D delivery, attachments, export, sharing, historical search, and Team governance.
 
 ## North Star
 
@@ -49,21 +49,22 @@ When doing growth work, do not send traffic to a vague page. Prefer these paths:
 
 Use this short positioning:
 
-> Free for trying and occasional reports. Pro for formal delivery and searchable historical 8D knowledge.
+> Free for evaluation. Pro for individual quality engineers. Team for controlled review, approval, locking, revisions, and delivery.
 
 Emphasize:
 
 - Free includes the complete D0-D8 editor.
-- Free includes 5 lifetime reports.
+- Free includes 3 lifetime reports.
 - Free PDF export has watermark.
 - Pro unlocks unlimited reports, no-watermark PDF, Word export, company logo, editable sharing, and deep historical search.
-- AI report drafting is coming later and should only be treated as interest validation for now.
+- Team includes Owner / Editor / Viewer roles, approval status, report locking, revisions, and Activity Log.
+- AI Quality Check and AI Draft are beta assistance tools. They do not approve or certify a report.
 
 Do not claim:
 
 - That the product replaces quality engineering judgment.
 - That AI approves or completes formal reports automatically.
-- That current version includes full QMS, team approval workflow, SCAR automation, or supplier portals.
+- That current version includes a full QMS, complex approval matrix, SCAR automation, supplier portal, SSO, or email reminders.
 
 ## Weekly Codex Execution Loop
 

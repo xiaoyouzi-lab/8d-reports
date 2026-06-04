@@ -69,7 +69,7 @@
 | # | 测试项 | 状态 | 详情 |
 |---|--------|------|------|
 | 5.1 | 统计分析 | ✅ | Total/In Progress/Completed 卡片显示 |
-| 5.2 | 配额指示器 | ✅ | "0/5 free reports" + 进度条 + 升级横幅 |
+| 5.2 | 配额指示器 | ✅ | "0/3 lifetime reports" + 进度条 + 升级横幅 |
 | 5.3 | 报告列表 | ✅ | 3 条 mock 报告（Draft/Submitted/Completed）+ 状态徽章 |
 
 ---
