@@ -34,10 +34,13 @@ export async function GET() {
     || rows[0];
 
   const entitlements = await getUserEntitlements(user.id);
+  const effectiveStatus = entitlements.plan === "team"
+    ? "active"
+    : sub?.status ?? "free";
 
   return NextResponse.json({
     ...(sub || {}),
-    status: sub?.status ?? "free",
+    status: effectiveStatus,
     plan: entitlements.plan,
     entitlements,
   });
