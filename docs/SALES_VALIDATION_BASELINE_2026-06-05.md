@@ -22,18 +22,20 @@ Each workflow demo now includes a two-minute validation form that records:
 
 Submissions are stored in the existing `feedback` table with the marker `[team-workflow-validation]`. The product event `team_demo_feedback_submitted` is also recorded.
 
+Run the local market-validation dashboard from the desktop shortcut `8D Metrics Dashboard.command`. Its primary metrics exclude known owner and test accounts while retaining an all-activity comparison for troubleshooting.
+
 ## Current Seven-Day Product Baseline
 
 Data window: the seven days ending 2026-06-05.
 
 | Metric | Current 7 days | Previous 7 days | Interpretation |
 | --- | ---: | ---: | --- |
-| New accounts | 5 | 1 | All five current-period accounts are test accounts |
-| Reports created | 5 | 0 | Two reports came from one non-test user |
-| Non-test report creators | 1 | — | Too small for a product decision |
-| Successful exports | 8 | 1 | Primarily production validation activity |
-| Checkout starts | 13 | 1 | Primarily production validation activity |
-| Upgrade clicks | 5 | 1 | Primarily production validation activity |
+| External market accounts | 0 | — | Every current account is an owner, QA, security, plan, or role-test account |
+| External reports created | 0 | — | Existing reports were created during product development and production validation |
+| External report creators | 0 | — | No market activation evidence yet |
+| External successful exports | 0 | — | Existing exports were production validation activity |
+| External checkout starts | 0 | — | Existing checkout starts were production validation activity |
+| External Team demo feedback | 0 | — | The feedback loop is live; distribution is now the bottleneck |
 
 The current event volume must not be treated as market validation because production testing generated most activity.
 

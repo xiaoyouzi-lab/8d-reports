@@ -1,6 +1,7 @@
 "use client"
 
 type EventMetadata = Record<string, unknown>;
+type AnalyticsPlan = "free" | "pro" | "team";
 
 declare global {
   interface Window {
@@ -25,13 +26,18 @@ export function trackEvent(
     page_path: window.location.pathname,
   });
 
+  const metadataPlan = metadata.plan;
+  const plan: AnalyticsPlan = metadataPlan === "pro" || metadataPlan === "team"
+    ? metadataPlan
+    : "free";
+
   const body = {
     eventName,
     reportId,
     metadata,
     path: window.location.pathname,
     locale: document.cookie.includes("NEXT_LOCALE=zh-CN") ? "zh-CN" : "en",
-    plan: metadata.plan === "pro" ? "pro" : "free",
+    plan,
   };
 
   const payload = JSON.stringify(body);

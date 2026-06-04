@@ -47,6 +47,10 @@ function inferDeviceType(userAgent: string | null): string {
   return /Mobile|Android|iPhone|iPad/i.test(userAgent) ? "mobile" : "desktop";
 }
 
+function normalizePlan(value: unknown) {
+  return value === "pro" || value === "team" ? value : "free";
+}
+
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   const body = await req.json().catch(() => ({}));
@@ -67,7 +71,7 @@ export async function POST(req: NextRequest) {
       eventName,
       userId: user?.id ?? null,
       reportId,
-      plan: typeof body.plan === "string" ? body.plan : "free",
+      plan: normalizePlan(body.plan),
       locale: typeof body.locale === "string" ? body.locale : "en",
       deviceType: inferDeviceType(headerStore.get("user-agent")),
       path: typeof body.path === "string" ? body.path : null,
