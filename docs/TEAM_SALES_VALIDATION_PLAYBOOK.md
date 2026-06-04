@@ -62,6 +62,20 @@ Do not pretend to be an unrelated customer. From the owner account, use honest l
 
 Publish one public discussion:
 
+Recommended first channel:
+
+- Elsmar Cove — `Quality Assurance and Compliance Software Tools and Solutions`:
+  `https://elsmar.com/elsmarqualityforum/forums/quality-assurance-and-compliance-software-tools-and-solutions.36/`
+
+This forum is the best first fit because the post is explicitly about evaluating a quality software workflow. Use the founder voice below, ask for critique, and do not frame the post as an unrelated customer recommendation.
+
+Alternative after the first discussion produces useful engagement:
+
+- Elsmar Cove — `Nonconformance and Corrective Action`:
+  `https://elsmar.com/elsmarqualityforum/forums/nonconformance-and-corrective-action.40/`
+- Reddit `r/Quality`, after reviewing the current community rules and logging in:
+  `https://www.reddit.com/r/Quality/submit`
+
 **Title**
 
 > After an 8D is approved and sent to the customer, how do you stop uncontrolled edits?
@@ -75,7 +89,7 @@ Publish one public discussion:
 >
 > In your current process, once an 8D is approved and sent to the customer, how do you control later edits and prove who changed what?
 
-Target: r/Quality or Elsmar. Publish to one channel first, not several simultaneously.
+Publish to one channel first, not several simultaneously. Record the live URL and wait for initial responses before adapting the post for a second channel.
 
 ### Day 2: Ask consultants about approval and template requirements
 

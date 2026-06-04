@@ -71,4 +71,8 @@ Publish one honest discussion from the founder/owner account:
 >
 > In your current process, once an 8D is approved and sent to the customer, how do you control later edits and prove who changed what?
 
-Recommended first channel: r/Quality or Elsmar. Publish to one channel first and record the URL, date, views, comments, demo visits, and feedback form submissions.
+Recommended first channel: Elsmar Cove’s `Quality Assurance and Compliance Software Tools and Solutions` forum:
+
+`https://elsmar.com/elsmarqualityforum/forums/quality-assurance-and-compliance-software-tools-and-solutions.36/`
+
+It is a better first fit than a general corrective-action discussion because the post openly evaluates a software workflow. Publish to one channel first and record the URL, date, views, comments, demo visits, and feedback form submissions.
