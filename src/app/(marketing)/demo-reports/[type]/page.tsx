@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Archive, ArrowLeft, CheckCircle2, Download, FileText, History, LockKeyhole } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { TeamWorkflowFeedbackForm } from "@/components/marketing/TeamWorkflowFeedbackForm";
 import { DEMO_REPORTS, getDemoReport } from "@/lib/demo-reports";
 import { cn } from "@/lib/utils";
 
@@ -125,6 +126,12 @@ export default async function DemoReportPage({ params }: { params: Promise<{ typ
               </div>
             </div>
           </aside>
+        </div>
+      </section>
+
+      <section className="border-t border-slate-200 bg-slate-50 py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6">
+          <TeamWorkflowFeedbackForm demoType={type} />
         </div>
       </section>
 
