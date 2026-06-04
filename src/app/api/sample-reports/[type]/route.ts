@@ -1,76 +1,134 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jsPDF } from "jspdf";
+import JSZip from "jszip";
+import { getDemoReport } from "@/lib/demo-reports";
+import { generateWordDocument } from "@/lib/word-export";
 
-const samples: Record<string, { title: string; industry: string; problem: string; rootCause: string; action: string }> = {
-  automotive: {
-    title: "Automotive 8D Sample - Brake Bracket Coating Failure",
-    industry: "Automotive supplier quality",
-    problem: "Customer reported coating peel-off on brake brackets from lot BB-2026-031 after salt spray validation.",
-    rootCause: "Pretreatment bath concentration drifted below the control limit and the shift handover checklist did not require verification before restart.",
-    action: "Locked pretreatment concentration checks before production restart, retrained operators, and added layered process audit confirmation.",
-  },
-  supplier: {
-    title: "Supplier SCAR Sample - Incoming Dimension Out of Tolerance",
-    industry: "Supplier corrective action",
-    problem: "Incoming machined bushings exceeded upper tolerance on inner diameter during receiving inspection.",
-    rootCause: "Supplier tool offset was changed without second-person verification after insert replacement.",
-    action: "Supplier added offset approval, first-piece revalidation, and shipment certificate review for three lots.",
-  },
-  electronics: {
-    title: "Electronics 8D Sample - Solder Joint Intermittent Failure",
-    industry: "Electronics manufacturing",
-    problem: "Functional test found intermittent LED driver failure after thermal cycling on assembly line 2.",
-    rootCause: "Reflow soak-zone recipe was edited without engineering approval, reducing wetting margin on one connector pad.",
-    action: "Restored approved recipe, locked recipe permissions, and added AOI trend review for the connector joint.",
-  },
-};
-
-export async function GET(
-  _req: NextRequest,
-  { params }: { params: Promise<{ type: string }> },
-) {
-  const { type } = await params;
-  const sample = samples[type] || samples.automotive;
+function createPdf(type: string) {
+  const sample = getDemoReport(type);
+  const data = sample.reportData;
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  let y = 24;
+  let y = 22;
+  const addSection = (label: string, value: string) => {
+    if (y > 265) {
+      doc.addPage();
+      y = 22;
+    }
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(79, 70, 229);
+    doc.text(label, 18, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(35, 35, 35);
+    const lines = doc.splitTextToSize(value || "-", 174);
+    doc.text(lines, 18, y);
+    y += lines.length * 4.5 + 6;
+  };
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(22);
   doc.setTextColor(79, 70, 229);
-  doc.text("8D REPORT SAMPLE", 20, y);
-  y += 14;
-  doc.setTextColor(20, 20, 20);
-  doc.setFontSize(14);
-  doc.text(sample.title, 20, y);
+  doc.text("CUSTOMER-READY 8D DEMO", 18, y);
   y += 12;
+  doc.setTextColor(20, 20, 20);
+  doc.setFontSize(13);
+  doc.text(doc.splitTextToSize(sample.title, 174), 18, y);
+  y += 16;
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
+  doc.setFontSize(9);
+  doc.text(`${data.reportNumber}  |  ${sample.revision}  |  ${sample.industry}`, 18, y);
+  y += 8;
+  doc.text(sample.workflowSummary, 18, y, { maxWidth: 174 });
+  y += 14;
   const rows = [
-    ["Industry", sample.industry],
-    ["D2 Problem Description", sample.problem],
-    ["D3 Containment", "Suspect stock quarantined, customer pipeline checked, and 100% inspection applied until permanent action verified."],
-    ["D4 Root Cause", sample.rootCause],
-    ["D5 Corrective Action", sample.action],
-    ["D6 Verification", "Three consecutive lots passed inspection with no repeat failure; audit evidence attached."],
-    ["D7 Prevention", "Control plan, work instruction, training record, and layered audit checklist updated."],
-    ["D8 Approval", "Prepared / Reviewed / Approved signature area included in paid exports."],
+    ["Customer / Product / Lot", `${data.customerName} / ${data.productName} / ${data.batchNumber}`],
+    ["D1 Team", `${data.teamLeader}; ${data.teamMembers}`],
+    ["D2 Problem Description", data.problemDescription],
+    ["D3 Containment", data.containmentDescription],
+    ["D4 Occurrence Cause", data.rootCauseOccurrence],
+    ["D4 Escape Cause", data.rootCauseEscape],
+    ["D4 Confirmed Root Cause", data.confirmedRootCause],
+    ["D4 5-Why", [data.why1, data.why2, data.why3, data.why4, data.why5].map((v, i) => `${i + 1}. ${v}`).join("\n")],
+    ["D5 Corrective Action", data.selectedCorrectiveAction],
+    ["D6 Verification", `${data.validationMethod}\n${data.validationResults}`],
+    ["D7 Prevention", `${data.systemChanges}\n${data.horizontalDeployment}`],
+    ["D8 Approval", `Prepared: ${data.preparedBy} (${data.preparedDate})\nReviewed: ${data.reviewedBy} (${data.reviewedDate})\nApproved: ${data.approverName} (${data.approverDate})`],
+    ["Attachment List", sample.evidenceFiles.map((file) => `${file.stepId}: ${file.filename}`).join("\n")],
   ];
   for (const [label, value] of rows) {
-    doc.setFont("helvetica", "bold");
-    doc.text(label, 20, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
-    const lines = doc.splitTextToSize(value, 170);
-    doc.text(lines, 20, y);
-    y += lines.length * 5 + 6;
+    addSection(label, value);
   }
   doc.setFontSize(8);
   doc.setTextColor(120, 120, 120);
-  doc.text("Generated sample from 8D Reports. Replace with your own report evidence before customer submission.", 20, 285);
-  const bytes = doc.output("arraybuffer");
-  return new NextResponse(bytes, {
+  doc.text("Demonstration report generated by 8D Reports. Evidence is illustrative and must not be used as real production evidence.", 18, 287);
+  return Buffer.from(doc.output("arraybuffer"));
+}
+
+export async function GET(req: NextRequest, { params }: { params: Promise<{ type: string }> }) {
+  const { type } = await params;
+  const sample = getDemoReport(type);
+  const format = req.nextUrl.searchParams.get("format") || "pdf";
+  const baseFilename = `${sample.slug}-8d-demo`;
+
+  if (format === "docx") {
+    const buffer = await generateWordDocument({
+      reportData: sample.reportData,
+      reportTitle: sample.title,
+      reportId: sample.reportData.reportNumber,
+      withWatermark: false,
+      locale: "en",
+      attachmentImages: sample.evidenceFiles.map((file) => ({
+        url: "",
+        filename: file.filename,
+        stepId: file.stepId,
+        mimeType: file.filename.endsWith(".csv") ? "text/csv" : "text/plain",
+      })),
+    });
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "Content-Disposition": `attachment; filename="${baseFilename}.docx"`,
+      },
+    });
+  }
+
+  if (format === "zip") {
+    const zip = new JSZip();
+    const pdf = createPdf(type);
+    const word = await generateWordDocument({
+      reportData: sample.reportData,
+      reportTitle: sample.title,
+      reportId: sample.reportData.reportNumber,
+      withWatermark: false,
+      locale: "en",
+      attachmentImages: sample.evidenceFiles.map((file) => ({
+        url: "",
+        filename: file.filename,
+        stepId: file.stepId,
+        mimeType: file.filename.endsWith(".csv") ? "text/csv" : "text/plain",
+      })),
+    });
+    zip.file(`${baseFilename}.pdf`, pdf);
+    zip.file(`${baseFilename}.docx`, word);
+    const evidence = zip.folder("attachments");
+    sample.evidenceFiles.forEach((file) => evidence?.file(file.filename, file.content));
+    evidence?.file("README.txt", "These files demonstrate how non-image evidence is preserved in a customer delivery ZIP package.");
+    const buffer = await zip.generateAsync({ type: "nodebuffer" });
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/zip",
+        "Content-Disposition": `attachment; filename="${baseFilename}-delivery-package.zip"`,
+      },
+    });
+  }
+
+  const bytes = createPdf(type);
+  return new NextResponse(new Uint8Array(bytes), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${type}-8d-sample.pdf"`,
+      "Content-Disposition": `attachment; filename="${baseFilename}.pdf"`,
     },
   });
 }

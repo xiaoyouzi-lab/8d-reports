@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { ArrowRight, Download, LockKeyhole } from "lucide-react"
+import { Archive, ArrowRight, Download, FileText, LockKeyhole } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -16,21 +16,21 @@ const demos = [
     scenario: "CNC aluminum housing burr found during customer incoming inspection.",
     highlights: "D0-D8, evidence, Internal Review, Approved lock, Rev.1, Activity Log",
     example: "/8d-report-example/automotive",
-    pdf: "/api/sample-reports/automotive",
+    downloadType: "automotive",
   },
   {
     title: "Injection molding sink mark defect",
     scenario: "Visible sink marks found on an injection-molded customer housing.",
     highlights: "5-Why, Fishbone 6M, containment, process correction, approval",
     example: "/8d-report-example/plastic-injection-molding",
-    pdf: "/api/sample-reports/supplier",
+    downloadType: "molding",
   },
   {
     title: "Electronics intermittent LED failure",
     scenario: "LED module intermittently fails during the customer burn-in test.",
     highlights: "Failure evidence, root cause validation, revision history, final delivery",
     example: "/8d-report-example/led-failure",
-    pdf: "/api/sample-reports/electronics",
+    downloadType: "electronics",
   },
 ]
 
@@ -54,7 +54,9 @@ export default function DemoReportsPage() {
               <p className="mt-4 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">{demo.highlights}</p>
               <div className="mt-auto flex flex-col gap-2 pt-6">
                 <Link href={demo.example} className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>Review complete example <ArrowRight className="size-4" /></Link>
-                <Link href={demo.pdf} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Download className="size-4" /> Download sample PDF</Link>
+                <Link href={`/api/sample-reports/${demo.downloadType}`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Download className="size-4" /> Download PDF</Link>
+                <Link href={`/api/sample-reports/${demo.downloadType}?format=docx`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Download Word</Link>
+                <Link href={`/api/sample-reports/${demo.downloadType}?format=zip`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Download delivery ZIP</Link>
               </div>
             </article>
           ))}
