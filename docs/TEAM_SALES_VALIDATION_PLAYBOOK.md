@@ -56,6 +56,20 @@ The first validation batch is 60 relevant people:
 
 Do not pretend to be an unrelated customer. From the owner account, use honest language such as “I built”, “I am testing”, or “I am looking for feedback”.
 
+## Distribution Channel Map
+
+Use channels in this order. Do not paste the same message everywhere.
+
+| Priority | Channel | Fit | How to participate |
+| --- | --- | --- | --- |
+| 1 | [Elsmar Quality Software Tools](https://elsmar.com/elsmarqualityforum/forums/quality-assurance-and-compliance-software-tools-and-solutions.36/) | Quality practitioners explicitly discussing software tools | Publish the founder-style workflow question below; ask for critique rather than a purchase |
+| 2 | [myASQ Discussions](https://communityasq.prod.pcomm.net/discuss) | Broad professional quality community with active general, standards, and quality-management discussions | Join relevant discussions first; post a question about approval and revision control only after understanding community expectations |
+| 3 | [Elsmar Nonconformance and Corrective Action](https://elsmar.com/elsmarqualityforum/forums/nonconformance-and-corrective-action.40/) | Strong problem-fit, but higher self-promotion risk | Ask about the process problem; link the demo only when members request an example |
+| 4 | [CR4 Quality Assurance / Control](https://cr4.globalspec.com/forum/quality-assurance) | Engineering audience discussing practical QA/QC issues | Use a technical discussion about controlled revisions; do not lead with pricing |
+| 5 | Reddit `r/Quality`, `r/manufacturing`, or `r/SixSigma` | Useful for candid feedback, but each subreddit has different self-promotion rules | Review current rules after login; publish to one subreddit only and disclose that you built the workflow |
+
+ASQ describes myASQ as an online community of practice for quality professionals. Treat it as a professional discussion space, not a launch directory. Elsmar and CR4 are also discussion communities; useful participation and clear disclosure matter more than link volume.
+
 ## Seven-Day Execution
 
 ### Day 1: Publish the Team workflow demo
