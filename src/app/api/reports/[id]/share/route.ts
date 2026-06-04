@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { reportShares } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { getUserEntitlements } from "@/lib/subscription";
-import { getAccessibleReport } from "@/lib/report-access";
 import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
 type ReportShareUpdate = Partial<typeof reportShares.$inferInsert>;
@@ -57,10 +56,12 @@ export async function POST(
     );
   }
 
-  const report = await getAccessibleReport(reportId, user.id);
-
-  if (!report) {
+  const access = await getReportAccess(reportId, user.id);
+  if (!access) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  }
+  if (!access.canShare) {
+    return NextResponse.json({ error: "You do not have permission to create share links" }, { status: 403 });
   }
 
   const [existingShare] = await db

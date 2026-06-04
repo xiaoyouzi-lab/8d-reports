@@ -3,7 +3,7 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { S3Client } from "@aws-sdk/client-s3";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getUserEntitlements } from "@/lib/subscription";
-import { getAccessibleReport } from "@/lib/report-access";
+import { getReportAccess } from "@/lib/report-workflow";
 
 function getR2Client(): S3Client | null {
   const accountId = process.env.R2_ACCOUNT_ID;
@@ -51,10 +51,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing file or reportId" }, { status: 400 });
     }
 
-    const report = await getAccessibleReport(reportId, user.id);
-
-    if (!report) {
+    const access = await getReportAccess(reportId, user.id);
+    if (!access) {
       return NextResponse.json({ error: "Report not found" }, { status: 404 });
+    }
+    if (!access.canEdit) {
+      return NextResponse.json(
+        { error: access.locked ? "This report is locked" : "You do not have permission to upload attachments" },
+        { status: 403 },
+      );
     }
 
     const entitlements = await getUserEntitlements(user.id);

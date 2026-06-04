@@ -5,7 +5,6 @@ import { attachments } from "@/lib/db/schema";
 import { eq, and } from "drizzle-orm";
 import { deleteR2Object } from "@/lib/r2";
 import { getUserEntitlements } from "@/lib/subscription";
-import { getAccessibleReport } from "@/lib/report-access";
 import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
 export async function GET(
@@ -21,7 +20,6 @@ export async function GET(
   if (!access) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
-  if (!access.canEdit) return NextResponse.json({ error: access.locked ? "This report is locked" : "You do not have permission to upload attachments" }, { status: 403 });
 
   const rows = await db
     .select()
@@ -41,9 +39,15 @@ export async function POST(
 
   const { id: reportId } = await params;
 
-  const report = await getAccessibleReport(reportId, user.id);
-  if (!report) {
+  const access = await getReportAccess(reportId, user.id);
+  if (!access) {
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  }
+  if (!access.canEdit) {
+    return NextResponse.json(
+      { error: access.locked ? "This report is locked" : "You do not have permission to upload attachments" },
+      { status: 403 },
+    );
   }
 
   const body = await req.json().catch(() => ({}));
