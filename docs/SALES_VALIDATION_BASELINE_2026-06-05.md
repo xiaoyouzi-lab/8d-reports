@@ -358,3 +358,61 @@ Environment setup:
 - A production redeploy was completed after adding `ADMIN_EMAILS`, and `https://www.8d-reports.com` was aliased to the new deployment.
 - Unauthenticated API access still returns `404 {"error":"Not found"}`, so service request data is not exposed publicly.
 - Remaining manual check: log in with an admin-listed account and verify `/admin/service-requests` can list and update service requests through the UI.
+
+## Current Attachment-Plan Completion Audit
+
+Date checked: 2026-06-05
+
+Purpose:
+
+- Reconcile the expert plan against the current codebase and production deployment.
+- Separate items with strong current evidence from items that still require an authenticated manual smoke test.
+
+Strong evidence now available:
+
+- Trust fixes:
+  - AI Quality Check and AI Draft are beta-gated.
+  - AI failure paths return friendly messages instead of raw 502-style failures.
+  - AI Draft uses the current report plus user-provided materials and the UI states this boundary.
+  - AI Quality Check copy states that it does not approve or certify a report.
+- Team value foundation:
+  - Workflow statuses are `draft`, `internal_review`, `approved`, `submitted`, and `closed`.
+  - `approved`, `submitted`, and `closed` lock reports against D-step edits, attachment deletion, and signature replacement.
+  - Owner / Editor / Viewer permissions are enforced through the shared report-access gate.
+  - Owner can unlock for revision only with a reason, and unlock increments the revision number.
+  - Activity Log records field updates, attachment upload/delete, share link create/revoke, workflow transitions, unlock, and export events.
+- Commercial boundaries:
+  - Free is 3 lifetime reports.
+  - Pro is described as `$19/month` for unlimited personal reports and individual delivery features.
+  - Team is described as `$99/month` with 5 seats, workspace roles, approval, locking, revisions, and Activity Log.
+  - Single export is `$4.99/report`.
+  - Template Setup is `From $499`.
+  - Team Launch is `From $999`.
+  - Public copy no longer claims full QMS, SSO, email reminders, Customer Complaint Intake, automatic AI approval, or password-protected share links.
+- Service offer foundation:
+  - Template Setup and Team Launch requests are persisted with `request_type`.
+  - Service status flow exists: `submitted`, `under_review`, `quote_sent`, `in_progress`, `ready_for_review`, `delivered`, `cancelled`.
+  - Admin-only service request page and API exist.
+  - Production unauthenticated API access does not expose service request data.
+- Production proof assets:
+  - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
+  - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
+- Regression coverage:
+  - `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Activity Log recording points, pricing boundaries, homepage Team positioning, and Pro-vs-Team copy boundaries.
+  - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
+
+Remaining manual/authenticated checks:
+
+- Log in with an admin-listed account and verify `/admin/service-requests` can list and update service requests through the UI.
+- Use real Team accounts to verify Owner / Editor / Viewer behavior through the UI and direct API calls:
+  - Viewer cannot edit D-steps, upload/delete attachments, replace signatures, create share links, export drafts, or change workflow state.
+  - Editor can create/edit reports, upload/delete attachments, create share links, and export draft packages, but cannot approve, lock, unlock, or manage members.
+  - Owner can approve, lock, unlock with reason, revoke links, and manage members.
+- Use a beta account to run AI Quality Check successfully on a real report.
+- In a safe non-production setup, force DeepSeek failure or invalid credentials and confirm the UI shows the friendly failure message while report data remains saved.
+- Create two unrelated reports and manually confirm AI Draft on report B does not use report A content.
+
+Current decision:
+
+- The product is ready for Team workflow sales validation and service-offer validation.
+- Do not start Customer Complaint Intake, email reminders, ERP/MES/PLM integrations, SSO, complex approval matrices, or full QMS scope until the evidence gate near the top of this document is met.
