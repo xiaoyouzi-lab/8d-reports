@@ -257,3 +257,29 @@ Remaining production smoke test:
 - Use a beta account to run AI Quality Check successfully on a real report.
 - Temporarily force DeepSeek failure or invalid credentials in a safe environment and confirm the UI shows the friendly failure message while report data remains saved.
 - Create two unrelated reports and confirm AI Draft on report B does not use report A content.
+
+## Sharing and Attachment Governance Check
+
+Date updated: 2026-06-05
+
+Purpose:
+
+- Ensure Team governance covers shared report links and evidence upload failures, because these are part of customer-facing report delivery.
+
+Changes made:
+
+- Share link update and revocation are now controlled by report-level permissions instead of only the original link creator.
+- This allows an authorized Team Owner or Editor to update or revoke the active report share link after it has been created, rather than leaving governance tied to the individual who first created it.
+- The same API still blocks Viewers through the shared `getReportAccess` gate.
+- Attachment upload failures now log server-side detail and return a friendly 503 message instead of exposing storage-layer errors to the user.
+
+Verification:
+
+- `npm run lint`: passed with 0 errors and 11 existing warnings.
+- `npm run build`: passed and generated 102 app routes.
+
+Remaining production smoke test:
+
+- Confirm Owner can revoke an Editor-created share link.
+- Confirm Viewer cannot create, update, or revoke share links.
+- Confirm upload failures show the friendly message and do not create partial attachment records.

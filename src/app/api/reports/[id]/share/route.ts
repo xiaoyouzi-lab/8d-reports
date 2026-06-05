@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reportShares } from "@/lib/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getUserEntitlements } from "@/lib/subscription";
 import { getReportAccess, logReportActivity } from "@/lib/report-workflow";
 
@@ -123,7 +123,7 @@ export async function PATCH(
   const [updated] = await db
     .update(reportShares)
     .set({ permissionLevel } satisfies ReportShareUpdate)
-    .where(and(eq(reportShares.reportId, reportId), eq(reportShares.sharedBy, user.id)))
+    .where(eq(reportShares.reportId, reportId))
     .returning();
 
   if (!updated) {
@@ -148,7 +148,7 @@ export async function DELETE(
 
   await db
     .delete(reportShares)
-    .where(and(eq(reportShares.reportId, reportId), eq(reportShares.sharedBy, user.id)));
+    .where(eq(reportShares.reportId, reportId));
   await logReportActivity({ reportId, actorId: user.id, actorName: user.name, actionType: "share_link_revoked", entityType: "share" });
 
   return NextResponse.json({ success: true });

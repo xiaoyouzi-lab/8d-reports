@@ -116,9 +116,10 @@ export async function POST(req: NextRequest) {
       stepId: stepId || null,
     });
   } catch (err) {
+    console.error("Attachment upload failed", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Upload failed" },
-      { status: 500 }
+      { error: "Upload is temporarily unavailable. Please try again later." },
+      { status: 503 }
     );
   }
 }
