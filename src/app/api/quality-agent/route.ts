@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Quality agent error:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "Quality Expert is temporarily unavailable. Please try again later." },
+      { status: 503 }
     )
   }
 }

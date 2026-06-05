@@ -223,3 +223,37 @@ Remaining production smoke test:
 - Confirm Viewer cannot edit D-steps, upload/delete attachments, replace signatures, create share links, export drafts, or change workflow state.
 - Confirm Editor can create/edit reports, upload/delete attachments, create share links, and export draft packages while still being unable to approve, lock, unlock, or manage members.
 - Confirm Owner can approve, lock, unlock with reason, and manage members.
+
+## AI Failure Handling Check
+
+Date updated: 2026-06-05
+
+Purpose:
+
+- Ensure AI failures do not break the report workflow or show raw server failures to users.
+- Keep AI positioned as beta assistance, not as an approval or certification mechanism.
+
+Confirmed behavior:
+
+- `POST /api/ai/report-review` is beta-gated, logs failed tasks, and returns a friendly 503 message when DeepSeek fails.
+- `POST /api/ai/draft-report` is beta-gated, limits material length, reads only the current report plus user-provided materials, logs failed tasks, and returns a friendly 503 message when DeepSeek fails.
+- AI Draft apply behavior only fills empty report fields and does not overwrite existing user-entered content.
+- The editor UI states: `AI Quality Check — Beta`, `It does not approve or certify the report`, and `AI Draft uses only your current report fields and the material you provide in this session.`
+
+Changes made:
+
+- `POST /api/ai/template-evaluation` no longer returns a raw 502-style failure. It now logs the failure, records the failed AI task, and returns a friendly 503 message.
+- `POST /api/quality-agent/chat` now has a 25-second timeout and returns a friendly 503 message when DeepSeek fails or times out.
+- `POST /api/quality-agent` now returns the same friendly 503-style Quality Expert message on unexpected failure instead of a generic internal-server error.
+- Search verification found no remaining `status: 502` or `Internal server error` strings in `src/app/api/ai` or `src/app/api/quality-agent`.
+
+Verification:
+
+- `npm run lint`: passed with 0 errors and 11 existing warnings.
+- `npm run build`: passed and generated 102 app routes.
+
+Remaining production smoke test:
+
+- Use a beta account to run AI Quality Check successfully on a real report.
+- Temporarily force DeepSeek failure or invalid credentials in a safe environment and confirm the UI shows the friendly failure message while report data remains saved.
+- Create two unrelated reports and confirm AI Draft on report B does not use report A content.

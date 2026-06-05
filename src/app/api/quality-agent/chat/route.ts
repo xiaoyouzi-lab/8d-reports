@@ -114,6 +114,7 @@ export async function POST(request: NextRequest) {
         "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
+      signal: AbortSignal.timeout(25_000),
       body: JSON.stringify({
         model: DEEPSEEK_MODEL,
         messages,
@@ -126,8 +127,8 @@ export async function POST(request: NextRequest) {
       const errText = await res.text().catch(() => "")
       console.error("DeepSeek API error:", res.status, errText)
       return NextResponse.json(
-        { error: "AI service temporarily unavailable" },
-        { status: 502 }
+        { error: "Quality Expert is temporarily unavailable. Please try again later." },
+        { status: 503 }
       )
     }
 
@@ -139,8 +140,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Quality agent chat error:", error)
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
+      { error: "Quality Expert is temporarily unavailable. Please try again later." },
+      { status: 503 }
     )
   }
 }

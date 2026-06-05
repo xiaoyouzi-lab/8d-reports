@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
     }).catch(() => {});
     return NextResponse.json({ output });
   } catch (err) {
+    console.error("AI Template Evaluation failed", { userId: user.id, err });
     await db.insert(aiTasks).values({
       userId: user.id,
       taskType: "template_evaluation",
@@ -34,6 +35,8 @@ export async function POST(req: NextRequest) {
       status: "failed",
       error: err instanceof Error ? err.message : "AI failed",
     }).catch(() => {});
-    return NextResponse.json({ error: err instanceof Error ? err.message : "AI failed" }, { status: 502 });
+    return NextResponse.json({
+      error: "AI template evaluation is temporarily unavailable. Your request is safely saved. Please try again later.",
+    }, { status: 503 });
   }
 }
