@@ -76,3 +76,33 @@ Recommended first channel: Elsmar Cove’s `Quality Assurance and Compliance Sof
 `https://elsmar.com/elsmarqualityforum/forums/quality-assurance-and-compliance-software-tools-and-solutions.36/`
 
 It is a better first fit than a general corrective-action discussion because the post openly evaluates a software workflow. Publish to one channel first and record the URL, date, views, comments, demo visits, and feedback form submissions.
+
+## First Elsmar Execution Result
+
+Date: 2026-06-05
+
+Outcome:
+
+- The original validation thread could not be posted because the new Elsmar account has 0 posts and the forum blocks links until the account has at least 10 posts.
+- The strategy was changed from direct validation post to warm-up participation:
+  - no product links;
+  - no UTM links;
+  - no product mention unless asked;
+  - useful process replies only.
+- First warm-up reply was submitted in this thread:
+  `https://elsmar.com/elsmarqualityforum/threads/how-are-you-handling-vda-6-3-alongside-iatf-16949-still-on-spreadsheets.92271/`
+- Reply status after submission:
+  `This message is awaiting moderator approval, and is invisible to normal visitors.`
+
+First reply topic:
+
+- VDA 6.3 audit scoring should remain recognizable to customers/auditors.
+- Findings can still be linked into the same corrective-action system used for IATF issues.
+- The useful trace is from VDA question / process step / score to nonconformity, owner, containment, corrective action, due date, evidence, and effectiveness check.
+- Spreadsheets can work for one audit event, but become weak when multiple audits, suppliers, actions, and overdue follow-ups need to be trended.
+
+Next Elsmar rule:
+
+- Do not post repeatedly while the first reply is awaiting moderator approval.
+- Wait for approval or a reasonable interval before submitting the next no-link reply.
+- Continue reading threads and collecting recurring customer problems during the wait.

@@ -43,6 +43,124 @@ The next product decision must answer:
 
 Do not add Customer Complaint Intake or email reminders before collecting evidence on this question.
 
+## Forum VOC Map
+
+Use this section when reading quality forums and deciding what to post next. The goal is to identify recurring pain, not to force every discussion toward the product.
+
+Initial Elsmar observations:
+
+- People are not asking for another blank 8D form. They are asking how to control real corrective-action work after the form exists.
+- Repeated pain appears around traceability: who found the issue, who owns the action, what evidence proves closure, and what changed after review.
+- Spreadsheet and Word workflows are accepted for single events, but they become weak once multiple suppliers, audits, actions, due dates, and revisions must be tracked.
+- Community members distinguish sharply between standards/process requirements and software convenience. Any post should respect the method first, then discuss tooling.
+- Direct product links from a new account are blocked and also look promotional. Warm-up participation should be link-free, useful, and specific.
+
+Recurring user problems to track:
+
+| Theme | What people ask | Product implication |
+| --- | --- | --- |
+| 8D / RCA trigger | When is a full 8D required versus a simpler corrective action? | Add clearer guidance in onboarding and sample reports: when to use full D0-D8. |
+| Root-cause quality | How do we know the cause is not vague, repeated, or unsupported? | Keep AI Quality Check focused on logic risks, evidence gaps, and weak wording. |
+| Corrective action ownership | How do we assign actions, due dates, and evidence without losing follow-up? | Team value should emphasize owners, due dates, evidence, and Activity Log. |
+| Supplier responses | Supplier 8Ds often come back incomplete or generic. | Sample reports and review service should show what a customer-ready response looks like. |
+| Audit trail / revision control | After a report is approved or submitted, how do we prevent uncontrolled edits? | This is the strongest Team wedge: approval, locking, unlock reason, revision number, Activity Log. |
+| Attachments and evidence | Photos, test records, and non-image files need to be tied to the right step. | Export package must keep images in report and all files in ZIP with an attachment list. |
+| Customer-specific templates | Customers often require a specific Word/Excel format. | Template Setup / Team Launch are likely easier to sell than generic subscription at first. |
+| Spreadsheets vs software | Spreadsheets work until there are many suppliers, audits, actions, and overdue items. | Position as controlled workflow and delivery package, not as a full QMS replacement. |
+| VDA / IATF / process audit linkage | Teams want to link audit findings to CAPA without duplicating work. | Future expansion can connect audit findings to corrective actions, but not before Team workflow validation. |
+
+Community participation rule:
+
+- Reply to the specific process question first.
+- Do not mention 8D Reports unless someone asks for examples/tools or the post is explicitly a disclosed validation post.
+- Avoid UTM links on strict forums.
+- Prefer questions that invite practitioners to describe their real process: approval, locking, revision reason, evidence, customer format, supplier follow-up.
+
+## Elsmar Warm-Up Reply Queue
+
+Do not submit these while the first warm-up reply is still awaiting moderator approval. Use them as vetted candidates once the account is allowed to participate normally.
+
+### Candidate 1: AS9100 document control cleanup
+
+Thread:
+
+`https://elsmar.com/elsmarqualityforum/threads/as9100-qa-intern-help.91922/`
+
+Why it fits:
+
+- The thread is about a small machining company trying to clean up controlled documents, forms, logs, revisions, approval signatures, ownership, and uncontrolled local copies.
+- It maps directly to our broader Team positioning around ownership, revision control, and simple governance.
+- It should not mention 8D Reports, demos, AI, pricing, or software.
+
+Safe reply angle:
+
+> I would start with risk and ownership before redesigning the whole folder tree. A simple master list with document title, owner, current revision, approval date, location, and obsolete location usually gives you control faster than a perfect numbering system. Then pick the highest-risk records first: customer-facing forms, inspection records, supplier records, nonconformance/CAPA records, and anything operators actually use on the floor. For employee adoption, involve the process owner before changing the document and publish read-only PDFs where possible so old editable copies do not keep circulating.
+
+Product learning:
+
+- Small manufacturers struggle with revision control because ownership is unclear, not because they lack a naming convention.
+- Team features should emphasize document/report owner, approval date, current revision, and read-only delivery after approval.
+
+### Candidate 2: Supplier change management
+
+Thread:
+
+`https://elsmar.com/elsmarqualityforum/threads/supplier-change-management.92188/`
+
+Why it fits:
+
+- The thread asks how suppliers should know when changes require customer notification and approval.
+- It maps to future supplier-quality workflows, but also to current 8D/SCAR evidence and approval control.
+- Keep reply focused on process and criteria, not tooling.
+
+Safe reply angle:
+
+> I would separate the problem into two parts: the contractual requirement to notify, and the practical trigger list that tells the supplier what "notify" means. The trigger list should include material source, manufacturing location, special process, equipment/method, sub-supplier, inspection/test method, packaging, labeling, and anything tied to CTQ or customer-specific requirements. If CTQ is not fully defined yet, start with a conservative interim rule: any change that could affect fit, form, function, reliability, regulatory/customer requirement, or validation status must be notified before implementation. Then review the list after a few real change requests so it becomes usable rather than theoretical.
+
+Product learning:
+
+- Supplier-facing workflows need a clear trigger list and approval status, not just a free-text note.
+- Customer-ready reports should expose the decision basis: why the action/change was accepted, who approved it, and what evidence was reviewed.
+
+### Candidate 3: Older supplier change notification clause
+
+Thread:
+
+`https://elsmar.com/elsmarqualityforum/threads/supplier-change-management.86083/`
+
+Why it fits:
+
+- The thread asks whether a PO statement is enough or whether a signed supplier quality agreement is needed.
+- It can be answered with process advice and shows common small-business gaps.
+
+Safe reply angle:
+
+> I would not rely on the purchase order alone if the change control requirement is important to product performance or customer commitments. A PO clause helps, but a supplier quality agreement or signed quality clause gives a clearer baseline, especially for changes to process, location, material source, test method, packaging, labeling, or sub-suppliers. I would also define the advance notice period, the approval route, and what evidence is expected with the request. Without those three pieces, suppliers may technically "notify" but still not give enough information for a real risk review.
+
+Product learning:
+
+- Buyers want evidence and approval routing, not only a policy statement.
+- Template Setup and Team Launch can include standard quality-clause workflows as future service material.
+
+### Candidate 4: Internal supplier control
+
+Thread:
+
+`https://elsmar.com/elsmarqualityforum/threads/how-to-control-internal-supplier.35796/`
+
+Why it fits:
+
+- The thread is older, but the theme is useful: internal handoffs can create the same risks as external suppliers.
+- Only use if recent/newer threads are scarce; avoid reviving very old threads unless the forum culture allows it.
+
+Safe reply angle:
+
+> For internal suppliers, I would keep the control proportional to the risk of the handoff rather than creating a separate supplier system. The receiving process still needs defined requirements, acceptance criteria, nonconformance feedback, and evidence of correction when problems repeat. The difference is that the corrective path is usually through process ownership and management review rather than purchasing leverage.
+
+Product learning:
+
+- Internal handoffs can justify future complaint/intake or internal CAPA features, but they are not the current Team validation priority.
+
 ## Target Interview Mix
 
 The first validation batch is 60 relevant people:
