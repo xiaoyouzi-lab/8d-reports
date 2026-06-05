@@ -33,6 +33,9 @@ type SearchMatch = {
   id: string;
   title: string;
   status: string;
+  workflowStatus: string;
+  revision: number;
+  lockedAt: Date | null;
   reportType: string;
   priority: string;
   source: string | null;
@@ -74,6 +77,9 @@ export async function GET(req: NextRequest) {
       id: reports.id,
       title: reports.title,
       status: reports.status,
+      workflowStatus: reports.workflowStatus,
+      revision: reports.revision,
+      lockedAt: reports.lockedAt,
       reportType: reports.reportType,
       priority: reports.priority,
       source: reports.source,
@@ -117,6 +123,9 @@ export async function GET(req: NextRequest) {
       id: result.id,
       title: result.title,
       status: result.status,
+      workflowStatus: result.workflowStatus,
+      revision: result.revision,
+      lockedAt: result.lockedAt,
       reportType: result.reportType,
       priority: result.priority,
       source: result.source,

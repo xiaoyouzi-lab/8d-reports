@@ -108,6 +108,18 @@ const activityRoute = read("src/app/api/reports/[id]/activity/route.ts");
 assert.match(activityRoute, /report_exported/, "PDF/Word/ZIP exports must be loggable");
 assert.match(activityRoute, /canExportDraft/, "Viewer export logging must be blocked");
 
+const reportsRoute = read("src/app/api/reports/route.ts");
+assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard report API must expose workflow status");
+assert.match(reportsRoute, /revision: reports\.revision/, "Dashboard report API must expose revision number");
+assert.match(reportsRoute, /lockedAt: reports\.lockedAt/, "Dashboard report API must expose lock state");
+
+const dashboardPage = read("src/app/(app)/dashboard/page.tsx");
+assert.match(dashboardPage, /Workflow/, "Dashboard report list should show workflow status, not only completion status");
+assert.match(dashboardPage, /Rev\./, "Dashboard report list should show revision number");
+
+const appLayout = read("src/app/(app)/layout.tsx");
+assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
+
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");
 assert.match(pricingPage, /From \$999/, "Team Launch price should be From $999");

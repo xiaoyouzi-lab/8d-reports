@@ -21,7 +21,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const [quotaLabel, setQuotaLabel] = useState("2/5")
+  const [quotaLabel, setQuotaLabel] = useState("0/3")
 
   useEffect(() => {
     if (!menuOpen) return
@@ -44,7 +44,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       .then((data) => {
         if (data) {
           const used = data.usedQuota ?? 0
-          const total = data.totalQuota ?? 5
+          const total = data.totalQuota ?? 3
           setQuotaLabel(`${used}/${total}`)
         }
       })
@@ -91,7 +91,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               variant={plan === "pro" || plan === "team" ? "default" : "outline"}
               className="hidden sm:inline-flex"
             >
-              {plan === "team" ? "Team · 5 seats" : plan === "pro" ? "Pro · Unlimited" : `Free · ${quotaLabel}`}
+              {plan === "team" ? "Team · 5 seats" : plan === "pro" ? "Pro · Personal" : `Free · ${quotaLabel}`}
             </Badge>
 
             <div className="relative">

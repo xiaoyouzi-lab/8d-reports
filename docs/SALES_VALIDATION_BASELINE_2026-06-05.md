@@ -381,6 +381,7 @@ Strong evidence now available:
   - Owner / Editor / Viewer permissions are enforced through the shared report-access gate.
   - Owner can unlock for revision only with a reason, and unlock increments the revision number.
   - Activity Log records field updates, attachment upload/delete, share link create/revoke, workflow transitions, unlock, and export events.
+  - Dashboard report rows now expose and display workflow status, revision number, and locked state, so Team governance is visible before opening a report.
 - Commercial boundaries:
   - Free is 3 lifetime reports.
   - Pro is described as `$19/month` for unlimited personal reports and individual delivery features.
@@ -398,7 +399,7 @@ Strong evidence now available:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
 - Regression coverage:
-  - `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Activity Log recording points, pricing boundaries, homepage Team positioning, and Pro-vs-Team copy boundaries.
+  - `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Activity Log recording points, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, and Pro-vs-Team copy boundaries.
   - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:

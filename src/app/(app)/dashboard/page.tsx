@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Search, Plus, FileText, Sparkles } from "lucide-react"
+import { Lock, Plus, Search, FileText, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,6 +27,9 @@ interface Report {
   id: string
   title: string
   status: string
+  workflowStatus?: string
+  revision?: number
+  lockedAt?: string | null
   reportType: string
   priority: string
   source: string | null
@@ -50,16 +53,20 @@ interface TeamState {
   } | null
 }
 
-const statusStyles: Record<string, string> = {
+const workflowStatusStyles: Record<string, string> = {
   draft: "bg-amber-100 text-amber-700 ring-amber-600/20",
-  in_progress: "bg-blue-100 text-blue-700 ring-blue-600/20",
-  completed: "bg-emerald-100 text-emerald-700 ring-emerald-600/20",
+  internal_review: "bg-blue-100 text-blue-700 ring-blue-600/20",
+  approved: "bg-emerald-100 text-emerald-700 ring-emerald-600/20",
+  submitted: "bg-indigo-100 text-indigo-700 ring-indigo-600/20",
+  closed: "bg-slate-100 text-slate-700 ring-slate-600/20",
 }
 
-const statusLabel: Record<string, string> = {
+const workflowStatusLabel: Record<string, string> = {
   draft: "Draft",
-  in_progress: "In Progress",
-  completed: "Completed",
+  internal_review: "Internal Review",
+  approved: "Approved",
+  submitted: "Submitted",
+  closed: "Closed",
 }
 
 const priorityDot: Record<string, string> = {
@@ -126,8 +133,8 @@ export default function DashboardPage() {
   }, [plan, session])
 
   const totalReports = reports.length
-  const inProgress = reports.filter((r) => r.status !== "completed").length
-  const completed = reports.filter((r) => r.status === "completed").length
+  const activeWorkflow = reports.filter((r) => !["submitted", "closed"].includes(r.workflowStatus || "draft")).length
+  const approvedOrSubmitted = reports.filter((r) => ["approved", "submitted"].includes(r.workflowStatus || "draft")).length
   const normalizedQuery = query.trim().toLowerCase()
   const freeVisibleReports = normalizedQuery
     ? reports.filter((report) => {
@@ -136,6 +143,8 @@ export default function DashboardPage() {
           report.reportNumber ?? "",
           report.title,
           report.status,
+          report.workflowStatus ?? "",
+          workflowStatusLabel[report.workflowStatus || ""] ?? "",
           report.priority,
           report.source ?? "",
         ].some((value) => value.toLowerCase().includes(normalizedQuery))
@@ -279,10 +288,10 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="flex flex-col gap-1 p-4 lg:p-5">
             <span className="text-xs font-medium text-muted-foreground">
-              In Progress
+              Active Workflow
             </span>
             <span className="text-2xl font-semibold tabular-nums tracking-tight text-amber-600 font-mono">
-              {loading ? "—" : inProgress}
+              {loading ? "—" : activeWorkflow}
             </span>
           </CardContent>
         </Card>
@@ -290,10 +299,10 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="flex flex-col gap-1 p-4 lg:p-5">
             <span className="text-xs font-medium text-muted-foreground">
-              Completed
+              Approved / Submitted
             </span>
             <span className="text-2xl font-semibold tabular-nums tracking-tight text-emerald-600 font-mono">
-              {loading ? "—" : completed}
+              {loading ? "—" : approvedOrSubmitted}
             </span>
           </CardContent>
         </Card>
@@ -464,7 +473,10 @@ export default function DashboardPage() {
                       Title
                     </TableHead>
                     <TableHead className="w-[120px] text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Status
+                      Workflow
+                    </TableHead>
+                    <TableHead className="w-[86px] text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Rev
                     </TableHead>
                     <TableHead className="w-[100px] text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                       Priority
@@ -504,12 +516,20 @@ export default function DashboardPage() {
                         <Badge
                           className={cn(
                             "ring-1 ring-inset",
-                            statusStyles[report.status] || statusStyles.draft
+                            workflowStatusStyles[report.workflowStatus || "draft"] || workflowStatusStyles.draft
                           )}
                           variant="outline"
                         >
-                          {statusLabel[report.status] || report.status}
+                          {workflowStatusLabel[report.workflowStatus || "draft"] || report.workflowStatus || "Draft"}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="py-3">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          {(report.lockedAt || ["approved", "submitted", "closed"].includes(report.workflowStatus || "")) && (
+                            <Lock className="size-3.5 text-slate-500" />
+                          )}
+                          <span>Rev.{report.revision ?? 0}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="py-3">
                         <div className="flex items-center gap-1.5">
@@ -555,12 +575,18 @@ export default function DashboardPage() {
                       <Badge
                         className={cn(
                           "ring-1 ring-inset",
-                          statusStyles[report.status] || statusStyles.draft
+                          workflowStatusStyles[report.workflowStatus || "draft"] || workflowStatusStyles.draft
                         )}
                         variant="outline"
                       >
-                        {statusLabel[report.status] || report.status}
+                        {workflowStatusLabel[report.workflowStatus || "draft"] || report.workflowStatus || "Draft"}
                       </Badge>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      {(report.lockedAt || ["approved", "submitted", "closed"].includes(report.workflowStatus || "")) && (
+                        <Lock className="size-3.5 text-slate-500" />
+                      )}
+                      <span>Rev.{report.revision ?? 0}</span>
                     </div>
                     <span className="text-sm font-medium text-foreground">
                       {report.title}
