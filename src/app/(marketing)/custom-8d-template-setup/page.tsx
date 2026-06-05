@@ -71,7 +71,10 @@ const process = [
   },
 ]
 
-export default function Custom8DTemplateSetupPage() {
+export default async function Custom8DTemplateSetupPage({ searchParams }: { searchParams: Promise<{ service?: string }> }) {
+  const { service } = await searchParams;
+  const requestType = service === "team_launch" ? "team_launch" : "template_setup";
+
   return (
     <div className="font-sans">
       <section className="border-b border-slate-200 bg-slate-50 py-20 sm:py-24">
@@ -136,7 +139,7 @@ export default function Custom8DTemplateSetupPage() {
 
       <section id="request" className="border-b border-slate-200 bg-white py-16 sm:py-20">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <CustomTemplateRequestForm />
+          <CustomTemplateRequestForm initialRequestType={requestType} />
         </div>
       </section>
 

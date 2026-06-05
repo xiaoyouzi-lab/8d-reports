@@ -30,7 +30,7 @@ export default function TeamLaunchPage() {
             We convert your existing customer 8D template, configure the team workspace, train your quality team, and help complete the first customer-ready report.
           </p>
           <div className="mt-8 flex flex-wrap items-center gap-4">
-            <Link href="/custom-8d-template-setup#request" className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>
+            <Link href="/custom-8d-template-setup?service=team_launch#request" className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>
               Request Team Launch <ArrowRight className="size-4" />
             </Link>
             <span className="font-mono text-xl font-semibold">From $999</span>
@@ -52,7 +52,7 @@ export default function TeamLaunchPage() {
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
           <h2 className="text-3xl font-semibold">Bring the template you use today.</h2>
           <p className="mx-auto mt-4 max-w-2xl text-slate-300">We will review the format, confirm scope, and tell you what can be launched within the base service.</p>
-          <Link href="/custom-8d-template-setup#request" className={cn(buttonVariants({ size: "lg" }), "mt-7 bg-white text-slate-950 hover:bg-slate-100")}>Submit your template</Link>
+          <Link href="/custom-8d-template-setup?service=team_launch#request" className={cn(buttonVariants({ size: "lg" }), "mt-7 bg-white text-slate-950 hover:bg-slate-100")}>Submit your template</Link>
         </div>
       </section>
     </div>

@@ -8,11 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 
-export function CustomTemplateRequestForm() {
+interface CustomTemplateRequestFormProps {
+  initialRequestType?: "template_setup" | "team_launch"
+}
+
+export function CustomTemplateRequestForm({ initialRequestType = "template_setup" }: CustomTemplateRequestFormProps) {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [fileNames, setFileNames] = useState<string[]>([])
   const [fileError, setFileError] = useState("")
+  const requestType = initialRequestType
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -42,11 +47,16 @@ export function CustomTemplateRequestForm() {
   return (
     <form onSubmit={submit} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div>
-        <h2 className="text-xl font-semibold text-slate-950">Submit your template for setup</h2>
+        <h2 className="text-xl font-semibold text-slate-950">
+          {requestType === "team_launch" ? "Request Team Launch" : "Submit your template for setup"}
+        </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          Upload the Word, Excel, PDF, screenshots, or customer instructions you use today. We will review the structure and confirm the setup scope.
+          {requestType === "team_launch"
+            ? "Upload the template you use today. We will review the format, confirm scope, and outline the 7-day launch steps."
+            : "Upload the Word, Excel, PDF, screenshots, or customer instructions you use today. We will review the structure and confirm the setup scope."}
         </p>
       </div>
+      <input type="hidden" name="requestType" value={requestType} />
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="companyName">Company name</Label>
@@ -104,7 +114,7 @@ export function CustomTemplateRequestForm() {
       </div>
       <Button type="submit" className="mt-5 bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Submit setup request
+        {requestType === "team_launch" ? "Submit Team Launch request" : "Submit setup request"}
       </Button>
       {submitted && (
         <p className="mt-3 text-sm text-emerald-700">

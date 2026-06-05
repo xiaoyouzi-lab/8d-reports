@@ -293,6 +293,7 @@ export const aiTasks = pgTable("ai_tasks", {
 export const customTemplateRequests = pgTable("custom_template_requests", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  requestType: text("request_type").notNull().default("template_setup"),
   companyName: text("company_name").notNull(),
   contactEmail: text("contact_email").notNull(),
   templateUseCase: text("template_use_case").notNull(),
@@ -302,9 +303,13 @@ export const customTemplateRequests = pgTable("custom_template_requests", {
   uploadedFiles: jsonb("uploaded_files").default("[]"),
   aiEvaluation: jsonb("ai_evaluation").default("{}"),
   status: text("status").notNull().default("submitted"),
+  adminNotes: text("admin_notes"),
+  quotedAmount: numeric("quoted_amount", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_custom_template_requests_user_id").on(table.userId),
+  index("idx_custom_template_requests_status").on(table.status),
+  index("idx_custom_template_requests_type").on(table.requestType),
   index("idx_custom_template_requests_created_at").on(table.createdAt.desc()),
 ]);

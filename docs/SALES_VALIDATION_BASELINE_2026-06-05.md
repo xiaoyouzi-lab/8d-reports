@@ -283,3 +283,43 @@ Remaining production smoke test:
 - Confirm Owner can revoke an Editor-created share link.
 - Confirm Viewer cannot create, update, or revoke share links.
 - Confirm upload failures show the friendly message and do not create partial attachment records.
+
+## Service Request Flow Check
+
+Date updated: 2026-06-05
+
+Purpose:
+
+- Make Template Setup and Team Launch usable as service offers, not just marketing pages.
+- Keep the service backend intentionally lightweight while still allowing follow-up.
+
+Changes made:
+
+- Added a service request migration for `request_type`, `admin_notes`, and `quoted_amount`.
+- Service request statuses are now explicitly modeled:
+  - `submitted`
+  - `under_review`
+  - `quote_sent`
+  - `in_progress`
+  - `ready_for_review`
+  - `delivered`
+  - `cancelled`
+- Template Setup requests are saved as `template_setup`.
+- Team Launch requests are saved as `team_launch`.
+- Team Launch CTAs now route to `/custom-8d-template-setup?service=team_launch#request`, and the form changes its heading, description, hidden request type, and submit button accordingly.
+- Admin-only `GET /api/custom-template-requests` lists the latest service requests and can filter by status.
+- Admin-only `PATCH /api/custom-template-requests` updates status, admin notes, and quoted amount.
+- Admin access is controlled by `ADMIN_EMAILS` or `ADMIN_EMAIL`.
+
+Verification:
+
+- `npx tsc --noEmit`: passed.
+- `npm run lint`: passed with 0 errors and 11 existing warnings.
+- `npm run build`: passed and generated 102 app routes.
+
+Remaining production smoke test:
+
+- Run the new migration in production.
+- Submit one Template Setup request and one Team Launch request.
+- Confirm the database rows include the correct `request_type`.
+- Confirm the admin account can list and update request status.
