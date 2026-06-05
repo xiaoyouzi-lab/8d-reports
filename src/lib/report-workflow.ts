@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { reportActivities, reports, teamMembers, teamWorkspaces } from "@/lib/db/schema";
 import { getAccessibleReport } from "@/lib/report-access";
@@ -34,7 +34,7 @@ export function previewValue(value: unknown, maxLength = 300) {
 export async function getReportAccess(reportId: string, userId: string) {
   const accessible = await getAccessibleReport(reportId, userId);
   if (!accessible) return null;
-  const workspaceRole = await getUserWorkspaceRole(userId);
+  const workspaceRole = await getUserWorkspaceRoleForReportOwner(userId, accessible.userId);
   if (accessible.userId === userId) return buildAccess(accessible, workspaceRole || "owner");
   return buildAccess(accessible, workspaceRole || "viewer");
 }
@@ -43,6 +43,46 @@ export async function getUserWorkspaceRole(userId: string): Promise<TeamRole | n
   const [owned] = await db.select({ id: teamWorkspaces.id }).from(teamWorkspaces).where(eq(teamWorkspaces.ownerId, userId)).limit(1);
   if (owned) return "owner";
   const [membership] = await db.select({ role: teamMembers.role }).from(teamMembers).where(eq(teamMembers.userId, userId)).limit(1);
+  return membership ? normalizeTeamRole(membership.role) : null;
+}
+
+export async function getUserWorkspaceRoleForReportOwner(userId: string, reportOwnerId: string): Promise<TeamRole | null> {
+  const ownerTeam = await db
+    .select({ id: teamWorkspaces.id })
+    .from(teamWorkspaces)
+    .where(eq(teamWorkspaces.ownerId, reportOwnerId))
+    .limit(1);
+
+  if (ownerTeam[0]) {
+    if (userId === reportOwnerId) return "owner";
+    const [membership] = await db
+      .select({ role: teamMembers.role })
+      .from(teamMembers)
+      .where(and(eq(teamMembers.teamId, ownerTeam[0].id), eq(teamMembers.userId, userId)))
+      .limit(1);
+    return membership ? normalizeTeamRole(membership.role) : null;
+  }
+
+  const [reportOwnerMembership] = await db
+    .select({ teamId: teamMembers.teamId })
+    .from(teamMembers)
+    .where(eq(teamMembers.userId, reportOwnerId))
+    .limit(1);
+
+  if (!reportOwnerMembership) return null;
+
+  const [ownedByRequester] = await db
+    .select({ id: teamWorkspaces.id })
+    .from(teamWorkspaces)
+    .where(and(eq(teamWorkspaces.id, reportOwnerMembership.teamId), eq(teamWorkspaces.ownerId, userId)))
+    .limit(1);
+  if (ownedByRequester) return "owner";
+
+  const [membership] = await db
+    .select({ role: teamMembers.role })
+    .from(teamMembers)
+    .where(and(eq(teamMembers.teamId, reportOwnerMembership.teamId), eq(teamMembers.userId, userId)))
+    .limit(1);
   return membership ? normalizeTeamRole(membership.role) : null;
 }
 

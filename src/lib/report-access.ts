@@ -26,16 +26,27 @@ export async function getAccessibleUserIds(userId: string): Promise<string[]> {
   }
 
   const memberTeams = await db
-    .select({ ownerId: teamWorkspaces.ownerId, planName: plans.name, status: subscriptions.status })
+    .select({ teamId: teamWorkspaces.id, ownerId: teamWorkspaces.ownerId, planName: plans.name, status: subscriptions.status })
     .from(teamMembers)
     .innerJoin(teamWorkspaces, eq(teamMembers.teamId, teamWorkspaces.id))
     .innerJoin(subscriptions, eq(subscriptions.userId, teamWorkspaces.ownerId))
     .leftJoin(plans, eq(subscriptions.planId, plans.id))
     .where(eq(teamMembers.userId, userId));
 
-  memberTeams
-    .filter((team) => isActiveStatus(team.status) && getPlanFromName(team.planName) === "team")
-    .forEach((team) => ids.add(team.ownerId));
+  const activeMemberTeamIds: string[] = [];
+  memberTeams.forEach((team) => {
+    if (!isActiveStatus(team.status) || getPlanFromName(team.planName) !== "team") return;
+    ids.add(team.ownerId);
+    activeMemberTeamIds.push(team.teamId);
+  });
+
+  if (activeMemberTeamIds.length > 0) {
+    const peers = await db
+      .select({ userId: teamMembers.userId })
+      .from(teamMembers)
+      .where(inArray(teamMembers.teamId, activeMemberTeamIds));
+    peers.forEach((peer) => ids.add(peer.userId));
+  }
 
   return Array.from(ids);
 }

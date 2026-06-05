@@ -192,3 +192,34 @@ Conclusion:
 - The production site now has the minimum public proof assets needed for sales validation: homepage, pricing, Team Launch, security page, demo overview, individual demo workflow page, and downloadable customer-delivery packages.
 - The demo ZIP packages preserve non-image evidence files, which directly addresses the earlier export-quality concern that only photos were included.
 - The next validation action should be showing these demo workflow pages to target users and measuring demo feedback, signups, report creation, checkout intent, Team inquiries, or Template Setup inquiries.
+
+## Team Permission Hardening
+
+Date updated: 2026-06-05
+
+Why this was needed:
+
+- The Team plan is only credible if Owner / Editor / Viewer permissions are enforced by the API, not just hidden in the UI.
+- A review found that report access used the user's general workspace role instead of the role tied to the specific report owner's Team workspace.
+- This could make role behavior confusing in edge cases, especially if a user belonged to more than one workspace or if a report was created by a team member rather than the workspace owner.
+
+Changes made:
+
+- Team report visibility now includes reports owned by peers in the same active Team workspace, not only reports owned by the Team owner.
+- Report permissions now resolve the user's role relative to the report owner's Team context.
+- If the report owner is the Team owner, the requester must be a member of that owner's Team to receive Editor or Viewer rights.
+- If the report was created by a Team member, the requester is resolved through that member's Team so the workspace Owner still receives Owner rights and other members receive their own roles.
+- Viewer remains view-only through the shared `getReportAccess` gate used by report editing, attachments, signatures, workflow, share links, and export activity endpoints.
+
+Verification:
+
+- `npx tsc --noEmit`: passed.
+- `npm run lint`: passed with 0 errors and 11 existing warnings.
+- `npm run build`: passed and generated the same 102 app routes.
+
+Remaining production smoke test:
+
+- Use real Team accounts to verify Owner / Editor / Viewer behavior through both UI buttons and direct API calls.
+- Confirm Viewer cannot edit D-steps, upload/delete attachments, replace signatures, create share links, export drafts, or change workflow state.
+- Confirm Editor can create/edit reports, upload/delete attachments, create share links, and export draft packages while still being unable to approve, lock, unlock, or manage members.
+- Confirm Owner can approve, lock, unlock with reason, and manage members.
