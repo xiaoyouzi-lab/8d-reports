@@ -5,6 +5,12 @@ import { customTemplateRequests } from "@/lib/db/schema";
 import { getSessionUser } from "@/lib/api-helpers";
 import { getPublicUrl, getR2Client } from "@/lib/r2";
 import { desc, eq } from "drizzle-orm";
+import {
+  isServiceAdmin,
+  isServiceRequestStatus,
+  isServiceRequestType,
+  SERVICE_REQUEST_STATUSES,
+} from "@/lib/service-requests";
 
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -18,24 +24,6 @@ const ALLOWED_TYPES = [
   "image/webp",
 ];
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
-const REQUEST_TYPES = new Set(["template_setup", "team_launch"]);
-const REQUEST_STATUSES = new Set([
-  "submitted",
-  "under_review",
-  "quote_sent",
-  "in_progress",
-  "ready_for_review",
-  "delivered",
-  "cancelled",
-]);
-
-function isServiceAdmin(email?: string | null) {
-  const admins = (process.env.ADMIN_EMAILS || process.env.ADMIN_EMAIL || "")
-    .split(",")
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-  return Boolean(email && admins.includes(email.toLowerCase()));
-}
 
 function textValue(form: FormData, key: string) {
   const value = form.get(key);
@@ -58,7 +46,7 @@ export async function POST(req: NextRequest) {
   if (!form) return NextResponse.json({ error: "Expected multipart form data" }, { status: 400 });
 
   const requestTypeInput = textValue(form, "requestType");
-  const requestType = REQUEST_TYPES.has(requestTypeInput) ? requestTypeInput : "template_setup";
+  const requestType = isServiceRequestType(requestTypeInput) ? requestTypeInput : "template_setup";
   const companyName = textValue(form, "companyName");
   const contactEmail = textValue(form, "contactEmail");
   const templateUseCase = textValue(form, "templateUseCase");
@@ -145,7 +133,7 @@ export async function GET(req: NextRequest) {
   }
 
   const status = req.nextUrl.searchParams.get("status") || "";
-  const where = REQUEST_STATUSES.has(status) ? eq(customTemplateRequests.status, status) : undefined;
+  const where = isServiceRequestStatus(status) ? eq(customTemplateRequests.status, status) : undefined;
   const rows = await db
     .select()
     .from(customTemplateRequests)
@@ -154,7 +142,7 @@ export async function GET(req: NextRequest) {
     .limit(100);
 
   return NextResponse.json({
-    statuses: Array.from(REQUEST_STATUSES),
+    statuses: SERVICE_REQUEST_STATUSES,
     requests: rows,
   });
 }
@@ -176,7 +164,7 @@ export async function PATCH(req: NextRequest) {
       : undefined;
 
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
-  if (status && !REQUEST_STATUSES.has(status)) {
+  if (status && !isServiceRequestStatus(status)) {
     return NextResponse.json({ error: "Invalid service request status" }, { status: 400 });
   }
 

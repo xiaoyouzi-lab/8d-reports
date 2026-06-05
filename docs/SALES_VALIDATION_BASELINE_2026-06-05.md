@@ -310,12 +310,14 @@ Changes made:
 - Admin-only `GET /api/custom-template-requests` lists the latest service requests and can filter by status.
 - Admin-only `PATCH /api/custom-template-requests` updates status, admin notes, and quoted amount.
 - Admin access is controlled by `ADMIN_EMAILS` or `ADMIN_EMAIL`.
+- Added `/admin/service-requests` for service follow-up. The page is admin-only and shows request type, company, email, use case, requirements, language/export needs, uploaded files, status, quote amount, admin notes, and created time.
+- The admin page can update service request status, quote amount, and internal notes without building a full service backend.
 
 Verification:
 
 - `npx tsc --noEmit`: passed.
 - `npm run lint`: passed with 0 errors and 11 existing warnings.
-- `npm run build`: passed and generated 102 app routes.
+- `npm run build`: passed and generated 103 app routes, including `/admin/service-requests`.
 - Migration `drizzle/0005_service_request_flow.sql` applied successfully to the configured database.
 - Database verification confirmed `custom_template_requests` now has `request_type`, `admin_notes`, `quoted_amount`, and the existing `status` column.
 
@@ -323,4 +325,4 @@ Remaining production smoke test:
 
 - Submit one Template Setup request and one Team Launch request.
 - Confirm the database rows include the correct `request_type`.
-- Confirm the admin account can list and update request status.
+- Confirm the admin account can list and update request status through `/admin/service-requests`.
