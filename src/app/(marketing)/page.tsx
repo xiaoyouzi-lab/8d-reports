@@ -102,7 +102,7 @@ function HeroProductPreview() {
   const steps = ["D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8"]
 
   return (
-    <div className="relative pb-10 sm:pb-8">
+    <div className="relative min-w-0 pb-10 sm:pb-8">
       <div className="rounded-lg border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
         <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
           <div>
@@ -201,7 +201,7 @@ function HeroProductPreview() {
         </div>
       </div>
 
-      <div className="absolute -bottom-8 left-5 right-5 rounded-lg border border-indigo-100 bg-white p-4 shadow-[0_18px_48px_rgba(79,70,229,0.18)] sm:left-auto sm:right-[-24px] sm:w-80">
+      <div className="absolute -bottom-8 left-5 right-5 rounded-lg border border-indigo-100 bg-white p-4 shadow-[0_18px_48px_rgba(79,70,229,0.18)] sm:left-auto sm:right-5 sm:w-80">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
           <Search className="h-4 w-4 text-indigo-600" />
           Pro deep search
@@ -296,7 +296,7 @@ export default function LandingPage() {
               and formal PDF, Word, and ZIP delivery.
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
                 href="/sample-report"
                 className={cn(
@@ -308,33 +308,6 @@ export default function LandingPage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/resources"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
-                )}
-              >
-                Browse complete samples
-              </Link>
-              <Link
-                href="/demo-reports"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
-                )}
-              >
-                View Team workflow demos
-              </Link>
-              <Link
-                href="/api/sample-reports/automotive"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
-                )}
-              >
-                Download sample PDF
-              </Link>
-              <Link
                 href="/login"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
@@ -342,6 +315,17 @@ export default function LandingPage() {
                 )}
               >
                 Create free report
+              </Link>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-slate-600">
+              <Link href="/resources" className="hover:text-indigo-700">
+                Browse complete samples
+              </Link>
+              <Link href="/demo-reports" className="hover:text-indigo-700">
+                View Team workflow demos
+              </Link>
+              <Link href="/api/sample-reports/automotive" className="hover:text-indigo-700">
+                Download sample PDF
               </Link>
             </div>
 
