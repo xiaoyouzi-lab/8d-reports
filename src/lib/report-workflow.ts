@@ -86,16 +86,22 @@ export async function getUserWorkspaceRoleForReportOwner(userId: string, reportO
   return membership ? normalizeTeamRole(membership.role) : null;
 }
 
-function buildAccess(report: typeof reports.$inferSelect, role: TeamRole) {
+export function buildReportAccess(report: Pick<typeof reports.$inferSelect, "lockedAt" | "workflowStatus">, role: TeamRole) {
   const locked = Boolean(report.lockedAt) || LOCKED_WORKFLOW_STATUSES.has(report.workflowStatus as WorkflowStatus);
   return {
-    report,
     role,
     locked,
     canEdit: role !== "viewer" && !locked,
     canManageWorkflow: role === "owner",
     canShare: role !== "viewer",
     canExportDraft: role !== "viewer",
+  };
+}
+
+function buildAccess(report: typeof reports.$inferSelect, role: TeamRole) {
+  return {
+    report,
+    ...buildReportAccess(report, role),
   };
 }
 

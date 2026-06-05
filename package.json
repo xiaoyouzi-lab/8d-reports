@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:governance": "tsx scripts/team-governance.test.ts",
     "metrics": "node scripts/metrics-dashboard.mjs"
   },
   "dependencies": {
