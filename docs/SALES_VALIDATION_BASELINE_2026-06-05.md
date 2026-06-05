@@ -143,3 +143,52 @@ Interpretation:
 - There is still no referrer or campaign evidence, so this is a weak traffic signal rather than proof of qualified demand.
 - Do not count this as market validation until it produces at least one of: demo feedback, signup, report creation, checkout intent, Team inquiry, or Template Setup inquiry.
 - Continue directing future validated traffic toward `/demo-reports`, `/demo-reports/automotive`, `/sample-report`, and `/resources`, then compare visits with feedback and account activity.
+
+## Production Sales-Readiness Check
+
+Date checked: 2026-06-05
+
+Purpose:
+
+- Confirm that the public site can support the next sales-validation step before building Customer Complaint Intake or email reminders.
+- Verify that the buyer-facing proof assets exist in production, not only in local development.
+
+Build and static checks:
+
+- `npm run lint`: passed with 0 errors and 11 existing warnings.
+- `npx tsc --noEmit`: passed.
+- `npm run build`: passed. Next generated 102 app routes, including `/demo-reports`, three demo workflow pages, and the programmatic SEO pages.
+
+Production page checks:
+
+| URL | Status | Content type |
+| --- | ---: | --- |
+| `https://www.8d-reports.com/` | 200 | `text/html` |
+| `https://www.8d-reports.com/pricing` | 200 | `text/html` |
+| `https://www.8d-reports.com/team-launch` | 200 | `text/html` |
+| `https://www.8d-reports.com/demo-reports` | 200 | `text/html` |
+| `https://www.8d-reports.com/demo-reports/automotive` | 200 | `text/html` |
+| `https://www.8d-reports.com/security` | 200 | `text/html` |
+| `https://www.8d-reports.com/resources` | 200 | `text/html` |
+
+Production demo download checks:
+
+| Asset | Status | Content type | Size |
+| --- | ---: | --- | ---: |
+| Automotive PDF | 200 | `application/pdf` | 259,548 bytes |
+| Automotive Word | 200 | `application/vnd.openxmlformats-officedocument.wordprocessingml.document` | 262,825 bytes |
+| Automotive ZIP | 200 | `application/zip` | 773,655 bytes |
+| Molding ZIP | 200 | `application/zip` | 856,152 bytes |
+| Electronics ZIP | 200 | `application/zip` | 667,983 bytes |
+
+ZIP evidence package verification:
+
+- Automotive ZIP includes the PDF, Word document, image evidence, `D2-customer-defect-photo-description.txt`, `D4-brush-wear-study.csv`, and `D6-validation-summary.txt`.
+- Molding ZIP includes the PDF, Word document, image evidence, `D2-cosmetic-boundary-sample.txt`, `D4-cooling-flow-comparison.csv`, and `D6-validation-results.txt`.
+- Electronics ZIP includes the PDF, Word document, image evidence, `D2-burn-in-failure-log.csv`, `D4-cross-section-findings.txt`, and `D6-reliability-validation.txt`.
+
+Conclusion:
+
+- The production site now has the minimum public proof assets needed for sales validation: homepage, pricing, Team Launch, security page, demo overview, individual demo workflow page, and downloadable customer-delivery packages.
+- The demo ZIP packages preserve non-image evidence files, which directly addresses the earlier export-quality concern that only photos were included.
+- The next validation action should be showing these demo workflow pages to target users and measuring demo feedback, signups, report creation, checkout intent, Team inquiries, or Template Setup inquiries.
