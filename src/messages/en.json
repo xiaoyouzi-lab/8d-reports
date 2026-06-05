@@ -400,7 +400,7 @@
       "q3Q": "Q: Do uploaded images appear in exported files?",
       "q3A": "A: Yes. When exporting PDF and Word, images uploaded to each step appear at the corresponding position. All attachment files are packaged in the ZIP file's attachments folder.",
       "q4Q": "Q: Can I set a password for share links?",
-      "q4A": "A: Current version shares via unique token links. Links can be deleted anytime to revoke access. Password protection coming soon.",
+      "q4A": "A: Current version shares via unique token links. Links can be deleted anytime to revoke access. Password protection is not included in the current version.",
       "q5Q": "Q: How is my data secured?",
       "q5A": "A: Data uses encrypted transmission (HTTPS) and encrypted storage. Database uses Neon Serverless Postgres, files stored on Cloudflare R2. You can export all your data anytime."
     },

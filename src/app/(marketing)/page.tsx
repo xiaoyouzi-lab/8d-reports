@@ -5,7 +5,6 @@ import {
   LockKeyhole,
   Search,
   Share2,
-  Sparkles,
   Smartphone,
   Upload,
 } from "lucide-react"
@@ -544,29 +543,50 @@ export default function LandingPage() {
       <section className="border-y border-slate-200 bg-slate-950 py-20 text-white sm:py-24">
         <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <div>
-            <Sparkles className="h-6 w-6 text-indigo-300" />
+            <LockKeyhole className="h-6 w-6 text-indigo-300" />
             <h2 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">
-              AI report drafting is positioned as the next Pro expansion.
+              Team is for controlled review, approval, and delivery.
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-300">
-              The first month should validate report completion and paid
-              delivery. AI stays visible enough to measure interest without
-              slowing the launch.
+              The paid Team value is not another blank 8D form. It is the
+              governance around a customer report: roles, approval status,
+              report locking, revision reasons, Activity Log, and a formal
+              export package.
             </p>
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/demo-reports"
+                className={cn(
+                  buttonVariants({ size: "lg" }),
+                  "bg-white text-slate-950 hover:bg-slate-100"
+                )}
+              >
+                View Team workflow demos
+              </Link>
+              <Link
+                href="/team-launch"
+                className={cn(
+                  buttonVariants({ variant: "outline", size: "lg" }),
+                  "border-white/20 bg-transparent text-white hover:bg-white/10 hover:text-white"
+                )}
+              >
+                Book Team Launch
+              </Link>
+            </div>
           </div>
           <div className="rounded-lg border border-white/10 bg-white/5 p-5">
             <div className="flex items-center gap-2 text-sm font-semibold">
-              <LockKeyhole className="h-4 w-4 text-indigo-300" />
-              AI report drafting coming soon
+              <Share2 className="h-4 w-4 text-indigo-300" />
+              What Team controls today
             </div>
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               {[
-                "Customer complaint email",
-                "Inspection records",
-                "Photo descriptions",
-                "5Why draft",
-                "Containment notes",
-                "Responsible owner and dates",
+                "Owner / Editor / Viewer roles",
+                "Internal Review, Approved, Submitted, Closed",
+                "Locked reports after approval",
+                "Unlock for revision with reason",
+                "Activity Log for changes and exports",
+                "View-only and editable share links",
               ].map((item) => (
                 <div
                   key={item}
@@ -577,8 +597,9 @@ export default function LandingPage() {
               ))}
             </div>
             <p className="mt-5 text-sm leading-6 text-slate-300">
-              Future goal: generate a D0-D8 draft for review, not automatic
-              approval.
+              AI Quality Check remains a beta assistant. It can identify weak
+              logic and missing evidence, but it does not approve or certify a
+              report.
             </p>
           </div>
         </div>
