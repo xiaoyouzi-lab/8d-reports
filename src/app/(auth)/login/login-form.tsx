@@ -34,6 +34,7 @@ export default function LoginPage() {
   const callbackUrl = rawCallback && rawCallback.startsWith("/")
     ? rawCallback
     : legacyPlanCallback ?? "/dashboard"
+  const oauthError = searchParams.get("error")
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -63,12 +64,26 @@ export default function LoginPage() {
   }
 
   async function handleOAuth(provider: "google" | "github") {
+    setError("")
     try {
-      await authClient.signIn.social({
+      const callbackURL = new URL(callbackUrl, window.location.origin).toString()
+      const errorCallbackURL = new URL(
+        `/login?callbackUrl=${encodeURIComponent(callbackUrl)}&error=oauth`,
+        window.location.origin
+      ).toString()
+      const result = await authClient.signIn.social({
         provider,
-        callbackURL: callbackUrl,
+        callbackURL,
+        newUserCallbackURL: callbackURL,
+        errorCallbackURL,
+        disableRedirect: true,
       })
-      trackEvent("login_success", { method: provider })
+      if (result.error || !result.data?.url) {
+        setError(result.error?.message || "OAuth sign-in failed. Please try again.")
+        return
+      }
+      trackEvent("login_oauth_started", { method: provider })
+      window.location.assign(result.data.url)
     } catch {
       setError("OAuth sign-in failed. Please try again.")
     }
@@ -132,9 +147,9 @@ export default function LoginPage() {
               </Link>
             </div>
           </div>
-          {error && (
+          {(error || oauthError) && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
-              {error}
+              {error || "OAuth sign-in could not be completed. Please try again."}
             </p>
           )}
           <Button

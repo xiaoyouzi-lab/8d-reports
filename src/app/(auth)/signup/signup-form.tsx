@@ -16,6 +16,7 @@ export default function SignupPage() {
   const searchParams = useSearchParams()
   const rawCallback = searchParams.get("callbackUrl")
   const callbackUrl = rawCallback && rawCallback.startsWith("/") ? rawCallback : "/dashboard"
+  const oauthError = searchParams.get("error")
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -85,9 +86,26 @@ export default function SignupPage() {
   }
 
   async function handleOAuth(provider: "google" | "github") {
+    setError("")
     try {
-      await authClient.signIn.social({ provider, callbackURL: callbackUrl })
-      trackEvent("signup_success", { method: provider })
+      const callbackURL = new URL(callbackUrl, window.location.origin).toString()
+      const errorCallbackURL = new URL(
+        `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}&error=oauth`,
+        window.location.origin
+      ).toString()
+      const result = await authClient.signIn.social({
+        provider,
+        callbackURL,
+        newUserCallbackURL: callbackURL,
+        errorCallbackURL,
+        disableRedirect: true,
+      })
+      if (result.error || !result.data?.url) {
+        setError(result.error?.message || "OAuth sign-up failed")
+        return
+      }
+      trackEvent("signup_oauth_started", { method: provider })
+      window.location.assign(result.data.url)
     } catch {
       setError("OAuth sign-up failed")
     }
@@ -162,7 +180,11 @@ export default function SignupPage() {
             <Label htmlFor="confirmPassword">Confirm password</Label>
             <Input id="confirmPassword" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="h-9" />
           </div>
-          {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">{error}</p>}
+          {(error || oauthError) && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
+              {error || "OAuth sign-up could not be completed. Please try again."}
+            </p>
+          )}
           <Button type="submit" disabled={loading} className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700">
             {loading ? "Creating account..." : "Create account"}
           </Button>
