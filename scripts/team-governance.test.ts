@@ -10,6 +10,7 @@ import {
   WORKFLOW_STATUSES,
   type TeamRole,
 } from "../src/lib/report-workflow";
+import { aiUnavailableMessage, type AiTaskType } from "../src/lib/ai/deepseek";
 
 const root = process.cwd();
 
@@ -146,6 +147,22 @@ const englishMessages = read("src/messages/en.json");
 assert.doesNotMatch(englishMessages, /Password protection coming soon/, "Docs FAQ should not promise password-protected share links before implementation");
 assert.doesNotMatch(englishMessages, /Team collaboration/, "Pro message copy should not claim Team collaboration");
 assert.doesNotMatch(englishMessages, /Audit trail & version history/, "Pro message copy should not claim Team governance");
+
+const aiMessages: Record<AiTaskType, string> = {
+  report_review: "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.",
+  draft_generation: "AI Draft is temporarily unavailable. Your report is safely saved. Please try again later.",
+  template_evaluation: "AI template evaluation is temporarily unavailable. Your request is safely saved. Please try again later.",
+};
+for (const [taskType, expected] of Object.entries(aiMessages) as Array<[AiTaskType, string]>) {
+  assert.equal(aiUnavailableMessage(taskType), expected, `${taskType} should use a task-specific friendly failure message`);
+}
+
+const draftRoute = read("src/app/api/ai/draft-report/route.ts");
+assert.match(draftRoute, /isAiBetaUser/, "AI Draft must remain beta gated");
+assert.match(draftRoute, /getAccessibleReport\(reportId, user\.id\)/, "AI Draft must load only the requested accessible report");
+assert.match(draftRoute, /summarizeMaterialsForAi\(materials, reportData\)/, "AI Draft input must be built from current report data and user-provided materials");
+assert.doesNotMatch(draftRoute, /currentReportData/, "AI Draft API must not trust client-sent currentReportData");
+assert.doesNotMatch(draftRoute, /getAccessibleUserIds|reports\/search|reportActivities/, "AI Draft must not read unrelated reports, search results, or activity history");
 
 const loginForm = read("src/app/(auth)/login/login-form.tsx");
 const signupForm = read("src/app/(auth)/signup/signup-form.tsx");

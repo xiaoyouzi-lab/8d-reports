@@ -16,6 +16,16 @@ const JSON_RULES = `
 Return valid JSON only. Do not wrap the JSON in markdown. Do not invent evidence, dates, names, test results, customer approvals, standard certifications, or legal conclusions. If information is missing, put it in "missingInformation" or "assumptions".
 `;
 
+export function aiUnavailableMessage(taskType: AiTaskType) {
+  if (taskType === "draft_generation") {
+    return "AI Draft is temporarily unavailable. Your report is safely saved. Please try again later.";
+  }
+  if (taskType === "template_evaluation") {
+    return "AI template evaluation is temporarily unavailable. Your request is safely saved. Please try again later.";
+  }
+  return "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.";
+}
+
 export const AI_PROMPTS: Record<AiTaskType, string> = {
   report_review: `You are a senior quality engineer reviewing an 8D report before customer submission.
 Evaluate whether the report can be accepted by a customer reviewer. Check problem clarity, containment, root cause evidence, corrective action linkage, verification evidence, preventive action, attachments, approval readiness, and wording professionalism.
@@ -83,6 +93,7 @@ export async function callDeepSeekJson<T>(taskType: AiTaskType, input: string): 
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) throw new Error("AI service not configured");
   if (input.length > 12000) throw new Error("AI input is too long");
+  const unavailableMessage = aiUnavailableMessage(taskType);
 
   let res: Response;
   try {
@@ -106,22 +117,22 @@ export async function callDeepSeekJson<T>(taskType: AiTaskType, input: string): 
     });
   } catch (error) {
     console.error("DeepSeek request failed", { taskType, error });
-    throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
+    throw new Error(unavailableMessage);
   }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
     console.error("DeepSeek returned an error", { taskType, status: res.status, detail: errText.slice(0, 300) });
-    throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
+    throw new Error(unavailableMessage);
   }
 
   const data = await res.json();
   const content = data.choices?.[0]?.message?.content;
-  if (!content || typeof content !== "string") throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
+  if (!content || typeof content !== "string") throw new Error(unavailableMessage);
   try {
     return JSON.parse(content) as T;
   } catch (error) {
     console.error("DeepSeek returned invalid JSON", { taskType, error });
-    throw new Error("AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.");
+    throw new Error(unavailableMessage);
   }
 }

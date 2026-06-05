@@ -374,6 +374,8 @@ Strong evidence now available:
   - AI Quality Check and AI Draft are beta-gated.
   - AI failure paths return friendly messages instead of raw 502-style failures.
   - AI Draft uses the current report plus user-provided materials and the UI states this boundary.
+  - AI Draft API ignores client-sent report snapshots, loads only the requested accessible report, and does not read unrelated reports, search results, activity history, or historical report content.
+  - DeepSeek failures now use task-specific friendly messages for AI Quality Check, AI Draft, and template evaluation.
   - AI Quality Check copy states that it does not approve or certify a report.
   - Google/GitHub shortcuts are hidden on login and signup until end-to-end social login is stable; production authentication is email-first.
 - Team value foundation:
@@ -401,7 +403,7 @@ Strong evidence now available:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
 - Regression coverage:
-- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Activity Log recording points and UI audit details, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
+- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
   - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:
@@ -413,7 +415,7 @@ Remaining manual/authenticated checks:
   - Owner can approve, lock, unlock with reason, revoke links, and manage members.
 - Use a beta account to run AI Quality Check successfully on a real report.
 - In a safe non-production setup, force DeepSeek failure or invalid credentials and confirm the UI shows the friendly failure message while report data remains saved.
-- Create two unrelated reports and manually confirm AI Draft on report B does not use report A content.
+- Create two unrelated reports and manually confirm AI Draft on report B does not use report A content. Static route coverage now verifies the API does not query unrelated reports or history, but a beta-account end-to-end check is still needed.
 
 Current decision:
 
