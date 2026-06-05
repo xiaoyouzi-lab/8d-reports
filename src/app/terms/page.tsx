@@ -15,7 +15,7 @@ export default function TermsPage() {
           <p>8D Reports is a SaaS application for creating, managing, and exporting 8D problem-solving reports. The Service is provided &ldquo;as is&rdquo; without warranties.</p>
           
           <h2>3. Free & Pro Plans</h2>
-          <p><strong>Free Plan:</strong> 3 lifetime reports with watermarked PDF export and basic search. <strong>Pro Plan:</strong>  $19/month for unlimited reports, PDF export without watermark, Word export, company logo, editable share links, and deep historical search. Pro subscriptions auto-renew unless cancelled.</p>
+          <p><strong>Free Plan:</strong> 3 lifetime reports with watermarked PDF export and basic search. <strong>Pro Plan:</strong> $19/month for individual use with unlimited personal reports, PDF export without watermark, Word export, company logo, editable share links, and deep historical search. Pro subscriptions auto-renew unless cancelled. <strong>Team Plan:</strong> $99/month includes 5 seats, a shared workspace, roles, approval status, report locking, revisions, and Activity Log.</p>
           
           <h2>4. User Responsibilities</h2>
           <p>You are responsible for the accuracy of report data you enter. You must not use the Service for illegal purposes. You retain all ownership rights to your report data.</p>

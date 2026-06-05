@@ -249,7 +249,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm font-medium text-indigo-950">Upgrade to Pro</p>
                   <p className="text-xs text-indigo-700">
-                    Unlimited reports, no watermarks, Word export, and deep search.
+                    Unlimited personal reports, no watermarks, Word export, and deep search.
                   </p>
                 </div>
               </div>

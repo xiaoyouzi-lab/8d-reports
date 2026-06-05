@@ -381,7 +381,7 @@ erDiagram
 - Creem handles checkout and payment events. The webhook updates `subscriptions` and records `checkout_completed`.
 - Free, Pro, and Team gates are enforced in both UI and API routes:
   - Free: 3 lifetime reports, PDF watermark, basic search, view-only sharing.
-  - Pro: unlimited reports, no-watermark PDF, Word export, logo, editable sharing, deep search.
+  - Pro: unlimited personal reports for individual use, no-watermark PDF, Word export, logo, editable sharing, deep search.
   - Team: 5-seat workspace, Owner / Editor / Viewer roles, approval statuses, locking, revisions, Activity Log, and Pro delivery features.
 - PDF export is generated client-side with `jsPDF`; Word export is generated server-side with `docx`.
 - ZIP export packages report files plus attachments with `JSZip`.

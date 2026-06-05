@@ -36,7 +36,7 @@ const plans = [
     description: "For individual quality engineers who deliver 8D reports regularly.",
     recommended: true,
     features: [
-      "Unlimited reports",
+      "Unlimited personal reports",
       "No-watermark PDF export",
       "Word export",
       "Company logo on exports",
@@ -83,7 +83,7 @@ const addOns = [
     icon: FileDown,
     title: "Single report export",
     price: "$4.99/report",
-    text: "Unlock no-watermark PDF and Word export for one report only. It does not unlock unlimited reports, logo upload, editable sharing, or deep search.",
+    text: "Unlock no-watermark PDF and Word export for one report only. It does not unlock unlimited personal reports, logo upload, editable sharing, or deep search.",
   },
   {
     icon: Wrench,

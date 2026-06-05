@@ -40,7 +40,7 @@ export const seoPages: SeoPage[] = [
       {
         title: "Free and Pro usage",
         body:
-          "Free users can create up to 3 lifetime reports and export watermarked PDFs. Pro unlocks unlimited reports, no-watermark PDF export, Word export, company logo, editable sharing, and deep historical search.",
+          "Free users can create up to 3 lifetime reports and export watermarked PDFs. Pro unlocks unlimited personal reports, no-watermark PDF export, Word export, company logo, editable sharing, and deep historical search.",
       },
     ],
     checklist: [

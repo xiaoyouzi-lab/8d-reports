@@ -33,7 +33,7 @@ When doing growth work, do not send traffic to a vague page. Prefer these paths:
 4. User signs in.
 5. User creates a report.
 6. User saves and exports.
-7. User hits Pro value through watermark, Word export, logo, unlimited reports, editable share, or deep search.
+7. User hits Pro value through watermark, Word export, logo, unlimited personal reports, editable share, or deep search.
 
 ## Core Links
 
@@ -56,7 +56,7 @@ Emphasize:
 - Free includes the complete D0-D8 editor.
 - Free includes 3 lifetime reports.
 - Free PDF export has watermark.
-- Pro unlocks unlimited reports, no-watermark PDF, Word export, company logo, editable sharing, and deep historical search.
+- Pro unlocks unlimited personal reports, no-watermark PDF, Word export, company logo, editable sharing, and deep historical search.
 - Team includes Owner / Editor / Viewer roles, approval status, report locking, revisions, and Activity Log.
 - AI Quality Check and AI Draft are beta assistance tools. They do not approve or certify a report.
 

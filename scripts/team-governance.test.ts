@@ -114,6 +114,9 @@ assert.match(pricingPage, /From \$999/, "Team Launch price should be From $999")
 assert.doesNotMatch(pricingPage, /\$299/, "Current pricing page should not show old $299 template setup price");
 assert.match(pricingPage, /Owner \/ Editor \/ Viewer roles/, "Pricing must describe implemented Team roles");
 assert.match(pricingPage, /Approval status, report locking, and revisions/, "Pricing must describe implemented Team governance");
+assert.match(pricingPage, /Unlimited personal reports/, "Pro copy should frame unlimited reports as individual/personal use");
+assert.doesNotMatch(pricingPage, /Team collaboration/, "Pro pricing copy should not claim Team collaboration");
+assert.doesNotMatch(pricingPage, /Audit trail & version history/, "Pro pricing copy should not claim Team governance");
 
 const homepage = read("src/app/(marketing)/page.tsx");
 assert.match(homepage, /Team is for controlled review, approval, and delivery/, "Homepage should emphasize current Team governance value");
@@ -122,5 +125,7 @@ assert.doesNotMatch(homepage, /AI report drafting is positioned as the next Pro 
 
 const englishMessages = read("src/messages/en.json");
 assert.doesNotMatch(englishMessages, /Password protection coming soon/, "Docs FAQ should not promise password-protected share links before implementation");
+assert.doesNotMatch(englishMessages, /Team collaboration/, "Pro message copy should not claim Team collaboration");
+assert.doesNotMatch(englishMessages, /Audit trail & version history/, "Pro message copy should not claim Team governance");
 
 console.log("Team governance verification passed.");

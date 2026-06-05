@@ -42,7 +42,7 @@ const freeFeatures = [
 ]
 
 const proFeatures = [
-  "Unlimited reports",
+  "Unlimited personal reports",
   "PDF export without watermark",
   "Word export",
   "Company logo on deliverables",
@@ -66,7 +66,7 @@ const faqs = [
   },
   {
     q: "Why would a quality engineer upgrade to Pro?",
-    a: "Pro is for individual users who deliver reports regularly and want their 8D history to become searchable knowledge: unlimited reports, no watermark, Word export, company logo, and deep historical search.",
+    a: "Pro is for individual users who deliver reports regularly and want their 8D history to become searchable knowledge: unlimited personal reports, no watermark, Word export, company logo, and deep historical search.",
   },
   {
     q: "How does dashboard search differ between Free and Pro?",
@@ -450,7 +450,7 @@ export default function LandingPage() {
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600">
               The paywall is designed around visible value: no watermark,
-              unlimited reports, Word export, company logo, team access, and deep search.
+              unlimited personal reports, Word export, company logo, Team access, and deep search.
             </p>
           </div>
 

@@ -288,7 +288,7 @@ export default function SampleReportPage() {
             <div className="mt-6 space-y-3">
               {[
                 "Free: 3 lifetime reports and basic dashboard search.",
-                "Pro: unlimited reports, Word export, no watermark, company logo, editable sharing, and deep history search.",
+                "Pro: unlimited personal reports, Word export, no watermark, company logo, editable sharing, and deep history search.",
                 "Team: 5 seats, shared report workspace, and team-wide search/export permissions.",
                 "Single export: $4.99 unlocks no-watermark PDF and Word export for one selected report.",
               ].map((item) => (
