@@ -316,10 +316,11 @@ Verification:
 - `npx tsc --noEmit`: passed.
 - `npm run lint`: passed with 0 errors and 11 existing warnings.
 - `npm run build`: passed and generated 102 app routes.
+- Migration `drizzle/0005_service_request_flow.sql` applied successfully to the configured database.
+- Database verification confirmed `custom_template_requests` now has `request_type`, `admin_notes`, `quoted_amount`, and the existing `status` column.
 
 Remaining production smoke test:
 
-- Run the new migration in production.
 - Submit one Template Setup request and one Team Launch request.
 - Confirm the database rows include the correct `request_type`.
 - Confirm the admin account can list and update request status.
