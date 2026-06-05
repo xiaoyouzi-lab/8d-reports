@@ -352,8 +352,9 @@ Database verification:
   - Template Setup: `status = under_review`, `quoted_amount = 499.00`, admin note recorded.
   - Team Launch: `status = quote_sent`, `quoted_amount = 999.00`, admin note recorded.
 
-Remaining environment setup:
+Environment setup:
 
-- `ADMIN_EMAIL` / `ADMIN_EMAILS` is not present in the current environment.
-- Set `ADMIN_EMAILS` in Vercel to the account email that should access `/admin/service-requests`.
-- After that, log in with that account and verify the admin page can list and update service requests through the UI.
+- `ADMIN_EMAILS` is configured in Vercel Production.
+- A production redeploy was completed after adding `ADMIN_EMAILS`, and `https://www.8d-reports.com` was aliased to the new deployment.
+- Unauthenticated API access still returns `404 {"error":"Not found"}`, so service request data is not exposed publicly.
+- Remaining manual check: log in with an admin-listed account and verify `/admin/service-requests` can list and update service requests through the UI.
