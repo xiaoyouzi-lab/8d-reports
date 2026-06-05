@@ -108,6 +108,13 @@ const activityRoute = read("src/app/api/reports/[id]/activity/route.ts");
 assert.match(activityRoute, /report_exported/, "PDF/Word/ZIP exports must be loggable");
 assert.match(activityRoute, /canExportDraft/, "Viewer export logging must be blocked");
 
+const workflowPanel = read("src/components/report/ReportWorkflowPanel.tsx");
+assert.match(workflowPanel, /oldValuePreview/, "Activity panel must show old value previews for auditability");
+assert.match(workflowPanel, /newValuePreview/, "Activity panel must show new value previews for auditability");
+assert.match(workflowPanel, /metadata\?\.filename/, "Activity panel must show attachment filenames from metadata");
+assert.match(workflowPanel, /metadata\?\.format/, "Activity panel must show export format metadata");
+assert.match(workflowPanel, /Reason:/, "Activity panel must show unlock reasons");
+
 const reportsRoute = read("src/app/api/reports/route.ts");
 assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard report API must expose workflow status");
 assert.match(reportsRoute, /revision: reports\.revision/, "Dashboard report API must expose revision number");

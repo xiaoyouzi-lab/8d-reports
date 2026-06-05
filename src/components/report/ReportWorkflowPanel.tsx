@@ -19,10 +19,72 @@ interface Activity {
   id: string
   actorName?: string | null
   actionType: string
+  entityType?: string | null
+  entityId?: string | null
   fieldName?: string | null
+  oldValuePreview?: string | null
+  newValuePreview?: string | null
   reason?: string | null
   createdAt: string
   metadata?: Record<string, unknown>
+}
+
+const ACTION_LABELS: Record<string, string> = {
+  report_field_updated: "Updated report field",
+  report_updated: "Updated report details",
+  attachment_uploaded: "Uploaded attachment",
+  attachment_deleted: "Deleted attachment",
+  share_link_created: "Created share link",
+  share_link_updated: "Updated share link",
+  share_link_revoked: "Revoked share link",
+  workflow_status_changed: "Changed workflow status",
+  report_approved_or_locked: "Approved / locked report",
+  report_unlocked: "Unlocked for revision",
+  report_exported: "Exported report",
+}
+
+function humanize(value: string) {
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase())
+}
+
+function shortText(value: unknown) {
+  if (value === undefined || value === null || value === "") return null
+  return String(value)
+}
+
+function activityLabel(activity: Activity) {
+  const base = ACTION_LABELS[activity.actionType] || humanize(activity.actionType)
+  return activity.fieldName ? `${base} · ${humanize(activity.fieldName)}` : base
+}
+
+function activityDetails(activity: Activity) {
+  const details: string[] = []
+  const filename = shortText(activity.metadata?.filename)
+  const stepId = shortText(activity.metadata?.stepId)
+  const format = shortText(activity.metadata?.format)
+  const permissionLevel = shortText(activity.metadata?.permissionLevel)
+  const revision = shortText(activity.metadata?.revision)
+
+  if (filename) details.push(`File: ${filename}`)
+  if (stepId) details.push(`Step: ${stepId.toUpperCase()}`)
+  if (format) details.push(`Format: ${format.toUpperCase()}`)
+  if (permissionLevel) details.push(`Share: ${permissionLevel}`)
+  if (revision) details.push(`Revision: ${revision}`)
+  if (activity.entityType && activity.entityType !== "report") details.push(`Entity: ${humanize(activity.entityType)}`)
+
+  return details
+}
+
+function hasActivityValueChange(activity: Activity) {
+  return (
+    activity.oldValuePreview !== undefined ||
+    activity.newValuePreview !== undefined
+  ) && (
+    activity.oldValuePreview !== null ||
+    activity.newValuePreview !== null
+  )
 }
 
 export function ReportWorkflowPanel({
@@ -108,12 +170,63 @@ export function ReportWorkflowPanel({
           <h3 className="text-sm font-semibold">Activity log</h3>
           <div className="mt-2 divide-y rounded-lg border">
             {activities.length === 0 && <div className="p-3 text-xs text-muted-foreground">No activity recorded yet.</div>}
-            {activities.map((activity) => (
-              <div key={activity.id} className="p-3 text-xs">
-                <div><span className="font-medium">{activity.actorName || "Team member"}</span> · {activity.actionType.replaceAll("_", " ")}</div>
-                <div className="mt-1 text-muted-foreground">{new Date(activity.createdAt).toLocaleString()}{activity.reason ? ` · ${activity.reason}` : ""}</div>
-              </div>
-            ))}
+            {activities.map((activity) => {
+              const details = activityDetails(activity)
+              const hasValueChange = hasActivityValueChange(activity)
+
+              return (
+                <div key={activity.id} className="space-y-2 p-3 text-xs">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <div className="font-medium">
+                        {activity.actorName || "Team member"} · {activityLabel(activity)}
+                      </div>
+                      <div className="mt-1 text-muted-foreground">
+                        {new Date(activity.createdAt).toLocaleString()}
+                      </div>
+                    </div>
+                    {activity.entityId && (
+                      <span className="rounded-full bg-slate-100 px-2 py-0.5 font-mono text-[10px] text-slate-500">
+                        {activity.entityId.slice(0, 8)}
+                      </span>
+                    )}
+                  </div>
+
+                  {details.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {details.map((detail) => (
+                        <span key={detail} className="rounded-full bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+                          {detail}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {hasValueChange && (
+                    <div className="grid gap-2 rounded-md bg-slate-50 p-2 sm:grid-cols-2">
+                      <div>
+                        <div className="mb-1 font-medium text-slate-500">Before</div>
+                        <div className="max-h-20 overflow-y-auto whitespace-pre-wrap break-words text-slate-700">
+                          {activity.oldValuePreview || "-"}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="mb-1 font-medium text-slate-500">After</div>
+                        <div className="max-h-20 overflow-y-auto whitespace-pre-wrap break-words text-slate-700">
+                          {activity.newValuePreview || "-"}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activity.reason && (
+                    <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-900">
+                      Reason: {activity.reason}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </DialogContent>
