@@ -326,3 +326,34 @@ Remaining production smoke test:
 - Submit one Template Setup request and one Team Launch request.
 - Confirm the database rows include the correct `request_type`.
 - Confirm the admin account can list and update request status through `/admin/service-requests`.
+
+## Service Request Production Smoke Test
+
+Date checked: 2026-06-05
+
+Production route checks:
+
+- `GET https://www.8d-reports.com/admin/service-requests`: route exists and returns the protected app shell for unauthenticated visitors.
+- The unauthenticated HTML does not expose `Service Requests` or request details.
+- `GET https://www.8d-reports.com/api/custom-template-requests` without an admin session returns `404 {"error":"Not found"}`.
+
+Production submission checks:
+
+- Submitted a Template Setup smoke request through `POST /api/custom-template-requests`.
+- Submitted a Team Launch smoke request through `POST /api/custom-template-requests`.
+- Both requests returned `201 application/json`.
+- Both requests uploaded a ZIP test file to R2 and persisted one uploaded file record.
+
+Database verification:
+
+- The Template Setup smoke request was saved with `request_type = template_setup`, `status = submitted`, and one uploaded file.
+- The Team Launch smoke request was saved with `request_type = team_launch`, `status = submitted`, and one uploaded file.
+- Status-flow fields were verified by updating the smoke records:
+  - Template Setup: `status = under_review`, `quoted_amount = 499.00`, admin note recorded.
+  - Team Launch: `status = quote_sent`, `quoted_amount = 999.00`, admin note recorded.
+
+Remaining environment setup:
+
+- `ADMIN_EMAIL` / `ADMIN_EMAILS` is not present in the current environment.
+- Set `ADMIN_EMAILS` in Vercel to the account email that should access `/admin/service-requests`.
+- After that, log in with that account and verify the admin page can list and update service requests through the UI.
