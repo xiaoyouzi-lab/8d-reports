@@ -91,7 +91,9 @@ git push -u origin main
 
 ---
 
-### 2.4 Google OAuth (Google 登录)
+### 2.4 Google OAuth (暂不开放)
+
+当前生产登录/注册页暂不显示 Google 快捷登录。保留以下配置步骤仅用于未来恢复前检查。
 
 **操作步骤**:
 
@@ -112,11 +114,13 @@ git push -u origin main
    - Authorized redirect URIs: 添加 `http://localhost:3001/api/auth/callback/google` 和 `https://你的域名.vercel.app/api/auth/callback/google`
 7. 保存 **Client ID** 和 **Client Secret**
 
-**验证**: 本地 `localhost:3001/login` 点击 Google 按钮测试。
+**验证**: 恢复按钮前必须完成端到端测试：点击 Google → 授权 → 回调 → 站内登录状态写入 → 返回 dashboard 或原 callbackUrl。
 
 ---
 
-### 2.5 GitHub OAuth (GitHub 登录)
+### 2.5 GitHub OAuth (暂不开放)
+
+当前生产登录/注册页暂不显示 GitHub 快捷登录。保留以下配置步骤仅用于未来恢复前检查。
 
 **操作步骤**:
 
@@ -129,7 +133,7 @@ git push -u origin main
 3. 保存 **Client ID**
 4. 点击 **"Generate a new client secret"** → 保存 **Client Secret**
 
-**验证**: 本地 `localhost:3001/login` 点击 GitHub 按钮测试。
+**验证**: 恢复按钮前必须完成端到端测试：点击 GitHub → 授权 → 回调 → 站内登录状态写入 → 返回 dashboard 或原 callbackUrl。
 
 ---
 
@@ -376,8 +380,8 @@ https://你的域名.vercel.app/api/auth/[...all]  # Auth API (返回 200)
 |---|--------|------|---------|------|
 | 13 | 邮箱注册 | 在注册页填写信息并提交 | 自动登录，跳转仪表盘 | |
 | 14 | 邮箱登录 | 退出后重新登录 | 成功登录 | |
-| 15 | Google 登录 | 点击 "Google" 按钮 | 跳转 Google 授权 → 登录成功 | |
-| 16 | GitHub 登录 | 点击 "GitHub" 按钮 | 跳转 GitHub 授权 → 登录成功 | |
+| 15 | Google 快捷登录 | 当前不显示按钮 | 恢复前完成端到端验证 | |
+| 16 | GitHub 快捷登录 | 当前不显示按钮 | 恢复前完成端到端验证 | |
 | 17 | 未登录保护 | 直接访问 `/dashboard` | 自动重定向到 `/login` | |
 | 18 | 登录后回调 | 从登录页登录后 | 跳回之前的页面 | |
 

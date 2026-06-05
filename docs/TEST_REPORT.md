@@ -1,6 +1,7 @@
 # Phase 1 MVP — 线上部署测试报告
 
 **测试日期**: 2026年5月20日  
+**当前修订**: 2026年6月6日 — Google / GitHub 快捷登录已临时隐藏，生产认证入口以邮箱注册和邮箱登录为准。
 **部署地址**: `https://8d-reports.com`  
 **产品经理**: Quality PM  
 **代码版本**: commit `cbfe7bd`
@@ -14,7 +15,7 @@
 | 部署与基础设施 | 2/2 | ✅ |
 | 落地页 | 3/3 | ✅ |
 | 认证系统 (邮箱) | 3/3 | ✅ |
-| 认证系统 (OAuth) | 2/2 | ✅ |
+| 社交快捷登录 | 0/0 | 暂停显示，待稳定验证后再启用 |
 | 仪表盘 | 3/3 | ✅ |
 | 报告创建 & 编辑 | 3/3 | ✅ |
 | 分享链接 | 3/3 | ✅ |
@@ -47,7 +48,7 @@
 
 | # | 测试项 | 状态 | 详情 |
 |---|--------|------|------|
-| 3.1 | 注册页面 | ✅ | 表单 4 字段 + Google/GitHub 按钮 + 底部登录链接 |
+| 3.1 | 注册页面 | ✅ | 表单 4 字段 + 底部登录链接；Google/GitHub 快捷登录暂不显示 |
 | 3.2 | 注册 API | ✅ | `POST /api/auth/sign-up/email` 返回 200，新用户写入 Neon |
 | 3.3 | 登录 API + Dashboard 跳转 | ✅ | `POST /api/auth/sign-in/email` 返回 200，自动跳转 dashboard |
 
@@ -55,12 +56,12 @@
 
 ---
 
-### 4. 认证系统 — OAuth
+### 4. 社交快捷登录
 
 | # | 测试项 | 状态 | 详情 |
 |---|--------|------|------|
-| 4.1 | Google OAuth 回调 | ✅ | 正确跳转 `accounts.google.com`，`redirect_uri` 指向 `8d-reports.com` |
-| 4.2 | GitHub OAuth 回调 | ✅ | 正确跳转 `github.com/login`，显示 "8D reports" App 授权页 |
+| 4.1 | Google 快捷登录 | 暂停 | 已从登录/注册页隐藏，避免用户遇到不稳定登录入口 |
+| 4.2 | GitHub 快捷登录 | 暂停 | 已从登录/注册页隐藏，待稳定验证后再重新开放 |
 
 ---
 
@@ -119,13 +120,8 @@
     → set-cookie: __Secure-better-auth.session_token ✅
     → redirect → /dashboard → proxy check cookie ✅ → 显示仪表盘
     
-用户点击 "Google" 按钮
-    → redirect → accounts.google.com ✅
-    → client_id + redirect_uri 正确指向 8d-reports.com ✅
-
-用户点击 "GitHub" 按钮
-    → redirect → github.com/login/oauth ✅
-    → client_id + redirect_uri 正确指向 8d-reports.com ✅
+当前生产页面不显示 Google / GitHub 快捷登录按钮。
+恢复前必须完成端到端验证：点击按钮 → 第三方授权 → 回调 → 站内登录状态写入 → 返回 dashboard 或原 callbackUrl。
 ```
 
 ---
@@ -145,8 +141,7 @@
 | 测试项 | 原因 |
 |--------|------|
 | PDF 导出 | 自动化浏览器限制文件下载弹窗 |
-| Google OAuth 完整登录 | 需要真实 Google 账号密码 |
-| GitHub OAuth 完整登录 | 需要真实 GitHub 账号密码 |
+| Google/GitHub 快捷登录恢复 | 当前已隐藏，需重新完成端到端验证后再开放 |
 | Creem 支付 | 测试 API Key 已配置，需在沙箱环境测试 |
 | R2 文件上传 | 前端上传组件需验证 |
 
@@ -156,7 +151,7 @@
 
 ✅ **Phase 1 MVP 已通过部署验收，产品就绪。**
 
-所有核心功能（落地页、注册、登录、仪表盘、8D 编辑器、分享、移动端）均已验证通过。OAuth 回调地址正确配置，两个第三方登录均已确认可触发授权流程。
+所有核心功能（落地页、邮箱注册、邮箱登录、仪表盘、8D 编辑器、分享、移动端）均已验证通过。Google/GitHub 快捷登录当前不作为生产入口。
 
 **建议下一步**: 找真实用户注册 1 个账户，完成一份完整的 D0-D8 报告（含填表 + PDF 导出 + 分享），作为端到端验收。
 

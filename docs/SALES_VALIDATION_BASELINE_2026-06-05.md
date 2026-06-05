@@ -375,6 +375,7 @@ Strong evidence now available:
   - AI failure paths return friendly messages instead of raw 502-style failures.
   - AI Draft uses the current report plus user-provided materials and the UI states this boundary.
   - AI Quality Check copy states that it does not approve or certify a report.
+  - Google/GitHub shortcuts are hidden on login and signup until end-to-end social login is stable; production authentication is email-first.
 - Team value foundation:
   - Workflow statuses are `draft`, `internal_review`, `approved`, `submitted`, and `closed`.
   - `approved`, `submitted`, and `closed` lock reports against D-step edits, attachment deletion, and signature replacement.
@@ -399,7 +400,7 @@ Strong evidence now available:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
 - Regression coverage:
-  - `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Activity Log recording points, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, and Pro-vs-Team copy boundaries.
+  - `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Activity Log recording points, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
   - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:

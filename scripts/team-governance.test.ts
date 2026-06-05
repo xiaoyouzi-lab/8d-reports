@@ -140,4 +140,9 @@ assert.doesNotMatch(englishMessages, /Password protection coming soon/, "Docs FA
 assert.doesNotMatch(englishMessages, /Team collaboration/, "Pro message copy should not claim Team collaboration");
 assert.doesNotMatch(englishMessages, /Audit trail & version history/, "Pro message copy should not claim Team governance");
 
+const loginForm = read("src/app/(auth)/login/login-form.tsx");
+const signupForm = read("src/app/(auth)/signup/signup-form.tsx");
+assert.doesNotMatch(loginForm, /signIn\.social|Google|GitHub|or continue with/, "Login page should not expose social login until it is stable");
+assert.doesNotMatch(signupForm, /signIn\.social|Google|GitHub|or continue with/, "Signup page should not expose social login until it is stable");
+
 console.log("Team governance verification passed.");

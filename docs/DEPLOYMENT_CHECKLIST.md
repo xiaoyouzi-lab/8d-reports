@@ -127,10 +127,10 @@
 | 1 | `DATABASE_URL` | Neon 后台复制 | `npm run build` 成功 |
 | 2 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` 生成 | 注册/登录成功 |
 | 3 | `BETTER_AUTH_URL` | `https://www.8d-reports.com` | 必须等于 Vercel 实际域名 |
-| 4 | `GOOGLE_CLIENT_ID` | Google Cloud Console | Google 登录成功 |
-| 5 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console | Google 登录成功 |
-| 6 | `GITHUB_CLIENT_ID` | GitHub Developer Settings | GitHub 登录成功 |
-| 7 | `GITHUB_CLIENT_SECRET` | GitHub Developer Settings | GitHub 登录成功 |
+| 4 | `GOOGLE_CLIENT_ID` | Google Cloud Console | 当前 UI 暂不显示 Google 登录；恢复前端到端验证 |
+| 5 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console | 当前 UI 暂不显示 Google 登录；恢复前端到端验证 |
+| 6 | `GITHUB_CLIENT_ID` | GitHub Developer Settings | 当前 UI 暂不显示 GitHub 登录；恢复前端到端验证 |
+| 7 | `GITHUB_CLIENT_SECRET` | GitHub Developer Settings | 当前 UI 暂不显示 GitHub 登录；恢复前端到端验证 |
 | 8 | `R2_ACCOUNT_ID` | Cloudflare R2 后台 | 上传附件成功 |
 | 9 | `R2_ACCESS_KEY_ID` | Cloudflare R2 API Token | 上传附件成功 |
 | 10 | `R2_SECRET_ACCESS_KEY` | Cloudflare R2 API Token | 上传附件成功 |
@@ -151,6 +151,8 @@
 
 ### Google OAuth
 
+当前生产登录/注册页暂不显示 Google 快捷登录。以下配置仅用于未来恢复前的检查清单。
+
 | 名称 | 值 |
 |------|-----|
 | Authorized JavaScript Origin (生产) | `https://www.8d-reports.com` + `https://8d-reports.com` |
@@ -160,6 +162,8 @@
 | 禁止登录排查 | OAuth consent screen 必须是 External；如果状态是 Testing，测试 Gmail 必须加入 Test users；Authorized domains 必须包含 `8d-reports.com` |
 
 ### GitHub OAuth
+
+当前生产登录/注册页暂不显示 GitHub 快捷登录。以下配置仅用于未来恢复前的检查清单。
 
 | 名称 | 值 |
 |------|-----|
