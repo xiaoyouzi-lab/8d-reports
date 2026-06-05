@@ -106,3 +106,40 @@ Next Elsmar rule:
 - Do not post repeatedly while the first reply is awaiting moderator approval.
 - Wait for approval or a reasonable interval before submitting the next no-link reply.
 - Continue reading threads and collecting recurring customer problems during the wait.
+
+## 24-Hour Analytics Snapshot After First Validation Work
+
+Date checked: 2026-06-05
+
+Source: Vercel Analytics, production traffic, `Jun 4, 10:00 - Jun 5, 9:59`.
+
+| Metric | Value | Note |
+| --- | ---: | --- |
+| Visitors | 8 | `+14%` versus previous period |
+| Page views | 56 | `+167%` versus previous period |
+| Bounce rate | 38% | `-19%` versus previous period |
+| Online visitors at check time | 0 | No live visitor during check |
+
+Top visible pages:
+
+- `/`: 5 visitors
+- `/dashboard`: 3 visitors
+- `/login`: 3 visitors
+- `/resources`: 3 visitors
+- `/sample-report`: 3 visitors
+- `/demo-reports`: 2 visitors
+- `/demo-reports/automotive`: 2 visitors
+
+Traffic context:
+
+- Referrers: no data found for the selected period.
+- Countries: Japan 38%, United States 38%, China 25%.
+- Devices: Desktop 100%.
+- Operating systems: Mac 63%, GNU/Linux 25%, Windows 13%.
+
+Interpretation:
+
+- The Resources, sample report, and demo report pages are receiving visits, which supports keeping these pages in the validation path.
+- There is still no referrer or campaign evidence, so this is a weak traffic signal rather than proof of qualified demand.
+- Do not count this as market validation until it produces at least one of: demo feedback, signup, report creation, checkout intent, Team inquiry, or Template Setup inquiry.
+- Continue directing future validated traffic toward `/demo-reports`, `/demo-reports/automotive`, `/sample-report`, and `/resources`, then compare visits with feedback and account activity.
