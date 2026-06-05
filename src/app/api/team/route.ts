@@ -14,6 +14,18 @@ async function getOwnedTeam(userId: string) {
     .limit(1))[0];
 }
 
+async function requireActiveTeamOwner(userId: string) {
+  const entitlements = await getUserEntitlements(userId);
+  if (entitlements.plan !== "team") {
+    return { error: NextResponse.json({ error: "Team management requires the Team plan" }, { status: 403 }) };
+  }
+
+  return {
+    entitlements,
+    team: await getOwnedTeam(userId),
+  };
+}
+
 async function getTeamWithMembers(userId: string) {
   const owned = await getOwnedTeam(userId);
   if (owned) {
@@ -78,12 +90,11 @@ export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
-  const entitlements = await getUserEntitlements(user.id);
-  if (entitlements.plan !== "team") {
-    return NextResponse.json({ error: "Team management requires the Team plan" }, { status: 403 });
-  }
+  const ownerAccess = await requireActiveTeamOwner(user.id);
+  if ("error" in ownerAccess) return ownerAccess.error;
 
-  let team = await getOwnedTeam(user.id);
+  const { entitlements } = ownerAccess;
+  let team = ownerAccess.team;
   if (!team) {
     const [created] = await db
       .insert(teamWorkspaces)
@@ -130,7 +141,9 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
-  const team = await getOwnedTeam(user.id);
+  const ownerAccess = await requireActiveTeamOwner(user.id);
+  if ("error" in ownerAccess) return ownerAccess.error;
+  const team = ownerAccess.team;
   if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
   const body = await req.json().catch(() => ({}));
   const memberId = typeof body.memberId === "string" ? body.memberId : "";
@@ -148,7 +161,9 @@ export async function DELETE(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
 
-  const team = await getOwnedTeam(user.id);
+  const ownerAccess = await requireActiveTeamOwner(user.id);
+  if ("error" in ownerAccess) return ownerAccess.error;
+  const team = ownerAccess.team;
   if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
 
   const memberId = req.nextUrl.searchParams.get("memberId");

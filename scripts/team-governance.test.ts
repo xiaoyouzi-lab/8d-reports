@@ -121,6 +121,12 @@ assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard
 assert.match(reportsRoute, /revision: reports\.revision/, "Dashboard report API must expose revision number");
 assert.match(reportsRoute, /lockedAt: reports\.lockedAt/, "Dashboard report API must expose lock state");
 
+const teamRoute = read("src/app/api/team/route.ts");
+assert.match(teamRoute, /requireActiveTeamOwner/, "Team management routes should use one active-Team-owner gate");
+assert.match(teamRoute, /entitlements\.plan !== "team"/, "Team management must require an active Team plan");
+assert.match(teamRoute, /export async function PATCH[\s\S]*requireActiveTeamOwner/, "Role updates must require an active Team owner");
+assert.match(teamRoute, /export async function DELETE[\s\S]*requireActiveTeamOwner/, "Member removal must require an active Team owner");
+
 const dashboardPage = read("src/app/(app)/dashboard/page.tsx");
 assert.match(dashboardPage, /Workflow/, "Dashboard report list should show workflow status, not only completion status");
 assert.match(dashboardPage, /Rev\./, "Dashboard report list should show revision number");
