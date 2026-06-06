@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Lock, Plus, Search, FileText, Sparkles, Trash2 } from "lucide-react"
+import { History, Lock, Plus, Search, FileText, Sparkles, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,11 +45,20 @@ interface TeamMember {
   role: string
 }
 
+interface TeamActivity {
+  id: string
+  eventName: string
+  actorName: string
+  message: string
+  createdAt: string
+}
+
 interface TeamState {
   maxSeats: number
   team: {
     role: string
     members: TeamMember[]
+    activities?: TeamActivity[]
   } | null
 }
 
@@ -385,6 +394,29 @@ export default function DashboardPage() {
                   {teamSaving ? "Adding..." : "Add"}
                 </Button>
               </div>
+            )}
+          </div>
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-700">
+              <History className="size-3.5 text-indigo-600" />
+              Team activity
+            </div>
+            {(teamState?.team?.activities?.length ?? 0) > 0 ? (
+              <div className="space-y-1.5">
+                {(teamState?.team?.activities ?? []).slice(0, 5).map((activity) => (
+                  <div key={activity.id} className="flex flex-col gap-0.5 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      <span className="font-medium text-slate-800">{activity.actorName}</span>{" "}
+                      {activity.message}
+                    </span>
+                    <span className="shrink-0 text-slate-400">{new Date(activity.createdAt).toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-muted-foreground">
+                Team member changes will appear here for owner review.
+              </p>
             )}
           </div>
         </div>
