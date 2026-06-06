@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Lock, Plus, Search, FileText, Sparkles } from "lucide-react"
+import { Lock, Plus, Search, FileText, Sparkles, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -95,6 +95,7 @@ export default function DashboardPage() {
   const [teamState, setTeamState] = useState<TeamState | null>(null)
   const [teamEmail, setTeamEmail] = useState("")
   const [teamSaving, setTeamSaving] = useState(false)
+  const [teamMemberSavingId, setTeamMemberSavingId] = useState<string | null>(null)
   const [teamRole, setTeamRole] = useState<"editor" | "viewer">("editor")
 
   const fetchReports = useCallback(async () => {
@@ -229,14 +230,34 @@ export default function DashboardPage() {
   }
 
   async function updateTeamRole(memberId: string, role: "editor" | "viewer") {
-    const res = await fetch("/api/team", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ memberId, role }),
-    })
-    const data = await res.json().catch(() => null)
-    if (!res.ok) return alert(data?.error || "Failed to update member role")
-    setTeamState((prev) => ({ maxSeats: prev?.maxSeats ?? 5, team: data }))
+    setTeamMemberSavingId(memberId)
+    try {
+      const res = await fetch("/api/team", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ memberId, role }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) return alert(data?.error || "Failed to update member role")
+      setTeamState((prev) => ({ maxSeats: prev?.maxSeats ?? 5, team: data }))
+    } finally {
+      setTeamMemberSavingId(null)
+    }
+  }
+
+  async function removeTeamMember(memberId: string, label: string) {
+    if (!confirm(`Remove ${label} from this Team workspace?`)) return
+    setTeamMemberSavingId(memberId)
+    try {
+      const res = await fetch(`/api/team?memberId=${encodeURIComponent(memberId)}`, {
+        method: "DELETE",
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) return alert(data?.error || "Failed to remove member")
+      setTeamState((prev) => ({ maxSeats: prev?.maxSeats ?? 5, team: data }))
+    } finally {
+      setTeamMemberSavingId(null)
+    }
   }
 
   return (
@@ -323,10 +344,26 @@ export default function DashboardPage() {
                   <div key={member.id} className="flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
                     <span>{member.name || member.email}</span>
                     {teamState?.team?.role === "owner" && member.role !== "owner" ? (
-                      <select value={member.role === "viewer" ? "viewer" : "editor"} onChange={(event) => void updateTeamRole(member.id, event.target.value as "editor" | "viewer")} className="bg-transparent font-medium outline-none">
-                        <option value="editor">Editor</option>
-                        <option value="viewer">Viewer</option>
-                      </select>
+                      <>
+                        <select
+                          value={member.role === "viewer" ? "viewer" : "editor"}
+                          onChange={(event) => void updateTeamRole(member.id, event.target.value as "editor" | "viewer")}
+                          disabled={teamMemberSavingId === member.id}
+                          className="bg-transparent font-medium outline-none disabled:opacity-50"
+                        >
+                          <option value="editor">Editor</option>
+                          <option value="viewer">Viewer</option>
+                        </select>
+                        <button
+                          type="button"
+                          aria-label={`Remove ${member.name || member.email}`}
+                          disabled={teamMemberSavingId === member.id}
+                          onClick={() => void removeTeamMember(member.id, member.name || member.email)}
+                          className="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                      </>
                     ) : <span>· {member.role}</span>}
                   </div>
                 ))}

@@ -384,6 +384,7 @@ Strong evidence now available:
   - Owner / Editor / Viewer permissions are enforced through the shared report-access gate.
   - Workspace role resolution only trusts active Team subscriptions, so stale team memberships from expired or non-Team workspaces do not grant or restrict report permissions.
   - Team member creation, role updates, and member removal require an active Team owner, so expired or non-Team users cannot keep managing Team seats.
+  - Team Owners can add members, change Editor/Viewer roles, and remove non-owner members from the dashboard Team workspace.
   - Owner can unlock for revision only with a reason, and unlock increments the revision number.
   - Activity Log records field updates, attachment upload/delete, share link create/revoke, workflow transitions, unlock, and export events.
   - Activity Log UI displays field before/after previews, attachment filenames, D-step metadata, export format, share permission, revision, and unlock reason.
@@ -407,7 +408,7 @@ Strong evidence now available:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
 - Regression coverage:
-- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, Team member management plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
+- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, Team member management UI and plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
   - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:

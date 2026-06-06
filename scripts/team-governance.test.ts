@@ -157,6 +157,9 @@ assert.match(templateRequestRoute, /normalizeServiceQuoteAmount/, "Service admin
 const dashboardPage = read("src/app/(app)/dashboard/page.tsx");
 assert.match(dashboardPage, /Workflow/, "Dashboard report list should show workflow status, not only completion status");
 assert.match(dashboardPage, /Rev\./, "Dashboard report list should show revision number");
+assert.match(dashboardPage, /removeTeamMember/, "Dashboard Team workspace should let Owners remove members");
+assert.match(dashboardPage, /method: "DELETE"/, "Dashboard member removal should call the Team DELETE API");
+assert.match(dashboardPage, /Remove \$\{member\.name \|\| member\.email\}/, "Dashboard member removal should expose an accessible remove label");
 
 const appLayout = read("src/app/(app)/layout.tsx");
 assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
