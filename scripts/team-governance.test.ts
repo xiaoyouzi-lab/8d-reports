@@ -5,6 +5,7 @@ import {
   buildReportAccess,
   isWorkflowStatus,
   LOCKED_WORKFLOW_STATUSES,
+  normalizeAssignableTeamRole,
   normalizeTeamRole,
   previewValue,
   WORKFLOW_STATUSES,
@@ -44,6 +45,10 @@ assert.equal(normalizeTeamRole("owner"), "owner");
 assert.equal(normalizeTeamRole("editor"), "editor");
 assert.equal(normalizeTeamRole("viewer"), "viewer");
 assert.equal(normalizeTeamRole("unknown"), "editor");
+assert.equal(normalizeAssignableTeamRole("editor"), "editor");
+assert.equal(normalizeAssignableTeamRole("viewer"), "viewer");
+assert.equal(normalizeAssignableTeamRole("owner"), null);
+assert.equal(normalizeAssignableTeamRole("unknown"), null);
 
 assert.deepEqual(
   {
@@ -138,6 +143,9 @@ assert.match(teamRoute, /requireActiveTeamOwner/, "Team management routes should
 assert.match(teamRoute, /entitlements\.plan !== "team"/, "Team management must require an active Team plan");
 assert.match(teamRoute, /export async function PATCH[\s\S]*requireActiveTeamOwner/, "Role updates must require an active Team owner");
 assert.match(teamRoute, /export async function DELETE[\s\S]*requireActiveTeamOwner/, "Member removal must require an active Team owner");
+assert.match(teamRoute, /normalizeAssignableTeamRole/, "Team management API must only assign editor/viewer roles");
+assert.match(teamRoute, /Role must be editor or viewer/, "Team management API must reject owner role assignment through raw API calls");
+assert.doesNotMatch(teamRoute, /normalizeTeamRole\(body\.role\)/, "Team management API must not allow raw owner role assignment");
 
 assert.equal(MAX_SERVICE_REQUEST_FILES, 5, "Service requests should keep a clear 5-file limit");
 assert.equal(isValidServiceContactEmail("quality@example.com"), true, "Service request email validation should accept normal business emails");

@@ -4,7 +4,7 @@ import { db } from "@/lib/db";
 import { teamMembers, teamWorkspaces, users } from "@/lib/db/schema";
 import { eq, and, ne } from "drizzle-orm";
 import { getUserEntitlements } from "@/lib/subscription";
-import { normalizeTeamRole } from "@/lib/report-workflow";
+import { normalizeAssignableTeamRole } from "@/lib/report-workflow";
 
 async function getOwnedTeam(userId: string) {
   return (await db
@@ -106,9 +106,12 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  const role = normalizeTeamRole(body.role);
+  const role = normalizeAssignableTeamRole(body.role ?? "editor");
   if (!email) {
     return NextResponse.json({ error: "Missing email" }, { status: 400 });
+  }
+  if (!role) {
+    return NextResponse.json({ error: "Role must be editor or viewer" }, { status: 400 });
   }
 
   const memberRows = await db
@@ -147,8 +150,9 @@ export async function PATCH(req: NextRequest) {
   if (!team) return NextResponse.json({ error: "Team not found" }, { status: 404 });
   const body = await req.json().catch(() => ({}));
   const memberId = typeof body.memberId === "string" ? body.memberId : "";
-  const role = normalizeTeamRole(body.role);
+  const role = normalizeAssignableTeamRole(body.role);
   if (!memberId) return NextResponse.json({ error: "memberId required" }, { status: 400 });
+  if (!role) return NextResponse.json({ error: "Role must be editor or viewer" }, { status: 400 });
 
   const [updated] = await db.update(teamMembers).set({ role })
     .where(and(eq(teamMembers.id, memberId), eq(teamMembers.teamId, team.id), ne(teamMembers.userId, user.id)))
