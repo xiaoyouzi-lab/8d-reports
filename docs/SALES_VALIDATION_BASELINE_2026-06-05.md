@@ -398,6 +398,8 @@ Strong evidence now available:
   - Public copy no longer claims full QMS, SSO, email reminders, Customer Complaint Intake, automatic AI approval, or password-protected share links.
 - Service offer foundation:
   - Template Setup and Team Launch requests are persisted with `request_type`.
+  - Service request submission validates contact email, upload count, upload size, and supported Word/Excel/PDF/ZIP/image files server-side.
+  - Admin service request updates validate quoted amount as a normalized numeric value with up to 2 decimals.
   - Service status flow exists: `submitted`, `under_review`, `quote_sent`, `in_progress`, `ready_for_review`, `delivered`, `cancelled`.
   - Admin-only service request page and API exist.
   - Production unauthenticated API access does not expose service request data.
@@ -405,7 +407,7 @@ Strong evidence now available:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
 - Regression coverage:
-- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, Team member management plan gates, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
+- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, Team member management plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
   - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:

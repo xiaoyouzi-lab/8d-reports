@@ -11,6 +11,12 @@ import {
   type TeamRole,
 } from "../src/lib/report-workflow";
 import { aiUnavailableMessage, type AiTaskType } from "../src/lib/ai/deepseek";
+import {
+  isSupportedServiceRequestFile,
+  isValidServiceContactEmail,
+  MAX_SERVICE_REQUEST_FILES,
+  normalizeServiceQuoteAmount,
+} from "../src/lib/service-requests";
 
 const root = process.cwd();
 
@@ -132,6 +138,21 @@ assert.match(teamRoute, /requireActiveTeamOwner/, "Team management routes should
 assert.match(teamRoute, /entitlements\.plan !== "team"/, "Team management must require an active Team plan");
 assert.match(teamRoute, /export async function PATCH[\s\S]*requireActiveTeamOwner/, "Role updates must require an active Team owner");
 assert.match(teamRoute, /export async function DELETE[\s\S]*requireActiveTeamOwner/, "Member removal must require an active Team owner");
+
+assert.equal(MAX_SERVICE_REQUEST_FILES, 5, "Service requests should keep a clear 5-file limit");
+assert.equal(isValidServiceContactEmail("quality@example.com"), true, "Service request email validation should accept normal business emails");
+assert.equal(isValidServiceContactEmail("quality"), false, "Service request email validation should reject invalid emails");
+assert.equal(isSupportedServiceRequestFile({ name: "customer-template.docx", type: "" }), true, "Service request upload should accept supported files by extension when MIME is missing");
+assert.equal(isSupportedServiceRequestFile({ name: "launch-package.zip", type: "application/x-zip-compressed" }), true, "Service request upload should accept common ZIP MIME types");
+assert.equal(isSupportedServiceRequestFile({ name: "script.exe", type: "application/x-msdownload" }), false, "Service request upload should reject unsupported file types");
+assert.equal(normalizeServiceQuoteAmount("999"), "999.00", "Service request quote should normalize whole-dollar amounts");
+assert.equal(normalizeServiceQuoteAmount("$499.95"), "499.95", "Service request quote should normalize currency-style amounts");
+assert.equal(normalizeServiceQuoteAmount("12.999"), null, "Service request quote should reject more than two decimals");
+
+const templateRequestRoute = read("src/app/api/custom-template-requests/route.ts");
+assert.match(templateRequestRoute, /isValidServiceContactEmail/, "Template Setup API must validate contact email server-side");
+assert.match(templateRequestRoute, /isSupportedServiceRequestFile/, "Template Setup API must validate uploaded file type server-side");
+assert.match(templateRequestRoute, /normalizeServiceQuoteAmount/, "Service admin API must validate quote amount server-side");
 
 const dashboardPage = read("src/app/(app)/dashboard/page.tsx");
 assert.match(dashboardPage, /Workflow/, "Dashboard report list should show workflow status, not only completion status");

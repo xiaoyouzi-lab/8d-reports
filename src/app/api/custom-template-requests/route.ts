@@ -9,21 +9,13 @@ import {
   isServiceAdmin,
   isServiceRequestStatus,
   isServiceRequestType,
+  isSupportedServiceRequestFile,
+  isValidServiceContactEmail,
+  MAX_SERVICE_REQUEST_FILES,
+  MAX_SERVICE_REQUEST_FILE_SIZE,
+  normalizeServiceQuoteAmount,
   SERVICE_REQUEST_STATUSES,
 } from "@/lib/service-requests";
-
-const ALLOWED_TYPES = [
-  "application/pdf",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  "application/vnd.ms-excel",
-  "application/zip",
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-];
-const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 function textValue(form: FormData, key: string) {
   const value = form.get(key);
@@ -57,13 +49,16 @@ export async function POST(req: NextRequest) {
   if (!companyName || !contactEmail || !templateUseCase) {
     return NextResponse.json({ error: "Company, email, and use case are required" }, { status: 400 });
   }
+  if (!isValidServiceContactEmail(contactEmail)) {
+    return NextResponse.json({ error: "Enter a valid contact email" }, { status: 400 });
+  }
 
   const files = form.getAll("files").filter((item): item is File => item instanceof File && item.size > 0);
   if (files.length === 0) {
     return NextResponse.json({ error: "Upload at least one template file" }, { status: 400 });
   }
-  if (files.length > 5) {
-    return NextResponse.json({ error: "Upload up to 5 files" }, { status: 400 });
+  if (files.length > MAX_SERVICE_REQUEST_FILES) {
+    return NextResponse.json({ error: `Upload up to ${MAX_SERVICE_REQUEST_FILES} files` }, { status: 400 });
   }
 
   const client = getR2Client();
@@ -71,10 +66,10 @@ export async function POST(req: NextRequest) {
 
   const uploadedFiles = [];
   for (const file of files) {
-    if (file.size > MAX_FILE_SIZE) {
+    if (file.size > MAX_SERVICE_REQUEST_FILE_SIZE) {
       return NextResponse.json({ error: `${file.name} exceeds 15MB` }, { status: 413 });
     }
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    if (!isSupportedServiceRequestFile(file)) {
       return NextResponse.json({ error: `${file.name} type is not supported` }, { status: 400 });
     }
     const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
@@ -157,15 +152,14 @@ export async function PATCH(req: NextRequest) {
   const id = typeof body.id === "string" ? body.id : "";
   const status = typeof body.status === "string" ? body.status : "";
   const adminNotes = typeof body.adminNotes === "string" ? body.adminNotes.trim() : undefined;
-  const quotedAmount = typeof body.quotedAmount === "number"
-    ? String(body.quotedAmount)
-    : typeof body.quotedAmount === "string" && body.quotedAmount.trim()
-      ? body.quotedAmount.trim()
-      : undefined;
+  const quotedAmount = normalizeServiceQuoteAmount(body.quotedAmount);
 
   if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 });
   if (status && !isServiceRequestStatus(status)) {
     return NextResponse.json({ error: "Invalid service request status" }, { status: 400 });
+  }
+  if (quotedAmount === null) {
+    return NextResponse.json({ error: "Quote must be a valid amount with up to 2 decimals" }, { status: 400 });
   }
 
   const updates: Partial<typeof customTemplateRequests.$inferInsert> = {

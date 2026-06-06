@@ -158,7 +158,14 @@ export function ServiceRequestsAdmin({ requests, statuses }: ServiceRequestsAdmi
                 </label>
                 <label className="grid gap-1 text-sm">
                   <span className="font-medium text-slate-700">Quote</span>
-                  <Input name="quotedAmount" defaultValue={request.quotedAmount || ""} placeholder="999" />
+                  <Input
+                    name="quotedAmount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    defaultValue={request.quotedAmount || ""}
+                    placeholder="999.00"
+                  />
                 </label>
                 <label className="grid gap-1 text-sm">
                   <span className="font-medium text-slate-700">Admin notes</span>
