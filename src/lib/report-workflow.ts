@@ -15,6 +15,7 @@ export const WORKFLOW_STATUSES = [
 
 export type WorkflowStatus = (typeof WORKFLOW_STATUSES)[number];
 export type TeamRole = "owner" | "editor" | "viewer";
+export type AssignableTeamRole = Extract<TeamRole, "editor" | "viewer">;
 
 export const LOCKED_WORKFLOW_STATUSES = new Set<WorkflowStatus>(["approved", "submitted", "closed"]);
 
@@ -25,6 +26,11 @@ export function isWorkflowStatus(value: unknown): value is WorkflowStatus {
 export function normalizeTeamRole(value: unknown): TeamRole {
   if (value === "owner" || value === "viewer") return value;
   return "editor";
+}
+
+export function normalizeAssignableTeamRole(value: unknown): AssignableTeamRole | null {
+  if (value === "editor" || value === "viewer") return value;
+  return null;
 }
 
 export function previewValue(value: unknown, maxLength = 300) {
