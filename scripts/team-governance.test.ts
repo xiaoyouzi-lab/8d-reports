@@ -126,6 +126,37 @@ const activityRoute = read("src/app/api/reports/[id]/activity/route.ts");
 assert.match(activityRoute, /report_exported/, "PDF/Word/ZIP exports must be loggable");
 assert.match(activityRoute, /canExportDraft/, "Viewer export logging must be blocked");
 
+const reportEditorPage = read("src/app/(app)/reports/[id]/page.tsx");
+assert.match(reportEditorPage, /canEdit: false/, "Report editor should default to safe read-only permissions until the API returns real access");
+assert.match(reportEditorPage, /canShare: false/, "Report editor should default to hidden share controls until the API returns real access");
+assert.match(reportEditorPage, /canExportDraft: false/, "Report editor should default to hidden export controls until the API returns real access");
+assert.match(reportEditorPage, /res\.status === 401/, "Report editor should handle unauthorized report loads explicitly");
+assert.match(reportEditorPage, /setLoadError\("Report not found, or you do not have access to it\."\)/, "Report editor should not render a default editable report when access is missing");
+assert.match(reportEditorPage, /Report unavailable/, "Report editor should show a safe unavailable state when the report cannot be loaded");
+assert.match(reportEditorPage, /reportPermissions\.canEdit && \(\s*<AiReportTools/, "Report editor should hide AI draft/review tools for Viewers and locked reports");
+assert.match(reportEditorPage, /reportPermissions\.canEdit && \(\s*<Button[\s\S]*Logo/, "Report editor should hide logo upload for Viewers and locked reports");
+assert.match(reportEditorPage, /reportPermissions\.canShare && \(\s*<ShareDialog/, "Report editor should hide share management from Viewers");
+assert.match(reportEditorPage, /reportPermissions\.canExportDraft && \(\s*<ExportMenu/, "Report editor should hide export controls from Viewers");
+assert.match(reportEditorPage, /canEdit=\{reportPermissions\.canEdit\}/, "Report editor should pass edit access into step fields and evidence controls");
+assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*try \{\s*await saveToServer/, "Report editor should not silently save when a Viewer only changes steps");
+assert.doesNotMatch(reportEditorPage, /pointer-events-none opacity-75/, "Read-only reports should still allow attachment preview and navigation");
+
+const stepForm = read("src/components/report/StepForm.tsx");
+assert.match(stepForm, /canEdit\?: boolean/, "Step form should accept explicit edit permission");
+assert.match(stepForm, /readOnly=\{!canEdit\}/, "Step text fields should become read-only for Viewers");
+assert.match(stepForm, /disabled=\{!canEdit\}/, "Step select fields should be disabled for Viewers");
+assert.match(stepForm, /<AttachmentArea[\s\S]*canEdit=\{canEdit\}/, "Attachment controls should receive edit permission");
+assert.match(stepForm, /<SignatureApprovalArea[\s\S]*canEdit=\{canEdit\}/, "Signature controls should receive edit permission");
+
+const attachmentArea = read("src/components/report/AttachmentArea.tsx");
+assert.match(attachmentArea, /canEdit = true/, "Attachment area should default to editable for existing callers");
+assert.match(attachmentArea, /Attachments are view-only for your role/, "Attachment area should explain read-only evidence access");
+assert.match(attachmentArea, /\{canEdit && \(\s*<button[\s\S]*handleDelete/, "Attachment delete controls should be hidden for Viewers");
+
+const signatureArea = read("src/components/report/SignatureApprovalArea.tsx");
+assert.match(signatureArea, /canEdit = true/, "Signature area should default to editable for existing callers");
+assert.match(signatureArea, /Signature changes are not available for your role/, "Signature area should explain read-only approval access");
+
 const workflowPanel = read("src/components/report/ReportWorkflowPanel.tsx");
 assert.match(workflowPanel, /oldValuePreview/, "Activity panel must show old value previews for auditability");
 assert.match(workflowPanel, /newValuePreview/, "Activity panel must show new value previews for auditability");
