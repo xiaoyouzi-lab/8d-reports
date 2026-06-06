@@ -81,6 +81,7 @@ export default function ReportEditorPage({
     ((session?.user as Record<string, unknown>)?.logoUrl as string | undefined) ?? null,
   )
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [workflowStatus, setWorkflowStatus] = useState("draft")
@@ -91,10 +92,10 @@ export default function ReportEditorPage({
     canUseLogo: false,
     canUseEditableShare: false,
     locked: false,
-    canEdit: true,
+    canEdit: false,
     canManageWorkflow: false,
-    canShare: true,
-    canExportDraft: true,
+    canShare: false,
+    canExportDraft: false,
   })
 
   useEffect(() => {
@@ -108,7 +109,18 @@ export default function ReportEditorPage({
     async function load() {
       try {
         const res = await fetch(`/api/reports/${reportId}`)
-        if (!res.ok) return
+        if (res.status === 401) {
+          window.location.href = `/login?callbackUrl=${encodeURIComponent(`/reports/${reportId}`)}`
+          return
+        }
+        if (res.status === 404) {
+          setLoadError("Report not found, or you do not have access to it.")
+          return
+        }
+        if (!res.ok) {
+          setLoadError("We could not load this report. Please try again.")
+          return
+        }
         const row = await res.json()
         if (row.permissions && typeof row.permissions === "object") {
           setReportPermissions({
@@ -137,7 +149,7 @@ export default function ReportEditorPage({
           }))
         }
       } catch {
-        // ignore
+        setLoadError("We could not load this report. Please check your connection and try again.")
       } finally {
         setLoading(false)
       }
@@ -154,6 +166,9 @@ export default function ReportEditorPage({
       : "draft"
 
   const currentStep = STEPS[activeStepIndex]
+  const readOnlyReason = reportPermissions.locked
+    ? "This report is locked. The owner must unlock it for revision before changes can be made."
+    : "You have view-only access to this report."
 
   const handleFieldChange = useCallback((name: string, value: string) => {
     if (!reportPermissions.canEdit) return
@@ -201,10 +216,12 @@ export default function ReportEditorPage({
   const handleNext = async () => {
     const next = new Set(getCompletedStepIds(reportData))
     trackEvent("step_changed", { from: currentStep.id, direction: "next", plan }, reportId)
-    try {
-      await saveToServer(reportData, next, reportTitle)
-      trackEvent("report_saved", { plan, completedSteps: next.size, auto: true }, reportId)
-    } catch { /* silently fail — explicit save handles errors */ }
+    if (reportPermissions.canEdit) {
+      try {
+        await saveToServer(reportData, next, reportTitle)
+        trackEvent("report_saved", { plan, completedSteps: next.size, auto: true }, reportId)
+      } catch { /* silently fail — explicit save handles errors */ }
+    }
     if (activeStepIndex < STEPS.length - 1) {
       setActiveStepIndex(activeStepIndex + 1)
     }
@@ -278,6 +295,29 @@ export default function ReportEditorPage({
     )
   }
 
+  if (loadError) {
+    return (
+      <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center bg-[#F8F9FB] px-4">
+        <Card className="w-full max-w-md">
+          <CardContent className="space-y-4 p-6 text-center">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">Report unavailable</h1>
+              <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
+            </div>
+            <div className="flex justify-center gap-2">
+              <Link
+                href="/dashboard"
+                className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                Back to dashboard
+              </Link>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col bg-[#F8F9FB]">
       <div className="sticky top-14 z-30 border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
@@ -318,21 +358,27 @@ export default function ReportEditorPage({
               {te(STATUS_KEY[status] || "draft")}
             </Badge>
 
-            <AiReportTools
-              reportId={reportId}
-              reportData={reportData}
-              onApplyDraft={(fields) => {
-                setReportData((prev) => {
-                  const next = { ...prev }
-                  for (const [key, value] of Object.entries(fields)) {
-                    if (!value) continue
-                    if (String(next[key as keyof ReportData] || "").trim()) continue
-                    next[key as keyof ReportData] = String(value)
+            {reportPermissions.canEdit && (
+              <AiReportTools
+                reportId={reportId}
+                reportData={reportData}
+                onApplyDraft={(fields) => {
+                  if (!reportPermissions.canEdit) {
+                    toast.error(readOnlyReason)
+                    return
                   }
-                  return next
-                })
-              }}
-            />
+                  setReportData((prev) => {
+                    const next = { ...prev }
+                    for (const [key, value] of Object.entries(fields)) {
+                      if (!value) continue
+                      if (String(next[key as keyof ReportData] || "").trim()) continue
+                      next[key as keyof ReportData] = String(value)
+                    }
+                    return next
+                  })
+                }}
+              />
+            )}
 
             <ReportWorkflowPanel
               reportId={reportId}
@@ -360,18 +406,26 @@ export default function ReportEditorPage({
               }}
             />
 
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleLogoClick}
-              disabled={uploadingLogo}
-              className="hidden md:inline-flex"
-            >
-              <Upload className="size-3.5" />
-              Logo
-            </Button>
+            {reportPermissions.canEdit && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleLogoClick}
+                disabled={uploadingLogo}
+                className="hidden md:inline-flex"
+              >
+                <Upload className="size-3.5" />
+                Logo
+              </Button>
+            )}
 
-            <ShareDialog reportId={reportId} reportTitle={reportTitle} isPro={reportPermissions.canUseEditableShare || entitlements.editableShare} />
+            {reportPermissions.canShare && (
+              <ShareDialog
+                reportId={reportId}
+                reportTitle={reportTitle}
+                isPro={reportPermissions.canUseEditableShare || entitlements.editableShare}
+              />
+            )}
 
             {reportPermissions.canExportDraft && (
               <ExportMenu
@@ -384,15 +438,21 @@ export default function ReportEditorPage({
               />
             )}
 
-            <Button
-              size="sm"
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
-              onClick={handleSave}
-              disabled={saving || !reportPermissions.canEdit}
-            >
-              <Save className="size-3.5" />
-              <span className="hidden sm:inline">{saving ? te("saving") : te("save")}</span>
-            </Button>
+            {reportPermissions.canEdit ? (
+              <Button
+                size="sm"
+                className="bg-indigo-600 text-white hover:bg-indigo-700"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                <Save className="size-3.5" />
+                <span className="hidden sm:inline">{saving ? te("saving") : te("save")}</span>
+              </Button>
+            ) : (
+              <Badge variant="outline" className="hidden border-slate-300 bg-slate-50 text-slate-600 sm:inline-flex">
+                {reportPermissions.locked ? "Locked" : "View only"}
+              </Badge>
+            )}
           </div>
         </div>
       </div>
@@ -419,7 +479,12 @@ export default function ReportEditorPage({
 
           <div className="flex-1 overflow-y-auto px-4 py-5 lg:px-8 lg:py-6">
             <div className="mx-auto max-w-3xl">
-              <Card className={cn(!reportPermissions.canEdit && "pointer-events-none opacity-75")}>
+              {!reportPermissions.canEdit && (
+                <div className="mb-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-muted-foreground shadow-sm">
+                  {readOnlyReason}
+                </div>
+              )}
+              <Card className={cn(!reportPermissions.canEdit && "bg-slate-50/60")}>
                 <CardContent className="p-5 lg:p-6">
                   <StepForm
                     step={currentStep}
@@ -427,6 +492,7 @@ export default function ReportEditorPage({
                     onChange={handleFieldChange}
                     reportId={reportId}
                     isPro={isPro}
+                    canEdit={reportPermissions.canEdit}
                   />
                 </CardContent>
               </Card>
@@ -445,10 +511,16 @@ export default function ReportEditorPage({
               </Button>
 
               <div className="flex items-center gap-2">
-                <Button variant="outline" onClick={handleSave} disabled={saving || !reportPermissions.canEdit}>
-                  <Save className="size-3.5" />
-                  {te("saveDraft")}
-                </Button>
+                {reportPermissions.canEdit ? (
+                  <Button variant="outline" onClick={handleSave} disabled={saving}>
+                    <Save className="size-3.5" />
+                    {te("saveDraft")}
+                  </Button>
+                ) : (
+                  <span className="hidden text-xs text-muted-foreground sm:inline">
+                    {reportPermissions.locked ? "Locked report" : "View-only role"}
+                  </span>
+                )}
 
                 <Button
                   className="bg-indigo-600 text-white hover:bg-indigo-700"
@@ -459,7 +531,7 @@ export default function ReportEditorPage({
                   <ChevronRight className="size-4" />
                 </Button>
 
-                {activeStepIndex === STEPS.length - 1 && (
+                {activeStepIndex === STEPS.length - 1 && reportPermissions.canEdit && (
                   <Button
                     className="bg-emerald-600 text-white hover:bg-emerald-700"
                     onClick={async () => {

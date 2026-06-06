@@ -387,6 +387,8 @@ Strong evidence now available:
   - Team Owners can add members, change Editor/Viewer roles, and remove non-owner members from the dashboard Team workspace.
   - Team member additions, role changes, and removals are recorded as lightweight Team activity events and shown in the dashboard Team workspace.
   - Owner can unlock for revision only with a reason, and unlock increments the revision number.
+  - Report editor UI now aligns with role permissions: Viewer/read-only states hide AI, logo upload, share management, export controls, save, attachment upload/delete, and signature replace/remove actions while still allowing D-step navigation and evidence preview.
+  - Report editor defaults to safe read-only permissions and shows a report-unavailable state if the report cannot be loaded, instead of rendering an editable blank report for missing or inaccessible IDs.
   - Activity Log records field updates, attachment upload/delete, share link create/revoke, workflow transitions, unlock, and export events.
   - Activity Log UI displays field before/after previews, attachment filenames, D-step metadata, export format, share permission, revision, and unlock reason.
   - Dashboard report rows now expose and display workflow status, revision number, and locked state, so Team governance is visible before opening a report.
@@ -409,14 +411,14 @@ Strong evidence now available:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
 - Regression coverage:
-- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, Team member management UI/activity and plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
+- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, safe report-load failure handling, Viewer/read-only editor UI gating, Team member management UI/activity and plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
   - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:
 
 - Log in with an admin-listed account and verify `/admin/service-requests` can list and update service requests through the UI.
 - Use real Team accounts to verify Owner / Editor / Viewer behavior through the UI and direct API calls:
-  - Viewer cannot edit D-steps, upload/delete attachments, replace signatures, create share links, export drafts, or change workflow state.
+  - Viewer cannot edit D-steps, upload/delete attachments, replace signatures, create share links, export drafts, or change workflow state; the UI should show this as read-only instead of presenting unusable action buttons.
   - Editor can create/edit reports, upload/delete attachments, create share links, and export draft packages, but cannot approve, lock, unlock, or manage members.
   - Owner can approve, lock, unlock with reason, revoke links, and manage members.
 - Use a beta account to run AI Quality Check successfully on a real report.

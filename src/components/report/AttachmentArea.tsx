@@ -106,9 +106,10 @@ interface AttachmentAreaProps {
   reportId: string
   stepId: string
   isPro?: boolean
+  canEdit?: boolean
 }
 
-export function AttachmentArea({ reportId, stepId, isPro = false }: AttachmentAreaProps) {
+export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true }: AttachmentAreaProps) {
   const t = useTranslations("editor")
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [loading, setLoading] = useState(true)
@@ -137,6 +138,10 @@ export function AttachmentArea({ reportId, stepId, isPro = false }: AttachmentAr
   }, [fetchAttachments])
 
   const handleFileSelect = async (file: File) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to add attachments to this report")
+      return
+    }
     const maxFileSize = isPro ? 10 * 1024 * 1024 : 5 * 1024 * 1024
     if (file.size > maxFileSize) {
       toast.error(`File too large (max ${isPro ? "10MB" : "5MB"})`)
@@ -183,6 +188,10 @@ export function AttachmentArea({ reportId, stepId, isPro = false }: AttachmentAr
   }
 
   const handleDelete = async (att: Attachment) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to delete attachments from this report")
+      return
+    }
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments?attachmentId=${att.id}`, { method: "DELETE" })
       if (!res.ok) throw new Error("Delete failed")
@@ -199,44 +208,50 @@ export function AttachmentArea({ reportId, stepId, isPro = false }: AttachmentAr
         <span className="text-sm font-medium text-foreground">{t("attachments")}</span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <input
-          ref={cameraInputRef}
-          type="file"
-          capture="environment"
-          accept={ALLOWED_IMAGE}
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
-        />
-        <Button variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
-          <Camera className="size-3.5 mr-1.5" />
-          {t("takePhoto")}
-        </Button>
+      {canEdit ? (
+        <div className="flex flex-wrap gap-2">
+          <input
+            ref={cameraInputRef}
+            type="file"
+            capture="environment"
+            accept={ALLOWED_IMAGE}
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
+          />
+          <Button variant="outline" size="sm" onClick={() => cameraInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
+            <Camera className="size-3.5 mr-1.5" />
+            {t("takePhoto")}
+          </Button>
 
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept={ALLOWED_IMAGE}
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
-        />
-        <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
-          <ImageIcon className="size-3.5 mr-1.5" />
-          {t("photoLibrary")}
-        </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={ALLOWED_IMAGE}
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
+          />
+          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
+            <ImageIcon className="size-3.5 mr-1.5" />
+            {t("photoLibrary")}
+          </Button>
 
-        <input
-          ref={docInputRef}
-          type="file"
-          accept={ALLOWED_FILE}
-          className="hidden"
-          onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
-        />
-        <Button variant="outline" size="sm" onClick={() => docInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
-          <FileUp className="size-3.5 mr-1.5" />
-          {t("uploadFile")}
-        </Button>
-      </div>
+          <input
+            ref={docInputRef}
+            type="file"
+            accept={ALLOWED_FILE}
+            className="hidden"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFileSelect(f); e.target.value = "" }}
+          />
+          <Button variant="outline" size="sm" onClick={() => docInputRef.current?.click()} className="h-8 text-xs" disabled={uploading}>
+            <FileUp className="size-3.5 mr-1.5" />
+            {t("uploadFile")}
+          </Button>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Attachments are view-only for your role.
+        </p>
+      )}
 
       {uploading && (
         <div className="text-xs text-muted-foreground py-2">Uploading...</div>
@@ -253,12 +268,14 @@ export function AttachmentArea({ reportId, stepId, isPro = false }: AttachmentAr
               key={att.id}
               className="group relative flex min-w-0 flex-col items-center overflow-hidden rounded-lg border border-border bg-white p-2"
             >
-              <button
-                className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                onClick={() => handleDelete(att)}
-              >
-                <X className="size-3" />
-              </button>
+              {canEdit && (
+                <button
+                  className="absolute -top-1.5 -right-1.5 flex size-5 items-center justify-center rounded-full bg-destructive text-white opacity-0 transition-opacity group-hover:opacity-100"
+                  onClick={() => handleDelete(att)}
+                >
+                  <X className="size-3" />
+                </button>
+              )}
               {isImage(att) ? (
                 <AttachmentImage attachment={att} onPreview={setPreviewUrl} />
               ) : (

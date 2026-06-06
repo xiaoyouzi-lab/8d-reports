@@ -48,6 +48,7 @@ interface SignatureApprovalAreaProps {
   reportId: string
   data: ReportData
   onChange: (name: string, value: string) => void
+  canEdit?: boolean
 }
 
 function SignatureCard({
@@ -55,17 +56,23 @@ function SignatureCard({
   reportId,
   data,
   onChange,
+  canEdit,
 }: {
   config: SignatureConfig
   reportId: string
   data: ReportData
   onChange: (name: string, value: string) => void
+  canEdit: boolean
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
   const signatureUrl = String(data[config.urlField] || "")
 
   const upload = async (file: File) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to replace signatures on this report")
+      return
+    }
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
       toast.error("Signature must be PNG, JPG, or WebP")
       return
@@ -94,6 +101,10 @@ function SignatureCard({
   }
 
   const remove = async () => {
+    if (!canEdit) {
+      toast.error("You do not have permission to delete signatures on this report")
+      return
+    }
     setLoading(true)
     try {
       const res = await fetch(`/api/reports/${reportId}/signatures/${config.role}`, { method: "DELETE" })
@@ -127,34 +138,40 @@ function SignatureCard({
           <span className="text-xs text-muted-foreground">No signature uploaded</span>
         )}
       </div>
-      <div className="mt-2 flex gap-2">
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(event) => {
-            const file = event.target.files?.[0]
-            if (file) void upload(file)
-            event.target.value = ""
-          }}
-        />
-        <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => inputRef.current?.click()}>
-          <ImageUp className="size-3.5" />
-          Upload
-        </Button>
-        {signatureUrl && (
-          <Button type="button" size="sm" variant="ghost" disabled={loading} onClick={remove}>
-            <Trash2 className="size-3.5" />
-            Remove
+      {canEdit ? (
+        <div className="mt-2 flex gap-2">
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              if (file) void upload(file)
+              event.target.value = ""
+            }}
+          />
+          <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => inputRef.current?.click()}>
+            <ImageUp className="size-3.5" />
+            Upload
           </Button>
-        )}
-      </div>
+          {signatureUrl && (
+            <Button type="button" size="sm" variant="ghost" disabled={loading} onClick={remove}>
+              <Trash2 className="size-3.5" />
+              Remove
+            </Button>
+          )}
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Signature changes are not available for your role.
+        </p>
+      )}
     </div>
   )
 }
 
-export function SignatureApprovalArea({ reportId, data, onChange }: SignatureApprovalAreaProps) {
+export function SignatureApprovalArea({ reportId, data, onChange, canEdit = true }: SignatureApprovalAreaProps) {
   return (
     <div className="space-y-3 border-t pt-4">
       <div>
@@ -172,6 +189,7 @@ export function SignatureApprovalArea({ reportId, data, onChange }: SignatureApp
             reportId={reportId}
             data={data}
             onChange={onChange}
+            canEdit={canEdit}
           />
         ))}
       </div>

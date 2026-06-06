@@ -21,12 +21,14 @@ interface StepFormProps {
   onChange: (name: string, value: string) => void
   reportId: string
   isPro?: boolean
+  canEdit?: boolean
 }
 
 function renderField(
   field: ReportField,
   value: string,
   onChange: (name: string, value: string) => void,
+  canEdit: boolean,
 ) {
   if (field.type === "photo") {
     return null
@@ -43,8 +45,10 @@ function renderField(
           id={field.name}
           placeholder={field.placeholder}
           value={value}
+          readOnly={!canEdit}
           onChange={(e) => onChange(field.name, e.target.value)}
           rows={4}
+          className={cn(!canEdit && "bg-slate-50 text-slate-700")}
         />
         {field.hint && (
           <p className="text-[11px] text-muted-foreground">{field.hint}</p>
@@ -68,6 +72,7 @@ function renderField(
           value={value || undefined}
           onValueChange={(val) => onChange(field.name, val ?? "")}
           name={field.name}
+          disabled={!canEdit}
         >
           <SelectTrigger id={selectId} className="w-full">
             <SelectValue className="sr-only" />
@@ -106,12 +111,14 @@ function renderField(
         type={inputType}
         placeholder={field.placeholder}
         value={value}
+        readOnly={!canEdit}
         onChange={(e) => onChange(field.name, e.target.value)}
         className={cn(
           inputType === "date" && "font-mono text-sm",
           inputType === "datetime-local" && "font-mono text-sm",
           inputType === "number" && "font-mono tabular-nums",
           field.name === "reportNumber" && "font-mono tabular-nums",
+          !canEdit && "bg-slate-50 text-slate-700",
         )}
       />
       {field.hint && (
@@ -131,7 +138,7 @@ const FISHBONE_FIELDS = new Set([
   "fishboneEnvironment",
 ])
 
-export function StepForm({ step, data, onChange, reportId, isPro = false }: StepFormProps) {
+export function StepForm({ step, data, onChange, reportId, isPro = false, canEdit = true }: StepFormProps) {
   const isRootCauseStep = step.id === "D4"
   const fiveWhyFields = step.fields.filter((f) => f.name.startsWith("why"))
   const fishboneFields = step.fields.filter((f) => FISHBONE_FIELDS.has(f.name))
@@ -158,7 +165,7 @@ export function StepForm({ step, data, onChange, reportId, isPro = false }: Step
                 "sm:col-span-2",
             )}
           >
-            {renderField(field, data[field.name as keyof ReportData] as string, onChange)}
+            {renderField(field, data[field.name as keyof ReportData] as string, onChange, canEdit)}
           </div>
         ))}
       </div>
@@ -178,7 +185,7 @@ export function StepForm({ step, data, onChange, reportId, isPro = false }: Step
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {fishboneFields.map((field) => (
               <div key={field.name}>
-                {renderField(field, data[field.name as keyof ReportData] as string, onChange)}
+                {renderField(field, data[field.name as keyof ReportData] as string, onChange, canEdit)}
               </div>
             ))}
           </div>
@@ -222,8 +229,12 @@ export function StepForm({ step, data, onChange, reportId, isPro = false }: Step
                           aria-label={`Why ${idx + 1}`}
                           placeholder={field.placeholder}
                           value={data[field.name as keyof ReportData] as string}
+                          readOnly={!canEdit}
                           onChange={(e) => onChange(field.name, e.target.value)}
-                          className="border-0 bg-transparent shadow-none focus-visible:ring-0"
+                          className={cn(
+                            "border-0 bg-transparent shadow-none focus-visible:ring-0",
+                            !canEdit && "text-slate-700",
+                          )}
                         />
                       </td>
                     </tr>
@@ -236,11 +247,11 @@ export function StepForm({ step, data, onChange, reportId, isPro = false }: Step
       )}
 
       {showAttachments && (
-        <AttachmentArea reportId={reportId} stepId={step.id} isPro={isPro} />
+        <AttachmentArea reportId={reportId} stepId={step.id} isPro={isPro} canEdit={canEdit} />
       )}
 
       {step.id === "D8" && (
-        <SignatureApprovalArea reportId={reportId} data={data} onChange={onChange} />
+        <SignatureApprovalArea reportId={reportId} data={data} onChange={onChange} canEdit={canEdit} />
       )}
     </div>
   )
