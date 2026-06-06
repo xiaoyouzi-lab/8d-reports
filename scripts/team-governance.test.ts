@@ -146,6 +146,11 @@ assert.match(teamRoute, /export async function DELETE[\s\S]*requireActiveTeamOwn
 assert.match(teamRoute, /normalizeAssignableTeamRole/, "Team management API must only assign editor/viewer roles");
 assert.match(teamRoute, /Role must be editor or viewer/, "Team management API must reject owner role assignment through raw API calls");
 assert.doesNotMatch(teamRoute, /normalizeTeamRole\(body\.role\)/, "Team management API must not allow raw owner role assignment");
+assert.match(teamRoute, /analyticsEvents/, "Team member operations should write lightweight audit events");
+assert.match(teamRoute, /team_member_added/, "Team member additions must be logged");
+assert.match(teamRoute, /team_member_role_changed/, "Team member role changes must be logged");
+assert.match(teamRoute, /team_member_removed/, "Team member removals must be logged");
+assert.match(teamRoute, /getTeamActivities/, "Team API should return recent team activity for the dashboard");
 
 assert.equal(MAX_SERVICE_REQUEST_FILES, 5, "Service requests should keep a clear 5-file limit");
 assert.equal(isValidServiceContactEmail("quality@example.com"), true, "Service request email validation should accept normal business emails");
@@ -168,6 +173,8 @@ assert.match(dashboardPage, /Rev\./, "Dashboard report list should show revision
 assert.match(dashboardPage, /removeTeamMember/, "Dashboard Team workspace should let Owners remove members");
 assert.match(dashboardPage, /method: "DELETE"/, "Dashboard member removal should call the Team DELETE API");
 assert.match(dashboardPage, /Remove \$\{member\.name \|\| member\.email\}/, "Dashboard member removal should expose an accessible remove label");
+assert.match(dashboardPage, /Team activity/, "Dashboard Team workspace should show recent Team activity");
+assert.match(dashboardPage, /activity\.message/, "Dashboard Team activity should render human-readable audit messages");
 
 const appLayout = read("src/app/(app)/layout.tsx");
 assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
