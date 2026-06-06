@@ -95,6 +95,12 @@ assert.match(workflowRoute, /revision: \(access\.report\.revision \|\| 0\) \+ 1/
 assert.match(workflowRoute, /report_unlocked/, "Unlock must be logged");
 assert.match(workflowRoute, /report_approved_or_locked/, "Approval/locking transition must be logged");
 
+const reportWorkflow = read("src/lib/report-workflow.ts");
+assert.match(reportWorkflow, /isActiveTeamSubscription/, "Workspace role resolution must use active Team subscription checks");
+assert.match(reportWorkflow, /innerJoin\(subscriptions, eq\(subscriptions\.userId, teamWorkspaces\.ownerId\)\)/, "Workspace role resolution must join owner subscriptions");
+assert.match(reportWorkflow, /getPlanFromName\(row\.planName\) === "team"/, "Workspace role resolution must reject non-Team subscriptions");
+assert.doesNotMatch(reportWorkflow, /select\(\{ role: teamMembers\.role \}\)\.from\(teamMembers\)\.where\(eq\(teamMembers\.userId, userId\)\)/, "Workspace role resolution must not use arbitrary stale membership rows");
+
 const attachmentsRoute = read("src/app/api/reports/[id]/attachments/route.ts");
 assert.match(attachmentsRoute, /access\.canEdit/, "Attachment upload/delete must be blocked for locked reports and Viewers");
 assert.match(attachmentsRoute, /attachment_uploaded/, "Attachment upload must be logged");

@@ -382,6 +382,7 @@ Strong evidence now available:
   - Workflow statuses are `draft`, `internal_review`, `approved`, `submitted`, and `closed`.
   - `approved`, `submitted`, and `closed` lock reports against D-step edits, attachment deletion, and signature replacement.
   - Owner / Editor / Viewer permissions are enforced through the shared report-access gate.
+  - Workspace role resolution only trusts active Team subscriptions, so stale team memberships from expired or non-Team workspaces do not grant or restrict report permissions.
   - Team member creation, role updates, and member removal require an active Team owner, so expired or non-Team users cannot keep managing Team seats.
   - Owner can unlock for revision only with a reason, and unlock increments the revision number.
   - Activity Log records field updates, attachment upload/delete, share link create/revoke, workflow transitions, unlock, and export events.
@@ -404,7 +405,7 @@ Strong evidence now available:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
 - Regression coverage:
-- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, Team member management plan gates, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
+- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, Team member management plan gates, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
   - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:
