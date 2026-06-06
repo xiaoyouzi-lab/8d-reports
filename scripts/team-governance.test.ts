@@ -205,4 +205,9 @@ const signupForm = read("src/app/(auth)/signup/signup-form.tsx");
 assert.doesNotMatch(loginForm, /signIn\.social|Google|GitHub|or continue with/, "Login page should not expose social login until it is stable");
 assert.doesNotMatch(signupForm, /signIn\.social|Google|GitHub|or continue with/, "Signup page should not expose social login until it is stable");
 
+const authConfig = read("src/lib/auth.ts");
+assert.match(authConfig, /ENABLE_SOCIAL_LOGIN !== "true"/, "Social auth providers must be disabled unless explicitly enabled");
+assert.match(authConfig, /socialProviders: getEnabledSocialProviders\(\)/, "Better Auth should use the gated social provider config");
+assert.doesNotMatch(authConfig, /socialProviders:\s*\{\s*google:/, "Google auth must not be configured unconditionally");
+
 console.log("Team governance verification passed.");

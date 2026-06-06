@@ -93,7 +93,7 @@ git push -u origin main
 
 ### 2.4 Google OAuth (暂不开放)
 
-当前生产登录/注册页暂不显示 Google 快捷登录。保留以下配置步骤仅用于未来恢复前检查。
+当前生产登录/注册页暂不显示 Google 快捷登录，后端默认也不会启用 Google provider。保留以下配置步骤仅用于未来恢复前检查；恢复时必须先设置 `ENABLE_SOCIAL_LOGIN=true`，并完成端到端验证。
 
 **操作步骤**:
 
@@ -120,7 +120,7 @@ git push -u origin main
 
 ### 2.5 GitHub OAuth (暂不开放)
 
-当前生产登录/注册页暂不显示 GitHub 快捷登录。保留以下配置步骤仅用于未来恢复前检查。
+当前生产登录/注册页暂不显示 GitHub 快捷登录，后端默认也不会启用 GitHub provider。保留以下配置步骤仅用于未来恢复前检查；恢复时必须先设置 `ENABLE_SOCIAL_LOGIN=true`，并完成端到端验证。
 
 **操作步骤**:
 
@@ -172,7 +172,8 @@ DATABASE_URL=postgresql://user:password@ep-xxx.us-east-2.aws.neon.tech/8d-report
 BETTER_AUTH_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx  # 生成方式见下方
 BETTER_AUTH_URL=https://你的域名.vercel.app  # 部署后改为实际域名
 
-# ========== OAuth 提供商 ==========
+# ========== OAuth 提供商（当前默认关闭） ==========
+ENABLE_SOCIAL_LOGIN=false
 GOOGLE_CLIENT_ID=xxxxxxxxxxxx.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxx
 GITHUB_CLIENT_ID=Iv1.xxxxxxxxxxxx
@@ -208,6 +209,7 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
 DATABASE_URL=postgresql://...你的 neon 连接串
 BETTER_AUTH_SECRET=dev-secret-xxxxxxxxxxxxxxxxxxxx
 BETTER_AUTH_URL=http://localhost:3001
+ENABLE_SOCIAL_LOGIN=false
 GOOGLE_CLIENT_ID=...
 GOOGLE_CLIENT_SECRET=...
 GITHUB_CLIENT_ID=...

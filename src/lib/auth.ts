@@ -56,6 +56,30 @@ function getAllowedAuthHosts() {
   return [...hosts];
 }
 
+function getEnabledSocialProviders(): Parameters<typeof betterAuth>[0]["socialProviders"] {
+  if (process.env.ENABLE_SOCIAL_LOGIN !== "true") {
+    return {};
+  }
+
+  const providers: NonNullable<Parameters<typeof betterAuth>[0]["socialProviders"]> = {};
+
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    providers.google = {
+      clientId: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    };
+  }
+
+  if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
+    providers.github = {
+      clientId: process.env.GITHUB_CLIENT_ID,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET,
+    };
+  }
+
+  return providers;
+}
+
 function createAuth() {
   const db = getDb();
   if (!db) {
@@ -102,16 +126,7 @@ function createAuth() {
         },
       }),
     ],
-    socialProviders: {
-      google: {
-        clientId: process.env.GOOGLE_CLIENT_ID || "",
-        clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-      },
-      github: {
-        clientId: process.env.GITHUB_CLIENT_ID || "",
-        clientSecret: process.env.GITHUB_CLIENT_SECRET || "",
-      },
-    },
+    socialProviders: getEnabledSocialProviders(),
     session: {
       cookieCache: {
         enabled: true,

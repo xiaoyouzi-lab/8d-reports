@@ -87,7 +87,7 @@ flowchart TB
   end
 
   subgraph CoreLibs["Core libraries"]
-    BetterAuth["Better Auth\nemail/password, OTP\nsocial login disabled in UI"]
+    BetterAuth["Better Auth\nemail/password, OTP\nsocial login disabled by default"]
     Drizzle["Drizzle ORM"]
     SubscriptionLib["Subscription gate\nFree vs Pro"]
     R2Lib["Cloudflare R2 S3 client"]
@@ -119,8 +119,8 @@ flowchart TB
   end
 
   subgraph External["External services"]
-    GoogleOAuth["Google OAuth\nconfigured, UI hidden"]
-    GitHubOAuth["GitHub OAuth\nconfigured, UI hidden"]
+    GoogleOAuth["Google OAuth\nbehind ENABLE_SOCIAL_LOGIN"]
+    GitHubOAuth["GitHub OAuth\nbehind ENABLE_SOCIAL_LOGIN"]
     Creem["Creem payments"]
     R2["Cloudflare R2\nattachments and logos"]
     DeepSeek["DeepSeek API\nreserved for AI features"]
@@ -375,7 +375,7 @@ erDiagram
 
 - Frontend and backend are in one Next.js 16 App Router application.
 - Vercel hosts the production site and serves both static marketing pages and dynamic API routes.
-- Better Auth handles email/password login, OTP verification, sessions, and auth cookies. Google/GitHub providers may remain configured, but the production UI currently hides those shortcuts until end-to-end login is stable.
+- Better Auth handles email/password login, OTP verification, sessions, and auth cookies. Google/GitHub providers are hidden in the UI and disabled by default in the backend; restoring them requires `ENABLE_SOCIAL_LOGIN=true` plus end-to-end callback verification.
 - Neon Serverless Postgres is the system of record. Drizzle ORM maps application code to database tables.
 - Cloudflare R2 stores report attachments and user company logos through S3-compatible APIs.
 - Creem handles checkout and payment events. The webhook updates `subscriptions` and records `checkout_completed`.

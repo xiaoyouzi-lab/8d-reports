@@ -118,7 +118,7 @@
 
 ---
 
-## 三、完整环境变量清单（18 个变量）
+## 三、完整环境变量清单（19 个变量）
 
 ### ⚠️ 以下变量必须全部在 Vercel Settings > Environment Variables 中填写
 
@@ -127,21 +127,22 @@
 | 1 | `DATABASE_URL` | Neon 后台复制 | `npm run build` 成功 |
 | 2 | `BETTER_AUTH_SECRET` | `openssl rand -base64 32` 生成 | 注册/登录成功 |
 | 3 | `BETTER_AUTH_URL` | `https://www.8d-reports.com` | 必须等于 Vercel 实际域名 |
-| 4 | `GOOGLE_CLIENT_ID` | Google Cloud Console | 当前 UI 暂不显示 Google 登录；恢复前端到端验证 |
-| 5 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console | 当前 UI 暂不显示 Google 登录；恢复前端到端验证 |
-| 6 | `GITHUB_CLIENT_ID` | GitHub Developer Settings | 当前 UI 暂不显示 GitHub 登录；恢复前端到端验证 |
-| 7 | `GITHUB_CLIENT_SECRET` | GitHub Developer Settings | 当前 UI 暂不显示 GitHub 登录；恢复前端到端验证 |
-| 8 | `R2_ACCOUNT_ID` | Cloudflare R2 后台 | 上传附件成功 |
-| 9 | `R2_ACCESS_KEY_ID` | Cloudflare R2 API Token | 上传附件成功 |
-| 10 | `R2_SECRET_ACCESS_KEY` | Cloudflare R2 API Token | 上传附件成功 |
-| 11 | `R2_BUCKET_NAME` | 固定值 `8d-reports` | 上传附件成功 |
-| 12 | `CREEM_API_KEY` | Creem 后台 | 支付功能正常 |
-| 13 | `CREEM_WEBHOOK_SECRET` | 🔴 当前为空 | 必须去 Creem 后台生成 |
-| 14 | `CREEM_PRODUCT_PRO_MONTHLY` | 🔴 当前为空 | Creem 后台 Pro Monthly 产品的 ID |
-| 15 | `CREEM_PRODUCT_TEAM_MONTHLY` | 🔴 当前为空 | Creem 后台 Team Monthly 产品的 ID |
-| 16 | `CREEM_PRODUCT_SINGLE_REPORT_EXPORT` | 🔴 当前为空 | Creem 后台 Single Report Export 产品的 ID |
-| 17 | `RESEND_API_KEY` | 🔴 当前为空 | 注册 Resend → API Keys → 创建 新 Key |
-| 18 | `DEEPSEEK_API_KEY` | 🔴 当前为空 | 注册 platform.deepseek.com → API Keys → 创建新 Key |
+| 4 | `ENABLE_SOCIAL_LOGIN` | 固定填 `false` | 当前隐藏并关闭 Google/GitHub 快捷登录；恢复前必须改为 `true` 并完成端到端验证 |
+| 5 | `GOOGLE_CLIENT_ID` | Google Cloud Console | 当前默认不启用；仅 `ENABLE_SOCIAL_LOGIN=true` 时生效 |
+| 6 | `GOOGLE_CLIENT_SECRET` | Google Cloud Console | 当前默认不启用；仅 `ENABLE_SOCIAL_LOGIN=true` 时生效 |
+| 7 | `GITHUB_CLIENT_ID` | GitHub Developer Settings | 当前默认不启用；仅 `ENABLE_SOCIAL_LOGIN=true` 时生效 |
+| 8 | `GITHUB_CLIENT_SECRET` | GitHub Developer Settings | 当前默认不启用；仅 `ENABLE_SOCIAL_LOGIN=true` 时生效 |
+| 9 | `R2_ACCOUNT_ID` | Cloudflare R2 后台 | 上传附件成功 |
+| 10 | `R2_ACCESS_KEY_ID` | Cloudflare R2 API Token | 上传附件成功 |
+| 11 | `R2_SECRET_ACCESS_KEY` | Cloudflare R2 API Token | 上传附件成功 |
+| 12 | `R2_BUCKET_NAME` | 固定值 `8d-reports` | 上传附件成功 |
+| 13 | `CREEM_API_KEY` | Creem 后台 | 支付功能正常 |
+| 14 | `CREEM_WEBHOOK_SECRET` | 🔴 当前为空 | 必须去 Creem 后台生成 |
+| 15 | `CREEM_PRODUCT_PRO_MONTHLY` | 🔴 当前为空 | Creem 后台 Pro Monthly 产品的 ID |
+| 16 | `CREEM_PRODUCT_TEAM_MONTHLY` | 🔴 当前为空 | Creem 后台 Team Monthly 产品的 ID |
+| 17 | `CREEM_PRODUCT_SINGLE_REPORT_EXPORT` | 🔴 当前为空 | Creem 后台 Single Report Export 产品的 ID |
+| 18 | `RESEND_API_KEY` | 🔴 当前为空 | 注册 Resend → API Keys → 创建 新 Key |
+| 19 | `DEEPSEEK_API_KEY` | 🔴 当前为空 | 注册 platform.deepseek.com → API Keys → 创建新 Key |
 
 > **实际值参考 `.env` 文件**（不在本文档中复制，避免 git push protection 拦截）
 
@@ -151,7 +152,7 @@
 
 ### Google OAuth
 
-当前生产登录/注册页暂不显示 Google 快捷登录。以下配置仅用于未来恢复前的检查清单。
+当前生产登录/注册页暂不显示 Google 快捷登录，后端也默认关闭。以下配置仅用于未来恢复前的检查清单，恢复时还必须设置 `ENABLE_SOCIAL_LOGIN=true`。
 
 | 名称 | 值 |
 |------|-----|
@@ -163,7 +164,7 @@
 
 ### GitHub OAuth
 
-当前生产登录/注册页暂不显示 GitHub 快捷登录。以下配置仅用于未来恢复前的检查清单。
+当前生产登录/注册页暂不显示 GitHub 快捷登录，后端也默认关闭。以下配置仅用于未来恢复前的检查清单，恢复时还必须设置 `ENABLE_SOCIAL_LOGIN=true`。
 
 | 名称 | 值 |
 |------|-----|

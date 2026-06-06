@@ -1,7 +1,7 @@
 # Phase 1 MVP — 线上部署测试报告
 
 **测试日期**: 2026年5月20日  
-**当前修订**: 2026年6月6日 — Google / GitHub 快捷登录已临时隐藏，生产认证入口以邮箱注册和邮箱登录为准。
+**当前修订**: 2026年6月6日 — Google / GitHub 快捷登录已临时隐藏并默认后端关闭，生产认证入口以邮箱注册和邮箱登录为准。
 **部署地址**: `https://8d-reports.com`  
 **产品经理**: Quality PM  
 **代码版本**: commit `cbfe7bd`
@@ -120,7 +120,7 @@
     → set-cookie: __Secure-better-auth.session_token ✅
     → redirect → /dashboard → proxy check cookie ✅ → 显示仪表盘
     
-当前生产页面不显示 Google / GitHub 快捷登录按钮。
+当前生产页面不显示 Google / GitHub 快捷登录按钮，后端 provider 也默认关闭。
 恢复前必须完成端到端验证：点击按钮 → 第三方授权 → 回调 → 站内登录状态写入 → 返回 dashboard 或原 callbackUrl。
 ```
 
