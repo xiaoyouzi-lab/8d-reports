@@ -25,6 +25,8 @@ function read(path: string) {
   return readFileSync(resolve(root, path), "utf8");
 }
 
+const packageJson = JSON.parse(read("package.json")) as { scripts?: Record<string, string> };
+
 function access(role: TeamRole, workflowStatus = "draft", lockedAt: Date | null = null) {
   return buildReportAccess({ workflowStatus, lockedAt }, role);
 }
@@ -182,6 +184,22 @@ assert.match(teamRoute, /team_member_added/, "Team member additions must be logg
 assert.match(teamRoute, /team_member_role_changed/, "Team member role changes must be logged");
 assert.match(teamRoute, /team_member_removed/, "Team member removals must be logged");
 assert.match(teamRoute, /getTeamActivities/, "Team API should return recent team activity for the dashboard");
+
+assert.equal(packageJson.scripts?.["test:auth-smoke"], "tsx scripts/authenticated-production-smoke.test.ts", "Package scripts should expose authenticated production smoke checks");
+const authenticatedSmoke = read("scripts/authenticated-production-smoke.test.ts");
+assert.match(authenticatedSmoke, /AUTH_SMOKE_OWNER_COOKIE/, "Authenticated smoke should require an Owner session cookie");
+assert.match(authenticatedSmoke, /AUTH_SMOKE_EDITOR_COOKIE/, "Authenticated smoke should require an Editor session cookie");
+assert.match(authenticatedSmoke, /AUTH_SMOKE_VIEWER_COOKIE/, "Authenticated smoke should require a Viewer session cookie");
+assert.match(authenticatedSmoke, /AUTH_SMOKE_REPORT_ID/, "Authenticated smoke should require a shared test report id");
+assert.match(authenticatedSmoke, /AUTH_SMOKE_MUTATE === "true"/, "Authenticated smoke should keep mutation checks opt-in");
+assert.match(authenticatedSmoke, /viewer report update/, "Authenticated smoke should verify Viewer cannot update reports");
+assert.match(authenticatedSmoke, /viewer workflow transition/, "Authenticated smoke should verify Viewer cannot change workflow");
+assert.match(authenticatedSmoke, /viewer share create/, "Authenticated smoke should verify Viewer cannot create share links");
+assert.match(authenticatedSmoke, /viewer attachment create/, "Authenticated smoke should verify Viewer cannot upload attachments");
+assert.match(authenticatedSmoke, /viewer docx export/, "Authenticated smoke should verify Viewer cannot export Word");
+assert.match(authenticatedSmoke, /editor workflow transition/, "Authenticated smoke should verify Editor cannot approve or lock reports");
+assert.match(authenticatedSmoke, /report_approved_or_locked/, "Authenticated smoke mutation flow should verify approval Activity Log");
+assert.match(authenticatedSmoke, /report_unlocked/, "Authenticated smoke mutation flow should verify unlock Activity Log");
 
 assert.equal(MAX_SERVICE_REQUEST_FILES, 5, "Service requests should keep a clear 5-file limit");
 assert.equal(isValidServiceContactEmail("quality@example.com"), true, "Service request email validation should accept normal business emails");

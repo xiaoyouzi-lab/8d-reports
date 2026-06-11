@@ -412,8 +412,9 @@ Strong evidence now available:
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
   - `npm run test:production-smoke` verifies the production Homepage, Pricing, Team Launch, Template Setup, Demo Reports, three individual demo pages, Security page, and all three demo PDF/Word/ZIP delivery packages.
   - The production smoke test verifies each demo ZIP contains the generated PDF, generated Word file, image evidence, non-image evidence, and evidence README.
+- Authenticated production smoke coverage is now scripted as `npm run test:auth-smoke`; it requires Owner/Editor/Viewer cookies plus a shared unlocked test report id, and it can optionally run workflow mutation checks with `AUTH_SMOKE_MUTATE=true`.
 - Regression coverage:
-- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, safe report-load failure handling, Viewer/read-only editor UI gating, Team member management UI/activity and plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
+- `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, safe report-load failure handling, Viewer/read-only editor UI gating, Team member management UI/activity and plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, hidden social-login buttons, and the authenticated smoke-test command.
   - Latest local checks passed: `npm run test:governance`, `npm run test:production-smoke`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:
@@ -423,6 +424,7 @@ Remaining manual/authenticated checks:
   - Viewer cannot edit D-steps, upload/delete attachments, replace signatures, create share links, export drafts, or change workflow state; the UI should show this as read-only instead of presenting unusable action buttons.
   - Editor can create/edit reports, upload/delete attachments, create share links, and export draft packages, but cannot approve, lock, unlock, or manage members.
   - Owner can approve, lock, unlock with reason, revoke links, and manage members.
+  - Use `npm run test:auth-smoke` after copying test-session cookies; add `AUTH_SMOKE_MUTATE=true` only for a disposable test report where status/revision changes are acceptable.
 - Use a beta account to run AI Quality Check successfully on a real report.
 - In a safe non-production setup, force DeepSeek failure or invalid credentials and confirm the UI shows the friendly failure message while report data remains saved.
 - Create two unrelated reports and manually confirm AI Draft on report B does not use report A content. Static route coverage now verifies the API does not query unrelated reports or history, but a beta-account end-to-end check is still needed.
