@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test:governance": "tsx scripts/team-governance.test.ts",
+    "test:production-smoke": "tsx scripts/production-smoke.test.ts",
     "metrics": "node scripts/metrics-dashboard.mjs"
   },
   "dependencies": {
