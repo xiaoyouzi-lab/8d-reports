@@ -39,6 +39,12 @@ Release verification:
 
 - Run `npm run test:production-smoke` after production deployment to confirm the public sales pages, demo pages, PDF samples, Word samples, and delivery ZIP packages are reachable on `https://www.8d-reports.com`.
 - The smoke test also confirms each demo ZIP includes image evidence, non-image evidence, the generated PDF, the generated Word file, and an evidence README.
+- Run `npm run test:auth-smoke` when Owner, Editor, and Viewer test sessions are available. Required environment variables:
+  - `AUTH_SMOKE_REPORT_ID`: an unlocked draft/internal-review test report shared inside the Team workspace.
+  - `AUTH_SMOKE_OWNER_COOKIE`, `AUTH_SMOKE_EDITOR_COOKIE`, `AUTH_SMOKE_VIEWER_COOKIE`: browser cookies copied from the three logged-in test accounts.
+  - Optional `AUTH_SMOKE_BASE_URL`: defaults to `https://www.8d-reports.com`.
+  - Optional `AUTH_SMOKE_MUTATE=true`: runs the approval/lock/unlock/revision Activity Log flow and should only be used on a disposable test report.
+- Without `AUTH_SMOKE_MUTATE=true`, the authenticated smoke test verifies Team role visibility and Viewer denial paths without intentionally changing report state.
 
 ## Validation Question
 
