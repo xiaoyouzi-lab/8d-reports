@@ -5,7 +5,7 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { callDeepSeekJson, isAiBetaUser } from "@/lib/ai/deepseek";
 import { summarizeReportForAi } from "@/lib/ai/report-payload";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
-import { getAccessibleReport } from "@/lib/report-access";
+import { getReportAccess } from "@/lib/report-workflow";
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
@@ -18,8 +18,15 @@ export async function POST(req: NextRequest) {
   const reportId = typeof body.reportId === "string" ? body.reportId : "";
   if (!reportId) return NextResponse.json({ error: "reportId is required" }, { status: 400 });
 
-  const report = await getAccessibleReport(reportId, user.id);
-  if (!report) return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  const access = await getReportAccess(reportId, user.id);
+  if (!access) return NextResponse.json({ error: "Report not found" }, { status: 404 });
+  if (access.locked) {
+    return NextResponse.json({ error: "This report is locked. Unlock it for revision before running AI Quality Check." }, { status: 403 });
+  }
+  if (!access.canEdit) {
+    return NextResponse.json({ error: "You do not have permission to run AI Quality Check for this report." }, { status: 403 });
+  }
+  const { report } = access;
 
   const reportData = {
     ...DEFAULT_REPORT_DATA,
