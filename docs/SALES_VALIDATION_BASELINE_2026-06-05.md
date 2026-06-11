@@ -410,9 +410,11 @@ Strong evidence now available:
 - Production proof assets:
   - Homepage, Pricing, Team Launch, Template Setup, Demo Reports, Security, and Resources return `200 text/html` on production.
   - Demo report downloads and ZIP evidence packages were previously verified, including non-image evidence files.
+  - `npm run test:production-smoke` verifies the production Homepage, Pricing, Team Launch, Template Setup, Demo Reports, three individual demo pages, Security page, and all three demo PDF/Word/ZIP delivery packages.
+  - The production smoke test verifies each demo ZIP contains the generated PDF, generated Word file, image evidence, non-image evidence, and evidence README.
 - Regression coverage:
 - `npm run test:governance` verifies workflow statuses, locked states, Owner / Editor / Viewer permissions, active-Team role resolution, safe report-load failure handling, Viewer/read-only editor UI gating, Team member management UI/activity and plan gates, service request validation rules, Activity Log recording points and UI audit details, AI task-specific failure messages, AI Draft current-report isolation, dashboard workflow/revision visibility, pricing boundaries, homepage Team positioning, Pro-vs-Team copy boundaries, and hidden social-login buttons.
-  - Latest local checks passed: `npm run test:governance`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
+  - Latest local checks passed: `npm run test:governance`, `npm run test:production-smoke`, `npm run lint`, `npx tsc --noEmit`, and `npm run build`.
 
 Remaining manual/authenticated checks:
 

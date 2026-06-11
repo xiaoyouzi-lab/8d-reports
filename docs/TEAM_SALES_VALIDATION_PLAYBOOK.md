@@ -35,6 +35,11 @@ Do not claim a full QMS, SSO, email reminders, complex approval matrices, automa
 Each demo provides an online report, PDF, Word, and ZIP delivery package with evidence attachments.
 Each demo also includes a two-minute Team workflow validation form. Responses are stored with the `[team-workflow-validation]` marker and the `team_demo_feedback_submitted` event.
 
+Release verification:
+
+- Run `npm run test:production-smoke` after production deployment to confirm the public sales pages, demo pages, PDF samples, Word samples, and delivery ZIP packages are reachable on `https://www.8d-reports.com`.
+- The smoke test also confirms each demo ZIP includes image evidence, non-image evidence, the generated PDF, the generated Word file, and an evidence README.
+
 ## Validation Question
 
 The next product decision must answer:
