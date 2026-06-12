@@ -259,10 +259,20 @@ for (const [taskType, expected] of Object.entries(aiMessages) as Array<[AiTaskTy
 
 const draftRoute = read("src/app/api/ai/draft-report/route.ts");
 assert.match(draftRoute, /isAiBetaUser/, "AI Draft must remain beta gated");
-assert.match(draftRoute, /getAccessibleReport\(reportId, user\.id\)/, "AI Draft must load only the requested accessible report");
+assert.match(draftRoute, /getReportAccess\(reportId, user\.id\)/, "AI Draft must use shared role and lock access gate");
+assert.match(draftRoute, /access\.locked/, "AI Draft must reject locked reports before generation");
+assert.match(draftRoute, /access\.canEdit/, "AI Draft must require edit permission before generation");
 assert.match(draftRoute, /summarizeMaterialsForAi\(materials, reportData\)/, "AI Draft input must be built from current report data and user-provided materials");
 assert.doesNotMatch(draftRoute, /currentReportData/, "AI Draft API must not trust client-sent currentReportData");
 assert.doesNotMatch(draftRoute, /getAccessibleUserIds|reports\/search|reportActivities/, "AI Draft must not read unrelated reports, search results, or activity history");
+
+const reportReviewRoute = read("src/app/api/ai/report-review/route.ts");
+assert.match(reportReviewRoute, /isAiBetaUser/, "AI Quality Check must remain beta gated");
+assert.match(reportReviewRoute, /getReportAccess\(reportId, user\.id\)/, "AI Quality Check must use shared role and lock access gate");
+assert.match(reportReviewRoute, /access\.locked/, "AI Quality Check must reject locked reports before review");
+assert.match(reportReviewRoute, /access\.canEdit/, "AI Quality Check must require edit permission before review");
+assert.match(reportReviewRoute, /summarizeReportForAi\(reportData, report\.title\)/, "AI Quality Check input must be built from the saved report");
+assert.doesNotMatch(reportReviewRoute, /getAccessibleReport|getAccessibleUserIds|reports\/search|reportActivities/, "AI Quality Check must not bypass shared report access or read unrelated data");
 
 const loginForm = read("src/app/(auth)/login/login-form.tsx");
 const signupForm = read("src/app/(auth)/signup/signup-form.tsx");
