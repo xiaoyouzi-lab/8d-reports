@@ -89,7 +89,7 @@ export default function SignupPage() {
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-xl font-semibold tracking-tight">Verify your email</CardTitle>
           <CardDescription className="text-sm">
-            A verification code has been generated for {email}
+            We sent a verification code to {email}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -108,7 +108,7 @@ export default function SignupPage() {
                 className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Enter the 6-digit code shown in the server logs
+                Enter the 6-digit code from your inbox. It expires in 5 minutes.
               </p>
             </div>
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">{error}</p>}

@@ -3,8 +3,9 @@ import { emailOTP } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "./db";
 import * as schema from "./db/schema";
+import { sendAuthOtpEmail } from "./email";
 
-function validatePassword(password: string): string | null {
+export function validatePassword(password: string): string | null {
   if (!password || password.length < 8) return "Password must be at least 8 characters";
   if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter";
   if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter";
@@ -21,6 +22,7 @@ function getTrustedOrigins() {
     "http://0.0.0.0:3000",
     "https://8d-reports.com",
     "https://www.8d-reports.com",
+    "https://*.xiaoyouzi-labs-projects.vercel.app",
   ]);
 
   if (process.env.BETTER_AUTH_URL) {
@@ -43,6 +45,7 @@ function getAllowedAuthHosts() {
     "8d-reports.com",
     "www.8d-reports.com",
     "8d-reports.vercel.app",
+    "*.xiaoyouzi-labs-projects.vercel.app",
   ]);
 
   if (process.env.BETTER_AUTH_URL) {
@@ -119,10 +122,16 @@ function createAuth() {
         sendVerificationOnSignUp: true,
         expiresIn: 300,
         async sendVerificationOTP({ email, otp, type }) {
-          const label = type === "email-verification"
-            ? "EMAIL VERIFY"
-            : type === "sign-in" ? "SIGN-IN" : "RESET PASSWORD";
-          console.log(`\n===== ${label} OTP for ${email}: ${otp} =====\n`);
+          try {
+            await sendAuthOtpEmail({ email, otp, type, expiresInSeconds: 300 });
+          } catch (error) {
+            console.error(
+              `[AUTH EMAIL] Failed to send ${type} OTP to ${email}: ${
+                error instanceof Error ? error.message : "Unknown error"
+              }`
+            );
+            throw error;
+          }
         },
       }),
     ],
