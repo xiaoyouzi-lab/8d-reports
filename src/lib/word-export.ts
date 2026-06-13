@@ -2,9 +2,8 @@ import {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   AlignmentType, WidthType, ImageRun,
 } from "docx";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { STEPS, type ReportData } from "./report-steps";
-import { getR2Client } from "./r2";
+import { getR2KeyFromPublicUrl, getR2ObjectBuffer } from "./r2";
 
 const FISHBONE_FIELD_NAMES = new Set([
   "fishboneMan",
@@ -41,21 +40,14 @@ function addMetaRow(label: string, value: string) {
 
 async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<Buffer | null> {
   if (img.storagePath) {
-    const client = getR2Client();
-    if (client) {
-      try {
-        const object = await client.send(
-          new GetObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME || "8d-reports",
-            Key: img.storagePath,
-          })
-        );
-        const bytes = await object.Body?.transformToByteArray();
-        if (bytes) return Buffer.from(bytes);
-      } catch {
-        // Fall back to URL fetch below.
-      }
-    }
+    const object = await getR2ObjectBuffer(img.storagePath);
+    if (object?.buffer) return object.buffer;
+  }
+
+  const key = getR2KeyFromPublicUrl(img.url);
+  if (key) {
+    const object = await getR2ObjectBuffer(key);
+    if (object?.buffer) return object.buffer;
   }
 
   try {
@@ -87,14 +79,15 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 
   if (logoUrl) {
     try {
-      const res = await fetch(logoUrl);
-      const buf = Buffer.from(await res.arrayBuffer());
-      children.push(
-        new Paragraph({
-          alignment: AlignmentType.LEFT,
-          children: [new ImageRun({ type: "png", data: buf, transformation: { width: 120, height: 60 } })],
-        })
-      );
+      const buf = await fetchImageBuffer({ url: logoUrl });
+      if (buf) {
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            children: [new ImageRun({ type: getDocxImageType(logoUrl.endsWith(".jpg") || logoUrl.endsWith(".jpeg") ? "image/jpeg" : "image/png"), data: buf, transformation: { width: 120, height: 60 } })],
+          })
+        );
+      }
     } catch { /* ignore logo error */ }
   }
 
@@ -341,19 +334,19 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 function render5WhyTable(values: string[]) {
   const headerRow = new TableRow({
     children: [
-      new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Step", bold: true, size: 20 })] })] }),
-      new TableCell({ width: { size: 7000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Question / Answer", bold: true, size: 20 })] })] }),
+      new TableCell({ width: { size: 1800, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Why", bold: true, size: 20 })] })] }),
+      new TableCell({ width: { size: 7200, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Answer / Evidence", bold: true, size: 20 })] })] }),
     ],
   });
 
   const rows = [headerRow];
-  const labels = ["1st Why", "2nd Why", "3rd Why", "4th Why", "5th Why"];
   for (let i = 0; i < 5; i++) {
+    const value = values[i]?.trim() || "No relevant data";
     rows.push(
       new TableRow({
         children: [
-          new TableCell({ width: { size: 2000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: labels[i], size: 20 })] })] }),
-          new TableCell({ width: { size: 7000, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: values[i] || "-", size: 20 })] })] }),
+          new TableCell({ width: { size: 1800, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: `Why ${i + 1}`, bold: true, size: 20 })] })] }),
+          new TableCell({ width: { size: 7200, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: value, size: 20 })] })] }),
         ],
       })
     );

@@ -161,7 +161,7 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
           </div>
           <div>
             <span className="text-sm font-semibold text-white">
-              {isZh ? "随便问任何质量问题" : "Ask Anything Quality"}
+              {isZh ? "质量专家顾问（Beta）" : "Quality Expert Chat (Beta)"}
             </span>
           </div>
         </div>
@@ -207,7 +207,7 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isZh ? "输入你的质量问题..." : "Ask about quality..."}
+            placeholder={isZh ? "输入质量体系、8D、FMEA、SPC 等问题..." : "Ask about quality systems, 8D, FMEA, SPC..."}
             rows={1}
             className="flex-1 resize-none rounded-xl border bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300 placeholder:text-muted-foreground"
           />
