@@ -14,7 +14,7 @@ This audit compares the current repository implementation against `docs/PRODUCT_
 - AI Quality Check and AI Draft routes exist and use beta email gating, conservative prompt rules, friendly unavailable messages, and server-side report access/lock/edit checks.
 - Review, approval, locking, unlocking with reason, revision increment, and Activity Log support are present for Team workflow.
 - Share links/share codes are implemented with view/edit permission levels, share revocation/update, external shared report viewing, and external edit support for editable links.
-- PDF and Word export flows are implemented for normal reports. Evidence packages are supported by ZIP download when attachments are present.
+- PDF, Word, and standard Excel export flows are implemented for normal reports. Evidence packages are supported by ZIP download when attachments are present.
 - Demo report pages and sample report APIs are present, including generated PDF, Word, and ZIP delivery packages with evidence files.
 - SEO and marketing pages are present for homepage, pricing, docs, FAQ, contact, security, sample report, demo reports, Team Launch, custom template setup, templates, examples, supplier 8D, corrective action, preventive action, 5-Why, and fishbone content.
 - Subscription/plan logic is implemented for Free, Pro, Team, single-report export purchase, report quota, Word/no-watermark export entitlement, logo entitlement, editable share, deep search, and Team seats.
@@ -24,7 +24,6 @@ This audit compares the current repository implementation against `docs/PRODUCT_
 
 ## Partially Implemented Features
 
-- Excel export is described in product context as supported for standard report outputs, but local code inspection did not find a dedicated `.xlsx` export route or workbook generator. Current implemented export code is clearly PDF, Word, and ZIP/evidence-package focused.
 - Historical search/deep search is present through report search and plan entitlements, but this audit did not verify ranking quality or full-text depth beyond code presence.
 - Complaint management exists as product direction and related report/source fields, but there is no separate end-to-end complaint intake module.
 - Supplier collaboration exists through share links and Team roles, but external supplier workflows appear share-link based rather than a dedicated supplier portal.
@@ -42,7 +41,7 @@ This audit compares the current repository implementation against `docs/PRODUCT_
 
 ## Risky Or Unclear Features
 
-- The product context now says standard PDF / Word / Excel export is supported, but code inspection only confirmed PDF, Word, ZIP packages, and uploaded spreadsheet evidence support. This should be reconciled before strong public Excel export claims.
+- Standard `.xlsx` export is now implemented, but customer-specific Excel templates, special formatting, macros, and company-controlled report formats remain unsupported unless future customization is added.
 - Share-link editing is implemented for editable links and checks locked workflow status, but it is external-token based and should continue to be included in permission regression testing.
 - AI routes log failed provider errors internally and return friendly user messages; this is appropriate, but AI availability depends on configured beta emails and provider keys.
 - Team Owner creation depends on active Team entitlement and `/api/team` workspace creation behavior; production manual validation still requires known Team Owner/Editor/Viewer accounts.
@@ -75,10 +74,10 @@ This audit compares the current repository implementation against `docs/PRODUCT_
 
 - PDF report export is implemented client-side in `src/lib/pdf-export.ts` and invoked by `src/components/report/ExportMenu.tsx`.
 - Word export is implemented through `src/lib/word-export.ts` and `/api/reports/[id]/export/docx`.
+- Standard Excel export is implemented through `src/lib/xlsx-export.ts` and `/api/reports/[id]/export/xlsx`.
 - ZIP evidence packages are implemented through `src/lib/export-zip.ts` and used when report attachments are present.
 - Demo/sample report downloads support PDF, Word, and ZIP packages through `/api/sample-reports/[type]`.
 - Upload accepts spreadsheet file types as evidence attachments, including Excel MIME types and CSV.
-- No dedicated `.xlsx` report export generator or API route was found during this audit.
 
 ## AI Quality Check Behavior Found
 
@@ -112,8 +111,8 @@ This audit compares the current repository implementation against `docs/PRODUCT_
 
 ## Recommended Next 5 Engineering Tasks
 
-1. Decide and reconcile the Excel export claim: either implement a standard `.xlsx` export route or narrow product/docs/SEO copy to PDF, Word, ZIP, and spreadsheet evidence support.
-2. Add a small export regression test for normal report exports covering PDF, Word, ZIP evidence packages, and the chosen Excel behavior.
-3. Run authenticated production Team validation with Owner, Editor, and Viewer accounts once safe production test accounts are available.
-4. Add a focused share-link permission regression test for locked reports, view-only links, editable links, and external attachment access.
-5. Document the supported Team Owner setup path for production validation so future manual smoke tests do not depend on ad hoc database inspection.
+1. Add a small export regression test for normal report exports covering PDF, Word, Excel, and ZIP evidence packages.
+2. Run authenticated production Team validation with Owner, Editor, and Viewer accounts once safe production test accounts are available.
+3. Add a focused share-link permission regression test for locked reports, view-only links, editable links, and external attachment access.
+4. Document the supported Team Owner setup path for production validation so future manual smoke tests do not depend on ad hoc database inspection.
+5. Decide whether customer-specific Excel template customization should be a paid service workflow or a future self-service template feature.

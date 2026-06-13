@@ -16,6 +16,7 @@ const ALLOWED_EVENTS = new Set([
   "watermark_exported",
   "quota_limit_seen",
   "word_export_gate_clicked",
+  "excel_export_gate_clicked",
   "logo_upload_gate_clicked",
   "deep_search_gate_clicked",
   "ai_draft_interest_clicked",

@@ -28,7 +28,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!access) return NextResponse.json({ error: "Report not found" }, { status: 404 });
   if (!access.canExportDraft) return NextResponse.json({ error: "You do not have permission to export reports" }, { status: 403 });
   const body = await req.json().catch(() => ({}));
-  const format = ["pdf", "word", "zip"].includes(body.format) ? body.format : "unknown";
+  const format = ["pdf", "word", "excel", "zip"].includes(body.format) ? body.format : "unknown";
   await logReportActivity({ reportId: id, actorId: user.id, actorName: user.name, actionType: "report_exported", metadata: { format } });
   return NextResponse.json({ success: true });
 }

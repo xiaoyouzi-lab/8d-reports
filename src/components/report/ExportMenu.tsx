@@ -60,7 +60,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     } catch { return [] }
   }
 
-  const logExport = (format: "pdf" | "word" | "zip") => {
+  const logExport = (format: "pdf" | "word" | "excel" | "zip") => {
     void fetch(`/api/reports/${reportId}/activity`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -203,6 +203,46 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     }
   }
 
+  const handleExportXlsx = async () => {
+    setOpen(false)
+    warnIfReportNeedsWork()
+    if (withWatermark) {
+      trackEvent("excel_export_gate_clicked", { plan: "free" }, reportId)
+      toast("Excel export requires Pro, Team, or a single-report export", {
+        description: "Export this report once for $4.99, including Excel, Word, and no-watermark PDF.",
+        action: {
+          label: "Export for $4.99",
+          onClick: () => {
+            trackEvent("upgrade_clicked", { source: "single_export_excel_gate", plan: "free" }, reportId)
+            void startSingleExportCheckout()
+          },
+        },
+      })
+      return
+    }
+    if (!canExportWord) {
+      toast.error("Excel export is not available for this account")
+      return
+    }
+    setLoading("xlsx")
+    try {
+      trackEvent("export_clicked", { format: "xlsx", plan: "pro" }, reportId)
+      const res = await fetch(`/api/reports/${reportId}/export/xlsx`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      if (!res.ok) throw new Error("Export failed")
+      const blob = await res.blob()
+      downloadBlob(blob, `${reportId.slice(0, 8)}_8D_Report.xlsx`)
+      trackEvent("export_succeeded", { format: "xlsx", plan: "pro" }, reportId)
+      toast.success(t("excelSuccess"))
+    } catch {
+      toast.error(t("exportFailed"))
+    } finally {
+      setLoading(null)
+    }
+  }
+
   return (
     <div className="relative inline-flex">
       <button
@@ -237,6 +277,14 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
           >
             <FileSpreadsheet className="size-4" />
             {t("word")}
+          </button>
+          <button
+            type="button"
+            onClick={handleExportXlsx}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="size-4" />
+            {t("excel")}
           </button>
           {withWatermark && (
             <button

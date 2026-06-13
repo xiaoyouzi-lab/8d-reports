@@ -2,40 +2,67 @@
 
 ## Latest Task
 
-Update workflow documentation with export status and product implementation audit.
+Implement standard XLSX export for normal 8D reports.
 
 ## Changed Files
 
-- `AGENTS.md`
-- `docs/PRODUCT_CONTEXT.md`
 - `docs/CURRENT_TASK.md`
 - `docs/DEV_LOG.md`
-- `docs/DECISIONS.md`
-- `docs/ACCEPTANCE_CHECKLIST.md`
 - `docs/PRODUCT_AUDIT.md`
+- `src/lib/xlsx-export.ts`
+- `src/app/api/reports/[id]/export/xlsx/route.ts`
+- `src/components/report/ExportMenu.tsx`
+- `src/app/api/events/route.ts`
+- `src/app/api/reports/[id]/activity/route.ts`
+- `src/messages/en.json`
+- `src/messages/zh-CN.json`
 
 ## Implementation Summary
 
-- Clarified the product context export status for standard PDF / Word / Excel outputs and future customer-specific template customization.
-- Audited the current local implementation against `docs/PRODUCT_CONTEXT.md`.
-- Added `docs/PRODUCT_AUDIT.md` covering implemented, partial, missing, risky, route, API, database, export, AI, Team/subscription, SEO, and recommended next-task findings.
+- Added a standard `.xlsx` workbook generator using the existing `jszip` dependency, so no new package was required.
+- Added `/api/reports/[id]/export/xlsx` with the same report access and export entitlement pattern used by Word export.
+- Added an Excel export entry to the existing export menu.
+- Added English and Chinese export labels/success messages.
+- Added Excel export analytics/activity format support.
+- Updated the product audit to reflect implemented standard Excel export while keeping customer-specific Excel templates as future customization.
+
+## Workbook Structure
+
+- `Summary`: report title, ID, report number, type, priority, status/workflow status, timestamps, customer/product/batch/quantity metadata.
+- `D0-D8 Report`: all structured D0-D8 fields grouped by step and field label.
+- `Actions`: containment, root cause, corrective action, verification/validation, prevention, and closure/approval fields.
+- `Evidence`: attachment filename, step, type, MIME type, file size, and upload time.
+
+## Export Route
+
+- `POST /api/reports/[id]/export/xlsx`
+
+## Entitlement Behavior
+
+- Excel export follows the closest existing paid export rule: Pro, Team, or a single-report export purchase.
+- Viewers and users without `canExportDraft` are rejected server-side.
+- Report access is checked with the existing `getReportAccess` helper.
 
 ## Tests / Verification
 
-- Documentation-only change.
-- Application tests were not required.
-- `git diff --check` passed with no whitespace or formatting errors after the export status and product audit documentation update.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Generated a sample `/tmp/8d-report-export-test.xlsx` with the new workbook generator.
+- `unzip -t /tmp/8d-report-export-test.xlsx` passed with no compressed data errors.
 
 ## Risks
 
-- The audit is based on local code inspection only and does not claim production validation.
-- Product context now states standard Excel export support, while the local implementation audit did not find a dedicated `.xlsx` export route or workbook generator.
+- The XLSX writer is intentionally minimal OpenXML generated with `jszip`; it should be verified in Microsoft Excel, Google Sheets, or LibreOffice during manual review.
+- Customer-specific Excel templates, macros, charts, formulas, and company-controlled layouts are still not implemented.
+- Excel export is gated like Word export; confirm that this is the desired business rule before release.
 
 ## Unfinished / Needs Human Review
 
-- Reconcile the Excel export product claim with the actual export implementation before using stronger public copy.
-- GitHub default branch is `main`, but no open GitHub PR was found for `codex/ai-dev-workflow-docs` at the time of inspection.
+- Manual browser review should confirm the Excel menu item is visible for eligible users and gated for Free users.
+- Manual file-opening review should confirm the generated workbook layout in target spreadsheet software.
 
 ## Suggested Next Task
 
-Create or update the workflow documentation PR against `main`, then reconcile Excel export implementation or copy before stronger public claims.
+Add an automated export regression test that exercises PDF, Word, Excel, and ZIP evidence package generation.
