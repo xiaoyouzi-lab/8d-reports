@@ -16,6 +16,7 @@ Set these for both Preview and Production:
 Set this when useful:
 
 - `EMAIL_REPLY_TO`: optional support mailbox for replies.
+- `BETTER_AUTH_TRUSTED_ORIGINS`: optional comma-separated extra origins for auth requests.
 
 Production should use:
 
@@ -26,11 +27,13 @@ Production domains supported by the auth config:
 - `https://www.8d-reports.com`
 - `https://8d-reports.com`
 
-Preview deployments are supported for the current Vercel project host pattern:
+Preview deployments are supported through Vercel system environment variables:
 
-- `https://*.xiaoyouzi-labs-projects.vercel.app`
+- `VERCEL_URL`
+- `VERCEL_BRANCH_URL`
+- `VERCEL_PROJECT_PRODUCTION_URL`
 
-If the Vercel team or project host pattern changes, update the auth allowed-host/trusted-origin configuration before using Preview auth flows.
+The auth config treats values without a protocol as `https://...`, then adds each resolved `.origin` to Better Auth trusted origins and each `.host` to allowed auth hosts. If a Preview URL is still rejected, add it to `BETTER_AUTH_TRUSTED_ORIGINS` as a comma-separated origin value.
 
 ## Local / Preview / Production Behavior
 

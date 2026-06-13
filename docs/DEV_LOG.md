@@ -40,6 +40,7 @@ Better Auth email OTP was configured, but its `sendVerificationOTP` callback onl
 - Missing Resend config throws a server-side error in Preview/Production without logging OTP codes.
 - Local development keeps a usable fallback by logging OTP codes only outside production/Vercel.
 - The auth route wrapper also rate-limits password reset OTP endpoints and validates reset-password strength before Better Auth processes the reset.
+- Preview auth origin follow-up: Better Auth no longer relies on wildcard preview origin strings. The auth config now derives trusted origins and allowed hosts from `VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `BETTER_AUTH_URL`, and optional comma-separated `BETTER_AUTH_TRUSTED_ORIGINS`.
 
 ## Required Env Vars
 
@@ -48,6 +49,7 @@ Better Auth email OTP was configured, but its `sendVerificationOTP` callback onl
 - `EMAIL_REPLY_TO` optional.
 - `BETTER_AUTH_SECRET` sensitive, existing required auth secret.
 - `BETTER_AUTH_URL` required per environment; use `https://www.8d-reports.com` in Production.
+- `BETTER_AUTH_TRUSTED_ORIGINS` optional comma-separated fallback for manually trusted Preview origins.
 
 See `docs/PRODUCTION_AUTH_EMAIL_SETUP.md` for the deployment checklist.
 
@@ -58,6 +60,7 @@ See `docs/PRODUCTION_AUTH_EMAIL_SETUP.md` for the deployment checklist.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
 - `npm run test:governance` passed.
+- Preview origin follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 
 ## Manual Verification Checklist
 
@@ -71,7 +74,7 @@ See `docs/PRODUCTION_AUTH_EMAIL_SETUP.md` for the deployment checklist.
 
 - Resend domain verification and DNS records must be completed before production sending works reliably.
 - Some messages may land in spam until domain reputation is established.
-- Preview auth works for the current Vercel project host wildcard; if the Vercel project/team host changes, allowed hosts/trusted origins must be updated.
+- Preview auth depends on Vercel system URL variables being present. If a Preview origin is still rejected, add the exact origin to `BETTER_AUTH_TRUSTED_ORIGINS`.
 - Existing users with unverified email may need manual verification guidance if they were created while email delivery was unavailable.
 
 ## Unfinished / Needs Human Review

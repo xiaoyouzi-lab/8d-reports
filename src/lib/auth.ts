@@ -14,6 +14,40 @@ export function validatePassword(password: string): string | null {
   return null;
 }
 
+const AUTH_ORIGIN_ENV_KEYS = [
+  "VERCEL_URL",
+  "VERCEL_BRANCH_URL",
+  "VERCEL_PROJECT_PRODUCTION_URL",
+  "BETTER_AUTH_URL",
+] as const;
+
+function normalizeAuthUrl(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  try {
+    return new URL(withProtocol);
+  } catch {
+    return null;
+  }
+}
+
+function getConfiguredAuthUrls() {
+  const values = AUTH_ORIGIN_ENV_KEYS.flatMap((key) => process.env[key] || []);
+  const extraOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
+    ?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean) || [];
+
+  return [...values, ...extraOrigins]
+    .map((value) => normalizeAuthUrl(value))
+    .filter((url): url is URL => Boolean(url));
+}
+
 function getTrustedOrigins() {
   const origins = new Set([
     "http://localhost:3000",
@@ -22,15 +56,10 @@ function getTrustedOrigins() {
     "http://0.0.0.0:3000",
     "https://8d-reports.com",
     "https://www.8d-reports.com",
-    "https://*.xiaoyouzi-labs-projects.vercel.app",
   ]);
 
-  if (process.env.BETTER_AUTH_URL) {
-    try {
-      origins.add(new URL(process.env.BETTER_AUTH_URL).origin);
-    } catch {
-      // Ignore invalid env values and let Better Auth surface its own config warning.
-    }
+  for (const url of getConfiguredAuthUrls()) {
+    origins.add(url.origin);
   }
 
   return [...origins];
@@ -45,15 +74,10 @@ function getAllowedAuthHosts() {
     "8d-reports.com",
     "www.8d-reports.com",
     "8d-reports.vercel.app",
-    "*.xiaoyouzi-labs-projects.vercel.app",
   ]);
 
-  if (process.env.BETTER_AUTH_URL) {
-    try {
-      hosts.add(new URL(process.env.BETTER_AUTH_URL).host);
-    } catch {
-      // Ignore invalid env values and keep the explicit production hosts.
-    }
+  for (const url of getConfiguredAuthUrls()) {
+    hosts.add(url.host);
   }
 
   return [...hosts];
