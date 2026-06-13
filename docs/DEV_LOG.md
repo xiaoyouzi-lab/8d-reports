@@ -18,7 +18,7 @@ Implement production-ready email delivery for signup verification and password r
 ## Auth / Email Audit
 
 - Signup flow: `/signup` calls `authClient.signUp.email`, Better Auth email OTP sends a signup verification code, and the signup page verifies it with `authClient.emailOtp.verifyEmail`.
-- Email verification behavior: Better Auth `emailOTP` plugin is configured with `sendVerificationOnSignUp: true` and 5-minute OTP expiry.
+- Email verification behavior: Better Auth `emailOTP` plugin has 5-minute OTP expiry. The implicit `sendVerificationOnSignUp` hook is disabled, and signup now explicitly requests the `email-verification` OTP after account creation succeeds.
 - Forgot password flow before this task: `/reset-password` called `/api/auth/forget-password`, which expects a reset-link sender that was not configured.
 - Forgot password flow after this task: `/reset-password` requests `/api/auth/email-otp/request-password-reset`, then completes reset through `/api/auth/email-otp/reset-password`.
 - Better Auth plugin used: `emailOTP` from `better-auth/plugins` plus `emailOTPClient` on the client.
@@ -32,6 +32,8 @@ Implement production-ready email delivery for signup verification and password r
 
 Better Auth email OTP was configured, but its `sendVerificationOTP` callback only printed OTP codes to server logs. The shared email utility was also a placeholder that returned success without sending email. As a result, signup verification and password reset messages were never delivered to users in Preview or Production.
 
+Preview follow-up root cause: signup could reach the OTP screen without a corresponding Resend email record. Better Auth provides a `sendVerificationOnSignUp` hook, but the Preview result did not confirm that `authClient.signUp.email()` reliably completed `sendVerificationOTP` and the Resend send path before the UI advanced. The signup UI now uses an explicit email OTP request and only advances to the OTP screen after that request succeeds.
+
 ## Email Provider Implementation
 
 - Resend is used because the dependency already exists in `package.json`.
@@ -41,6 +43,8 @@ Better Auth email OTP was configured, but its `sendVerificationOTP` callback onl
 - Local development keeps a usable fallback by logging OTP codes only outside production/Vercel.
 - The auth route wrapper also rate-limits password reset OTP endpoints and validates reset-password strength before Better Auth processes the reset.
 - Preview auth origin follow-up: Better Auth no longer relies on wildcard preview origin strings. The auth config now derives trusted origins and allowed hosts from `VERCEL_URL`, `VERCEL_BRANCH_URL`, `VERCEL_PROJECT_PRODUCTION_URL`, `BETTER_AUTH_URL`, and optional comma-separated `BETTER_AUTH_TRUSTED_ORIGINS`.
+- Signup email follow-up: `sendVerificationOnSignUp` is disabled so signup does not rely on the implicit post-signup hook. After successful signup, the client explicitly calls `authClient.emailOtp.sendVerificationOtp({ type: "email-verification" })`; the OTP screen is shown only if that request succeeds. The OTP screen also has a resend-code action that uses the same explicit request path.
+- Safe diagnostics were added to the Better Auth OTP callback and email utility. Logs include OTP `type`, recipient email domain, `hasResendApiKey`, `hasEmailFrom`, `vercelEnv`, and success/failure only; they do not include OTP codes, full emails, API keys, or message bodies in Preview/Production.
 
 ## Required Env Vars
 
@@ -61,12 +65,14 @@ See `docs/PRODUCTION_AUTH_EMAIL_SETUP.md` for the deployment checklist.
 - `npm run build` passed.
 - `npm run test:governance` passed.
 - Preview origin follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
+- Explicit signup OTP follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 
 ## Manual Verification Checklist
 
 - Production signup: create a disposable account, receive the verification email, and complete verification.
 - Production password reset: request a reset code, receive the email, enter the code, and set a strong new password.
 - Preview signup or reset: repeat on the PR preview URL after Vercel env vars are configured.
+- Resend records: after signup reaches the OTP screen, open Resend email logs and confirm a verification email record exists for the attempted recipient domain/time window.
 - Security: confirm Production logs record email success/failure only and never print OTP codes.
 - Config failure: temporarily test a safe non-production environment with missing email config and confirm no OTP code is exposed.
 

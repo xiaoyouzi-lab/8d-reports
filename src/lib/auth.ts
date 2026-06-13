@@ -48,6 +48,19 @@ function getConfiguredAuthUrls() {
     .filter((url): url is URL => Boolean(url));
 }
 
+function getEmailDomain(email: string) {
+  return email.split("@")[1]?.toLowerCase() || "unknown";
+}
+
+function getAuthEmailDiagnostics(email: string) {
+  return {
+    emailDomain: getEmailDomain(email),
+    hasResendApiKey: Boolean(process.env.RESEND_API_KEY),
+    hasEmailFrom: Boolean(process.env.EMAIL_FROM),
+    vercelEnv: process.env.VERCEL_ENV || "local",
+  };
+}
+
 function getTrustedOrigins() {
   const origins = new Set([
     "http://localhost:3000",
@@ -143,16 +156,18 @@ function createAuth() {
     },
     plugins: [
       emailOTP({
-        sendVerificationOnSignUp: true,
+        sendVerificationOnSignUp: false,
         expiresIn: 300,
         async sendVerificationOTP({ email, otp, type }) {
+          const diagnostics = getAuthEmailDiagnostics(email);
+          console.log("[AUTH EMAIL] sendVerificationOTP callback start", { type, ...diagnostics });
           try {
             await sendAuthOtpEmail({ email, otp, type, expiresInSeconds: 300 });
+            console.log("[AUTH EMAIL] sendVerificationOTP callback success", { type, ...diagnostics });
           } catch (error) {
             console.error(
-              `[AUTH EMAIL] Failed to send ${type} OTP to ${email}: ${
-                error instanceof Error ? error.message : "Unknown error"
-              }`
+              "[AUTH EMAIL] sendVerificationOTP callback failed",
+              { type, errorMessage: error instanceof Error ? error.message : "Unknown error", ...diagnostics }
             );
             throw error;
           }

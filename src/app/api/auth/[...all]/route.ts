@@ -8,6 +8,7 @@ const handlers = toNextJsHandler(auth);
 const RATE_LIMITED_PATHNAMES = [
   "/api/auth/sign-in/email",
   "/api/auth/sign-up/email",
+  "/api/auth/email-otp/send-verification-otp",
   "/api/auth/email-otp/request-password-reset",
   "/api/auth/email-otp/reset-password",
 ];

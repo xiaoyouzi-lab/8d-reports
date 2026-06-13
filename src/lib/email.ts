@@ -7,6 +7,7 @@ type SendEmailInput = {
   subject: string;
   html: string;
   text: string;
+  purpose?: string;
 };
 
 let resendClient: Resend | null = null;
@@ -20,6 +21,20 @@ function getEmailConfig() {
     apiKey: process.env.RESEND_API_KEY,
     from: process.env.EMAIL_FROM,
     replyTo: process.env.EMAIL_REPLY_TO,
+  };
+}
+
+function getEmailDomain(email: string) {
+  return email.split("@")[1]?.toLowerCase() || "unknown";
+}
+
+function getEmailDiagnostics(to: string) {
+  const { apiKey, from } = getEmailConfig();
+  return {
+    emailDomain: getEmailDomain(to),
+    hasResendApiKey: Boolean(apiKey),
+    hasEmailFrom: Boolean(from),
+    vercelEnv: process.env.VERCEL_ENV || "local",
   };
 }
 
@@ -107,18 +122,22 @@ function createOtpEmail({
   return { subject: copy.subject, html, text };
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
+export async function sendEmail({ to, subject, html, text, purpose = "transactional" }: SendEmailInput) {
   const { apiKey, from, replyTo } = getEmailConfig();
+  const diagnostics = getEmailDiagnostics(to);
+
+  console.log("[EMAIL] send start", { purpose, ...diagnostics });
 
   if (!apiKey || !from) {
     if (isLocalDevelopment()) {
-      console.log(`[EMAIL][local] To: ${to} | Subject: ${subject}`);
+      console.log("[EMAIL] local fallback", { purpose, ...diagnostics });
       return { ok: true, mode: "local-log" as const };
     }
+    console.error("[EMAIL] missing config", { purpose, ...diagnostics });
     throw new Error("Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM.");
   }
 
-  const { data, error } = await getResendClient(apiKey).emails.send({
+  const { error } = await getResendClient(apiKey).emails.send({
     from,
     to,
     subject,
@@ -128,11 +147,12 @@ export async function sendEmail({ to, subject, html, text }: SendEmailInput) {
   });
 
   if (error) {
+    console.error("[EMAIL] send failed", { purpose, providerError: error.name, ...diagnostics });
     throw new Error(`Email provider rejected the message: ${error.name}`);
   }
 
-  console.log(`[EMAIL] Sent "${subject}" to ${to}`);
-  return { ok: true, id: data?.id };
+  console.log("[EMAIL] send success", { purpose, ...diagnostics });
+  return { ok: true };
 }
 
 export async function sendAuthOtpEmail({
@@ -148,19 +168,26 @@ export async function sendAuthOtpEmail({
 }) {
   const { apiKey, from } = getEmailConfig();
   const emailContent = createOtpEmail({ otp, type, expiresInSeconds });
+  const diagnostics = getEmailDiagnostics(email);
+
+  console.log("[AUTH EMAIL] OTP email start", { type, ...diagnostics });
 
   if ((!apiKey || !from) && isLocalDevelopment()) {
     const label = getOtpCopy(type).heading;
     console.log(`\n===== LOCAL ${label} OTP for ${email}: ${otp} =====\n`);
+    console.log("[AUTH EMAIL] OTP local fallback", { type, ...diagnostics });
     return { ok: true, mode: "local-log" as const };
   }
 
-  return sendEmail({
+  const result = await sendEmail({
     to: email,
     subject: emailContent.subject,
     html: emailContent.html,
     text: emailContent.text,
+    purpose: `auth-otp:${type}`,
   });
+  console.log("[AUTH EMAIL] OTP email success", { type, ...diagnostics });
+  return result;
 }
 
 export async function sendWelcomeEmail(to: string, name: string) {
@@ -176,5 +203,6 @@ export async function sendWelcomeEmail(to: string, name: string) {
         <p style="margin:0">You can now create, review, and export structured 8D reports.</p>
       </div>
     `,
+    purpose: "welcome",
   });
 }

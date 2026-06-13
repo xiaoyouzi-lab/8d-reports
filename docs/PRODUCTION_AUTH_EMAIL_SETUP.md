@@ -54,8 +54,10 @@ The auth config treats values without a protocol as `https://...`, then adds eac
 After environment variables are set:
 
 - Signup: create a test account, receive the verification code email, and complete verification.
+- Resend records: when signup shows the OTP screen, Resend should show a verification email record for the same time window.
 - Password reset: request a reset code, receive the email, enter the code, and set a new password.
 - Security: confirm Vercel Production logs do not print OTP codes.
+- Diagnostics: Vercel logs may show OTP type, recipient email domain, config booleans, Vercel environment, and send success/failure. They must not show OTP codes, full recipient emails, API keys, or email body content.
 - Preview: repeat the signup or password-reset flow on the PR preview URL.
 
 If Preview uses a separate database, production accounts may not exist there. Use a disposable Preview-compatible account for validation.

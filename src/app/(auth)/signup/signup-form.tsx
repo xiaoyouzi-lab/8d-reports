@@ -26,6 +26,17 @@ export default function SignupPage() {
   const [step, setStep] = useState<"signup" | "otp">("signup")
   const [otp, setOtp] = useState("")
 
+  async function requestVerificationCode() {
+    const result = await authClient.emailOtp.sendVerificationOtp({
+      email,
+      type: "email-verification",
+    })
+
+    if (result.error) {
+      throw new Error(result.error.message || "Failed to send verification code")
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
@@ -51,11 +62,24 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
+      await requestVerificationCode()
       trackEvent("signup_success", { method: "email" })
       setStep("otp")
       setLoading(false)
-    } catch {
-      setError("An unexpected error occurred")
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "An unexpected error occurred")
+      setLoading(false)
+    }
+  }
+
+  async function handleResendCode() {
+    setError("")
+    setLoading(true)
+    try {
+      await requestVerificationCode()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to resend verification code")
+    } finally {
       setLoading(false)
     }
   }
@@ -121,6 +145,14 @@ export default function SignupPage() {
               className="text-center text-sm text-muted-foreground hover:text-foreground"
             >
               Back to sign up
+            </button>
+            <button
+              type="button"
+              onClick={handleResendCode}
+              disabled={loading}
+              className="text-center text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              {loading ? "Sending..." : "Resend code"}
             </button>
           </form>
         </CardContent>
