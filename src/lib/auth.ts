@@ -167,7 +167,7 @@ function createAuth() {
           } catch (error) {
             console.error(
               "[AUTH EMAIL] sendVerificationOTP callback failed",
-              { type, errorMessage: error instanceof Error ? error.message : "Unknown error", ...diagnostics }
+              { type, errorName: error instanceof Error ? error.name : "UnknownError", ...diagnostics }
             );
             throw error;
           }

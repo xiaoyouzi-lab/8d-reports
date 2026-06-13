@@ -32,13 +32,29 @@ async function validatePasswordResetRequest(req: NextRequest) {
 function withRateLimit(handler: (req: NextRequest) => Promise<Response>) {
   return async (req: NextRequest) => {
     const pathname = req.nextUrl.pathname;
+
+    if (pathname.startsWith("/api/auth/email-otp/")) {
+      console.log("[AUTH ROUTE] request start", { method: req.method, pathname });
+    }
+
+    const logAuthRouteResponse = (response: Response) => {
+      if (pathname.startsWith("/api/auth/email-otp/")) {
+        console.log("[AUTH ROUTE] request complete", {
+          method: req.method,
+          pathname,
+          status: response.status,
+        });
+      }
+      return response;
+    };
+
     if (!RATE_LIMITED_PATHNAMES.includes(pathname)) {
-      return handler(req);
+      return logAuthRouteResponse(await handler(req));
     }
 
     const passwordResponse = await validatePasswordResetRequest(req);
     if (passwordResponse) {
-      return passwordResponse;
+      return logAuthRouteResponse(passwordResponse);
     }
 
     const forwarded = req.headers.get("x-forwarded-for");
@@ -46,13 +62,13 @@ function withRateLimit(handler: (req: NextRequest) => Promise<Response>) {
     const { allowed } = checkRateLimit(ip);
 
     if (!allowed) {
-      return NextResponse.json(
+      return logAuthRouteResponse(NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 }
-      );
+      ));
     }
 
-    return handler(req);
+    return logAuthRouteResponse(await handler(req));
   };
 }
 

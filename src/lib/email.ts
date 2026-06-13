@@ -148,7 +148,7 @@ export async function sendEmail({ to, subject, html, text, purpose = "transactio
 
   if (error) {
     console.error("[EMAIL] send failed", { purpose, providerError: error.name, ...diagnostics });
-    throw new Error(`Email provider rejected the message: ${error.name}`);
+    throw new Error("Email provider rejected the message.");
   }
 
   console.log("[EMAIL] send success", { purpose, ...diagnostics });

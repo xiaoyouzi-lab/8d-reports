@@ -27,13 +27,15 @@ export default function SignupPage() {
   const [otp, setOtp] = useState("")
 
   async function requestVerificationCode() {
-    const result = await authClient.emailOtp.sendVerificationOtp({
-      email,
-      type: "email-verification",
+    const response = await fetch("/api/auth-email/signup-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
     })
 
-    if (result.error) {
-      throw new Error(result.error.message || "Failed to send verification code")
+    if (!response.ok) {
+      const data = await response.json().catch(() => null)
+      throw new Error(data?.error || "Failed to send verification code")
     }
   }
 
