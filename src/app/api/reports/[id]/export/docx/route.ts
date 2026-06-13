@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
-import { attachments } from "@/lib/db/schema";
+import { attachments, users } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { generateWordDocument } from "@/lib/word-export";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
@@ -54,7 +54,12 @@ export async function POST(
     .where(eq(attachments.reportId, reportId))
     .orderBy(attachments.sortOrder);
 
-  const logoUrl = body.logoUrl || null;
+  const [profile] = await db
+    .select({ logoUrl: users.logoUrl })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
+
   const locale = body.locale || "en";
 
   const buffer = await generateWordDocument({
@@ -62,7 +67,7 @@ export async function POST(
     reportTitle: report.title,
     reportId,
     withWatermark: false,
-    logoUrl,
+    logoUrl: profile?.logoUrl || null,
     locale,
     attachmentImages: attachmentRows
       .filter((a) => a.fileType !== "signature")

@@ -8,6 +8,7 @@ Fix production export and AI user-facing issues found during manual testing.
 
 - `docs/CURRENT_TASK.md`
 - `docs/DEV_LOG.md`
+- `src/app/api/reports/[id]/export/docx/route.ts`
 - `src/app/api/profile/logo/file/route.ts`
 - `src/app/api/quality-agent/chat/route.ts`
 - `src/components/quality-agent/ChatDialog.tsx`
@@ -21,6 +22,7 @@ Fix production export and AI user-facing issues found during manual testing.
 
 - Logo missing in PDF: PDF generation runs in the browser and tried to fetch the stored R2 public logo URL directly. If the R2 URL is private or lacks browser CORS access, the image fetch fails silently and the PDF still exports without the logo.
 - Logo missing in Word: Word export tried to fetch `logoUrl` as a public URL from the server. If the URL is not publicly fetchable, the document generator cannot read the image bytes.
+- Word export logo trust boundary: the Word export API accepted `logoUrl` from the browser request body. After server-side R2 logo byte loading was added, this meant the server could be influenced by an arbitrary client-provided logo URL instead of only the authenticated user's stored logo.
 - Word 5-Why formatting issue: the Word exporter rendered 5-Why data in a very plain two-column table with unclear labels and weak empty-value handling.
 - AI result displayed as raw output: `AiReportTools` rendered AI Quality Check output in a raw `<pre>` JSON block and rendered draft fields mechanically, which looked like code/debug data to normal users.
 - Unclear/broken AI entry point: the global Quality Expert chat button was visible even when `DEEPSEEK_API_KEY` was not configured, making a visible feature fail at first use. Its “Ask Anything Quality” label was also broader than the actual purpose.
@@ -31,6 +33,7 @@ Fix production export and AI user-facing issues found during manual testing.
 - Added R2 helpers to derive an R2 key from the stored public URL and read object bytes through the existing R2 client.
 - PDF export now uses `/api/profile/logo/file` for the logo, avoiding browser-side R2 CORS/public-access failures.
 - Word export now reads logo image bytes through the R2 helper first, then falls back to URL fetch.
+- Word export now ignores client-provided `logoUrl`, queries the authenticated user's stored `users.logoUrl` server-side by `user.id`, and passes only that stored URL to the document generator. The request body still controls only `locale`.
 - Word 5-Why output now uses clearer `Why` and `Answer / Evidence` labels and uses `No relevant data` for empty answers.
 - AI Quality Check output now renders as readable cards/lists for readiness, score, critical issues, missing information, section concerns, improvements, customer rejection risks, and wording suggestions.
 - AI Draft output now renders as a readable draft preview with an explicit “Apply to empty fields” action.
@@ -84,6 +87,7 @@ Fix production export and AI user-facing issues found during manual testing.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
 - `npm run test:governance` passed.
+- Security hardening follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 
 ## Manual Verification Checklist
 
