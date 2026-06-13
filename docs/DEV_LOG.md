@@ -9,10 +9,15 @@ Implement production-ready email delivery for signup verification and password r
 - `docs/CURRENT_TASK.md`
 - `docs/DEV_LOG.md`
 - `docs/PRODUCTION_AUTH_EMAIL_SETUP.md`
+- `src/app/debug/email/page.tsx`
+- `src/app/debug/email/email-debug-form.tsx`
+- `src/app/api/debug/email-self-test/route.ts`
 - `src/app/api/auth-email/signup-verification/route.ts`
 - `src/app/(auth)/signup/signup-form.tsx`
+- `src/app/(auth)/signup/page.tsx`
 - `src/app/api/auth/[...all]/route.ts`
 - `src/app/reset-password/page.tsx`
+- `src/lib/email-debug.ts`
 - `src/lib/auth.ts`
 - `src/lib/email.ts`
 
@@ -34,6 +39,8 @@ Implement production-ready email delivery for signup verification and password r
 Better Auth email OTP was configured, but its `sendVerificationOTP` callback only printed OTP codes to server logs. The shared email utility was also a placeholder that returned success without sending email. As a result, signup verification and password reset messages were never delivered to users in Preview or Production.
 
 Preview follow-up root cause: signup could reach the OTP screen without a corresponding Resend email record. Better Auth provides a `sendVerificationOnSignUp` hook, but the Preview result did not confirm that `authClient.signUp.email()` reliably completed `sendVerificationOTP` and the Resend send path before the UI advanced. The first explicit client attempt used `authClient.emailOtp.sendVerificationOtp`, which type-checked against the installed package, but Preview still showed no Resend record, so it was not a reliable proof of the real send path.
+
+Preview diagnostic follow-up: commit `96b9b69` still reached the signup OTP screen with no Resend record. That should not happen if `POST /api/auth-email/signup-verification` is running and `sendEmail` is returning real Resend success. Because the product owner cannot inspect browser network requests or Vercel logs directly, a temporary Preview/local-only diagnostic page was added at `/debug/email`.
 
 Installed Better Auth discovery:
 
@@ -58,6 +65,10 @@ Installed Better Auth discovery:
 - Signup email follow-up: `sendVerificationOnSignUp` is disabled so signup does not rely on the implicit post-signup hook. After successful signup, the client calls a server-side wrapper at `POST /api/auth-email/signup-verification`; the wrapper writes the Better Auth-compatible OTP verification row and directly awaits `sendAuthOtpEmail`. The OTP screen is shown only if that wrapper returns success. The OTP screen also has a resend-code action that uses the same wrapper.
 - Safe diagnostics were added to the Better Auth OTP callback and email utility. Logs include OTP `type`, recipient email domain, `hasResendApiKey`, `hasEmailFrom`, `vercelEnv`, and success/failure only; they do not include OTP codes, full emails, API keys, or message bodies in Preview/Production.
 - Route-level diagnostics were added around `/api/auth/email-otp/...` requests and log only method, pathname, and status.
+- Temporary Preview/local email diagnostics were added at `/debug/email`. The page shows route version `auth-email-debug-v1`, current commit SHA when Vercel provides it, `VERCEL_ENV`, current host/origin, and boolean-only email config status.
+- `/api/debug/email-self-test` sends a direct Resend self-test through `sendEmail` and returns success only after the real provider path succeeds. It is disabled in Production and rate-limited.
+- Signup now displays Preview/local-only wrapper debug under the OTP screen. If this block appears, the browser called the wrapper. If self-test succeeds but this block does not appear during signup, the tested frontend is likely stale or not using the wrapper route.
+- The temporary diagnostic page should be removed after Preview signup and password reset delivery are verified consistently in Resend records.
 
 ## Required Env Vars
 
@@ -79,12 +90,15 @@ See `docs/PRODUCTION_AUTH_EMAIL_SETUP.md` for the deployment checklist.
 - `npm run test:governance` passed.
 - Preview origin follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 - Explicit signup OTP follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
+- Email diagnostic follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 
 ## Manual Verification Checklist
 
 - Production signup: create a disposable account, receive the verification email, and complete verification.
 - Production password reset: request a reset code, receive the email, enter the code, and set a strong new password.
 - Preview signup or reset: repeat on the PR preview URL after Vercel env vars are configured.
+- Preview email debug: open `/debug/email`, confirm the latest commit SHA, confirm `hasResendApiKey=true` and `hasEmailFrom=true`, send a self-test email, then confirm Resend shows a record for that time window.
+- Preview signup debug: after signup reaches the OTP screen, confirm the OTP page shows the `signup-verification-wrapper` debug block. If it does, Resend should show a verification email record for that same time window.
 - Resend records: after signup reaches the OTP screen, open Resend email logs and confirm a verification email record exists for the attempted recipient domain/time window.
 - Vercel logs: confirm `signup verification wrapper success` and `[EMAIL] send success` appear before the OTP screen is shown.
 - Security: confirm Production logs record email success/failure only and never print OTP codes.

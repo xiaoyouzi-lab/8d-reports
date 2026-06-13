@@ -8,6 +8,7 @@ type SendEmailInput = {
   html: string;
   text: string;
   purpose?: string;
+  allowLocalFallback?: boolean;
 };
 
 let resendClient: Resend | null = null;
@@ -122,7 +123,14 @@ function createOtpEmail({
   return { subject: copy.subject, html, text };
 }
 
-export async function sendEmail({ to, subject, html, text, purpose = "transactional" }: SendEmailInput) {
+export async function sendEmail({
+  to,
+  subject,
+  html,
+  text,
+  purpose = "transactional",
+  allowLocalFallback = true,
+}: SendEmailInput) {
   const { apiKey, from, replyTo } = getEmailConfig();
   const diagnostics = getEmailDiagnostics(to);
 
@@ -130,8 +138,12 @@ export async function sendEmail({ to, subject, html, text, purpose = "transactio
 
   if (!apiKey || !from) {
     if (isLocalDevelopment()) {
-      console.log("[EMAIL] local fallback", { purpose, ...diagnostics });
-      return { ok: true, mode: "local-log" as const };
+      if (allowLocalFallback) {
+        console.log("[EMAIL] local fallback", { purpose, ...diagnostics });
+        return { ok: true, mode: "local-log" as const };
+      }
+      console.error("[EMAIL] missing config", { purpose, ...diagnostics });
+      throw new Error("Email delivery is not configured.");
     }
     console.error("[EMAIL] missing config", { purpose, ...diagnostics });
     throw new Error("Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM.");

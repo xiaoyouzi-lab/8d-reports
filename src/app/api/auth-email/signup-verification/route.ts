@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { users, verifications } from "@/lib/db/schema";
+import { getEmailDebugConfig, isEmailDebugAvailable } from "@/lib/email-debug";
 import { sendAuthOtpEmail } from "@/lib/email";
 import { checkRateLimit } from "@/lib/rate-limit";
 
@@ -21,6 +22,19 @@ function createOtp() {
 
 function createVerificationIdentifier(email: string) {
   return `email-verification-otp-${email}`;
+}
+
+function createPreviewDebug(email: string) {
+  if (!isEmailDebugAvailable()) return undefined;
+  const config = getEmailDebugConfig(email);
+  return {
+    route: "signup-verification-wrapper",
+    routeVersion: config.routeVersion,
+    emailDomain: config.emailDomain,
+    hasResendApiKey: config.hasResendApiKey,
+    hasEmailFrom: config.hasEmailFrom,
+    vercelEnv: config.vercelEnv,
+  };
 }
 
 export async function POST(req: NextRequest) {
@@ -84,7 +98,11 @@ export async function POST(req: NextRequest) {
       expiresInSeconds: 300,
     });
     console.log("[AUTH EMAIL] signup verification wrapper success", { emailDomain });
-    return NextResponse.json({ success: true });
+    const debug = createPreviewDebug(email);
+    return NextResponse.json({
+      success: true,
+      ...(debug ? { debug } : {}),
+    });
   } catch (error) {
     await db.delete(verifications).where(eq(verifications.identifier, identifier));
     console.error("[AUTH EMAIL] signup verification wrapper failed", {

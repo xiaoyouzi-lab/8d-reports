@@ -53,8 +53,10 @@ The auth config treats values without a protocol as `https://...`, then adds eac
 
 After environment variables are set:
 
+- Preview diagnostics: open `/debug/email` on the PR Preview URL. Confirm the latest commit SHA, `hasResendApiKey=true`, and `hasEmailFrom=true`, then send a self-test email. The self-test must create a Resend record before it reports success.
 - Signup: create a test account, receive the verification code email, and complete verification.
 - Resend records: when signup shows the OTP screen, Resend should show a verification email record for the same time window.
+- Signup diagnostics: on Preview/local only, the OTP screen may show safe wrapper debug. Seeing `route=signup-verification-wrapper` confirms the browser called the server wrapper route.
 - Vercel logs: when signup shows the OTP screen, logs should include safe signup verification wrapper success and email send success events.
 - Password reset: request a reset code, receive the email, enter the code, and set a new password.
 - Security: confirm Vercel Production logs do not print OTP codes.
@@ -62,3 +64,5 @@ After environment variables are set:
 - Preview: repeat the signup or password-reset flow on the PR preview URL.
 
 If Preview uses a separate database, production accounts may not exist there. Use a disposable Preview-compatible account for validation.
+
+`/debug/email` and `/api/debug/email-self-test` are temporary Preview/local-only diagnostics. They should return not found in Production and should be removed after Preview email delivery is consistently verified.
