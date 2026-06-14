@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import { Sparkles, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -13,8 +13,19 @@ interface QualityAgentFabProps {
 
 export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
   const [open, setOpen] = useState(false)
+  const [available, setAvailable] = useState<boolean | null>(null)
   const pathname = usePathname()
   const inReportEditor = pathname?.startsWith("/reports/")
+  const label = locale === "zh-CN" ? "质量专家顾问（Beta）" : "Quality Expert Chat (Beta)"
+
+  useEffect(() => {
+    fetch("/api/quality-agent/chat")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => setAvailable(Boolean(data?.available)))
+      .catch(() => setAvailable(false))
+  }, [])
+
+  if (available !== true) return null
 
   return (
     <>
@@ -30,7 +41,7 @@ export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
             : "bg-indigo-600 hover:bg-indigo-700"
         )}
         style={{ paddingInline: open ? undefined : "0" }}
-        title={open ? undefined : locale === "zh-CN" ? "随便问任何质量问题" : "Ask Anything Quality"}
+        title={open ? undefined : label}
       >
         {open ? (
           <>
@@ -43,7 +54,7 @@ export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
           <>
             <Sparkles className="size-4" />
             <span className="hidden sm:inline text-sm font-medium ml-1">
-              {locale === "zh-CN" ? "随便问任何质量问题" : "Ask Anything Quality"}
+              {label}
             </span>
           </>
         )}

@@ -3,14 +3,62 @@ import { emailOTP } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { getDb } from "./db";
 import * as schema from "./db/schema";
+import { sendAuthOtpEmail } from "./email";
 
-function validatePassword(password: string): string | null {
+export function validatePassword(password: string): string | null {
   if (!password || password.length < 8) return "Password must be at least 8 characters";
   if (!/[A-Z]/.test(password)) return "Password must contain at least one uppercase letter";
   if (!/[a-z]/.test(password)) return "Password must contain at least one lowercase letter";
   if (!/[0-9]/.test(password)) return "Password must contain at least one digit";
   if (!/[^A-Za-z0-9]/.test(password)) return "Password must contain at least one special character";
   return null;
+}
+
+const AUTH_ORIGIN_ENV_KEYS = [
+  "VERCEL_URL",
+  "VERCEL_BRANCH_URL",
+  "VERCEL_PROJECT_PRODUCTION_URL",
+  "BETTER_AUTH_URL",
+] as const;
+
+function normalizeAuthUrl(value?: string | null) {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  const withProtocol = /^[a-z][a-z\d+\-.]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+
+  try {
+    return new URL(withProtocol);
+  } catch {
+    return null;
+  }
+}
+
+function getConfiguredAuthUrls() {
+  const values = AUTH_ORIGIN_ENV_KEYS.flatMap((key) => process.env[key] || []);
+  const extraOrigins = process.env.BETTER_AUTH_TRUSTED_ORIGINS
+    ?.split(",")
+    .map((origin) => origin.trim())
+    .filter(Boolean) || [];
+
+  return [...values, ...extraOrigins]
+    .map((value) => normalizeAuthUrl(value))
+    .filter((url): url is URL => Boolean(url));
+}
+
+function getEmailDomain(email: string) {
+  return email.split("@")[1]?.toLowerCase() || "unknown";
+}
+
+function getAuthEmailDiagnostics(email: string) {
+  return {
+    emailDomain: getEmailDomain(email),
+    hasResendApiKey: Boolean(process.env.RESEND_API_KEY),
+    hasEmailFrom: Boolean(process.env.EMAIL_FROM),
+    vercelEnv: process.env.VERCEL_ENV || "local",
+  };
 }
 
 function getTrustedOrigins() {
@@ -23,12 +71,8 @@ function getTrustedOrigins() {
     "https://www.8d-reports.com",
   ]);
 
-  if (process.env.BETTER_AUTH_URL) {
-    try {
-      origins.add(new URL(process.env.BETTER_AUTH_URL).origin);
-    } catch {
-      // Ignore invalid env values and let Better Auth surface its own config warning.
-    }
+  for (const url of getConfiguredAuthUrls()) {
+    origins.add(url.origin);
   }
 
   return [...origins];
@@ -45,12 +89,8 @@ function getAllowedAuthHosts() {
     "8d-reports.vercel.app",
   ]);
 
-  if (process.env.BETTER_AUTH_URL) {
-    try {
-      hosts.add(new URL(process.env.BETTER_AUTH_URL).host);
-    } catch {
-      // Ignore invalid env values and keep the explicit production hosts.
-    }
+  for (const url of getConfiguredAuthUrls()) {
+    hosts.add(url.host);
   }
 
   return [...hosts];
@@ -116,13 +156,21 @@ function createAuth() {
     },
     plugins: [
       emailOTP({
-        sendVerificationOnSignUp: true,
+        sendVerificationOnSignUp: false,
         expiresIn: 300,
         async sendVerificationOTP({ email, otp, type }) {
-          const label = type === "email-verification"
-            ? "EMAIL VERIFY"
-            : type === "sign-in" ? "SIGN-IN" : "RESET PASSWORD";
-          console.log(`\n===== ${label} OTP for ${email}: ${otp} =====\n`);
+          const diagnostics = getAuthEmailDiagnostics(email);
+          console.log("[AUTH EMAIL] sendVerificationOTP callback start", { type, ...diagnostics });
+          try {
+            await sendAuthOtpEmail({ email, otp, type, expiresInSeconds: 300 });
+            console.log("[AUTH EMAIL] sendVerificationOTP callback success", { type, ...diagnostics });
+          } catch (error) {
+            console.error(
+              "[AUTH EMAIL] sendVerificationOTP callback failed",
+              { type, errorName: error instanceof Error ? error.name : "UnknownError", ...diagnostics }
+            );
+            throw error;
+          }
         },
       }),
     ],

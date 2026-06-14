@@ -2,152 +2,233 @@
 
 ## Task Name
 
-Implement standard XLSX export for normal 8D reports.
+Implement production-ready email delivery for signup verification and password reset.
 
 ## Background
 
-The latest product audit found that PDF, Word, and ZIP evidence package exports are implemented, but no dedicated `.xlsx` report export route or workbook generator was found.
+Manual testing found that signup verification and password reset emails are not delivered.
 
-The product context and some marketing/SEO positioning mention Excel export support. This creates a trust risk if standard Excel export is not actually available.
+Current auth behavior uses Better Auth email OTP, but the OTP sender only logs OTP codes to the server console:
 
-For manufacturing quality engineers, supplier quality engineers, and complaint handlers, Excel is an important working format. A standard XLSX export should exist for normal 8D reports.
+- signup verification OTP is printed to logs
+- reset password OTP is printed to logs
+- users do not receive emails
+
+This was acceptable for early development, but it is not production-ready. It also blocks preview validation because testers cannot register, verify, or recover accounts reliably.
+
+The production version currently avoids relying on email verification because real emails are not delivered. This must be fixed before the product can be trusted as a SaaS.
 
 ## Goal
 
-Implement a standard `.xlsx` export for normal 8D reports.
+Add real email delivery for:
 
-The export should generate a clear, practical Excel workbook containing the report metadata and D0-D8 content.
+- signup verification
+- password reset / forgot password
+- any Better Auth email OTP flow currently used by the app
+
+The user should receive a real email with the OTP code or reset/verification flow needed to continue.
 
 ## Non-Goals
 
-Do not implement customer-specific Excel templates.
+Do not redesign the whole auth system.
 
-Do not implement custom company-controlled Excel layouts.
+Do not change pricing rules.
 
-Do not implement macros.
+Do not change subscription logic.
 
-Do not implement complex formulas.
+Do not change database schema unless absolutely necessary and explicitly justified.
 
-Do not implement charts.
+Do not remove password validation.
 
-Do not implement a self-service template builder.
+Do not expose OTP codes to users through logs in production.
 
-Do not change authentication logic.
+Do not break existing production login.
 
-Do not change payment logic unless needed only to reuse existing export entitlement checks.
-
-Do not change database schema.
-
-Do not change environment variables.
-
-Do not refactor unrelated export code.
+Do not require social login.
 
 ## Scope
 
 Likely affected areas:
 
-- export library
-- report export menu
-- report export API route
-- entitlement checks
-- tests or verification
-- documentation / DEV_LOG
-
-Codex should inspect the existing PDF, Word, and ZIP export implementations before choosing the final implementation approach.
+- auth configuration
+- email provider utility
+- environment variables
+- signup verification flow
+- forgot password / reset password flow
+- UI copy if needed
+- Vercel environment documentation
+- docs/DEV_LOG.md
 
 ## Requirements
 
-1. Add a standard XLSX export capability for normal reports.
+### 1. Audit current auth/email behavior
 
-2. The workbook should include at minimum:
+Inspect the current Better Auth configuration and all auth-related pages/routes.
 
-   - Report title
-   - Report number
-   - Report type
-   - Priority
-   - Status / workflow status if available
-   - Created date / updated date if available
-   - Customer / supplier / product / part information if available
-   - D0-D8 sections
-   - Containment actions
-   - Root cause analysis
-   - Corrective actions
-   - Verification / validation content
-   - Preventive actions
-   - Closure / approval-related fields if available
-   - Attachment/evidence list if available
+Document:
 
-3. The workbook should be readable and practical, not just a raw JSON dump.
+- signup flow
+- email verification behavior
+- forgot password flow
+- reset password flow
+- which Better Auth plugin is used
+- where OTP is currently generated
+- where OTP is currently sent/logged
+- which UI screens depend on email delivery
+- what differs between local, preview, and production
 
-4. Use one workbook with clearly named sheets. Suggested sheets:
+### 2. Add a real email provider
 
-   - Summary
-   - D0-D8 Report
-   - Actions
-   - Evidence
+Implement a production email sending utility.
 
-   Codex may adjust sheet names if the existing data model suggests a better structure.
+Preferred approach:
 
-5. Add a clear export entry in the existing export UI.
+- Use Resend if it is already suitable for the stack.
+- If another email provider is already partially present, use the existing direction.
+- Keep the integration simple and maintainable.
 
-6. Add or reuse an API route for XLSX export.
+Expected environment variables may include:
 
-   Preferred route if consistent with the existing architecture:
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- optionally `EMAIL_REPLY_TO`
 
-   - `/api/reports/[id]/export/xlsx`
+Do not hardcode secrets.
 
-7. Reuse existing report access checks and export entitlement checks.
+### 3. Replace console-only OTP delivery
 
-8. If the product currently restricts Word/no-watermark export by plan, align XLSX export with the closest existing export entitlement pattern. Do not invent a new monetization rule.
+Update Better Auth email OTP sending so that:
 
-9. If a new dependency is required for workbook generation, Codex may add one lightweight, standard XLSX library, but must explain why in `docs/DEV_LOG.md`.
+- in production and preview, OTPs are sent by email
+- in local development, OTP may still be logged for developer convenience
+- failed email delivery returns/logs a useful server-side error
+- production does not rely only on console logs
 
-10. If an existing dependency already supports XLSX generation, prefer using the existing dependency.
+### 4. Email content
 
-11. Update product documentation if necessary to clarify:
+Create clear email content for:
 
-   - Standard PDF / Word / Excel export is supported for normal 8D report outputs.
-   - Customer-specific Excel templates may require future customization.
+- email verification
+- password reset
+- sign-in OTP if used
 
-12. Update `docs/DEV_LOG.md` after completion.
+Email should include:
+
+- product name: 8D Reports
+- OTP code
+- expiration time
+- short explanation of why the user received it
+- safety note: ignore if not requested
+
+Keep content simple. HTML is optional; plain text is acceptable if reliable.
+
+### 5. Forgot password behavior
+
+Ensure the forgot password flow has a real path that sends an email to the user.
+
+If the current UI implies "we sent an email," the email must actually be sent.
+
+If Better Auth expects OTP verification rather than reset links, make the UI copy match the actual behavior.
+
+### 6. Preview environment behavior
+
+Make preview validation possible.
+
+Document the required Vercel Preview environment variables.
+
+If preview uses a separate database or separate auth URL, document that existing production accounts may not work in preview.
+
+If preview uses the same database, ensure trusted origins / allowed hosts include Vercel preview URLs or the correct auth base behavior.
+
+### 7. Production environment behavior
+
+Document the required Vercel Production environment variables.
+
+Ensure the production domain works:
+
+- `https://www.8d-reports.com`
+- `https://8d-reports.com`
+
+Do not break existing logged-in users if avoidable.
+
+### 8. Logging and security
+
+Do not print OTP codes in production logs.
+
+It is acceptable to log OTPs only in local development.
+
+Server logs may record that an email was attempted/sent/failed, but should not expose codes in production.
+
+### 9. Documentation
+
+Update `docs/DEV_LOG.md` with:
+
+- root cause
+- email provider chosen
+- environment variables needed
+- behavior in local / preview / production
+- manual verification checklist
+
+If useful, add or update a small docs file such as:
+
+- `docs/ENVIRONMENT_SETUP.md`
+- or `docs/PRODUCTION_AUTH_EMAIL_SETUP.md`
 
 ## Acceptance Criteria
 
 The task is complete only if:
 
-- [ ] A normal 8D report can be exported as `.xlsx`.
-- [ ] The generated workbook opens in Excel-compatible software.
-- [ ] The workbook contains report metadata and D0-D8 content.
-- [ ] The export is available from the existing export UI.
-- [ ] Access checks are preserved.
-- [ ] Existing PDF export is not broken.
-- [ ] Existing Word export is not broken.
-- [ ] Existing ZIP evidence package export is not broken.
-- [ ] No unrelated application code is changed.
-- [ ] No database schema is changed.
-- [ ] No environment variables are changed.
-- [ ] Build/lint/type checks are run if available.
-- [ ] `docs/DEV_LOG.md` is updated with changed files, verification, risks, and unfinished items.
+- [ ] Signup verification email is actually sent in preview/production when configured.
+- [ ] Forgot password / reset password email is actually sent in preview/production when configured.
+- [ ] OTP codes are not printed in production logs.
+- [ ] Local development still has a usable developer path.
+- [ ] Email provider secrets are read from environment variables.
+- [ ] Required Vercel Preview and Production env vars are documented.
+- [ ] Auth trusted origins / allowed hosts are reviewed for preview and production.
+- [ ] Existing production login is not broken.
+- [ ] Build/lint/type checks pass.
+- [ ] docs/DEV_LOG.md is updated.
+
+## Manual Verification Required
+
+After implementation and env setup:
+
+1. Production:
+   - Register a new account.
+   - Receive verification email.
+   - Complete verification or login flow.
+   - Use forgot password.
+   - Receive reset/OTP email.
+   - Complete reset/login.
+
+2. Preview:
+   - Open PR preview.
+   - Register a test account or log in with a preview-compatible account.
+   - Confirm auth flow works.
+   - Confirm preview can be used for PR validation.
+
+3. Security:
+   - Confirm production logs do not show OTP codes.
+   - Confirm missing email env vars show a clear server-side error without exposing secrets.
 
 ## Risk Areas
 
-- Export entitlement behavior may be inconsistent with existing PDF/Word rules.
-- Workbook generation may require a new dependency.
-- Report data may include optional or missing fields.
-- Large reports with many attachments should not break export.
-- Marketing copy must not imply support for customer-specific Excel templates.
+- Better Auth email OTP behavior may differ from expected reset-link behavior.
+- Preview URL and trusted origin handling may need careful configuration.
+- Email provider domain verification may be required before production sending.
+- Some emails may go to spam until DNS records are configured.
+- Existing users without verified email may need a migration or graceful handling plan.
 
 ## Completion Report Required
 
-After finishing, update `docs/DEV_LOG.md` with:
+Update `docs/DEV_LOG.md` with:
 
-- task name
 - changed files
-- implementation summary
-- workbook structure
-- export route
-- entitlement behavior
-- tests/checks run
-- risks
-- unfinished items
+- root cause
+- email provider implementation
+- required env vars
+- local/preview/production behavior
+- checks run
+- manual verification checklist
+- remaining risks
 - suggested next task

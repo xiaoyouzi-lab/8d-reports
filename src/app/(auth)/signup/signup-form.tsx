@@ -10,7 +10,27 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { trackEvent } from "@/lib/analytics"
 
-export default function SignupPage() {
+type PreviewDebug = {
+  commitSha: string
+}
+
+type SignupOtpDebug = {
+  route?: string
+  routeVersion?: string
+  providerMessageId?: string | null
+  emailDomain?: string
+  hasResendApiKey?: boolean
+  hasEmailFrom?: boolean
+  vercelEnv?: string
+}
+
+type SignupVerificationResponse = {
+  success?: boolean
+  error?: string
+  debug?: SignupOtpDebug
+}
+
+export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDebug }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawCallback = searchParams.get("callbackUrl")
@@ -25,6 +45,21 @@ export default function SignupPage() {
 
   const [step, setStep] = useState<"signup" | "otp">("signup")
   const [otp, setOtp] = useState("")
+  const [otpDebug, setOtpDebug] = useState<SignupOtpDebug | null>(null)
+
+  async function requestVerificationCode() {
+    const response = await fetch("/api/auth-email/signup-verification", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+    const data = await response.json().catch(() => null) as SignupVerificationResponse | null
+
+    if (!response.ok) {
+      throw new Error(data?.error || "Failed to send verification code")
+    }
+    setOtpDebug(data?.debug || null)
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -51,11 +86,24 @@ export default function SignupPage() {
         setLoading(false)
         return
       }
+      await requestVerificationCode()
       trackEvent("signup_success", { method: "email" })
       setStep("otp")
       setLoading(false)
-    } catch {
-      setError("An unexpected error occurred")
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "An unexpected error occurred")
+      setLoading(false)
+    }
+  }
+
+  async function handleResendCode() {
+    setError("")
+    setLoading(true)
+    try {
+      await requestVerificationCode()
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "Failed to resend verification code")
+    } finally {
       setLoading(false)
     }
   }
@@ -89,7 +137,7 @@ export default function SignupPage() {
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-xl font-semibold tracking-tight">Verify your email</CardTitle>
           <CardDescription className="text-sm">
-            A verification code has been generated for {email}
+            We sent a verification code to {email}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -108,7 +156,7 @@ export default function SignupPage() {
                 className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Enter the 6-digit code shown in the server logs
+                Enter the 6-digit code from your inbox. It expires in 5 minutes.
               </p>
             </div>
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">{error}</p>}
@@ -122,6 +170,32 @@ export default function SignupPage() {
             >
               Back to sign up
             </button>
+            <button
+              type="button"
+              onClick={handleResendCode}
+              disabled={loading}
+              className="text-center text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
+            >
+              {loading ? "Sending..." : "Resend code"}
+            </button>
+            {otpDebug && (
+              <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                <p className="font-medium text-foreground/80">Signup email debug</p>
+                <dl className="mt-1 grid gap-1">
+                  {Object.entries(otpDebug).map(([key, value]) => (
+                    <div key={key} className="flex justify-between gap-4">
+                      <dt>{key}</dt>
+                      <dd className="font-mono">{String(value)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
+            {previewDebug && (
+              <p className="text-center text-xs text-muted-foreground">
+                Preview build: <span className="font-mono">{previewDebug.commitSha}</span>
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -160,6 +234,11 @@ export default function SignupPage() {
           <Button type="submit" disabled={loading} className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700">
             {loading ? "Creating account..." : "Create account"}
           </Button>
+          {previewDebug && (
+            <p className="text-center text-xs text-muted-foreground">
+              Preview build: <span className="font-mono">{previewDebug.commitSha}</span>
+            </p>
+          )}
         </form>
       </CardContent>
       <CardFooter className="justify-center border-t bg-muted/50 p-4">
