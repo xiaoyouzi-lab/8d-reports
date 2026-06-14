@@ -1,17 +1,60 @@
-import { auth } from "@/lib/auth";
+import { auth, validatePassword } from "@/lib/auth";
 import { toNextJsHandler } from "better-auth/next-js";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { NextRequest, NextResponse } from "next/server";
 
 const handlers = toNextJsHandler(auth);
 
-const RATE_LIMITED_PATHNAMES = ["/api/auth/sign-in/email", "/api/auth/sign-up/email"];
+const RATE_LIMITED_PATHNAMES = [
+  "/api/auth/sign-in/email",
+  "/api/auth/sign-up/email",
+  "/api/auth/email-otp/send-verification-otp",
+  "/api/auth/email-otp/request-password-reset",
+  "/api/auth/email-otp/reset-password",
+];
+
+async function validatePasswordResetRequest(req: NextRequest) {
+  if (req.nextUrl.pathname !== "/api/auth/email-otp/reset-password") {
+    return null;
+  }
+
+  const body = await req.clone().json().catch(() => null);
+  const password = typeof body?.password === "string" ? body.password : "";
+  const passwordError = validatePassword(password);
+
+  if (!passwordError) {
+    return null;
+  }
+
+  return NextResponse.json({ error: passwordError }, { status: 400 });
+}
 
 function withRateLimit(handler: (req: NextRequest) => Promise<Response>) {
   return async (req: NextRequest) => {
     const pathname = req.nextUrl.pathname;
+
+    if (pathname.startsWith("/api/auth/email-otp/")) {
+      console.log("[AUTH ROUTE] request start", { method: req.method, pathname });
+    }
+
+    const logAuthRouteResponse = (response: Response) => {
+      if (pathname.startsWith("/api/auth/email-otp/")) {
+        console.log("[AUTH ROUTE] request complete", {
+          method: req.method,
+          pathname,
+          status: response.status,
+        });
+      }
+      return response;
+    };
+
     if (!RATE_LIMITED_PATHNAMES.includes(pathname)) {
-      return handler(req);
+      return logAuthRouteResponse(await handler(req));
+    }
+
+    const passwordResponse = await validatePasswordResetRequest(req);
+    if (passwordResponse) {
+      return logAuthRouteResponse(passwordResponse);
     }
 
     const forwarded = req.headers.get("x-forwarded-for");
@@ -19,13 +62,13 @@ function withRateLimit(handler: (req: NextRequest) => Promise<Response>) {
     const { allowed } = checkRateLimit(ip);
 
     if (!allowed) {
-      return NextResponse.json(
+      return logAuthRouteResponse(NextResponse.json(
         { error: "Too many requests. Please try again later." },
         { status: 429 }
-      );
+      ));
     }
 
-    return handler(req);
+    return logAuthRouteResponse(await handler(req));
   };
 }
 

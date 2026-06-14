@@ -2,225 +2,233 @@
 
 ## Task Name
 
-Fix production export and AI user-facing issues found during manual testing.
+Implement production-ready email delivery for signup verification and password reset.
 
 ## Background
 
-Manual testing was performed on the production version.
+Manual testing found that signup verification and password reset emails are not delivered.
 
-Excel export was not visible because PR #3 had not yet been merged/deployed to production, so Excel visibility should be re-tested after PR #3 is merged.
+Current auth behavior uses Better Auth email OTP, but the OTP sender only logs OTP codes to the server console:
 
-However, the following production issues were confirmed:
+- signup verification OTP is printed to logs
+- reset password OTP is printed to logs
+- users do not receive emails
 
-1. Uploaded company logo does not appear in exported PDF reports.
-2. Uploaded company logo does not appear in exported Word reports.
-3. Word export has abnormal formatting in the 5-Why section.
-4. AI Draft / AI self-evaluation result is displayed as raw code or raw structured output instead of a user-friendly visual result.
-5. Another AI feature is visible but not usable, and its purpose is unclear to the user.
+This was acceptable for early development, but it is not production-ready. It also blocks preview validation because testers cannot register, verify, or recover accounts reliably.
 
-These issues damage product trust and must be fixed before adding new features.
+The production version currently avoids relying on email verification because real emails are not delivered. This must be fixed before the product can be trusted as a SaaS.
 
 ## Goal
 
-Fix the confirmed production usability issues in export and AI workflows.
+Add real email delivery for:
 
-The product should feel professional and understandable to a real quality engineer.
+- signup verification
+- password reset / forgot password
+- any Better Auth email OTP flow currently used by the app
+
+The user should receive a real email with the OTP code or reset/verification flow needed to continue.
 
 ## Non-Goals
 
+Do not redesign the whole auth system.
+
 Do not change pricing rules.
 
-Do not remove the $4.99 single-report export gate.
+Do not change subscription logic.
 
 Do not change database schema unless absolutely necessary and explicitly justified.
 
-Do not add new AI features.
+Do not remove password validation.
 
-Do not add customer-specific Excel templates.
+Do not expose OTP codes to users through logs in production.
 
-Do not redesign the whole editor.
+Do not break existing production login.
 
-Do not refactor unrelated code.
+Do not require social login.
 
 ## Scope
 
 Likely affected areas:
 
-- PDF export
-- Word export
-- logo upload / logo URL handling
-- report editor parent component
-- ExportMenu
-- Word export generator
-- AI Draft UI
-- AI Quality Check / AI report review UI
-- AI-related buttons and labels
-- localization messages
+- auth configuration
+- email provider utility
+- environment variables
+- signup verification flow
+- forgot password / reset password flow
+- UI copy if needed
+- Vercel environment documentation
 - docs/DEV_LOG.md
 
 ## Requirements
 
-### 1. Logo in PDF export
+### 1. Audit current auth/email behavior
 
-Uploaded company logo must appear in exported PDF reports when available.
+Inspect the current Better Auth configuration and all auth-related pages/routes.
 
-Investigate:
+Document:
 
-- Whether logo upload stores the correct logo URL.
-- Whether the editor receives the latest logo URL after upload.
-- Whether ExportMenu receives `logoUrl`.
-- Whether PDF export actually renders the logo.
-- Whether logo URL is public or fetchable during export.
-- Whether CORS / protected file access prevents rendering.
+- signup flow
+- email verification behavior
+- forgot password flow
+- reset password flow
+- which Better Auth plugin is used
+- where OTP is currently generated
+- where OTP is currently sent/logged
+- which UI screens depend on email delivery
+- what differs between local, preview, and production
 
-Expected behavior:
+### 2. Add a real email provider
 
-- Upload logo.
-- Export PDF.
-- Logo appears in the exported PDF.
-- If logo cannot be loaded, export still succeeds and logs/fails gracefully.
+Implement a production email sending utility.
 
-### 2. Logo in Word export
+Preferred approach:
 
-Uploaded company logo must appear in exported Word reports when available.
+- Use Resend if it is already suitable for the stack.
+- If another email provider is already partially present, use the existing direction.
+- Keep the integration simple and maintainable.
 
-Investigate:
+Expected environment variables may include:
 
-- Whether Word export route receives `logoUrl`.
-- Whether `generateWordDocument` actually inserts the logo.
-- Whether remote logo image fetching works server-side.
-- Whether private/protected logo URLs need conversion to accessible URLs.
+- `RESEND_API_KEY`
+- `EMAIL_FROM`
+- optionally `EMAIL_REPLY_TO`
 
-Expected behavior:
+Do not hardcode secrets.
 
-- Upload logo.
-- Export Word.
-- Logo appears in the `.docx`.
-- If logo cannot be loaded, export still succeeds and logs/fails gracefully.
+### 3. Replace console-only OTP delivery
 
-### 3. Fix Word 5-Why formatting
+Update Better Auth email OTP sending so that:
 
-The 5-Why section in Word export must be readable and professional.
+- in production and preview, OTPs are sent by email
+- in local development, OTP may still be logged for developer convenience
+- failed email delivery returns/logs a useful server-side error
+- production does not rely only on console logs
 
-Expected behavior:
+### 4. Email content
 
-- Why 1 to Why 5 are clearly separated.
-- Labels are clear.
-- Empty values do not break layout.
-- Long text wraps normally.
-- Chinese and English content display correctly.
-- The section should use either a clean table or a clearly separated list.
+Create clear email content for:
 
-### 4. Fix AI Draft / AI self-evaluation display
+- email verification
+- password reset
+- sign-in OTP if used
 
-AI self-evaluation results must not be shown as raw JSON, raw code, markdown code block, or unformatted structured output.
+Email should include:
 
-Expected UI:
+- product name: 8D Reports
+- OTP code
+- expiration time
+- short explanation of why the user received it
+- safety note: ignore if not requested
 
-- Overall score or readiness level if available.
-- Key issues.
-- Missing evidence.
-- Root cause logic concerns.
-- Corrective action concerns.
-- Suggested improvements.
-- Customer rejection risk if available.
-- Clear empty state.
-- Clear error state.
+Keep content simple. HTML is optional; plain text is acceptable if reliable.
 
-If AI returns JSON, parse it and render it into cards/lists.
+### 5. Forgot password behavior
 
-If AI returns markdown, render or normalize it safely.
+Ensure the forgot password flow has a real path that sends an email to the user.
 
-If AI returns invalid structured output, show a friendly error and do not expose raw code to normal users.
+If the current UI implies "we sent an email," the email must actually be sent.
 
-Raw debug output may only be shown in development mode.
+If Better Auth expects OTP verification rather than reset links, make the UI copy match the actual behavior.
 
-### 5. Audit unclear/broken AI feature
+### 6. Preview environment behavior
 
-Find all visible AI entry points.
+Make preview validation possible.
 
-For each AI feature, document in `docs/DEV_LOG.md`:
+Document the required Vercel Preview environment variables.
 
-- Feature/button name
-- Page/location
-- API route called
-- Required permission
-- Required environment variables
-- Expected user-facing purpose
-- Current status: works / broken / unclear / should hide
+If preview uses a separate database or separate auth URL, document that existing production accounts may not work in preview.
 
-If a visible AI feature is broken or not ready, either:
+If preview uses the same database, ensure trusted origins / allowed hosts include Vercel preview URLs or the correct auth base behavior.
 
-- fix it,
-- hide it behind beta gating,
-- or rename it and add clear explanatory copy.
+### 7. Production environment behavior
 
-Do not leave broken or confusing AI buttons visible to normal users.
+Document the required Vercel Production environment variables.
 
-### 6. Re-test Excel after PR #3
+Ensure the production domain works:
 
-If PR #3 is merged before this task, confirm that production shows Excel export after deployment.
+- `https://www.8d-reports.com`
+- `https://8d-reports.com`
 
-If PR #3 is not merged yet, do not treat Excel absence in production as a bug. Document that Excel is pending PR #3 deployment.
+Do not break existing logged-in users if avoidable.
+
+### 8. Logging and security
+
+Do not print OTP codes in production logs.
+
+It is acceptable to log OTPs only in local development.
+
+Server logs may record that an email was attempted/sent/failed, but should not expose codes in production.
+
+### 9. Documentation
+
+Update `docs/DEV_LOG.md` with:
+
+- root cause
+- email provider chosen
+- environment variables needed
+- behavior in local / preview / production
+- manual verification checklist
+
+If useful, add or update a small docs file such as:
+
+- `docs/ENVIRONMENT_SETUP.md`
+- or `docs/PRODUCTION_AUTH_EMAIL_SETUP.md`
 
 ## Acceptance Criteria
 
 The task is complete only if:
 
-- [ ] Uploaded logo appears in PDF export.
-- [ ] Uploaded logo appears in Word export.
-- [ ] Word 5-Why formatting is clean and readable.
-- [ ] AI self-evaluation result is rendered visually, not as raw code.
-- [ ] Broken or unclear AI entry points are fixed, hidden, or clearly explained.
-- [ ] Free user Word export gate still works.
-- [ ] Existing PDF export still works.
-- [ ] Existing Word export still works.
-- [ ] Excel export production status is documented after PR #3.
+- [ ] Signup verification email is actually sent in preview/production when configured.
+- [ ] Forgot password / reset password email is actually sent in preview/production when configured.
+- [ ] OTP codes are not printed in production logs.
+- [ ] Local development still has a usable developer path.
+- [ ] Email provider secrets are read from environment variables.
+- [ ] Required Vercel Preview and Production env vars are documented.
+- [ ] Auth trusted origins / allowed hosts are reviewed for preview and production.
+- [ ] Existing production login is not broken.
 - [ ] Build/lint/type checks pass.
-- [ ] docs/DEV_LOG.md is updated with root cause and verification notes.
+- [ ] docs/DEV_LOG.md is updated.
 
 ## Manual Verification Required
 
-After implementation, manually verify:
+After implementation and env setup:
 
-1. Logo:
-   - Upload company logo.
-   - Export PDF.
-   - Confirm logo appears.
-   - Export Word.
-   - Confirm logo appears.
+1. Production:
+   - Register a new account.
+   - Receive verification email.
+   - Complete verification or login flow.
+   - Use forgot password.
+   - Receive reset/OTP email.
+   - Complete reset/login.
 
-2. Word 5-Why:
-   - Fill Why 1 to Why 5.
-   - Export Word.
-   - Confirm 5-Why section is readable.
+2. Preview:
+   - Open PR preview.
+   - Register a test account or log in with a preview-compatible account.
+   - Confirm auth flow works.
+   - Confirm preview can be used for PR validation.
 
-3. AI:
-   - Run AI Draft / AI self-evaluation.
-   - Confirm result is visual and readable.
-   - Confirm no raw JSON/code is shown.
-   - Check the other AI feature and confirm it is usable, hidden, or clearly explained.
-
-4. Export gates:
-   - Free user Word export still shows $4.99 gate.
-   - Pro/Team export still works.
+3. Security:
+   - Confirm production logs do not show OTP codes.
+   - Confirm missing email env vars show a clear server-side error without exposing secrets.
 
 ## Risk Areas
 
-- Logo URLs may be private or inaccessible during export.
-- Word export image insertion may require binary image fetching.
-- AI response formats may vary.
-- Fixing AI display should not weaken conservative AI behavior.
-- Excel visibility depends on whether PR #3 has been merged and deployed.
+- Better Auth email OTP behavior may differ from expected reset-link behavior.
+- Preview URL and trusted origin handling may need careful configuration.
+- Email provider domain verification may be required before production sending.
+- Some emails may go to spam until DNS records are configured.
+- Existing users without verified email may need a migration or graceful handling plan.
 
 ## Completion Report Required
 
 Update `docs/DEV_LOG.md` with:
 
 - changed files
-- root cause for each issue
-- fixes implemented
+- root cause
+- email provider implementation
+- required env vars
+- local/preview/production behavior
 - checks run
 - manual verification checklist
-- unresolved risks
+- remaining risks
 - suggested next task
