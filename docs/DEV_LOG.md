@@ -2,6 +2,42 @@
 
 ## Latest Task
 
+Update PR #4 (`codex/p0-export-ai-fixes`) with latest `main` after PR #5 merged.
+
+## Changed Files During This Update
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Merged latest `origin/main` into the PR #4 branch so the branch includes the production auth email fixes from PR #5.
+- Resolved documentation conflicts by preserving latest main's auth/email task documentation and adding this merge-readiness note.
+- No pricing, subscription, database schema, Excel export, report export behavior, or AI behavior was intentionally changed during conflict resolution.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+
+## Risks
+
+- This update still requires the full requested local checks and GitHub mergeability recalculation after push.
+
+## Unfinished / Needs Human Review
+
+- Review PR #4 after push to confirm GitHub marks it mergeable.
+- Manually verify the PR #4 export and AI UI flows after Preview deployment if needed.
+
+## Suggested Next Task
+
+Review the refreshed PR #4 preview/checks, then merge if GitHub reports it clean and checks pass.
+
+## Previous Task
+
 Implement production-ready email delivery for signup verification and password reset.
 
 ## Changed Files

@@ -109,7 +109,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         reportTitle,
         reportId,
         withWatermark,
-        logoUrl,
+        logoUrl: logoUrl ? "/api/profile/logo/file" : null,
         attachments: allAttachments.map((a) => ({
           url: getAttachmentFileUrl(a),
           filename: a.filename,

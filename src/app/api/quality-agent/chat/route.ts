@@ -69,6 +69,10 @@ If the user asks something completely unrelated to quality management (e.g., pro
 Adhere to these principles strictly. Provide professional, accurate, and practical quality advice.`,
 }
 
+export async function GET() {
+  return NextResponse.json({ available: Boolean(process.env.DEEPSEEK_API_KEY) })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const apiKey = process.env.DEEPSEEK_API_KEY
