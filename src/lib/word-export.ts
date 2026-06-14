@@ -14,6 +14,10 @@ const FISHBONE_FIELD_NAMES = new Set([
   "fishboneEnvironment",
 ]);
 
+const BRAND_BLUE = "1e40af";
+const LIGHT_BLUE = "eff6ff";
+const LIGHT_GRAY = "f8fafc";
+
 interface WordExportOptions {
   reportData: ReportData;
   reportTitle: string;
@@ -34,6 +38,83 @@ function addMetaRow(label: string, value: string) {
     children: [
       new TextRun({ text: `${label}: `, bold: true, size: 22 }),
       new TextRun({ text: value || "-", size: 22 }),
+    ],
+  });
+}
+
+function textRun(text: string, options: { bold?: boolean; color?: string; size?: number; italics?: boolean } = {}) {
+  return new TextRun({
+    text,
+    bold: options.bold,
+    color: options.color,
+    size: options.size ?? 20,
+    italics: options.italics,
+  });
+}
+
+function cell(text: string, options: { bold?: boolean; fill?: string; width?: number; color?: string } = {}) {
+  return new TableCell({
+    width: options.width ? { size: options.width, type: WidthType.DXA } : undefined,
+    shading: options.fill ? { fill: options.fill } : undefined,
+    margins: { top: 120, bottom: 120, left: 140, right: 140 },
+    children: [
+      new Paragraph({
+        children: [textRun(text || "-", { bold: options.bold, color: options.color })],
+      }),
+    ],
+  });
+}
+
+function renderMetadataTable(rows: Array<[string, string]>) {
+  return new Table({
+    width: { size: 9000, type: WidthType.DXA },
+    rows: rows.map(([label, value]) => new TableRow({
+      children: [
+        cell(label, { bold: true, fill: LIGHT_BLUE, width: 2600, color: "334155" }),
+        cell(value || "-", { width: 6400 }),
+      ],
+    })),
+  });
+}
+
+function renderFieldTable(rows: Array<[string, string]>) {
+  return new Table({
+    width: { size: 9000, type: WidthType.DXA },
+    rows: [
+      new TableRow({
+        children: [
+          cell("Field", { bold: true, fill: BRAND_BLUE, width: 3000, color: "ffffff" }),
+          cell("Response / Evidence", { bold: true, fill: BRAND_BLUE, width: 6000, color: "ffffff" }),
+        ],
+      }),
+      ...rows.map(([label, value]) => new TableRow({
+        children: [
+          cell(label, { bold: true, fill: LIGHT_GRAY, width: 3000, color: "334155" }),
+          cell(value || "No relevant data", { width: 6000 }),
+        ],
+      })),
+    ],
+  });
+}
+
+function renderAttachmentTable(attachments: Array<{ filename: string; stepId?: string; mimeType?: string | null }>) {
+  return new Table({
+    width: { size: 9000, type: WidthType.DXA },
+    rows: [
+      new TableRow({
+        children: [
+          cell("Step", { bold: true, fill: BRAND_BLUE, width: 1800, color: "ffffff" }),
+          cell("Filename", { bold: true, fill: BRAND_BLUE, width: 5200, color: "ffffff" }),
+          cell("Type", { bold: true, fill: BRAND_BLUE, width: 2000, color: "ffffff" }),
+        ],
+      }),
+      ...attachments.map((att) => new TableRow({
+        children: [
+          cell(att.stepId || "General", { width: 1800 }),
+          cell(att.filename, { width: 5200 }),
+          cell(att.mimeType || "file", { width: 2000 }),
+        ],
+      })),
     ],
   });
 }
@@ -94,7 +175,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   children.push(
     new Paragraph({
       spacing: { before: 400 },
-      children: [new TextRun({ text: isZh ? "8D 报告" : "8D Report", size: 56, bold: true, color: "1e40af" })],
+      children: [new TextRun({ text: isZh ? "8D 纠正措施报告" : "8D Corrective Action Report", size: 52, bold: true, color: BRAND_BLUE })],
     })
   );
   children.push(
@@ -106,26 +187,31 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   children.push(
     new Paragraph({
       spacing: { before: 100 },
-      children: [new TextRun({ text: reportId, size: 24, color: "4b5563" })],
+      children: [new TextRun({ text: isZh ? "客户/供应商质量记录" : "Customer / supplier quality record", size: 22, color: "64748b" })],
     })
   );
-  children.push(addMetaRow("Report Number", reportData.reportNumber || reportId));
-  children.push(addMetaRow("Customer", reportData.customerName));
-  children.push(addMetaRow("Product / Model", reportData.productName));
-  children.push(addMetaRow("Batch / Lot", reportData.batchNumber));
   children.push(
     new Paragraph({
-      spacing: { before: 100 },
-      children: [new TextRun({ text: new Date().toLocaleDateString(isZh ? "zh-CN" : "en-US", { year: "numeric", month: "long", day: "numeric" }), size: 24, color: "4b5563" })],
+      spacing: { before: 240, after: 120 },
+      children: [new TextRun({ text: "Report Metadata", size: 24, bold: true, color: BRAND_BLUE })],
     })
   );
+  children.push(renderMetadataTable([
+    ["Report Number", reportData.reportNumber || reportId],
+    ["Customer / Supplier", reportData.customerName],
+    ["Product / Part", reportData.productName],
+    ["Batch / Lot", reportData.batchNumber],
+    ["Report Type", reportData.reportType],
+    ["Priority", reportData.priority],
+    ["Generated Date", new Date().toLocaleDateString(isZh ? "zh-CN" : "en-US", { year: "numeric", month: "long", day: "numeric" })],
+  ]));
 
   if (withWatermark) {
     children.push(
       new Paragraph({
         spacing: { before: 400 },
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: isZh ? "样 例 报 告" : "SAMPLE REPORT", size: 40, color: "d1d5db", italics: true })],
+        children: [new TextRun({ text: "Generated with 8d-reports.com", size: 28, color: "94a3b8", italics: true })],
       })
     );
   }
@@ -163,17 +249,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
         children: [new TextRun({ text: "Attachment List", size: 28, bold: true, color: "1e40af" })],
       })
     );
-    for (const att of normalAttachments) {
-      children.push(
-        new Paragraph({
-          spacing: { after: 60 },
-          children: [
-            new TextRun({ text: `${att.stepId || "General"}: `, bold: true, size: 18 }),
-            new TextRun({ text: `${att.filename} (${att.mimeType || "file"})`, size: 18 }),
-          ],
-        })
-      );
-    }
+    children.push(renderAttachmentTable(normalAttachments));
   }
 
   // Steps
@@ -195,19 +271,12 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
     const fiveWhyFields = step.fields.filter((field) => field.name.startsWith("why"));
     const regularFields = step.fields.filter((field) => !FISHBONE_FIELD_NAMES.has(field.name) && !field.name.startsWith("why"));
 
-    for (const field of regularFields) {
-      const val: unknown = reportData[field.name as keyof ReportData];
-      if (!val || String(val).trim() === "") continue;
-
-      children.push(
-        new Paragraph({
-          spacing: { after: 100 },
-          children: [
-            new TextRun({ text: field.label + ": ", bold: true, size: 22 }),
-            new TextRun({ text: String(val), size: 22 }),
-          ],
-        })
-      );
+    const fieldRows = regularFields
+      .filter((field) => field.type !== "photo")
+      .map((field) => [field.label, String(reportData[field.name as keyof ReportData] || "").trim()] as [string, string])
+      .filter(([, value]) => value !== "");
+    if (fieldRows.length > 0) {
+      children.push(renderFieldTable(fieldRows));
     }
 
     if (fishboneFields.length > 0) {

@@ -26,6 +26,7 @@ type Sheet = {
   name: string;
   rows: CellValue[][];
   widths: number[];
+  noteRows?: number[];
 };
 
 const ACTION_FIELDS: Array<{ category: string; fields: Array<keyof ReportData> }> = [
@@ -135,10 +136,24 @@ function columnName(index: number) {
   return name;
 }
 
-function cellXml(value: CellValue, rowIndex: number, columnIndex: number, header: boolean) {
+function cellStyle(rowIndex: number, noteRows?: number[]) {
+  if (rowIndex === 0) return 1;
+  if (noteRows?.includes(rowIndex)) return 3;
+  return 2;
+}
+
+function rowHeight(row: CellValue[]) {
+  const longest = Math.max(...row.map((value) => displayValue(value).length));
+  if (longest > 240) return 86;
+  if (longest > 140) return 64;
+  if (longest > 80) return 44;
+  return 22;
+}
+
+function cellXml(value: CellValue, rowIndex: number, columnIndex: number, styleId: number) {
   const address = `${columnName(columnIndex)}${rowIndex + 1}`;
   const text = escapeXml(displayValue(value));
-  return `<c r="${address}" t="inlineStr"${header ? ' s="1"' : ""}><is><t xml:space="preserve">${text}</t></is></c>`;
+  return `<c r="${address}" t="inlineStr" s="${styleId}"><is><t xml:space="preserve">${text}</t></is></c>`;
 }
 
 function sheetXml(sheet: Sheet) {
@@ -147,15 +162,17 @@ function sheetXml(sheet: Sheet) {
     .join("");
   const rows = sheet.rows
     .map((row, rowIndex) => {
-      const cells = row.map((value, columnIndex) => cellXml(value, rowIndex, columnIndex, rowIndex === 0)).join("");
-      return `<row r="${rowIndex + 1}">${cells}</row>`;
+      const styleId = cellStyle(rowIndex, sheet.noteRows);
+      const cells = row.map((value, columnIndex) => cellXml(value, rowIndex, columnIndex, styleId)).join("");
+      const height = rowHeight(row);
+      return `<row r="${rowIndex + 1}" ht="${height}" customHeight="1">${cells}</row>`;
     })
     .join("");
 
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <sheetViews><sheetView workbookViewId="0"/></sheetViews>
-  <sheetFormatPr defaultRowHeight="15"/>
+  <sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+  <sheetFormatPr defaultRowHeight="22"/>
   <cols>${cols}</cols>
   <sheetData>${rows}</sheetData>
   <pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/>
@@ -201,16 +218,27 @@ function contentTypesXml(sheets: Sheet[]) {
 function stylesXml() {
   return `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
-  <fonts count="2">
+  <fonts count="3">
     <font><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/></font>
-    <font><b/><sz val="11"/><color theme="1"/><name val="Calibri"/><family val="2"/></font>
+    <font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/><family val="2"/></font>
+    <font><i/><sz val="10"/><color rgb="FF475569"/><name val="Calibri"/><family val="2"/></font>
   </fonts>
-  <fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills>
-  <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+  <fills count="4">
+    <fill><patternFill patternType="none"/></fill>
+    <fill><patternFill patternType="gray125"/></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FF1D4ED8"/><bgColor indexed="64"/></patternFill></fill>
+    <fill><patternFill patternType="solid"><fgColor rgb="FFEFF6FF"/><bgColor indexed="64"/></patternFill></fill>
+  </fills>
+  <borders count="2">
+    <border><left/><right/><top/><bottom/><diagonal/></border>
+    <border><left style="thin"><color rgb="FFE2E8F0"/></left><right style="thin"><color rgb="FFE2E8F0"/></right><top style="thin"><color rgb="FFE2E8F0"/></top><bottom style="thin"><color rgb="FFE2E8F0"/></bottom><diagonal/></border>
+  </borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="2">
+  <cellXfs count="4">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-    <xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+    <xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="center" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>
+    <xf numFmtId="0" fontId="2" fillId="3" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"><alignment vertical="top" wrapText="1"/></xf>
   </cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
 </styleSheet>`;
@@ -304,7 +332,10 @@ function actionsSheet(reportData: ReportData): Sheet {
 }
 
 function evidenceSheet(attachments: XlsxAttachment[] = []): Sheet {
-  const rows: CellValue[][] = [["Step", "Filename", "Type", "MIME Type", "Size", "Uploaded"]];
+  const rows: CellValue[][] = [
+    ["Step", "Filename", "Type", "MIME Type", "Size", "Uploaded"],
+    ["Note", "Attachment files are included in the ZIP attachments folder when exported with attachments.", "", "", "", ""],
+  ];
   for (const attachment of attachments) {
     rows.push([
       attachment.stepId || "General",
@@ -315,11 +346,12 @@ function evidenceSheet(attachments: XlsxAttachment[] = []): Sheet {
       formatDate(attachment.createdAt),
     ]);
   }
-  if (rows.length === 1) rows.push(["", "No attachments recorded", "", "", "", ""]);
+  if (attachments.length === 0) rows.push(["", "No attachments recorded", "", "", "", ""]);
   return {
     name: "Evidence",
-    widths: [14, 50, 18, 34, 14, 24],
+    widths: [16, 64, 20, 36, 16, 26],
     rows,
+    noteRows: [1],
   };
 }
 
