@@ -24,12 +24,13 @@ function createVerificationIdentifier(email: string) {
   return `email-verification-otp-${email}`;
 }
 
-function createPreviewDebug(email: string) {
+function createPreviewDebug(email: string, providerMessageId: string | null) {
   if (!isEmailDebugAvailable()) return undefined;
   const config = getEmailDebugConfig(email);
   return {
     route: "signup-verification-wrapper",
     routeVersion: config.routeVersion,
+    providerMessageId,
     emailDomain: config.emailDomain,
     hasResendApiKey: config.hasResendApiKey,
     hasEmailFrom: config.hasEmailFrom,
@@ -91,14 +92,17 @@ export async function POST(req: NextRequest) {
   });
 
   try {
-    await sendAuthOtpEmail({
+    const result = await sendAuthOtpEmail({
       email,
       otp,
       type: "email-verification",
       expiresInSeconds: 300,
     });
-    console.log("[AUTH EMAIL] signup verification wrapper success", { emailDomain });
-    const debug = createPreviewDebug(email);
+    console.log("[AUTH EMAIL] signup verification wrapper success", {
+      emailDomain,
+      providerMessageId: result.providerMessageId,
+    });
+    const debug = createPreviewDebug(email, result.providerMessageId);
     return NextResponse.json({
       success: true,
       ...(debug ? { debug } : {}),

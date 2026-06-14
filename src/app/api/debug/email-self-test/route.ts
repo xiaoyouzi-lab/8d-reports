@@ -8,13 +8,14 @@ function getClientIp(req: NextRequest) {
   return forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
 }
 
-function createDebugResponse(email: string, success: boolean) {
+function createDebugResponse(email: string, success: boolean, providerMessageId: string | null = null) {
   const config = getEmailDebugConfig(email);
   return {
     success,
     debug: {
       route: "email-self-test",
       routeVersion: config.routeVersion,
+      providerMessageId,
       emailDomain: config.emailDomain,
       hasResendApiKey: config.hasResendApiKey,
       hasEmailFrom: config.hasEmailFrom,
@@ -23,7 +24,7 @@ function createDebugResponse(email: string, success: boolean) {
   };
 }
 
-export async function POST(req: NextRequest) {
+async function runSelfTest(req: NextRequest, email: string) {
   if (!isEmailDebugAvailable()) {
     return NextResponse.json({ error: "Not available in production" }, { status: 404 });
   }
@@ -34,8 +35,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many requests. Please try again later." }, { status: 429 });
   }
 
-  const body = await req.json().catch(() => null);
-  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
   const emailDomain = getEmailDomain(email);
   const config = getEmailDebugConfig(email);
 
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await sendEmail({
+    const result = await sendEmail({
       to: email,
       subject: "8D Reports email self-test",
       text: "This is a safe email self-test from 8D Reports Preview/local diagnostics.",
@@ -62,11 +61,12 @@ export async function POST(req: NextRequest) {
     });
     console.log("[EMAIL DEBUG] self-test success", {
       emailDomain,
+      providerMessageId: result.providerMessageId,
       hasResendApiKey: config.hasResendApiKey,
       hasEmailFrom: config.hasEmailFrom,
       vercelEnv: config.vercelEnv,
     });
-    return NextResponse.json(createDebugResponse(email, true));
+    return NextResponse.json(createDebugResponse(email, true, result.providerMessageId));
   } catch (error) {
     console.error("[EMAIL DEBUG] self-test failed", {
       emailDomain,
@@ -80,4 +80,15 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+export async function GET(req: NextRequest) {
+  const email = req.nextUrl.searchParams.get("to")?.trim().toLowerCase() || "";
+  return runSelfTest(req, email);
+}
+
+export async function POST(req: NextRequest) {
+  const body = await req.json().catch(() => null);
+  const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+  return runSelfTest(req, email);
 }

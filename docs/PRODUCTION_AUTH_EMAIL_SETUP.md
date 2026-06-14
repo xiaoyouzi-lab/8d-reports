@@ -54,6 +54,8 @@ The auth config treats values without a protocol as `https://...`, then adds eac
 After environment variables are set:
 
 - Preview diagnostics: open `/debug/email` on the PR Preview URL. Confirm the latest commit SHA, `hasResendApiKey=true`, and `hasEmailFrom=true`, then send a self-test email. The self-test must create a Resend record before it reports success.
+- Provider id diagnostics: a successful Preview self-test returns `providerMessageId`. Search this id in Resend. If the id exists in the API response but not in the visible Resend UI, confirm the correct Resend workspace/account and filters.
+- Remote Preview self-test: GET `/api/debug/email-self-test?to=TEST_EMAIL` can be used in Preview/local to trigger the same safe self-test without browser DevTools.
 - Signup: create a test account, receive the verification code email, and complete verification.
 - Resend records: when signup shows the OTP screen, Resend should show a verification email record for the same time window.
 - Signup diagnostics: on Preview/local only, the OTP screen may show safe wrapper debug. Seeing `route=signup-verification-wrapper` confirms the browser called the server wrapper route.

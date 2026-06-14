@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 type SelfTestDebug = {
   route?: string;
   routeVersion?: string;
+  providerMessageId?: string | null;
   emailDomain?: string;
   hasResendApiKey?: boolean;
   hasEmailFrom?: boolean;
@@ -69,6 +70,11 @@ export function EmailDebugForm() {
           }`}
         >
           <p className="font-medium">{result.success ? "Self-test sent successfully." : result.error || "Self-test failed."}</p>
+          {result.success && (
+            <p className="mt-1 text-xs">
+              Search the providerMessageId in Resend to confirm which workspace accepted the message.
+            </p>
+          )}
           {result.debug && (
             <dl className="mt-2 grid gap-1 text-xs">
               {Object.entries(result.debug).map(([key, value]) => (

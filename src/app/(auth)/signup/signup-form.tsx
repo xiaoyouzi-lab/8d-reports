@@ -17,6 +17,7 @@ type PreviewDebug = {
 type SignupOtpDebug = {
   route?: string
   routeVersion?: string
+  providerMessageId?: string | null
   emailDomain?: string
   hasResendApiKey?: boolean
   hasEmailFrom?: boolean

@@ -68,6 +68,8 @@ Installed Better Auth discovery:
 - Temporary Preview/local email diagnostics were added at `/debug/email`. The page shows route version `auth-email-debug-v1`, current commit SHA when Vercel provides it, `VERCEL_ENV`, current host/origin, and boolean-only email config status.
 - `/api/debug/email-self-test` sends a direct Resend self-test through `sendEmail` and returns success only after the real provider path succeeds. It is disabled in Production and rate-limited.
 - Signup now displays Preview/local-only wrapper debug under the OTP screen. If this block appears, the browser called the wrapper. If self-test succeeds but this block does not appear during signup, the tested frontend is likely stale or not using the wrapper route.
+- Email self-test and signup wrapper debug now include Resend `providerMessageId` when the provider accepts a message. If the API returns `success=true` with a provider id but the visible Resend UI has no record, the likely issue is checking the wrong Resend workspace/account or filter. If `success=false` or the provider id is missing, the server did not get a confirmed Resend acceptance for that request.
+- Preview/local self-test also supports `GET /api/debug/email-self-test?to=TEST_EMAIL`. This lets the assistant trigger a safe direct Resend test from the Preview URL and inspect JSON without requiring browser DevTools or product-owner network inspection.
 - The temporary diagnostic page should be removed after Preview signup and password reset delivery are verified consistently in Resend records.
 
 ## Required Env Vars
@@ -91,6 +93,7 @@ See `docs/PRODUCTION_AUTH_EMAIL_SETUP.md` for the deployment checklist.
 - Preview origin follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 - Explicit signup OTP follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 - Email diagnostic follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
+- Provider id diagnostic follow-up reran `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`; all passed, with the same 11 existing lint warnings.
 
 ## Manual Verification Checklist
 
@@ -98,6 +101,7 @@ See `docs/PRODUCTION_AUTH_EMAIL_SETUP.md` for the deployment checklist.
 - Production password reset: request a reset code, receive the email, enter the code, and set a strong new password.
 - Preview signup or reset: repeat on the PR preview URL after Vercel env vars are configured.
 - Preview email debug: open `/debug/email`, confirm the latest commit SHA, confirm `hasResendApiKey=true` and `hasEmailFrom=true`, send a self-test email, then confirm Resend shows a record for that time window.
+- Preview remote self-test: call `/api/debug/email-self-test?to=TEST_EMAIL` on the Preview URL and inspect `success`, `providerMessageId`, `hasResendApiKey`, `hasEmailFrom`, and `vercelEnv`.
 - Preview signup debug: after signup reaches the OTP screen, confirm the OTP page shows the `signup-verification-wrapper` debug block. If it does, Resend should show a verification email record for that same time window.
 - Resend records: after signup reaches the OTP screen, open Resend email logs and confirm a verification email record exists for the attempted recipient domain/time window.
 - Vercel logs: confirm `signup verification wrapper success` and `[EMAIL] send success` appear before the OTP screen is shown.

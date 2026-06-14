@@ -11,6 +11,12 @@ type SendEmailInput = {
   allowLocalFallback?: boolean;
 };
 
+type SendEmailResult = {
+  ok: true;
+  providerMessageId: string | null;
+  mode?: "local-log";
+};
+
 let resendClient: Resend | null = null;
 
 function isLocalDevelopment() {
@@ -130,7 +136,7 @@ export async function sendEmail({
   text,
   purpose = "transactional",
   allowLocalFallback = true,
-}: SendEmailInput) {
+}: SendEmailInput): Promise<SendEmailResult> {
   const { apiKey, from, replyTo } = getEmailConfig();
   const diagnostics = getEmailDiagnostics(to);
 
@@ -140,7 +146,7 @@ export async function sendEmail({
     if (isLocalDevelopment()) {
       if (allowLocalFallback) {
         console.log("[EMAIL] local fallback", { purpose, ...diagnostics });
-        return { ok: true, mode: "local-log" as const };
+        return { ok: true, providerMessageId: null, mode: "local-log" };
       }
       console.error("[EMAIL] missing config", { purpose, ...diagnostics });
       throw new Error("Email delivery is not configured.");
@@ -149,7 +155,7 @@ export async function sendEmail({
     throw new Error("Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM.");
   }
 
-  const { error } = await getResendClient(apiKey).emails.send({
+  const { data, error } = await getResendClient(apiKey).emails.send({
     from,
     to,
     subject,
@@ -163,8 +169,9 @@ export async function sendEmail({
     throw new Error("Email provider rejected the message.");
   }
 
-  console.log("[EMAIL] send success", { purpose, ...diagnostics });
-  return { ok: true };
+  const providerMessageId = data?.id || null;
+  console.log("[EMAIL] send success", { purpose, providerMessageId, ...diagnostics });
+  return { ok: true, providerMessageId };
 }
 
 export async function sendAuthOtpEmail({
@@ -188,7 +195,7 @@ export async function sendAuthOtpEmail({
     const label = getOtpCopy(type).heading;
     console.log(`\n===== LOCAL ${label} OTP for ${email}: ${otp} =====\n`);
     console.log("[AUTH EMAIL] OTP local fallback", { type, ...diagnostics });
-    return { ok: true, mode: "local-log" as const };
+    return { ok: true, providerMessageId: null, mode: "local-log" as const };
   }
 
   const result = await sendEmail({
@@ -198,7 +205,11 @@ export async function sendAuthOtpEmail({
     text: emailContent.text,
     purpose: `auth-otp:${type}`,
   });
-  console.log("[AUTH EMAIL] OTP email success", { type, ...diagnostics });
+  console.log("[AUTH EMAIL] OTP email success", {
+    type,
+    providerMessageId: result.providerMessageId,
+    ...diagnostics,
+  });
   return result;
 }
 
