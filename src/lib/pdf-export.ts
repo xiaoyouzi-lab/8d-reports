@@ -223,17 +223,23 @@ async function addCoverPage(doc: jsPDF, reportData: ReportData, reportTitle: str
   doc.rect(MARGIN - 2, MARGIN - 2, CONTENT_W + 4, 44, "F")
 
   let y = MARGIN + 22
+  let titleMaxWidth = CONTENT_W
   if (logoUrl) {
     try {
       const b64 = await fetchImageAsBase64(logoUrl)
-      if (b64) doc.addImage(b64, getImageFormat(b64), MARGIN, MARGIN + 10, 30, 15)
+      if (b64) {
+        const logoW = 34
+        const logoH = 17
+        doc.addImage(b64, getImageFormat(b64), PAGE_W - MARGIN - logoW, MARGIN + 8, logoW, logoH, undefined, "FAST")
+        titleMaxWidth = CONTENT_W - logoW - 10
+      }
     } catch { /* ignore */ }
   }
 
   doc.setFont("helvetica", "bold")
   doc.setFontSize(26)
   doc.setTextColor(...BRAND_BLUE)
-  doc.text("8D Corrective Action Report", MARGIN, y)
+  doc.text("8D Corrective Action Report", MARGIN, y, { maxWidth: titleMaxWidth })
   y += 13
 
   doc.setFont("helvetica", "normal")

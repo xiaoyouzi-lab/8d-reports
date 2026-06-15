@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { FileDown, FileText, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { exportReportToPdf } from "@/lib/pdf-export"
-import { createExportZip, downloadBlob } from "@/lib/export-zip"
+import { downloadBlob } from "@/lib/export-zip"
 import { useTranslations } from "next-intl"
 import { getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { trackEvent } from "@/lib/analytics"
@@ -62,18 +62,14 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
   const fetchAttachments = async (): Promise<ExportAttachment[]> => {
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments`)
-      if (!res.ok) return []
+      if (!res.ok) throw new Error("Could not load report attachments for export")
       const data = await res.json().catch(() => [])
       return Array.isArray(data) ? data.filter(isExportAttachment) : []
-    } catch { return [] }
+    } catch (error) {
+      if (error instanceof Error) throw error
+      throw new Error("Could not load report attachments for export")
+    }
   }
-
-  const attachmentZipEntries = (attachments: ExportAttachment[]) =>
-    attachments.map((a) => ({
-      url: getAttachmentFileUrl(a),
-      fallbackUrl: a.url,
-      filename: a.filename,
-    }))
 
   const downloadReportPackage = async ({
     reportBlob,
@@ -86,11 +82,20 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     attachments: ExportAttachment[]
     singleFormat: "pdf" | "word" | "excel"
   }) => {
-    const zipEntries = attachmentZipEntries(attachments)
-    if (zipEntries.length > 0) {
-      const zip = await createExportZip(reportBlob, reportFilename, zipEntries)
+    if (attachments.length > 0) {
+      const formData = new FormData()
+      formData.append("reportFile", reportBlob, reportFilename)
+      formData.append("reportFilename", reportFilename)
+      const res = await fetch(`/api/reports/${reportId}/export/package`, {
+        method: "POST",
+        body: formData,
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || "Could not package report attachments")
+      }
+      const zip = await res.blob()
       downloadBlob(zip, `${reportId}_8D_Export.zip`)
-      logExport("zip")
       return
     }
 
@@ -169,8 +174,8 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         trackEvent("watermark_exported", { format: "pdf", plan: "free" }, reportId)
       }
       toast.success(t("pdfSuccess"))
-    } catch {
-      toast.error(t("exportFailed"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("exportFailed"))
     } finally {
       setLoading(null)
     }
@@ -205,7 +210,6 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: withWatermark ? "free" : "pro",
-          logoUrl: logoUrl || null,
           locale: document.cookie.includes("NEXT_LOCALE=zh") ? "zh-CN" : "en",
         }),
       })
@@ -220,8 +224,8 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       })
       trackEvent("export_succeeded", { format: "docx", plan: "pro" }, reportId)
       toast.success(t("wordSuccess"))
-    } catch {
-      toast.error(t("exportFailed"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("exportFailed"))
     } finally {
       setLoading(null)
     }
@@ -266,8 +270,8 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       })
       trackEvent("export_succeeded", { format: "xlsx", plan: "pro" }, reportId)
       toast.success(t("excelSuccess"))
-    } catch {
-      toast.error(t("exportFailed"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("exportFailed"))
     } finally {
       setLoading(null)
     }

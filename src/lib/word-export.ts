@@ -28,6 +28,8 @@ interface WordExportOptions {
   attachmentImages?: { url: string; filename: string; stepId?: string; storagePath?: string; mimeType?: string | null }[];
 }
 
+type FetchedImage = { buffer: Buffer; contentType?: string | null };
+
 function isImageAttachment(att: { mimeType?: string | null; storagePath?: string; url: string }) {
   return att.mimeType?.startsWith("image/") ?? false;
 }
@@ -119,29 +121,43 @@ function renderAttachmentTable(attachments: Array<{ filename: string; stepId?: s
   });
 }
 
-async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<Buffer | null> {
+async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<FetchedImage | null> {
   if (img.storagePath) {
     const object = await getR2ObjectBuffer(img.storagePath);
-    if (object?.buffer) return object.buffer;
+    if (object?.buffer) return object;
   }
 
   const key = getR2KeyFromPublicUrl(img.url);
   if (key) {
     const object = await getR2ObjectBuffer(key);
-    if (object?.buffer) return object.buffer;
+    if (object?.buffer) return object;
   }
 
   try {
     const res = await fetch(img.url);
     if (!res.ok) return null;
-    return Buffer.from(await res.arrayBuffer());
+    return {
+      buffer: Buffer.from(await res.arrayBuffer()),
+      contentType: res.headers.get("content-type"),
+    };
   } catch {
     return null;
   }
 }
 
-function getDocxImageType(mimeType?: string | null): "png" | "jpg" {
-  return mimeType === "image/jpeg" || mimeType === "image/jpg" ? "jpg" : "png";
+function getDocxImageType(mimeType?: string | null): "png" | "jpg" | null {
+  if (mimeType === "image/jpeg" || mimeType === "image/jpg") return "jpg";
+  if (mimeType === "image/png") return "png";
+  return null;
+}
+
+function inferImageMimeType(url: string, mimeType?: string | null) {
+  if (mimeType) return mimeType.split(";")[0]?.trim().toLowerCase() || null;
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) return "image/jpeg";
+  if (lowerUrl.endsWith(".png")) return "image/png";
+  if (lowerUrl.endsWith(".webp")) return "image/webp";
+  return null;
 }
 
 export async function generateWordDocument(options: WordExportOptions): Promise<Buffer> {
@@ -160,12 +176,20 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 
   if (logoUrl) {
     try {
-      const buf = await fetchImageBuffer({ url: logoUrl });
-      if (buf) {
+      const logoImage = await fetchImageBuffer({ url: logoUrl });
+      const logoType = getDocxImageType(inferImageMimeType(logoUrl, logoImage?.contentType));
+      if (logoImage?.buffer && logoType) {
         children.push(
           new Paragraph({
             alignment: AlignmentType.LEFT,
-            children: [new ImageRun({ type: getDocxImageType(logoUrl.endsWith(".jpg") || logoUrl.endsWith(".jpeg") ? "image/jpeg" : "image/png"), data: buf, transformation: { width: 120, height: 60 } })],
+            children: [new ImageRun({ type: logoType, data: logoImage.buffer, transformation: { width: 120, height: 60 } })],
+          })
+        );
+      } else if (logoImage?.buffer) {
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            children: [new TextRun({ text: "Company logo is saved in a format Word export cannot embed yet. Please upload a PNG or JPG logo for Word export.", size: 16, color: "64748b", italics: true })],
           })
         );
       }
@@ -319,8 +343,9 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       )
       for (const img of stepImages) {
         try {
-          const buf = await fetchImageBuffer(img)
-          if (!buf) continue
+          const fetched = await fetchImageBuffer(img)
+          const imageType = getDocxImageType(inferImageMimeType(img.url, fetched?.contentType || img.mimeType))
+          if (!fetched?.buffer || !imageType) continue
           children.push(
             new Paragraph({
               spacing: { after: 50 },
@@ -329,7 +354,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
           )
           children.push(
             new Paragraph({
-              children: [new ImageRun({ type: getDocxImageType(img.mimeType), data: buf, transformation: { width: 360, height: 270 } })],
+              children: [new ImageRun({ type: imageType, data: fetched.buffer, transformation: { width: 360, height: 270 } })],
             })
           )
         } catch { /* skip failed image fetch */ }
@@ -367,13 +392,13 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   for (const row of signatureRows) {
     children.push(addMetaRow(row.label, `${row.name || "-"}    Date: ${row.date || "-"}`))
     if (row.url) {
-      const isWebp = row.url.toLowerCase().includes(".webp")
-      const buf = isWebp ? null : await fetchImageBuffer({ url: row.url })
-      if (buf) {
+      const fetched = await fetchImageBuffer({ url: row.url })
+      const imageType = getDocxImageType(inferImageMimeType(row.url, fetched?.contentType))
+      if (fetched?.buffer && imageType) {
         children.push(
           new Paragraph({
             spacing: { after: 120 },
-            children: [new ImageRun({ type: getDocxImageType(row.url.endsWith(".jpg") ? "image/jpeg" : "image/png"), data: buf, transformation: { width: 160, height: 60 } })],
+            children: [new ImageRun({ type: imageType, data: fetched.buffer, transformation: { width: 160, height: 60 } })],
           })
         )
       } else {

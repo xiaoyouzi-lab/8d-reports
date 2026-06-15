@@ -7,7 +7,7 @@ export async function createExportZip(
 ): Promise<Blob> {
   const zip = new JSZip();
 
-  zip.file(reportFilename, reportBlob);
+  zip.file(reportFilename, await reportBlob.arrayBuffer());
 
   if (attachments.length > 0) {
     const attachFolder = zip.folder("attachments");
@@ -18,19 +18,14 @@ export async function createExportZip(
           try {
             const res = await fetch(url, { credentials: "same-origin" });
             if (!res.ok) continue;
-            if (res.ok) {
-              const data = await res.arrayBuffer();
-              attachFolder.file(att.filename.replace(/[\\/]/g, "_"), data);
-              added = true;
-              break;
-            }
+            const data = await res.arrayBuffer();
+            attachFolder.file(att.filename.replace(/[\\/]/g, "_"), data);
+            added = true;
+            break;
           } catch { /* try next source */ }
         }
         if (!added) {
-          attachFolder.file(
-            `${att.filename.replace(/[\\/]/g, "_")}.download-error.txt`,
-            `This attachment could not be downloaded while creating the ZIP: ${att.filename}`,
-          );
+          throw new Error(`Could not include attachment "${att.filename}". Please try again or remove and re-upload the attachment.`);
         }
       }
     }
