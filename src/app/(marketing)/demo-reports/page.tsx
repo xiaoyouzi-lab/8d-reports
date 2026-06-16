@@ -54,9 +54,9 @@ export default function DemoReportsPage() {
               <p className="mt-4 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">{demo.highlights}</p>
               <div className="mt-auto flex flex-col gap-2 pt-6">
                 <Link href={demo.example} className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>Review complete example <ArrowRight className="size-4" /></Link>
-                <Link href={`/api/sample-reports/${demo.downloadType}`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Download className="size-4" /> Download PDF</Link>
-                <Link href={`/api/sample-reports/${demo.downloadType}?format=docx`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Download Word</Link>
-                <Link href={`/api/sample-reports/${demo.downloadType}?format=zip`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Download delivery ZIP</Link>
+                <Link href={`/api/sample-reports/${demo.downloadType}`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Download className="size-4" /> Download PDF</Link>
+                <Link href={`/api/sample-reports/${demo.downloadType}?format=docx`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Download Word</Link>
+                <Link href={`/api/sample-reports/${demo.downloadType}?format=zip`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Download delivery ZIP</Link>
               </div>
             </article>
           ))}

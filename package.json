@@ -10,6 +10,7 @@
     "test:governance": "tsx scripts/team-governance.test.ts",
     "test:production-smoke": "tsx scripts/production-smoke.test.ts",
     "test:auth-smoke": "tsx scripts/authenticated-production-smoke.test.ts",
+    "check:seo": "tsx scripts/check-seo-urls.ts",
     "metrics": "node scripts/metrics-dashboard.mjs"
   },
   "dependencies": {

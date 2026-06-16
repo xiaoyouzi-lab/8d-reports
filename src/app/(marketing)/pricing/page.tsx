@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
 import { ArrowRight, Check, FileDown, Wrench } from "lucide-react"
@@ -6,6 +7,10 @@ import { Badge } from "@/components/ui/badge"
 import { CheckoutButton } from "@/components/CheckoutButton"
 import { AutoCheckout } from "@/components/AutoCheckout"
 import { cn } from "@/lib/utils"
+
+export const metadata: Metadata = {
+  alternates: { canonical: "https://www.8d-reports.com/pricing" },
+}
 
 const plans = [
   {
@@ -211,7 +216,7 @@ export default function PricingPage() {
             {" · "}
             <Link href="/8d-report-review-service" className="font-medium text-indigo-600 hover:text-indigo-700">8D report review service</Link>
             {" · "}
-            <Link href="/api/sample-reports/automotive" className="font-medium text-indigo-600 hover:text-indigo-700">Download sample PDF</Link>
+            <Link href="/sample-report" className="font-medium text-indigo-600 hover:text-indigo-700">Review sample report downloads</Link>
           </p>
 
           <div className="mx-auto mt-12 max-w-5xl rounded-xl border border-slate-200 bg-slate-50 p-6">

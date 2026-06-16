@@ -1,8 +1,13 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import { Mail, MessageSquare, ShieldCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 
 const supportEmail = "19857345237@163.com"
+
+export const metadata: Metadata = {
+  alternates: { canonical: "https://www.8d-reports.com/contact" },
+}
 
 export default function ContactPage() {
   return (

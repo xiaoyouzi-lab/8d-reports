@@ -8,6 +8,7 @@ import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.8d-reports.com"),
   title: {
     default: "8D Reports — Professional 8D Problem-Solving Software",
     template: "%s | 8D Reports",

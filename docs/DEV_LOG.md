@@ -2,6 +2,80 @@
 
 ## Latest Task
 
+Google Search Console index hygiene fix for 404, robots blocked, redirect, and duplicate canonical reports.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `next.config.ts`
+- `package.json`
+- `scripts/check-seo-urls.ts`
+- `src/app/layout.tsx`
+- `src/app/sitemap.ts`
+- `src/app/(marketing)/page.tsx`
+- `src/app/(marketing)/pricing/page.tsx`
+- `src/app/(marketing)/faq/page.tsx`
+- `src/app/(marketing)/docs/page.tsx`
+- `src/app/(marketing)/sample-report/page.tsx`
+- `src/app/(marketing)/demo-reports/page.tsx`
+- `src/app/(marketing)/demo-reports/[type]/page.tsx`
+- `src/app/(marketing)/8d-report-example/page.tsx`
+- `src/app/(marketing)/8d-report-template/page.tsx`
+- `src/app/(marketing)/5-why-root-cause-template/page.tsx`
+- `src/app/(marketing)/corrective-action-report-template/page.tsx`
+- `src/app/(marketing)/supplier-8d-report/page.tsx`
+- `src/app/contact/page.tsx`
+- `src/app/privacy/page.tsx`
+- `src/app/terms/page.tsx`
+- `src/lib/seo-index-hygiene.ts`
+
+## Root Cause / Classification
+
+- `robots.txt` blocking `/api/`, `/dashboard`, and `/reports/` is expected because those are system/private app paths. They should remain blocked even if GSC reports them.
+- Sitemap included account entry pages (`/login`, `/signup`) that are public but not SEO landing pages. These can create low-value indexing and duplicate/canonical noise.
+- Several static marketing pages had no explicit canonical, so www/non-www, HTTPS, and query-parameter variants could contribute to duplicate-page notices.
+- Marketing pages linked directly to `/api/sample-reports/...` download endpoints. These API URLs are intentionally robots-blocked, so they should not be treated as SEO entrance links.
+- The listed historical `/8d-report-example/...` URLs are currently implemented programmatic SEO pages, not 404s. Additional legacy alias paths such as `/8d-example/:slug` and `/8d-report-examples/:slug` are now redirected to the canonical URL family.
+
+## Implementation Summary
+
+- Added `src/lib/seo-index-hygiene.ts` as a shared source for canonical site URL, indexable static paths, and legacy SEO redirects.
+- Updated sitemap generation to use only indexable canonical public paths and SEO content pages; removed `/login` and `/signup` from sitemap.
+- Added permanent redirects for legacy SEO aliases:
+  `/8d-example`, `/8d-example/:slug`, `/8d-examples/:slug`, `/8d-report-examples/:slug`, `/8d-template`, `/8d-template/:slug`, `/8d-templates/:slug`, `/demo-report`, `/demo-report/:type`, `/8d-report-sample`, and `/sample-8d-report`.
+- Added explicit canonical metadata for homepage, pricing, FAQ, docs, sample report, core SEO hub pages, contact, privacy, and terms.
+- Added `metadataBase` for the root layout using the final `https://www.8d-reports.com` host.
+- Replaced general marketing links to API sample downloads with `/sample-report`, and marked intentional download links with `rel="nofollow"`.
+- Added `scripts/check-seo-urls.ts` and `npm run check:seo` to verify sitemap URLs, robots blocking, redirect mappings, GSC example paths, and nofollow download links.
+- This PR is index hygiene only; no SEO content expansion was done.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with the existing 11 warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- `npm run check:seo` passed: 72 sitemap URLs and 11 redirects checked.
+
+## Risks
+
+- GSC may continue to show expected robots-blocked private/system URLs until Google recrawls and groups examples differently.
+- Domain-level HTTP to HTTPS and non-www to www redirects are expected platform behavior and are not changed in this code PR.
+- Live GSC validation should happen only after this PR is merged and deployed.
+
+## Unfinished / Needs Human Review
+
+- After deployment, inspect Google Search Console examples to confirm any remaining 404s are not public SEO pages.
+- If GSC reports specific unknown old URLs later, add targeted redirects only when a relevant canonical target exists.
+
+## Suggested Next Task
+
+After deployment, request validation in Google Search Console for affected indexing categories that relate to public SEO pages.
+
+## Previous Task
+
 Fix PR #3 second Preview blockers: forgot-password showed false success with no Resend record, and Word export metadata/field tables collapsed into unreadable one-character columns.
 
 ## Changed Files
