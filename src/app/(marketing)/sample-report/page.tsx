@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "Sample 8D Report | 8D Reports",
   description:
     "Review a practical sample 8D report with D0-D8 sections, evidence attachments, export, sharing, and Pro search examples.",
+  alternates: { canonical: "https://www.8d-reports.com/sample-report" },
 }
 
 const reportSections = [
@@ -128,6 +129,7 @@ export default function SampleReportPage() {
               </Link>
               <Link
                 href="/api/sample-reports/automotive"
+                rel="nofollow"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "h-11 border-slate-300 px-6"

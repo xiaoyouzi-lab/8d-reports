@@ -1,4 +1,9 @@
+import type { Metadata } from "next"
 import { Card, CardContent } from "@/components/ui/card"
+
+export const metadata: Metadata = {
+  alternates: { canonical: "https://www.8d-reports.com/privacy" },
+}
 
 export default function PrivacyPage() {
   return (

@@ -1,5 +1,10 @@
+import type { Metadata } from "next"
 import { getTranslations } from "next-intl/server"
 import Link from "next/link"
+
+export const metadata: Metadata = {
+  alternates: { canonical: "https://www.8d-reports.com/faq" },
+}
 
 export default async function FaqPage() {
   const t = await getTranslations({ locale: "en", namespace: "marketing" })

@@ -73,9 +73,9 @@ export default async function DemoReportPage({ params }: { params: Promise<{ typ
               <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">{demo.title}</h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">{demo.workflowSummary}</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={`/api/sample-reports/${type}`} className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}><Download className="size-4" /> PDF</Link>
-                <Link href={`/api/sample-reports/${type}?format=docx`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Word</Link>
-                <Link href={`/api/sample-reports/${type}?format=zip`} className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Delivery ZIP</Link>
+                <Link href={`/api/sample-reports/${type}`} rel="nofollow" className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}><Download className="size-4" /> PDF</Link>
+                <Link href={`/api/sample-reports/${type}?format=docx`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Word</Link>
+                <Link href={`/api/sample-reports/${type}?format=zip`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Delivery ZIP</Link>
               </div>
             </div>
             <dl className="grid gap-3 rounded-xl border border-slate-200 bg-white p-6 text-sm">

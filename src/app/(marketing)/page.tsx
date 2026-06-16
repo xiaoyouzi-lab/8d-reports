@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import Link from "next/link"
 import {
   ArrowRight,
@@ -11,6 +12,10 @@ import {
 import { CheckoutButton } from "@/components/CheckoutButton"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+
+export const metadata: Metadata = {
+  alternates: { canonical: "https://www.8d-reports.com" },
+}
 
 const workflowSteps = [
   {
@@ -323,8 +328,8 @@ export default function LandingPage() {
               <Link href="/demo-reports" className="hover:text-indigo-700">
                 View Team workflow demos
               </Link>
-              <Link href="/api/sample-reports/automotive" className="hover:text-indigo-700">
-                Download sample PDF
+              <Link href="/sample-report" className="hover:text-indigo-700">
+                See sample downloads
               </Link>
             </div>
 

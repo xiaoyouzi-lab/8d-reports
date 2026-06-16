@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import createNextIntlPlugin from "next-intl/plugin";
 import path from "node:path";
+import { LEGACY_SEO_REDIRECTS } from "./src/lib/seo-index-hygiene";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
@@ -40,6 +41,12 @@ const nextConfig: NextConfig = {
         ],
       },
     ];
+  },
+  async redirects() {
+    return LEGACY_SEO_REDIRECTS.map((redirect) => ({
+      ...redirect,
+      permanent: true,
+    }));
   },
 };
 
