@@ -2,6 +2,63 @@
 
 ## Latest Task
 
+Fix PR #3 second Preview blockers: forgot-password showed false success with no Resend record, and Word export metadata/field tables collapsed into unreadable one-character columns.
+
+## Changed Files
+
+- `docs/DEV_LOG.md`
+- `src/app/api/auth-email/password-reset/route.ts`
+- `src/app/reset-password/page.tsx`
+- `src/lib/word-export.ts`
+
+## Root Cause
+
+- The forgot-password UI called Better Auth's `/api/auth/email-otp/request-password-reset` endpoint directly. The installed Better Auth email OTP route intentionally returns `{ success: true }` when no matching user is found and deletes the generated verification record without calling `sendVerificationOTP`. That anti-enumeration behavior can make the UI advance even though no `sendAuthOtpEmail` / `sendEmail` / Resend path was reached.
+- The Word template used tables for cover metadata, D0-D8 field rows, attachments, 5-Why, and Fishbone sections. Some Word/preview viewers collapsed those table columns to a one-character width, causing labels like `Report Number` to display vertically.
+
+## Implementation Summary
+
+- Added `/api/auth-email/password-reset`, a first-party password reset OTP wrapper matching the signup verification wrapper pattern.
+- The wrapper rate-limits requests, validates email format, confirms a registered user exists, writes a Better Auth-compatible `forget-password-otp-EMAIL` verification row, and directly awaits `sendAuthOtpEmail({ type: "forget-password" })`.
+- The reset-password UI now calls the wrapper and only advances to the OTP screen when the wrapper returns real success after email sending succeeds.
+- Preview/local reset email debug now displays route, email domain, config booleans, `providerMessageId`, and Vercel env without exposing OTPs, full emails, or secrets.
+- Added safe server logs for password-reset request received, action called, provider callback reached, `sendEmail` start/success/failure through the existing email utility, and provider message id.
+- Signup verification behavior was not changed.
+- Replaced Word export tables with stable label/value paragraphs for cover metadata, D0-D8 field rows, attachment list, 5-Why, and Fishbone sections. This avoids table auto-layout collapse in Word/preview viewers.
+- Preserved PDF logo/title fix, Word PNG/JPG logo support, server-side export package route, attachment ZIP behavior, watermark branding, pricing, subscriptions, database schema, report access checks, and export entitlement checks.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with the existing 11 warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Generated `/tmp/8d-report-word-layout-test.docx`.
+- `unzip -t /tmp/8d-report-word-layout-test.docx` passed with no compressed data errors.
+- Verified generated `word/document.xml` contains `Report Metadata` and `Report Number`, has `tableCount: 0`, and includes PNG logo media under `word/media/`.
+- Generated `/tmp/8d-report-zip-regression-test.zip`.
+- `unzip -t /tmp/8d-report-zip-regression-test.zip` passed and listed a real attachment file under `attachments/`.
+- Preview password-reset Resend record verification cannot be completed locally; it requires the redeployed PR #3 Preview environment and a real registered test email.
+
+## Risks
+
+- The password reset wrapper intentionally returns a friendly failure instead of false success when the email cannot be sent. This is necessary for Preview validation but differs from Better Auth's anti-enumeration success response for unknown emails.
+- Preview manual validation is still required to confirm Resend shows a password reset send record and the inbox receives the OTP.
+- Word WebP logos remain unsupported for embedding; PNG/JPG logos are still supported.
+
+## Unfinished / Needs Human Review
+
+- Re-test PR #3 Preview forgot-password with a known registered account and confirm Resend shows a new message id.
+- Open the generated Word export in Microsoft Word or a compatible viewer and confirm metadata, D0-D8 fields, 5-Why, Fishbone, and attachments are readable horizontally.
+- Re-check PDF/Word/Excel ZIP packages with real uploaded attachments.
+
+## Suggested Next Task
+
+Redeploy PR #3 Preview and run manual verification for forgot-password email delivery plus Word export layout before considering merge.
+
+## Previous Task
+
 Fix PR #3 Preview export blockers: attachment ZIP files were packaged as `.download-error.txt`, PDF logo overlapped the title, Word logo was missing, and Excel needed safer branding.
 
 ## Changed Files

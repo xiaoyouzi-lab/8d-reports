@@ -1,6 +1,6 @@
 import {
-  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  AlignmentType, WidthType, ImageRun,
+  Document, Packer, Paragraph, TextRun,
+  AlignmentType, ImageRun,
 } from "docx";
 import { STEPS, type ReportData } from "./report-steps";
 import { getR2KeyFromPublicUrl, getR2ObjectBuffer } from "./r2";
@@ -15,8 +15,8 @@ const FISHBONE_FIELD_NAMES = new Set([
 ]);
 
 const BRAND_BLUE = "1e40af";
-const LIGHT_BLUE = "eff6ff";
-const LIGHT_GRAY = "f8fafc";
+const TEXT_DARK = "111827";
+const TEXT_MUTED = "64748b";
 
 interface WordExportOptions {
   reportData: ReportData;
@@ -44,81 +44,51 @@ function addMetaRow(label: string, value: string) {
   });
 }
 
-function textRun(text: string, options: { bold?: boolean; color?: string; size?: number; italics?: boolean } = {}) {
+function textRun(text: string, options: { bold?: boolean; color?: string; size?: number; italics?: boolean; break?: number } = {}) {
   return new TextRun({
     text,
     bold: options.bold,
     color: options.color,
     size: options.size ?? 20,
     italics: options.italics,
+    break: options.break,
   });
 }
 
-function cell(text: string, options: { bold?: boolean; fill?: string; width?: number; color?: string } = {}) {
-  return new TableCell({
-    width: options.width ? { size: options.width, type: WidthType.DXA } : undefined,
-    shading: options.fill ? { fill: options.fill } : undefined,
-    margins: { top: 120, bottom: 120, left: 140, right: 140 },
+function sectionHeading(text: string) {
+  return new Paragraph({
+    spacing: { before: 280, after: 120 },
+    children: [textRun(text, { size: 26, bold: true, color: BRAND_BLUE })],
+  });
+}
+
+function labelValueParagraph(label: string, value: string, options: { compact?: boolean } = {}) {
+  return new Paragraph({
+    spacing: { before: options.compact ? 40 : 80, after: options.compact ? 40 : 80 },
     children: [
-      new Paragraph({
-        children: [textRun(text || "-", { bold: options.bold, color: options.color })],
-      }),
+      textRun(`${label}: `, { bold: true, color: TEXT_MUTED, size: 20 }),
+      textRun(value || "-", { color: TEXT_DARK, size: 20 }),
     ],
   });
 }
 
-function renderMetadataTable(rows: Array<[string, string]>) {
-  return new Table({
-    width: { size: 9000, type: WidthType.DXA },
-    rows: rows.map(([label, value]) => new TableRow({
-      children: [
-        cell(label, { bold: true, fill: LIGHT_BLUE, width: 2600, color: "334155" }),
-        cell(value || "-", { width: 6400 }),
-      ],
-    })),
-  });
+function renderMetadataRows(rows: Array<[string, string]>) {
+  return rows.map(([label, value]) => labelValueParagraph(label, value));
 }
 
-function renderFieldTable(rows: Array<[string, string]>) {
-  return new Table({
-    width: { size: 9000, type: WidthType.DXA },
-    rows: [
-      new TableRow({
-        children: [
-          cell("Field", { bold: true, fill: BRAND_BLUE, width: 3000, color: "ffffff" }),
-          cell("Response / Evidence", { bold: true, fill: BRAND_BLUE, width: 6000, color: "ffffff" }),
-        ],
-      }),
-      ...rows.map(([label, value]) => new TableRow({
-        children: [
-          cell(label, { bold: true, fill: LIGHT_GRAY, width: 3000, color: "334155" }),
-          cell(value || "No relevant data", { width: 6000 }),
-        ],
-      })),
-    ],
-  });
+function renderFieldRows(rows: Array<[string, string]>) {
+  return rows.map(([label, value]) => labelValueParagraph(label, value || "No relevant data"));
 }
 
-function renderAttachmentTable(attachments: Array<{ filename: string; stepId?: string; mimeType?: string | null }>) {
-  return new Table({
-    width: { size: 9000, type: WidthType.DXA },
-    rows: [
-      new TableRow({
-        children: [
-          cell("Step", { bold: true, fill: BRAND_BLUE, width: 1800, color: "ffffff" }),
-          cell("Filename", { bold: true, fill: BRAND_BLUE, width: 5200, color: "ffffff" }),
-          cell("Type", { bold: true, fill: BRAND_BLUE, width: 2000, color: "ffffff" }),
-        ],
-      }),
-      ...attachments.map((att) => new TableRow({
-        children: [
-          cell(att.stepId || "General", { width: 1800 }),
-          cell(att.filename, { width: 5200 }),
-          cell(att.mimeType || "file", { width: 2000 }),
-        ],
-      })),
+function renderAttachmentRows(attachments: Array<{ filename: string; stepId?: string; mimeType?: string | null }>) {
+  return attachments.map((att) => new Paragraph({
+    spacing: { before: 60, after: 60 },
+    children: [
+      textRun(`${att.stepId || "General"}: `, { bold: true, color: TEXT_MUTED, size: 19 }),
+      textRun(att.filename, { color: TEXT_DARK, size: 19 }),
+      textRun(` (${att.mimeType || "file"})`, { color: TEXT_MUTED, size: 18 }),
     ],
-  });
+  }));
 }
 
 async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<FetchedImage | null> {
@@ -164,7 +134,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   const { reportData, reportTitle, reportId, withWatermark, logoUrl, attachmentImages = [] } = options;
   const isZh = options.locale?.startsWith("zh");
 
-  const children: Array<Paragraph | Table> = [];
+  const children: Paragraph[] = [];
 
   // Cover page
   children.push(
@@ -214,13 +184,8 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       children: [new TextRun({ text: isZh ? "客户/供应商质量记录" : "Customer / supplier quality record", size: 22, color: "64748b" })],
     })
   );
-  children.push(
-    new Paragraph({
-      spacing: { before: 240, after: 120 },
-      children: [new TextRun({ text: "Report Metadata", size: 24, bold: true, color: BRAND_BLUE })],
-    })
-  );
-  children.push(renderMetadataTable([
+  children.push(sectionHeading("Report Metadata"));
+  children.push(...renderMetadataRows([
     ["Report Number", reportData.reportNumber || reportId],
     ["Customer / Supplier", reportData.customerName],
     ["Product / Part", reportData.productName],
@@ -267,13 +232,8 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 
   const normalAttachments = attachmentImages.filter((att) => att.stepId?.startsWith("signature_") !== true);
   if (normalAttachments.length > 0) {
-    children.push(
-      new Paragraph({
-        spacing: { before: 300, after: 100 },
-        children: [new TextRun({ text: "Attachment List", size: 28, bold: true, color: "1e40af" })],
-      })
-    );
-    children.push(renderAttachmentTable(normalAttachments));
+    children.push(sectionHeading("Attachment List"));
+    children.push(...renderAttachmentRows(normalAttachments));
   }
 
   // Steps
@@ -300,7 +260,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       .map((field) => [field.label, String(reportData[field.name as keyof ReportData] || "").trim()] as [string, string])
       .filter(([, value]) => value !== "");
     if (fieldRows.length > 0) {
-      children.push(renderFieldTable(fieldRows));
+      children.push(...renderFieldRows(fieldRows));
     }
 
     if (fishboneFields.length > 0) {
@@ -315,7 +275,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
             children: [new TextRun({ text: "Fishbone / Ishikawa 6M Analysis", bold: true, size: 22, color: "1e40af" })],
           })
         );
-        children.push(renderFishboneTable(values));
+        children.push(...renderFishboneRows(values));
       }
     }
 
@@ -328,7 +288,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
             children: [new TextRun({ text: "5-Why Analysis", bold: true, size: 22, color: "1e40af" })],
           })
         );
-        children.push(render5WhyTable(values));
+        children.push(...render5WhyRows(values));
       }
     }
 
@@ -417,7 +377,11 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 
   const doc = new Document({
     sections: [{
-      properties: {},
+      properties: {
+        page: {
+          margin: { top: 720, right: 720, bottom: 720, left: 720 },
+        },
+      },
       children,
     }],
   });
@@ -425,47 +389,12 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   return Packer.toBuffer(doc);
 }
 
-function render5WhyTable(values: string[]) {
-  const headerRow = new TableRow({
-    children: [
-      new TableCell({ width: { size: 1800, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Why", bold: true, size: 20 })] })] }),
-      new TableCell({ width: { size: 7200, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Answer / Evidence", bold: true, size: 20 })] })] }),
-    ],
-  });
-
-  const rows = [headerRow];
-  for (let i = 0; i < 5; i++) {
-    const value = values[i]?.trim() || "No relevant data";
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ width: { size: 1800, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: `Why ${i + 1}`, bold: true, size: 20 })] })] }),
-          new TableCell({ width: { size: 7200, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: value, size: 20 })] })] }),
-        ],
-      })
-    );
-  }
-
-  return new Table({ rows, width: { size: 9000, type: WidthType.DXA } });
+function render5WhyRows(values: string[]) {
+  return Array.from({ length: 5 }, (_, index) =>
+    labelValueParagraph(`Why ${index + 1}`, values[index]?.trim() || "No relevant data")
+  );
 }
 
-function renderFishboneTable(values: Array<{ label: string; value: string }>) {
-  const headerRow = new TableRow({
-    children: [
-      new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "6M Category", bold: true, size: 20 })] })] }),
-      new TableCell({ width: { size: 6500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Possible Causes / Evidence Checked", bold: true, size: 20 })] })] }),
-    ],
-  });
-
-  const rows = [
-    headerRow,
-    ...values.map((item) => new TableRow({
-      children: [
-        new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: item.label, bold: true, size: 20 })] })] }),
-        new TableCell({ width: { size: 6500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: item.value || "-", size: 20 })] })] }),
-      ],
-    })),
-  ];
-
-  return new Table({ rows, width: { size: 9000, type: WidthType.DXA } });
+function renderFishboneRows(values: Array<{ label: string; value: string }>) {
+  return values.map((item) => labelValueParagraph(item.label, item.value || "No relevant data"));
 }
