@@ -2,6 +2,227 @@
 
 ## Latest Task
 
+Fix PR #3 second Preview blockers: forgot-password showed false success with no Resend record, and Word export metadata/field tables collapsed into unreadable one-character columns.
+
+## Changed Files
+
+- `docs/DEV_LOG.md`
+- `src/app/api/auth-email/password-reset/route.ts`
+- `src/app/reset-password/page.tsx`
+- `src/lib/word-export.ts`
+
+## Root Cause
+
+- The forgot-password UI called Better Auth's `/api/auth/email-otp/request-password-reset` endpoint directly. The installed Better Auth email OTP route intentionally returns `{ success: true }` when no matching user is found and deletes the generated verification record without calling `sendVerificationOTP`. That anti-enumeration behavior can make the UI advance even though no `sendAuthOtpEmail` / `sendEmail` / Resend path was reached.
+- The Word template used tables for cover metadata, D0-D8 field rows, attachments, 5-Why, and Fishbone sections. Some Word/preview viewers collapsed those table columns to a one-character width, causing labels like `Report Number` to display vertically.
+
+## Implementation Summary
+
+- Added `/api/auth-email/password-reset`, a first-party password reset OTP wrapper matching the signup verification wrapper pattern.
+- The wrapper rate-limits requests, validates email format, confirms a registered user exists, writes a Better Auth-compatible `forget-password-otp-EMAIL` verification row, and directly awaits `sendAuthOtpEmail({ type: "forget-password" })`.
+- The reset-password UI now calls the wrapper and only advances to the OTP screen when the wrapper returns real success after email sending succeeds.
+- Preview/local reset email debug now displays route, email domain, config booleans, `providerMessageId`, and Vercel env without exposing OTPs, full emails, or secrets.
+- Added safe server logs for password-reset request received, action called, provider callback reached, `sendEmail` start/success/failure through the existing email utility, and provider message id.
+- Signup verification behavior was not changed.
+- Replaced Word export tables with stable label/value paragraphs for cover metadata, D0-D8 field rows, attachment list, 5-Why, and Fishbone sections. This avoids table auto-layout collapse in Word/preview viewers.
+- Preserved PDF logo/title fix, Word PNG/JPG logo support, server-side export package route, attachment ZIP behavior, watermark branding, pricing, subscriptions, database schema, report access checks, and export entitlement checks.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with the existing 11 warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Generated `/tmp/8d-report-word-layout-test.docx`.
+- `unzip -t /tmp/8d-report-word-layout-test.docx` passed with no compressed data errors.
+- Verified generated `word/document.xml` contains `Report Metadata` and `Report Number`, has `tableCount: 0`, and includes PNG logo media under `word/media/`.
+- Generated `/tmp/8d-report-zip-regression-test.zip`.
+- `unzip -t /tmp/8d-report-zip-regression-test.zip` passed and listed a real attachment file under `attachments/`.
+- Preview password-reset Resend record verification cannot be completed locally; it requires the redeployed PR #3 Preview environment and a real registered test email.
+
+## Risks
+
+- The password reset wrapper intentionally returns a friendly failure instead of false success when the email cannot be sent. This is necessary for Preview validation but differs from Better Auth's anti-enumeration success response for unknown emails.
+- Preview manual validation is still required to confirm Resend shows a password reset send record and the inbox receives the OTP.
+- Word WebP logos remain unsupported for embedding; PNG/JPG logos are still supported.
+
+## Unfinished / Needs Human Review
+
+- Re-test PR #3 Preview forgot-password with a known registered account and confirm Resend shows a new message id.
+- Open the generated Word export in Microsoft Word or a compatible viewer and confirm metadata, D0-D8 fields, 5-Why, Fishbone, and attachments are readable horizontally.
+- Re-check PDF/Word/Excel ZIP packages with real uploaded attachments.
+
+## Suggested Next Task
+
+Redeploy PR #3 Preview and run manual verification for forgot-password email delivery plus Word export layout before considering merge.
+
+## Previous Task
+
+Fix PR #3 Preview export blockers: attachment ZIP files were packaged as `.download-error.txt`, PDF logo overlapped the title, Word logo was missing, and Excel needed safer branding.
+
+## Changed Files
+
+- `docs/DEV_LOG.md`
+- `src/app/api/reports/[id]/export/package/route.ts`
+- `src/components/report/ExportMenu.tsx`
+- `src/lib/export-zip.ts`
+- `src/lib/pdf-export.ts`
+- `src/lib/word-export.ts`
+- `src/lib/xlsx-export.ts`
+
+## Root Cause
+
+- Attachment ZIP packaging was browser-side and fetched each attachment through `/api/attachments/[id]/file` or a fallback stored URL. When attachment bytes could not be fetched in Preview, the ZIP helper silently wrote `*.download-error.txt` files, so the export looked successful even though the real evidence files were missing.
+- PDF cover layout placed the logo and the main `8D...` title in the same left-side header area.
+- Word export read the authenticated user's stored logo URL, but image embedding did not preserve the actual content type from R2 and could attempt to embed unsupported formats such as WebP as if they were PNG.
+- Excel export uses a lightweight manual XLSX generator. Embedding images would require more OpenXML drawing/media relationship handling, so a branded Summary header is safer for this PR.
+
+## Implementation Summary
+
+- Added a server-side report package route at `/api/reports/[id]/export/package`.
+- The package route checks the authenticated user's existing report access/export permission, accepts the already-generated PDF/DOCX/XLSX report file, reads non-signature attachments directly from R2 by `storagePath`, and returns a ZIP with the report at the root plus real files under `attachments/`.
+- Packaging now fails with a clear friendly error if any attachment cannot be read; it no longer creates misleading `.download-error.txt` files.
+- `ExportMenu` now calls the server-side package route when non-signature attachments exist and shows the route's friendly error message if packaging fails.
+- PDF cover logo now renders in a reserved top-right area, while the title uses reduced width so the logo and title cannot overlap.
+- Word image handling now carries R2/content-type information through to `ImageRun`; Word embeds PNG/JPEG logos and skips unsupported formats safely with a document note.
+- Excel Summary now starts with a branded `8D Corrective Action Report` / `Generated by 8d-reports.com` header while preserving workbook validity.
+- Watermark branding remains `Generated with 8d-reports.com`, `Generated by 8d-reports.com`, and `Free export generated with 8d-reports.com`.
+- No pricing, subscription, database schema, auth/email, Resend, AI, entitlement, or report access rules were intentionally changed.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with the existing 11 warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Generated `/tmp/8d-report-export-test.xlsx` with the branded Summary header.
+- `unzip -t /tmp/8d-report-export-test.xlsx` passed with no compressed data errors.
+- Generated `/tmp/8d-report-export-logo-test.docx` with a PNG logo.
+- `unzip -t /tmp/8d-report-export-logo-test.docx` passed, and `word/media/*.png` was present.
+- Generated `/tmp/8d-report-export-package-test.zip` containing the report file plus real attachment files under `attachments/`.
+- `unzip -t /tmp/8d-report-export-package-test.zip` passed, and the ZIP listing contained no `.download-error.txt` files.
+
+## Risks
+
+- Preview manual validation is still required with real uploaded attachments because the failure depended on deployed browser/server/storage behavior.
+- Word still cannot embed WebP logos without adding an image conversion dependency or more complex conversion pipeline; PNG/JPG logos are supported.
+- Excel logo image embedding was intentionally not added to avoid risking workbook corruption in the manual XLSX generator.
+
+## Unfinished / Needs Human Review
+
+- Re-test PR #3 Preview export package downloads for PDF, Word, and Excel with at least one uploaded image and one normal file attachment.
+- Open generated PDF, Word, and Excel files in target tools to confirm visual quality.
+
+## Suggested Next Task
+
+Run PR #3 Preview manual export verification again and do not merge until ZIP packages contain real attachment files.
+
+## Previous Task
+
+Expand PR #3 into an export package polish PR after Preview verification found export packaging and template quality issues.
+
+## Changed Files
+
+- `docs/DEV_LOG.md`
+- `src/components/report/ExportMenu.tsx`
+- `src/lib/pdf-export.ts`
+- `src/lib/word-export.ts`
+- `src/lib/xlsx-export.ts`
+
+## Root Cause
+
+- PDF and Word still had ZIP packaging logic, but each export path handled attachment filtering, report filenames, and download behavior separately. This made the packaging behavior fragile and left Excel without equivalent attachment packaging.
+- Excel exported a valid workbook, but the minimal OpenXML styling made the sheets look cramped and plain.
+- The Evidence sheet listed attachments but did not clearly tell users that actual files belong in the exported ZIP `attachments/` folder.
+- PDF and Word templates still looked closer to generated field dumps than customer/supplier quality records.
+- Free export watermark copy used generic sample-report wording instead of the product site brand.
+
+## Implementation Summary
+
+- Standardized export package behavior in `ExportMenu`: PDF, Word, and Excel now use the same attachment filtering and ZIP packaging helper.
+- Non-signature attachments include uploaded photos and normal files. Signatures are excluded by `fileType === "signature"` or `stepId` beginning with `signature_`.
+- If non-signature attachments exist, exports download a ZIP with the report at the root and files under `attachments/`. If no attachments exist, exports download the single report file.
+- Added Excel ZIP packaging for attachment files while keeping attachment metadata in the Evidence sheet.
+- Improved Excel readability with bold blue header rows, wrapped body cells, wider columns, frozen top rows, taller long-text rows, and a ZIP attachment note on the Evidence sheet.
+- Improved PDF output with a cleaner cover page, branded metadata block, stronger D0-D8 section hierarchy, cleaner attachment list styling, and branded footer text.
+- Improved Word output with a cleaner cover, report metadata table, structured field tables, and attachment table while preserving the improved 5-Why and Fishbone tables.
+- Replaced free-export sample watermarks with `Generated with 8d-reports.com` and footer text `Generated by 8d-reports.com`.
+- Preserved PR #4 logo behavior: PDF still uses `/api/profile/logo/file`, and Word still loads the authenticated user’s stored/R2 logo bytes before URL fallback.
+- No pricing, subscription, database schema, auth/email, Resend, entitlement, or report access logic was intentionally changed.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Generated `/tmp/8d-report-export-test.xlsx` with `generateExcelWorkbook`.
+- `unzip -t /tmp/8d-report-export-test.xlsx` passed with no compressed data errors.
+- Generated `/tmp/8d-report-export-package-test.zip` containing an `.xlsx` report plus two attachment files under `attachments/`.
+- `unzip -t /tmp/8d-report-export-package-test.zip` passed with no compressed data errors.
+
+## Risks
+
+- Browser/manual validation is still needed to confirm attachment ZIP behavior with real uploaded files in Preview.
+- PDF rendering is browser-based, so exact layout should be manually reviewed with representative long reports and images.
+- Word image rendering still depends on the `docx` library-supported image formats; WebP remains a known risk.
+
+## Unfinished / Needs Human Review
+
+- Verify Preview exports for reports with no attachments and with mixed photo/file attachments.
+- Open the generated `.xlsx`, `.docx`, and `.pdf` in target user tools to confirm visual quality.
+
+## Suggested Next Task
+
+Run Preview manual export verification for PDF, Word, and Excel with at least one image attachment and one normal file attachment.
+
+## Previous Task
+
+Update PR #3 (`codex/standard-xlsx-export`) with latest `main` after PR #4 and PR #5 merged.
+
+## Changed Files During This Update
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `src/components/report/ExportMenu.tsx`
+
+## Implementation Summary
+
+- Merged latest `origin/main` into the PR #3 branch so the branch includes the production auth email fixes from PR #5 and export/AI fixes from PR #4.
+- Resolved documentation conflicts by preserving latest main's current task documentation and adding this PR #3 merge-readiness note.
+- Verified `ExportMenu` keeps PDF, Word, and Excel export options together.
+- Preserved PR #4 PDF logo behavior by keeping `logoUrl: logoUrl ? "/api/profile/logo/file" : null` for browser PDF export.
+- Preserved PR #3 Excel gating behavior by keeping the Excel single-report checkout gate for Free/watermarked users and the `/api/reports/[id]/export/xlsx` call for eligible users.
+- No pricing, subscription, database schema, auth/email behavior, logo export behavior, or Excel export behavior was intentionally changed during conflict resolution.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Generated `/tmp/8d-report-export-test.xlsx` with `generateExcelWorkbook`.
+- `unzip -t /tmp/8d-report-export-test.xlsx` passed with no compressed data errors.
+
+## Risks
+
+- This update still requires the full requested local checks and GitHub mergeability recalculation after push.
+
+## Unfinished / Needs Human Review
+
+- Review PR #3 after push to confirm GitHub marks it mergeable.
+- Manually verify the Excel export menu item and a downloaded workbook in Preview if needed.
+
+## Suggested Next Task
+
+Review the refreshed PR #3 preview/checks, then merge if GitHub reports it clean and checks pass.
+
+## Previous Task
+
 Update PR #4 (`codex/p0-export-ai-fixes`) with latest `main` after PR #5 merged.
 
 ## Changed Files During This Update

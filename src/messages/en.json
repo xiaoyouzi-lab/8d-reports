@@ -281,8 +281,10 @@
   "export": {
     "pdf": "PDF",
     "word": "Word (.docx)",
+    "excel": "Excel (.xlsx)",
     "pdfSuccess": "PDF exported successfully",
     "wordSuccess": "Word document exported successfully",
+    "excelSuccess": "Excel workbook exported successfully",
     "exportFailed": "Failed to export"
   },
   "lang": {

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { FileDown, FileText, FileSpreadsheet } from "lucide-react"
 import { toast } from "sonner"
 import { exportReportToPdf } from "@/lib/pdf-export"
-import { createExportZip, downloadBlob } from "@/lib/export-zip"
+import { downloadBlob } from "@/lib/export-zip"
 import { useTranslations } from "next-intl"
 import { getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { trackEvent } from "@/lib/analytics"
@@ -13,13 +13,19 @@ interface ExportAttachment {
   id: string
   url: string
   filename: string
-  fileType: string
+  fileType?: string | null
   mimeType?: string | null
   stepId?: string | null
 }
 
 function getAttachmentFileUrl(att: ExportAttachment): string {
   return `/api/attachments/${att.id}/file`
+}
+
+function isExportAttachment(att: ExportAttachment): boolean {
+  if (att.fileType === "signature") return false
+  if (att.stepId?.startsWith("signature_")) return false
+  return Boolean(att.id && att.filename)
 }
 
 interface ExportMenuProps {
@@ -53,14 +59,51 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     return () => document.removeEventListener("mousedown", handleClick)
   }, [open])
 
-  const fetchAttachments = async () => {
+  const fetchAttachments = async (): Promise<ExportAttachment[]> => {
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments`)
-      return res.ok ? (await res.json() as ExportAttachment[]) : []
-    } catch { return [] }
+      if (!res.ok) throw new Error("Could not load report attachments for export")
+      const data = await res.json().catch(() => [])
+      return Array.isArray(data) ? data.filter(isExportAttachment) : []
+    } catch (error) {
+      if (error instanceof Error) throw error
+      throw new Error("Could not load report attachments for export")
+    }
   }
 
-  const logExport = (format: "pdf" | "word" | "zip") => {
+  const downloadReportPackage = async ({
+    reportBlob,
+    reportFilename,
+    attachments,
+    singleFormat,
+  }: {
+    reportBlob: Blob
+    reportFilename: string
+    attachments: ExportAttachment[]
+    singleFormat: "pdf" | "word" | "excel"
+  }) => {
+    if (attachments.length > 0) {
+      const formData = new FormData()
+      formData.append("reportFile", reportBlob, reportFilename)
+      formData.append("reportFilename", reportFilename)
+      const res = await fetch(`/api/reports/${reportId}/export/package`, {
+        method: "POST",
+        body: formData,
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => null)
+        throw new Error(data?.error || "Could not package report attachments")
+      }
+      const zip = await res.blob()
+      downloadBlob(zip, `${reportId}_8D_Export.zip`)
+      return
+    }
+
+    downloadBlob(reportBlob, reportFilename)
+    logExport(singleFormat)
+  }
+
+  const logExport = (format: "pdf" | "word" | "excel" | "zip") => {
     void fetch(`/api/reports/${reportId}/activity`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -103,7 +146,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     setLoading("pdf")
     try {
       trackEvent("export_clicked", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
-      const allAttachments = (await fetchAttachments()).filter((a) => a.fileType !== "signature")
+      const allAttachments = await fetchAttachments()
       const pdf = await exportReportToPdf({
         reportData,
         reportTitle,
@@ -114,32 +157,25 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
           url: getAttachmentFileUrl(a),
           filename: a.filename,
           stepId: a.stepId ?? undefined,
-          fileType: a.fileType,
-          mimeType: a.mimeType,
+          fileType: a.fileType ?? undefined,
+          mimeType: a.mimeType ?? undefined,
         })),
       })
 
-      const allAttachForZip = allAttachments.map((a) => ({
-        url: getAttachmentFileUrl(a),
-        fallbackUrl: a.url,
-        filename: a.filename,
-      }))
-      if (allAttachForZip.length > 0) {
-        const blob = new Blob([pdf.output("blob")], { type: "application/pdf" })
-        const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.pdf`, allAttachForZip)
-        downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
-        logExport("zip")
-      } else {
-        pdf.save(`${reportId.slice(0, 8)}_8D_Report.pdf`)
-        logExport("pdf")
-      }
+      const blob = new Blob([pdf.output("blob")], { type: "application/pdf" })
+      await downloadReportPackage({
+        reportBlob: blob,
+        reportFilename: `${reportId}_8D_Report.pdf`,
+        attachments: allAttachments,
+        singleFormat: "pdf",
+      })
       trackEvent("export_succeeded", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
       if (withWatermark) {
         trackEvent("watermark_exported", { format: "pdf", plan: "free" }, reportId)
       }
       toast.success(t("pdfSuccess"))
-    } catch {
-      toast.error(t("exportFailed"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("exportFailed"))
     } finally {
       setLoading(null)
     }
@@ -174,30 +210,68 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           plan: withWatermark ? "free" : "pro",
-          logoUrl: logoUrl || null,
           locale: document.cookie.includes("NEXT_LOCALE=zh") ? "zh-CN" : "en",
         }),
       })
       if (!res.ok) throw new Error("Export failed")
-      const allAttachments = (await fetchAttachments()).filter((a) => a.fileType !== "signature")
-      const allAttachForZip = allAttachments.map((a) => ({
-        url: getAttachmentFileUrl(a),
-        fallbackUrl: a.url,
-        filename: a.filename,
-      }))
-      if (allAttachForZip.length > 0) {
-        const blob = await res.blob()
-        const zip = await createExportZip(blob, `${reportId.slice(0, 8)}_8D_Report.docx`, allAttachForZip)
-        downloadBlob(zip, `${reportId.slice(0, 8)}_8D.zip`)
-        logExport("zip")
-      } else {
-        const blob = await res.blob()
-        downloadBlob(blob, `${reportId.slice(0, 8)}_8D_Report.docx`)
-      }
+      const allAttachments = await fetchAttachments()
+      const blob = await res.blob()
+      await downloadReportPackage({
+        reportBlob: blob,
+        reportFilename: `${reportId}_8D_Report.docx`,
+        attachments: allAttachments,
+        singleFormat: "word",
+      })
       trackEvent("export_succeeded", { format: "docx", plan: "pro" }, reportId)
       toast.success(t("wordSuccess"))
-    } catch {
-      toast.error(t("exportFailed"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("exportFailed"))
+    } finally {
+      setLoading(null)
+    }
+  }
+
+  const handleExportXlsx = async () => {
+    setOpen(false)
+    warnIfReportNeedsWork()
+    if (withWatermark) {
+      trackEvent("excel_export_gate_clicked", { plan: "free" }, reportId)
+      toast("Excel export requires Pro, Team, or a single-report export", {
+        description: "Export this report once for $4.99, including Excel, Word, and no-watermark PDF.",
+        action: {
+          label: "Export for $4.99",
+          onClick: () => {
+            trackEvent("upgrade_clicked", { source: "single_export_excel_gate", plan: "free" }, reportId)
+            void startSingleExportCheckout()
+          },
+        },
+      })
+      return
+    }
+    if (!canExportWord) {
+      toast.error("Excel export is not available for this account")
+      return
+    }
+    setLoading("xlsx")
+    try {
+      trackEvent("export_clicked", { format: "xlsx", plan: "pro" }, reportId)
+      const res = await fetch(`/api/reports/${reportId}/export/xlsx`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      if (!res.ok) throw new Error("Export failed")
+      const allAttachments = await fetchAttachments()
+      const blob = await res.blob()
+      await downloadReportPackage({
+        reportBlob: blob,
+        reportFilename: `${reportId}_8D_Report.xlsx`,
+        attachments: allAttachments,
+        singleFormat: "excel",
+      })
+      trackEvent("export_succeeded", { format: "xlsx", plan: "pro" }, reportId)
+      toast.success(t("excelSuccess"))
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("exportFailed"))
     } finally {
       setLoading(null)
     }
@@ -237,6 +311,14 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
           >
             <FileSpreadsheet className="size-4" />
             {t("word")}
+          </button>
+          <button
+            type="button"
+            onClick={handleExportXlsx}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+          >
+            <FileSpreadsheet className="size-4" />
+            {t("excel")}
           </button>
           {withWatermark && (
             <button

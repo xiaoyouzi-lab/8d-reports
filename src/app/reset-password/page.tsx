@@ -9,6 +9,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { toast } from "sonner"
 import { ArrowLeft } from "lucide-react"
 
+type PasswordResetDebug = {
+  route?: string
+  providerMessageId?: string | null
+  emailDomain?: string
+  hasResendApiKey?: boolean
+  hasEmailFrom?: boolean
+  vercelEnv?: string
+}
+
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState("")
   const [step, setStep] = useState<"request" | "reset" | "done">("request")
@@ -16,6 +25,7 @@ export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [loading, setLoading] = useState(false)
+  const [debug, setDebug] = useState<PasswordResetDebug | null>(null)
 
   function validateNewPassword() {
     if (password !== confirmPassword) return "Passwords do not match"
@@ -30,16 +40,21 @@ export default function ResetPasswordPage() {
   const handleRequestCode = async () => {
     if (!email) return
     setLoading(true)
+    setDebug(null)
     try {
-      const response = await fetch("/api/auth/email-otp/request-password-reset", {
+      const response = await fetch("/api/auth-email/password-reset", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       })
-      if (!response.ok) throw new Error("Request failed")
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to send reset code")
+      }
+      if (data.debug) setDebug(data.debug)
       setStep("reset")
-    } catch {
-      toast.error("Failed to send reset code. Please try again.")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to send reset code. Please try again.")
     } finally {
       setLoading(false)
     }
@@ -96,8 +111,19 @@ export default function ResetPasswordPage() {
           ) : step === "reset" ? (
             <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
-                If an account exists with that email, we&apos;ve sent a 6-digit reset code. Please check your inbox.
+                We sent a 6-digit reset code. Please check your inbox.
               </div>
+              {debug && (
+                <div className="rounded-md border border-slate-200 bg-slate-50 p-2 text-xs text-slate-500">
+                  <div>Preview reset email debug</div>
+                  <div>route: {debug.route || "unknown"}</div>
+                  <div>emailDomain: {debug.emailDomain || "unknown"}</div>
+                  <div>hasResendApiKey: {String(Boolean(debug.hasResendApiKey))}</div>
+                  <div>hasEmailFrom: {String(Boolean(debug.hasEmailFrom))}</div>
+                  <div>providerMessageId: {debug.providerMessageId || "none"}</div>
+                  <div>vercelEnv: {debug.vercelEnv || "local"}</div>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label htmlFor="otp">Reset code</Label>
                 <Input

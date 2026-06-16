@@ -280,8 +280,10 @@
   "export": {
     "pdf": "PDF",
     "word": "Word (.docx)",
+    "excel": "Excel (.xlsx)",
     "pdfSuccess": "PDF导出成功",
     "wordSuccess": "Word文档导出成功",
+    "excelSuccess": "Excel工作簿导出成功",
     "exportFailed": "导出失败"
   },
   "lang": {

@@ -1,6 +1,6 @@
 import {
-  Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
-  AlignmentType, WidthType, ImageRun,
+  Document, Packer, Paragraph, TextRun,
+  AlignmentType, ImageRun,
 } from "docx";
 import { STEPS, type ReportData } from "./report-steps";
 import { getR2KeyFromPublicUrl, getR2ObjectBuffer } from "./r2";
@@ -14,6 +14,10 @@ const FISHBONE_FIELD_NAMES = new Set([
   "fishboneEnvironment",
 ]);
 
+const BRAND_BLUE = "1e40af";
+const TEXT_DARK = "111827";
+const TEXT_MUTED = "64748b";
+
 interface WordExportOptions {
   reportData: ReportData;
   reportTitle: string;
@@ -23,6 +27,8 @@ interface WordExportOptions {
   locale?: string;
   attachmentImages?: { url: string; filename: string; stepId?: string; storagePath?: string; mimeType?: string | null }[];
 }
+
+type FetchedImage = { buffer: Buffer; contentType?: string | null };
 
 function isImageAttachment(att: { mimeType?: string | null; storagePath?: string; url: string }) {
   return att.mimeType?.startsWith("image/") ?? false;
@@ -38,36 +44,97 @@ function addMetaRow(label: string, value: string) {
   });
 }
 
-async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<Buffer | null> {
+function textRun(text: string, options: { bold?: boolean; color?: string; size?: number; italics?: boolean; break?: number } = {}) {
+  return new TextRun({
+    text,
+    bold: options.bold,
+    color: options.color,
+    size: options.size ?? 20,
+    italics: options.italics,
+    break: options.break,
+  });
+}
+
+function sectionHeading(text: string) {
+  return new Paragraph({
+    spacing: { before: 280, after: 120 },
+    children: [textRun(text, { size: 26, bold: true, color: BRAND_BLUE })],
+  });
+}
+
+function labelValueParagraph(label: string, value: string, options: { compact?: boolean } = {}) {
+  return new Paragraph({
+    spacing: { before: options.compact ? 40 : 80, after: options.compact ? 40 : 80 },
+    children: [
+      textRun(`${label}: `, { bold: true, color: TEXT_MUTED, size: 20 }),
+      textRun(value || "-", { color: TEXT_DARK, size: 20 }),
+    ],
+  });
+}
+
+function renderMetadataRows(rows: Array<[string, string]>) {
+  return rows.map(([label, value]) => labelValueParagraph(label, value));
+}
+
+function renderFieldRows(rows: Array<[string, string]>) {
+  return rows.map(([label, value]) => labelValueParagraph(label, value || "No relevant data"));
+}
+
+function renderAttachmentRows(attachments: Array<{ filename: string; stepId?: string; mimeType?: string | null }>) {
+  return attachments.map((att) => new Paragraph({
+    spacing: { before: 60, after: 60 },
+    children: [
+      textRun(`${att.stepId || "General"}: `, { bold: true, color: TEXT_MUTED, size: 19 }),
+      textRun(att.filename, { color: TEXT_DARK, size: 19 }),
+      textRun(` (${att.mimeType || "file"})`, { color: TEXT_MUTED, size: 18 }),
+    ],
+  }));
+}
+
+async function fetchImageBuffer(img: { url: string; storagePath?: string }): Promise<FetchedImage | null> {
   if (img.storagePath) {
     const object = await getR2ObjectBuffer(img.storagePath);
-    if (object?.buffer) return object.buffer;
+    if (object?.buffer) return object;
   }
 
   const key = getR2KeyFromPublicUrl(img.url);
   if (key) {
     const object = await getR2ObjectBuffer(key);
-    if (object?.buffer) return object.buffer;
+    if (object?.buffer) return object;
   }
 
   try {
     const res = await fetch(img.url);
     if (!res.ok) return null;
-    return Buffer.from(await res.arrayBuffer());
+    return {
+      buffer: Buffer.from(await res.arrayBuffer()),
+      contentType: res.headers.get("content-type"),
+    };
   } catch {
     return null;
   }
 }
 
-function getDocxImageType(mimeType?: string | null): "png" | "jpg" {
-  return mimeType === "image/jpeg" || mimeType === "image/jpg" ? "jpg" : "png";
+function getDocxImageType(mimeType?: string | null): "png" | "jpg" | null {
+  if (mimeType === "image/jpeg" || mimeType === "image/jpg") return "jpg";
+  if (mimeType === "image/png") return "png";
+  return null;
+}
+
+function inferImageMimeType(url: string, mimeType?: string | null) {
+  if (mimeType) return mimeType.split(";")[0]?.trim().toLowerCase() || null;
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) return "image/jpeg";
+  if (lowerUrl.endsWith(".png")) return "image/png";
+  if (lowerUrl.endsWith(".webp")) return "image/webp";
+  return null;
 }
 
 export async function generateWordDocument(options: WordExportOptions): Promise<Buffer> {
   const { reportData, reportTitle, reportId, withWatermark, logoUrl, attachmentImages = [] } = options;
   const isZh = options.locale?.startsWith("zh");
 
-  const children: Array<Paragraph | Table> = [];
+  const children: Paragraph[] = [];
 
   // Cover page
   children.push(
@@ -79,12 +146,20 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 
   if (logoUrl) {
     try {
-      const buf = await fetchImageBuffer({ url: logoUrl });
-      if (buf) {
+      const logoImage = await fetchImageBuffer({ url: logoUrl });
+      const logoType = getDocxImageType(inferImageMimeType(logoUrl, logoImage?.contentType));
+      if (logoImage?.buffer && logoType) {
         children.push(
           new Paragraph({
             alignment: AlignmentType.LEFT,
-            children: [new ImageRun({ type: getDocxImageType(logoUrl.endsWith(".jpg") || logoUrl.endsWith(".jpeg") ? "image/jpeg" : "image/png"), data: buf, transformation: { width: 120, height: 60 } })],
+            children: [new ImageRun({ type: logoType, data: logoImage.buffer, transformation: { width: 120, height: 60 } })],
+          })
+        );
+      } else if (logoImage?.buffer) {
+        children.push(
+          new Paragraph({
+            alignment: AlignmentType.LEFT,
+            children: [new TextRun({ text: "Company logo is saved in a format Word export cannot embed yet. Please upload a PNG or JPG logo for Word export.", size: 16, color: "64748b", italics: true })],
           })
         );
       }
@@ -94,7 +169,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   children.push(
     new Paragraph({
       spacing: { before: 400 },
-      children: [new TextRun({ text: isZh ? "8D 报告" : "8D Report", size: 56, bold: true, color: "1e40af" })],
+      children: [new TextRun({ text: isZh ? "8D 纠正措施报告" : "8D Corrective Action Report", size: 52, bold: true, color: BRAND_BLUE })],
     })
   );
   children.push(
@@ -106,26 +181,26 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   children.push(
     new Paragraph({
       spacing: { before: 100 },
-      children: [new TextRun({ text: reportId, size: 24, color: "4b5563" })],
+      children: [new TextRun({ text: isZh ? "客户/供应商质量记录" : "Customer / supplier quality record", size: 22, color: "64748b" })],
     })
   );
-  children.push(addMetaRow("Report Number", reportData.reportNumber || reportId));
-  children.push(addMetaRow("Customer", reportData.customerName));
-  children.push(addMetaRow("Product / Model", reportData.productName));
-  children.push(addMetaRow("Batch / Lot", reportData.batchNumber));
-  children.push(
-    new Paragraph({
-      spacing: { before: 100 },
-      children: [new TextRun({ text: new Date().toLocaleDateString(isZh ? "zh-CN" : "en-US", { year: "numeric", month: "long", day: "numeric" }), size: 24, color: "4b5563" })],
-    })
-  );
+  children.push(sectionHeading("Report Metadata"));
+  children.push(...renderMetadataRows([
+    ["Report Number", reportData.reportNumber || reportId],
+    ["Customer / Supplier", reportData.customerName],
+    ["Product / Part", reportData.productName],
+    ["Batch / Lot", reportData.batchNumber],
+    ["Report Type", reportData.reportType],
+    ["Priority", reportData.priority],
+    ["Generated Date", new Date().toLocaleDateString(isZh ? "zh-CN" : "en-US", { year: "numeric", month: "long", day: "numeric" })],
+  ]));
 
   if (withWatermark) {
     children.push(
       new Paragraph({
         spacing: { before: 400 },
         alignment: AlignmentType.CENTER,
-        children: [new TextRun({ text: isZh ? "样 例 报 告" : "SAMPLE REPORT", size: 40, color: "d1d5db", italics: true })],
+        children: [new TextRun({ text: "Generated with 8d-reports.com", size: 28, color: "94a3b8", italics: true })],
       })
     );
   }
@@ -157,23 +232,8 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 
   const normalAttachments = attachmentImages.filter((att) => att.stepId?.startsWith("signature_") !== true);
   if (normalAttachments.length > 0) {
-    children.push(
-      new Paragraph({
-        spacing: { before: 300, after: 100 },
-        children: [new TextRun({ text: "Attachment List", size: 28, bold: true, color: "1e40af" })],
-      })
-    );
-    for (const att of normalAttachments) {
-      children.push(
-        new Paragraph({
-          spacing: { after: 60 },
-          children: [
-            new TextRun({ text: `${att.stepId || "General"}: `, bold: true, size: 18 }),
-            new TextRun({ text: `${att.filename} (${att.mimeType || "file"})`, size: 18 }),
-          ],
-        })
-      );
-    }
+    children.push(sectionHeading("Attachment List"));
+    children.push(...renderAttachmentRows(normalAttachments));
   }
 
   // Steps
@@ -195,19 +255,12 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
     const fiveWhyFields = step.fields.filter((field) => field.name.startsWith("why"));
     const regularFields = step.fields.filter((field) => !FISHBONE_FIELD_NAMES.has(field.name) && !field.name.startsWith("why"));
 
-    for (const field of regularFields) {
-      const val: unknown = reportData[field.name as keyof ReportData];
-      if (!val || String(val).trim() === "") continue;
-
-      children.push(
-        new Paragraph({
-          spacing: { after: 100 },
-          children: [
-            new TextRun({ text: field.label + ": ", bold: true, size: 22 }),
-            new TextRun({ text: String(val), size: 22 }),
-          ],
-        })
-      );
+    const fieldRows = regularFields
+      .filter((field) => field.type !== "photo")
+      .map((field) => [field.label, String(reportData[field.name as keyof ReportData] || "").trim()] as [string, string])
+      .filter(([, value]) => value !== "");
+    if (fieldRows.length > 0) {
+      children.push(...renderFieldRows(fieldRows));
     }
 
     if (fishboneFields.length > 0) {
@@ -222,7 +275,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
             children: [new TextRun({ text: "Fishbone / Ishikawa 6M Analysis", bold: true, size: 22, color: "1e40af" })],
           })
         );
-        children.push(renderFishboneTable(values));
+        children.push(...renderFishboneRows(values));
       }
     }
 
@@ -235,7 +288,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
             children: [new TextRun({ text: "5-Why Analysis", bold: true, size: 22, color: "1e40af" })],
           })
         );
-        children.push(render5WhyTable(values));
+        children.push(...render5WhyRows(values));
       }
     }
 
@@ -250,8 +303,9 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
       )
       for (const img of stepImages) {
         try {
-          const buf = await fetchImageBuffer(img)
-          if (!buf) continue
+          const fetched = await fetchImageBuffer(img)
+          const imageType = getDocxImageType(inferImageMimeType(img.url, fetched?.contentType || img.mimeType))
+          if (!fetched?.buffer || !imageType) continue
           children.push(
             new Paragraph({
               spacing: { after: 50 },
@@ -260,7 +314,7 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
           )
           children.push(
             new Paragraph({
-              children: [new ImageRun({ type: getDocxImageType(img.mimeType), data: buf, transformation: { width: 360, height: 270 } })],
+              children: [new ImageRun({ type: imageType, data: fetched.buffer, transformation: { width: 360, height: 270 } })],
             })
           )
         } catch { /* skip failed image fetch */ }
@@ -298,13 +352,13 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   for (const row of signatureRows) {
     children.push(addMetaRow(row.label, `${row.name || "-"}    Date: ${row.date || "-"}`))
     if (row.url) {
-      const isWebp = row.url.toLowerCase().includes(".webp")
-      const buf = isWebp ? null : await fetchImageBuffer({ url: row.url })
-      if (buf) {
+      const fetched = await fetchImageBuffer({ url: row.url })
+      const imageType = getDocxImageType(inferImageMimeType(row.url, fetched?.contentType))
+      if (fetched?.buffer && imageType) {
         children.push(
           new Paragraph({
             spacing: { after: 120 },
-            children: [new ImageRun({ type: getDocxImageType(row.url.endsWith(".jpg") ? "image/jpeg" : "image/png"), data: buf, transformation: { width: 160, height: 60 } })],
+            children: [new ImageRun({ type: imageType, data: fetched.buffer, transformation: { width: 160, height: 60 } })],
           })
         )
       } else {
@@ -323,7 +377,11 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
 
   const doc = new Document({
     sections: [{
-      properties: {},
+      properties: {
+        page: {
+          margin: { top: 720, right: 720, bottom: 720, left: 720 },
+        },
+      },
       children,
     }],
   });
@@ -331,47 +389,12 @@ export async function generateWordDocument(options: WordExportOptions): Promise<
   return Packer.toBuffer(doc);
 }
 
-function render5WhyTable(values: string[]) {
-  const headerRow = new TableRow({
-    children: [
-      new TableCell({ width: { size: 1800, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Why", bold: true, size: 20 })] })] }),
-      new TableCell({ width: { size: 7200, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Answer / Evidence", bold: true, size: 20 })] })] }),
-    ],
-  });
-
-  const rows = [headerRow];
-  for (let i = 0; i < 5; i++) {
-    const value = values[i]?.trim() || "No relevant data";
-    rows.push(
-      new TableRow({
-        children: [
-          new TableCell({ width: { size: 1800, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: `Why ${i + 1}`, bold: true, size: 20 })] })] }),
-          new TableCell({ width: { size: 7200, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: value, size: 20 })] })] }),
-        ],
-      })
-    );
-  }
-
-  return new Table({ rows, width: { size: 9000, type: WidthType.DXA } });
+function render5WhyRows(values: string[]) {
+  return Array.from({ length: 5 }, (_, index) =>
+    labelValueParagraph(`Why ${index + 1}`, values[index]?.trim() || "No relevant data")
+  );
 }
 
-function renderFishboneTable(values: Array<{ label: string; value: string }>) {
-  const headerRow = new TableRow({
-    children: [
-      new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "6M Category", bold: true, size: 20 })] })] }),
-      new TableCell({ width: { size: 6500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: "Possible Causes / Evidence Checked", bold: true, size: 20 })] })] }),
-    ],
-  });
-
-  const rows = [
-    headerRow,
-    ...values.map((item) => new TableRow({
-      children: [
-        new TableCell({ width: { size: 2500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: item.label, bold: true, size: 20 })] })] }),
-        new TableCell({ width: { size: 6500, type: WidthType.DXA }, children: [new Paragraph({ children: [new TextRun({ text: item.value || "-", size: 20 })] })] }),
-      ],
-    })),
-  ];
-
-  return new Table({ rows, width: { size: 9000, type: WidthType.DXA } });
+function renderFishboneRows(values: Array<{ label: string; value: string }>) {
+  return values.map((item) => labelValueParagraph(item.label, item.value || "No relevant data"));
 }
