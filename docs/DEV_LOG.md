@@ -2,6 +2,70 @@
 
 ## Latest Task
 
+Marketing Data Pipeline v1 for 8d-reports.com.
+
+## Changed Files
+
+- `data/marketing/serp_competitor_sample.template.csv`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/MARKETING_DATA_DICTIONARY.md`
+- `docs/MARKETING_WORKFLOW.md`
+- `package.json`
+- `scripts/marketing/build-weekly-report.ts`
+- `scripts/marketing/ga4-export.ts`
+- `scripts/marketing/google-auth.ts`
+- `scripts/marketing/gsc-export.ts`
+- `scripts/marketing/marketing-utils.ts`
+
+## Root Cause / Operating Need
+
+- PR #6 handles Google Search Console index hygiene: crawlability, canonical URLs, sitemap quality, legacy SEO redirects, and expected robots-blocked private routes.
+- SEO / GEO / social optimization should not proceed as a copywriting exercise without real demand, engagement, funnel, and SERP evidence.
+- The first pipeline needs conservative data grading so A-grade first-party data, B-grade live manual evidence, C-grade estimates, and D-grade hypotheses are not mixed together as if they were equally reliable.
+
+## Implementation Summary
+
+- Added a lightweight Google service-account auth helper that uses the existing Node runtime instead of adding a Google SDK dependency.
+- Added `scripts/marketing/gsc-export.ts` to export GSC query, page, and query-page performance for 28-day and 90-day windows.
+- Added `scripts/marketing/ga4-export.ts` to export landing pages, traffic source / medium, events, and key funnel events for a 28-day window.
+- Added `scripts/marketing/build-weekly-report.ts` to generate `data/marketing/weekly_report.md` from existing CSV inputs and stay conservative with "No relevant data" when inputs are missing.
+- Added `data/marketing/serp_competitor_sample.template.csv` for manual SERP / competitor sampling.
+- Added `docs/MARKETING_DATA_DICTIONARY.md` with reliability grades, source definitions, fields, and operating rules.
+- Added `docs/MARKETING_WORKFLOW.md` with the weekly operating loop, UTM standards, platform notes, environment setup, and report-generation instructions.
+- Added `marketing:gsc`, `marketing:ga4`, and `marketing:report` package scripts.
+- This PR does not change SEO page body copy, homepage copy, auth, signup, login, forgot password, Resend, pricing, subscriptions, payment, checkout, database schema, exports, attachment ZIP, AI beta gating, sitemap, robots, or production configuration.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with the existing 11 warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- `npm run marketing:report` passed and generated `data/marketing/weekly_report.md`.
+- `npm run marketing:gsc -- --dry-run` passed and listed planned GSC outputs.
+- `npm run marketing:ga4 -- --dry-run` passed and listed planned GA4 outputs.
+- Missing-credential checks for `npm run marketing:gsc` and `npm run marketing:ga4` returned clear setup messages for `GOOGLE_APPLICATION_CREDENTIALS`.
+
+## Risks
+
+- Live GSC and GA4 exports require Google service-account access configured outside this PR.
+- GA4 key event names must match the deployed GA4 property configuration.
+- The first weekly report will intentionally show "No relevant data" until real CSV exports and manual SERP samples are available.
+
+## Unfinished / Needs Human Review
+
+- Add the service account email to Google Search Console and GA4 property access management.
+- Decide whether the canonical GSC property should be a domain property or `https://www.8d-reports.com/` URL-prefix property.
+- Fill the first SERP / competitor sample for the top three keyword families.
+
+## Suggested Next Task
+
+Configure GSC / GA4 permissions, run the exports, add the first SERP sample, regenerate the weekly report, then open a separate evidence-backed SEO / GEO optimization PR.
+
+## Previous Task
+
 Google Search Console index hygiene fix for 404, robots blocked, redirect, and duplicate canonical reports.
 
 ## Changed Files

@@ -2,65 +2,57 @@
 
 ## Task Name
 
-Google Search Console index hygiene fix.
+Marketing Data Pipeline v1.
 
 ## Background
 
-Google Search Console reported new indexing issue categories for `8d-reports.com`:
+PR #6 is the Google Search Console index hygiene PR. It handles crawlability, canonical URLs, sitemap quality, legacy SEO redirects, and expected robots-blocked private routes.
 
-- Not found (404)
-- Page with redirect
-- Blocked by `robots.txt`
-- Duplicate page without user-selected canonical
-
-This task pauses SEO content expansion. The goal is not to force every GSC notice to disappear, but to classify expected behavior versus real indexing risk and make sure public SEO pages are crawlable, canonical, and present in the sitemap only when they should be indexed.
+This task starts the next operating layer: a first Marketing Data Pipeline for `8d-reports.com`. The goal is to make later SEO, GEO, and social work depend on evidence from Google Search Console, Google Analytics 4, product events, and manually verified SERP / competitor samples instead of intuition.
 
 ## Goal
 
-Create a small index-hygiene PR that verifies public marketing/SEO pages are not blocked by robots, do not 404, are not submitted as redirect URLs, and have clear canonical URLs.
+Create a small, reviewable PR named `marketing-data-pipeline-v1` that adds data export scripts, reliability rules, a weekly marketing report generator, and a documented marketing workflow.
 
 ## Non-Goals
 
-- Do not write new SEO content.
-- Do not change auth, signup, login, forgot password, or Resend email behavior.
-- Do not change PDF, Word, Excel, attachment ZIP, subscription, pricing, payment, database schema, AI beta gating, or checkout behavior.
-- Do not open private app routes to search engines.
+- Do not optimize SEO page body content.
+- Do not change homepage copy.
+- Do not change auth, signup, login, forgot password, Resend, pricing, subscriptions, payment, checkout, database schema, export logic, attachment ZIP, AI beta gating, sitemap, robots, or production configuration.
+- Do not add LinkedIn, X, Xiaohongshu, Zhihu, or WeChat auto-publishing APIs.
 
 ## Scope
 
-- `src/app/robots.ts`
-- `src/app/sitemap.ts`
-- `next.config.ts` redirects for legacy SEO URL aliases
-- SEO metadata/canonical declarations for public marketing pages
-- Internal marketing links that point at blocked API download URLs
-- Lightweight SEO URL validation script
-- `docs/DEV_LOG.md`
+- Google Search Console export script.
+- Google Analytics 4 export script.
+- SERP / competitor sample CSV template.
+- Marketing data dictionary with reliability grading.
+- Marketing workflow documentation with UTM rules and social publishing preparation.
+- Weekly report generator that reads available CSV data and stays conservative when data is missing.
+- `package.json` scripts for marketing exports and report generation.
+- `docs/DEV_LOG.md`.
 
 ## Requirements
 
-- Keep private/system paths such as `/api/`, `/dashboard`, and `/reports/` blocked by robots.
-- Keep public SEO pages such as `/`, `/resources`, `/pricing`, `/sample-report`, `/demo-reports`, `/8d-report-template`, `/8d-report-example`, `/supplier-8d-report`, `/corrective-action-report-template`, and `/5-why-root-cause-template` crawlable.
-- Ensure sitemap URLs correspond to real public pages and are not redirect sources or robots-blocked paths.
-- Add 301 redirects for relevant old/alias SEO paths where the new canonical target exists.
-- Use canonical URLs on public SEO/marketing pages.
-- Add `npm run check:seo` to check sitemap URLs, robots blocking, legacy redirect mappings, and obvious internal API download links.
+- Export GSC query, page, and query-page performance data with clicks, impressions, CTR, and average position.
+- Export GA4 landing pages, source / medium, events, and funnel data for key events.
+- Missing Google credentials must produce clear setup errors, not confusing stack traces.
+- Weekly report must include Executive Summary, Data Sources and Reliability, Index Health, Search Demand, Landing Page Performance, Funnel Analysis, Competitor / SERP Gap, GEO Readiness, Social / UTM Performance, Recommended Codex Tasks, What Not To Do This Week, and Open Questions.
+- All future operational recommendations must cite data reliability grades.
 
 ## Acceptance Criteria
 
-- `robots.txt` only blocks pages that should not be indexed.
-- Sitemap contains final canonical URLs only.
-- Old SEO alias URLs redirect to relevant canonical pages without loops.
-- The listed `/8d-report-example/...` paths are present and valid.
-- Marketing pages do not use robots-blocked API download URLs as SEO entrance links.
-- `npm run check:seo` passes.
+- `npm run marketing:report` generates `data/marketing/weekly_report.md` without Google credentials.
+- `npm run marketing:gsc -- --dry-run` and `npm run marketing:ga4 -- --dry-run` document planned outputs without credentials.
 - Full project checks pass.
+- No SEO page body copy or product core behavior is changed.
 
 ## Risk Areas
 
-- Some GSC “blocked by robots.txt” notices are expected for private/system routes.
-- Some “page with redirect” notices are expected for HTTP to HTTPS, non-www to www, trailing slash normalization, or legacy URL redirects.
-- GSC validation still requires Google recrawl after deployment.
+- GSC and GA4 API exports require service account permissions configured outside this PR.
+- GA4 key event names must match the property configuration.
+- The first generated weekly report may contain mostly "No relevant data" until real CSV exports and manual SERP samples are added.
 
 ## Completion Report Required
 
-Report normal versus real GSC issues, redirects added, sitemap/internal-link changes, canonical handling, checks run, remaining risks, and whether the user should request validation in Google Search Console after deployment.
+Report new scripts, new documents, required Google credentials, data output locations, weekly report generation, what is runnable now, what requires GSC / GA4 access, checks run, remaining risks, unfinished items, and the suggested next task.
