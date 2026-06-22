@@ -2,6 +2,72 @@
 
 ## Latest Task
 
+Marketing Analysis v2 and entry-page SEO fix based on real GSC / GA4 exports.
+
+## Changed Files
+
+- `data/marketing/weekly_report.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/MARKETING_DATA_DICTIONARY.md`
+- `docs/MARKETING_WORKFLOW.md`
+- `scripts/marketing/build-weekly-report.ts`
+- `scripts/marketing/ga4-export.ts`
+- `src/app/(marketing)/page.tsx`
+- `src/app/(marketing)/8d-report-template/page.tsx`
+- `src/lib/analytics-taxonomy.ts`
+- `src/lib/analytics.ts`
+
+Live GSC / GA4 CSV exports remain local and untracked. Google credentials and `.secrets` were not changed.
+
+## Evidence / Operating Judgment
+
+- A-grade GSC data shows early visibility but low ranking: the main query positions are above 30, so zero clicks are not treated as a title/meta-only CTR problem.
+- The homepage has 244 GSC impressions, 65 GA4 sessions, and an 18.5% engagement rate, supporting a first-screen value proposition and CTA change.
+- `/8d-report-template` has 67 GSC impressions at position 51.6, supporting a deeper, directly usable template page rather than a snippet-only edit.
+- A-grade GA4 events show `signup_success`, `report_created`, `export_clicked`, and `export_succeeded` while the funnel expects different names. This is classified as Measurement risk.
+- The B-grade competitor template has no live samples, so no competitor conclusions were added.
+
+## Implementation Summary
+
+- Added position-aware weekly report rules for SERP snippet opportunities, near-ranking opportunities, and low-ranking early visibility.
+- Added Measurement Integrity with actual event names, expected funnel names, exact matches, observed aliases, missing names, and explicit A / B pending / D labels.
+- Preserved internal product analytics names while translating GA4 events to `sign_up`, `create_report`, `export_pdf`, `export_word`, and `export_excel`.
+- Left server-side `checkout_completed` unchanged in the payment webhook and documented the GA4 gap for a future safe server-side measurement design.
+- Repositioned the homepage as 8D report software for SQEs, quality engineers, supplier quality teams, customer complaints, SCARs, and corrective actions.
+- Rebuilt `/8d-report-template` with D0-D8 prompts, a copyable structure, common mistakes, Word / Excel / PDF guidance, sample-report CTAs, FAQ, and FAQ JSON-LD.
+- Added the first manual SERP keyword set without inventing competitor rankings or URLs.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors; no new warning was introduced.
+- `npm run build` passed and statically generated `/` and `/8d-report-template`.
+- `npm run test:governance` passed.
+- `npm run marketing:report` passed and regenerated the rank-aware report.
+- Analytics taxonomy smoke verification passed for signup, report creation, PDF, Word, Excel, and checkout-start mappings.
+- Playwright checks passed at 1440px desktop and 390px mobile widths with no horizontal overflow, console errors, or console warnings.
+
+## Risks
+
+- Historical generic export events cannot be split by PDF / Word / Excel from the current eventName-only CSV.
+- `checkout_completed` is not yet sent to GA4; do not infer payment failure from the GA4 funnel alone.
+- SEO impact requires a new GSC / GA4 observation window after deployment.
+- Competitor and GEO strategy still lacks B-grade live SERP samples.
+
+## Unfinished / Needs Human Review
+
+- Verify the normalized GA4 events in GA4 DebugView after deployment.
+- Decide which funnel events should be marked as GA4 key events.
+- Manually collect the first SERP samples before competitor or GEO conclusions.
+
+## Suggested Next Task
+
+Deploy the focused entry-page changes, verify the normalized events in GA4 DebugView, then collect B-grade SERP samples and wait for a new GSC / GA4 observation window before the next SEO / GEO iteration.
+
+## Previous Task
+
 Marketing Data Pipeline v1 for 8d-reports.com.
 
 ## Changed Files

@@ -4,7 +4,7 @@ This workflow turns SEO, GEO, and social work into a data-backed operating loop:
 
 Information gathering -> data reliability check -> Marketing Data Pipeline -> analysis -> professional operating judgment -> focused Codex optimization PR.
 
-This PR establishes the workflow and data pipeline only. It does not optimize SEO page body copy, homepage copy, auth, payment, exports, database schema, sitemap, robots, or production configuration.
+Marketing Data Pipeline v1 established the export workflow. Marketing Analysis v2 uses its A-grade GSC / GA4 evidence for focused entry-page and measurement improvements without changing auth, payment, export core logic, database schema, sitemap, robots, or production configuration.
 
 ## Weekly Operating Loop
 
@@ -23,6 +23,56 @@ This PR establishes the workflow and data pipeline only. It does not optimize SE
 5. Create the next Codex PR from the report.
    - Choose one or two recommendations with A-grade or B-grade evidence.
    - Keep SEO / GEO content optimization in a separate PR after this data pipeline exists.
+
+## Search Opportunity Rules
+
+- Average position 1-10 with low CTR: inspect the title, meta description, SERP snippet, rich-result eligibility, and FAQ snippet.
+- Average position 11-30: treat the page as a near-ranking opportunity; improve content depth, internal links, FAQ, schema, and usable template assets.
+- Average position above 30: treat the page as low-ranking early visibility; improve search-intent fit, industry examples, internal links, schema, and sample-report CTA before title/meta-only work.
+- GSC impressions plus low GA4 engagement: improve the first-screen value proposition and CTA.
+
+These rules use A-grade first-party evidence. A theory about why ranking is low remains D-grade until live SERP or other evidence verifies it.
+
+## Measurement Integrity
+
+The 2026-06-22 A-grade GA4 export contained these product events:
+
+- `signup_success`
+- `report_created`
+- `export_clicked`
+- `export_succeeded`
+- `checkout_started`
+
+The funnel taxonomy is:
+
+- `sign_up`
+- `create_report`
+- `export_pdf`
+- `export_word`
+- `export_excel`
+- `checkout_started`
+- `checkout_completed`
+
+The client analytics helper now translates `signup_success` to `sign_up`, `report_created` to `create_report`, and generic export clicks to a format-specific GA4 name. The existing internal product-event names are preserved for product analytics and governance history.
+
+`checkout_completed` is currently written by the payment webhook to product analytics only. Sending it to GA4 requires a separate, privacy-safe server-side measurement design; do not change payment success behavior merely to create a browser event.
+
+Until the normalized names appear in GA4 DebugView and a new export, zero-valued funnel steps indicate Measurement risk, not proof that users did not complete those actions.
+
+## First Manual SERP Sample
+
+Collect live B-grade samples for these keywords before making competitor or GEO positioning claims:
+
+- `8d report template`
+- `8d report example`
+- `8d software`
+- `supplier 8d report`
+- `corrective action report template`
+- `5 why root cause template`
+- `scar report template`
+- `customer complaint 8d report`
+
+Record only URLs and page details observed in the live SERP. Do not invent ranking URLs or infer a competitor pattern from the empty template.
 
 ## UTM Standard
 
@@ -95,7 +145,7 @@ This PR does not add LinkedIn, X, Zhihu, Xiaohongshu, or WeChat auto-publishing 
 These variables are for local marketing exports. They are not required for production runtime in this PR.
 
 - `GOOGLE_APPLICATION_CREDENTIALS`: local filesystem path to a Google service account JSON file.
-- `GSC_SITE_URL`: exact Search Console property URL, for example `https://www.8d-reports.com/`.
+- `GSC_SITE_URL`: exact Search Console property identifier, for example `sc-domain:8d-reports.com` for the configured domain property or a verified URL-prefix property.
 - `GA4_PROPERTY_ID`: numeric GA4 property id. The script also accepts `properties/123456789` and strips the prefix.
 
 Access requirements:
@@ -128,11 +178,12 @@ The report sections are:
 4. Search Demand
 5. Landing Page Performance
 6. Funnel Analysis
-7. Competitor / SERP Gap
-8. GEO Readiness
-9. Social / UTM Performance
-10. Recommended Codex Tasks
-11. What Not To Do This Week
-12. Open Questions
+7. Measurement Integrity
+8. Competitor / SERP Gap
+9. GEO Readiness
+10. Social / UTM Performance
+11. Recommended Codex Tasks
+12. What Not To Do This Week
+13. Open Questions
 
 The report is intentionally conservative. If CSV inputs are missing or empty, it says "No relevant data" and recommends data setup before content optimization.

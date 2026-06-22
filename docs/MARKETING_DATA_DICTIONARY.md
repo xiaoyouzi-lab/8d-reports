@@ -69,6 +69,18 @@ Tracked key event names for this pipeline:
 - `checkout_started`
 - `checkout_completed`
 
+Current event-name normalization:
+
+| Internal product event | GA4 funnel event | Notes |
+| --- | --- | --- |
+| `signup_success` | `sign_up` | Existing internal history remains unchanged. |
+| `report_created` | `create_report` | Sent after successful report creation. |
+| `export_clicked` with `format=pdf` | `export_pdf` | GA4 records the format-specific click. |
+| `export_clicked` with `format=docx` | `export_word` | GA4 records the format-specific click. |
+| `export_clicked` with `format=xlsx` | `export_excel` | GA4 records the format-specific click. |
+| `checkout_started` | `checkout_started` | Exact match. |
+| webhook `checkout_completed` | Not yet sent to GA4 | Product analytics receives it server-side; GA4 needs a separate safe design. |
+
 Primary uses:
 
 - Find traffic quality: sessions, engaged sessions, engagement rate.
@@ -133,12 +145,18 @@ Primary uses:
 
 ## Operational Rules
 
-1. Impressions without clicks: prioritize title, meta description, H1, and first-screen search intent.
-2. Clicks without engagement: prioritize page content, templates, examples, and FAQ.
-3. Engagement without signup: prioritize CTA, registration entry points, and value proposition.
-4. Signup without create_report: prioritize onboarding and first report creation.
-5. Create_report without export: prioritize editor completion cues and export CTA.
-6. Export without payment: prioritize paywall, single export, and Pro / Team value explanation.
+1. Average position 1-10 with low CTR: prioritize SERP snippet, title, meta description, rich results, and FAQ snippet.
+2. Average position 11-30: prioritize content depth, internal links, FAQ, schema, and template assets.
+3. Average position above 30: treat as early visibility and prioritize search-intent fit, examples, internal links, schema, and sample-report CTA before snippet-only work.
+4. Search impressions plus low landing engagement: prioritize the first-screen value proposition and CTA.
+5. Clicks without engagement: prioritize page content, templates, examples, and FAQ.
+6. Engagement without signup: prioritize CTA, registration entry points, and value proposition.
+7. Expected funnel names missing while other events exist: mark Measurement risk and validate actual names before conversion conclusions.
+8. Signup without create_report: prioritize onboarding only after measurement integrity is confirmed.
+9. Create_report without export: prioritize editor completion and export CTA only after measurement integrity is confirmed.
+10. Export without payment: prioritize paywall and plan value only after GA4 and product payment events reconcile.
+
+An empty B-grade SERP template is not competitor evidence. Mark it `B pending` and collect live rows before making competitor claims.
 
 ## API References
 

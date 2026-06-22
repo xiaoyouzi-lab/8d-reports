@@ -1,5 +1,7 @@
 "use client"
 
+import { getGa4EventName } from "@/lib/analytics-taxonomy";
+
 type EventMetadata = Record<string, unknown>;
 type AnalyticsPlan = "free" | "pro" | "team";
 
@@ -20,7 +22,7 @@ export function trackEvent(
 ) {
   if (typeof window === "undefined") return;
 
-  window.gtag?.("event", eventName, {
+  window.gtag?.("event", getGa4EventName(eventName, metadata), {
     ...metadata,
     report_id: reportId,
     page_path: window.location.pathname,

@@ -3,17 +3,22 @@ import Link from "next/link"
 import {
   ArrowRight,
   Check,
+  FileCheck2,
+  FileSpreadsheet,
   LockKeyhole,
   Search,
   Share2,
-  Smartphone,
   Upload,
+  Users,
 } from "lucide-react"
 import { CheckoutButton } from "@/components/CheckoutButton"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
+  title: "8D Report Software for Quality Teams",
+  description:
+    "Create 8D, SCAR, customer complaint, and corrective action reports online. Attach evidence, collaborate, and export PDF, Word, or Excel. Start with 3 free reports.",
   alternates: { canonical: "https://www.8d-reports.com" },
 }
 
@@ -152,11 +157,8 @@ function HeroProductPreview() {
                 </h3>
               </div>
               <div className="flex gap-2">
-                <span className="rounded-md border border-slate-200 px-2.5 py-1 text-xs text-slate-600">
-                  PDF
-                </span>
                 <span className="rounded-md bg-slate-950 px-2.5 py-1 text-xs text-white">
-                  Word Pro
+                  PDF / Word / Excel
                 </span>
               </div>
             </div>
@@ -292,35 +294,39 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-12 px-4 pb-24 pt-16 sm:px-6 sm:pt-24 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:pb-28">
           <div>
             <h1 className="max-w-xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl lg:text-6xl">
-              Create, approve, lock, and deliver customer-ready 8D reports.
+              8D report software for supplier quality, customer complaints, and corrective actions.
             </h1>
             <p className="mt-6 max-w-xl text-lg leading-8 text-slate-600">
-              Give your quality team one workflow for factory-floor evidence,
-              D0-D8 collaboration, internal approval, controlled revisions,
-              and formal PDF, Word, and ZIP delivery.
+              Create 8D, SCAR, and customer complaint reports online. Give SQEs
+              and quality engineers one place for D0-D8 work, evidence,
+              collaboration, and customer-ready PDF, Word, and Excel exports.
             </p>
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
               <Link
-                href="/sample-report"
+                href="/signup"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "h-11 w-full bg-indigo-600 px-6 text-base hover:bg-indigo-700 sm:w-auto"
                 )}
               >
-                View sample 8D report
+                Create free 8D report
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
-                href="/login"
+                href="/sample-report"
                 className={cn(
                   buttonVariants({ variant: "outline", size: "lg" }),
                   "h-11 w-full border-slate-300 px-6 text-base sm:w-auto"
                 )}
               >
-                Create free report
+                View sample report
               </Link>
             </div>
+            <p className="mt-4 text-sm leading-6 text-slate-600">
+              Free includes 3 lifetime reports, the complete D0-D8 editor,
+              attachments, view-only sharing, and watermarked PDF export.
+            </p>
             <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-sm font-medium text-slate-600">
               <Link href="/resources" className="hover:text-indigo-700">
                 Browse complete samples
@@ -335,9 +341,9 @@ export default function LandingPage() {
 
             <div className="mt-10 grid max-w-xl gap-3 sm:grid-cols-3">
               {[
-                ["Mobile", "capture evidence at the source"],
-                ["D0-D8", "guided factory-floor workflow"],
-                ["Team", "approve, lock, and track revisions"],
+                ["Online", "structured 8D report software"],
+                ["D0-D8", "guided corrective action workflow"],
+                ["3 free", "reports before you need to upgrade"],
               ].map(([value, label]) => (
                 <div key={label} className="border-l border-slate-200 pl-4">
                   <p className="font-mono text-2xl font-semibold text-slate-950">
@@ -359,19 +365,19 @@ export default function LandingPage() {
         <div className="mx-auto grid max-w-6xl gap-5 px-4 sm:px-6 md:grid-cols-3">
           {[
             {
-              icon: Smartphone,
-              title: "Built for the shop floor",
-              text: "Use a phone or tablet to capture the issue, photos, containment, and owners while standing near the process.",
+              icon: Users,
+              title: "Who it is for",
+              text: "SQEs, quality engineers, supplier quality teams, complaint owners, and reviewers who need a customer-ready corrective action record.",
             },
             {
-              icon: Upload,
-              title: "Evidence stays attached",
-              text: "Photos, inspection records, and files stay linked to the exact D-step instead of getting lost in chat threads.",
+              icon: FileCheck2,
+              title: "What you can create",
+              text: "Build structured 8D reports, supplier corrective action reports, SCAR responses, and customer complaint investigations.",
             },
             {
-              icon: Share2,
-              title: "Governed Team delivery",
-              text: "Use Owner, Editor, and Viewer roles, approve completed work, lock submitted reports, and retain a clear Activity Log.",
+              icon: FileSpreadsheet,
+              title: "Why not just Excel or Word",
+              text: "Keep versions, D-step evidence, owners, attachments, collaboration, and final exports together instead of rebuilding the submission from scattered files.",
             },
           ].map((item) => (
             <div key={item.title} className="rounded-lg bg-white p-5 shadow-sm">
@@ -685,23 +691,23 @@ export default function LandingPage() {
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/sample-report"
+              href="/signup"
               className={cn(
                 buttonVariants({ variant: "default", size: "lg" }),
                 "h-11 shrink-0 bg-indigo-600 px-6 hover:bg-indigo-700"
               )}
             >
-              View sample report
+              Create free 8D report
               <ArrowRight className="h-4 w-4" />
             </Link>
             <Link
-              href="/login"
+              href="/sample-report"
               className={cn(
                 buttonVariants({ variant: "outline", size: "lg" }),
                 "h-11 shrink-0 border-slate-300 px-6"
               )}
             >
-              Create free report
+              View sample report
             </Link>
           </div>
         </div>

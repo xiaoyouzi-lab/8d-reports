@@ -21,6 +21,13 @@
 /build
 /metrics-dashboard.html
 
+# local marketing exports and credentials
+data/marketing/*.csv
+!data/marketing/serp_competitor_sample.template.csv
+data/marketing/weekly_report.md
+*.service-account.json
+*google-marketing-sa*.json
+
 # misc
 .DS_Store
 *.pem

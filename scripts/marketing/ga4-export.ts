@@ -1,4 +1,5 @@
 import { explainGoogleCredentials, getGoogleAccessToken, requireEnv } from "./google-auth";
+import { funnelEventNames } from "../../src/lib/analytics-taxonomy";
 import {
   exitWithFriendlyError,
   hasFlag,
@@ -19,16 +20,6 @@ type Ga4RunReportResponse = {
 };
 
 const ga4Scope = "https://www.googleapis.com/auth/analytics.readonly";
-const keyEvents = [
-  "sign_up",
-  "create_report",
-  "export_pdf",
-  "export_word",
-  "export_excel",
-  "checkout_started",
-  "checkout_completed",
-];
-
 const reportConfigs = [
   {
     name: "landing pages",
@@ -90,7 +81,7 @@ async function runReport(
         ? {
             filter: {
               fieldName: "eventName",
-              inListFilter: { values: keyEvents },
+              inListFilter: { values: [...funnelEventNames] },
             },
           }
         : undefined,
