@@ -4,7 +4,19 @@ This workflow turns SEO, GEO, and social work into a data-backed operating loop:
 
 Information gathering -> data reliability check -> Marketing Data Pipeline -> analysis -> professional operating judgment -> focused Codex optimization PR.
 
-Marketing Data Pipeline v1 established the export workflow. Marketing Analysis v2 uses its A-grade GSC / GA4 evidence for focused entry-page and measurement improvements without changing auth, payment, export core logic, database schema, sitemap, robots, or production configuration.
+Marketing Data Pipeline v1 established the export workflow. PR #7 uses its A-grade GSC / GA4 evidence to upgrade the public SaaS experience, not to keep adding isolated SEO copy. The redesign keeps PR #6 index hygiene, sitemap, robots, redirect, and canonical rules intact and does not change auth, payment, export core logic, database schema, or production configuration.
+
+## Public SaaS Experience Rule
+
+Public pages should now be judged as a SaaS buying and onboarding experience first:
+
+- Explain the product as a lightweight 8D response and delivery workspace.
+- Keep the core value proposition consistent: “Finish customer-ready 8D reports without rebuilding them in Excel.”
+- Route Start free CTAs to `/signup`.
+- Use `/sample-report`, `/resources`, `/pricing`, `/faq`, and `/docs` as supporting decision paths.
+- Avoid unverified testimonials, customer logos, customer counts, revenue claims, or enterprise features that are not implemented.
+
+SEO / GEO work should still be evidence-backed, but the page structure should help a real quality engineer understand the product quickly before any keyword expansion happens.
 
 ## Weekly Operating Loop
 
@@ -22,7 +34,7 @@ Marketing Data Pipeline v1 established the export workflow. Marketing Analysis v
    - Review `data/marketing/weekly_report.md`.
 5. Create the next Codex PR from the report.
    - Choose one or two recommendations with A-grade or B-grade evidence.
-   - Keep SEO / GEO content optimization in a separate PR after this data pipeline exists.
+   - Keep future SEO / GEO content expansion in separate PRs after the public SaaS experience stays clear and measurable.
 
 ## Search Opportunity Rules
 

@@ -21,7 +21,7 @@ export function SeoLandingPage({ page }: { page: SeoPage }) {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/login"
+                href="/signup"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "h-11 bg-indigo-600 px-6 hover:bg-indigo-700"
@@ -154,12 +154,12 @@ export function SeoLandingPage({ page }: { page: SeoPage }) {
             </h2>
             <p className="mt-3 text-sm leading-6 text-slate-600">
               Free includes 3 lifetime reports and the complete editor. Upgrade
-              when no-watermark export, Word export, company logo, editable
+              when no-watermark export, Word and Excel export, company logo, editable
               sharing, or deep historical search becomes valuable.
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/login"
+                href="/signup"
                 className={cn(
                   buttonVariants({ variant: "default", size: "lg" }),
                   "h-11 bg-indigo-600 px-6 hover:bg-indigo-700"

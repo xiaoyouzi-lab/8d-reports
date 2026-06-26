@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { LayoutDashboard, LogOut } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -9,14 +10,14 @@ import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
 
 const navLinks = [
-  { href: "/sample-report", label: "Sample" },
+  { href: "/#workflow", label: "Product", match: "/" },
+  { href: "/sample-report", label: "Examples", match: "/sample-report" },
   { href: "/resources", label: "Resources" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/docs", label: "Docs" },
 ]
 
 export function MarketingHeader() {
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const { data: session, isPending } = authClient.useSession()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -58,6 +59,11 @@ export function MarketingHeader() {
 
   const user = session?.user
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"
+  const isActive = (link: (typeof navLinks)[number]) => {
+    if (link.match === "/") return pathname === "/"
+    const match = link.match || link.href
+    return pathname === match || pathname.startsWith(`${match}/`)
+  }
 
   return (
     <header
@@ -84,7 +90,12 @@ export function MarketingHeader() {
             <Link
               key={link.label}
               href={link.href}
-              className="rounded-md px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className={cn(
+                "rounded-md px-3 py-1.5 text-sm transition-colors",
+                isActive(link)
+                  ? "bg-indigo-50 text-indigo-700"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
             >
               {link.label}
             </Link>
@@ -160,7 +171,7 @@ export function MarketingHeader() {
                 Log in
               </Link>
               <Link
-                href="/login"
+                href="/signup"
                 className={cn(
                   buttonVariants({ variant: "default", size: "sm" }),
                   "bg-[#4F46E5] px-2 hover:bg-[#4F46E5]/90 sm:px-2.5"
@@ -180,7 +191,7 @@ export function MarketingHeader() {
               href={link.href}
               className={cn(
                 "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                link.href === "/resources"
+                isActive(link)
                   ? "bg-indigo-50 text-indigo-700"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
               )}

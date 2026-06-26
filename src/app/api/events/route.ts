@@ -37,6 +37,12 @@ const ALLOWED_EVENTS = new Set([
   "seo_signup_click",
   "demo_report_viewed",
   "team_demo_feedback_submitted",
+  "marketing_cta_clicked",
+  "sample_download",
+  "resource_opened",
+  "resource_filter_used",
+  "pricing_plan_clicked",
+  "docs_topic_opened",
 ]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

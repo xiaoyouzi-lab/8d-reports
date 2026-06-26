@@ -1,332 +1,253 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Download, FileArchive, FileText, ImageIcon, ShieldCheck } from "lucide-react"
+import { PrimaryCTA, TrackedLink } from "@/components/marketing/MarketingActions"
+import { StepAccordion } from "@/components/marketing/FaqAccordion"
 import {
-  ArrowRight,
-  Check,
-  Download,
-  FileText,
-  ImageIcon,
-  Search,
-  Share2,
-} from "lucide-react"
+  Breadcrumbs,
+  JsonLd,
+  PageHero,
+  PageShell,
+  Section,
+  SectionHeader,
+  breadcrumbJsonLd,
+} from "@/components/marketing/MarketingPrimitives"
 import { buttonVariants } from "@/components/ui/button"
+import { sampleReportSteps, siteUrl } from "@/lib/marketing-content"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: "Sample 8D Report | 8D Reports",
+  title: "Complete 8D Example Report | 8D Reports",
   description:
-    "Review a practical sample 8D report with D0-D8 sections, evidence attachments, export, sharing, and Pro search examples.",
-  alternates: { canonical: "https://www.8d-reports.com/sample-report" },
+    "See a complete 8D example from containment to verified corrective action, with evidence, export package, and related industry examples.",
+  alternates: { canonical: `${siteUrl}/sample-report` },
+  openGraph: {
+    title: "Complete 8D Example Report",
+    description:
+      "Review a finished D0-D8 report example before creating your own customer-ready 8D response.",
+    url: `${siteUrl}/sample-report`,
+    type: "website",
+  },
 }
 
-const reportSections = [
-  {
-    step: "D0",
-    title: "Prepare",
-    text: "Customer complaint opened for coating peel-off on brake bracket batch B26-041. Quality engineer assigned owner, scope, and first response date.",
-  },
-  {
-    step: "D1",
-    title: "Team",
-    text: "Quality engineering, production supervisor, coating process owner, warehouse, and supplier quality joined the investigation.",
-  },
-  {
-    step: "D2",
-    title: "Problem Description",
-    text: "18 of 500 brackets showed visible coating peel-off after salt spray validation. Issue limited to line 2, shift B, production date 2026-05-18.",
-  },
-  {
-    step: "D3",
-    title: "Containment",
-    text: "Blocked affected stock, started 100% visual inspection, notified customer service, and added temporary outgoing inspection for all open shipments.",
-  },
-  {
-    step: "D4",
-    title: "Root Cause",
-    text: "Occurrence cause: fixture cleaning check was skipped before line change. Escape cause: outgoing inspection checklist did not include coating edge adhesion.",
-  },
-  {
-    step: "D5",
-    title: "Corrective Action",
-    text: "Added mandatory fixture cleaning sign-off, updated coating setup checklist, and retrained shift B operators before restart.",
-  },
-  {
-    step: "D6",
-    title: "Verify",
-    text: "Three follow-up lots passed adhesion and visual checks. No repeat defect found after 1,500 pcs shipped.",
-  },
-  {
-    step: "D7",
-    title: "Prevent Recurrence",
-    text: "Updated control plan, layered audit checklist, and similar line startup checklist. Lesson added for future coating changeovers.",
-  },
-  {
-    step: "D8",
-    title: "Close",
-    text: "Customer accepted the corrective action package. Team recognition and final lessons learned recorded.",
-  },
+const breadcrumbItems = [
+  { label: "Home", href: siteUrl },
+  { label: "Sample report", href: `${siteUrl}/sample-report` },
 ]
 
 const evidenceItems = [
   {
     icon: ImageIcon,
-    title: "D2 photo evidence",
-    text: "Coating peel-off photo shown in exported report and shared view.",
+    title: "Photos and inspection records",
+    text: "Evidence is tied to the step it supports so reviewers can see why decisions were made.",
   },
   {
     icon: FileText,
-    title: "D5 inspection file",
-    text: "Supporting files are preserved in the export package attachments folder.",
+    title: "PDF, Word, and Excel outputs",
+    text: "Formal delivery can match the recipient format without rewriting the report.",
   },
   {
-    icon: Download,
-    title: "Customer-ready export",
-    text: "Free PDF includes watermark. Pro removes watermark and unlocks Word export.",
+    icon: FileArchive,
+    title: "Attachment package",
+    text: "When attachments are present, the export package can include report files and evidence together.",
   },
-  {
-    icon: Share2,
-    title: "Share link",
-    text: "Free supports view-only sharing. Pro can use editable share links.",
-  },
+]
+
+const credibilityChecks = [
+  "D2 includes quantity, date, product, customer context, and affected scope.",
+  "D3 containment is separate from permanent corrective action.",
+  "D4 separates occurrence cause from escape cause.",
+  "D5 actions trace back to the verified causes.",
+  "D6 includes effectiveness evidence and sample size.",
+]
+
+const relatedExamples = [
+  { label: "Automotive 8D example", href: "/8d-report-example/automotive" },
+  { label: "Supplier 8D example", href: "/8d-report-example/supplier-quality" },
+  { label: "Customer complaint 8D", href: "/8d-report-example/customer-complaint" },
 ]
 
 export default function SampleReportPage() {
   return (
-    <div className="bg-white text-slate-950">
-      <section className="border-b border-slate-200">
-        <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 sm:py-20 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">
-              Sample 8D report
-            </p>
-            <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              See what a finished online 8D report can look like.
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-600">
-              This example shows the product goal clearly: complete D0-D8,
-              attach evidence, export a customer-ready report, and reuse the
-              history later with Pro search.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Link
-                href="/login"
-                className={cn(
-                  buttonVariants({ variant: "default", size: "lg" }),
-                  "h-11 bg-indigo-600 px-6 hover:bg-indigo-700"
-                )}
-              >
-                Create free report
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link
-                href="/#pricing"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 border-slate-300 px-6"
-                )}
-              >
-                Compare Free vs Pro
-              </Link>
-              <Link
-                href="/api/sample-reports/automotive"
-                rel="nofollow"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "lg" }),
-                  "h-11 border-slate-300 px-6"
-                )}
-              >
-                Download sample PDF
-              </Link>
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="font-mono text-sm font-semibold text-indigo-600">
-                      2026-05-18-001
-                    </p>
-                    <h2 className="mt-1 text-xl font-semibold text-slate-950">
-                      Brake bracket coating failure
-                    </h2>
-                  </div>
-                  <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                    Completed
-                  </span>
-                </div>
-                <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                  {[
-                    ["Customer", "Northline Motors"],
-                    ["Priority", "High"],
-                    ["Owner", "Quality engineer"],
-                  ].map(([label, value]) => (
-                    <div key={label} className="rounded-lg bg-slate-50 p-3">
-                      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                        {label}
-                      </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-800">
-                        {value}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid divide-y divide-slate-200">
-                {reportSections.slice(0, 5).map((section) => (
-                  <div key={section.step} className="grid gap-3 p-5 sm:grid-cols-[90px_1fr]">
-                    <div>
-                      <span className="rounded-md bg-indigo-50 px-2.5 py-1 font-mono text-sm font-semibold text-indigo-700">
-                        {section.step}
-                      </span>
-                    </div>
-                    <div>
-                      <h3 className="text-base font-semibold text-slate-950">
-                        {section.title}
-                      </h3>
-                      <p className="mt-2 text-sm leading-6 text-slate-600">
-                        {section.text}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 sm:py-20">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-              Complete D0-D8 structure
-            </h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              The app keeps the report structured without hiding the judgment
-              work. Each step stays readable when exported or shared.
-            </p>
-          </div>
-          <div className="mt-10 grid gap-4 md:grid-cols-2">
-            {reportSections.map((section) => (
-              <article key={section.step} className="rounded-lg border border-slate-200 p-5">
-                <div className="flex items-center gap-3">
-                  <span className="rounded-md bg-indigo-600 px-2.5 py-1 font-mono text-sm font-semibold text-white">
-                    {section.step}
-                  </span>
-                  <h3 className="text-base font-semibold text-slate-950">
-                    {section.title}
-                  </h3>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {section.text}
+    <PageShell>
+      <JsonLd data={breadcrumbJsonLd(breadcrumbItems)} />
+      <Breadcrumbs items={breadcrumbItems} />
+      <PageHero
+        title="A complete 8D example — from containment to verified corrective action."
+        description="Use this sample to see how a finished report connects the customer issue, evidence, D0-D8 reasoning, review state, and export package."
+        actions={
+          <>
+            <PrimaryCTA href="/signup" page="sample_report" location="hero">
+              Use this structure
+            </PrimaryCTA>
+            <TrackedLink
+              href="/api/sample-reports/automotive"
+              rel="nofollow"
+              eventName="sample_download"
+              eventData={{ page: "sample_report", format: "pdf" }}
+              className={cn(
+                buttonVariants({ variant: "outline", size: "lg" }),
+                "h-11 border-slate-300 bg-white px-5 text-sm font-semibold text-slate-900 hover:bg-slate-50",
+              )}
+            >
+              Download sample PDF
+              <Download className="h-4 w-4" />
+            </TrackedLink>
+            <PrimaryCTA
+              href="/resources"
+              page="sample_report"
+              location="hero"
+              variant="ghost"
+            >
+              Browse industry examples
+            </PrimaryCTA>
+          </>
+        }
+      >
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-lg border border-slate-200 bg-white p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
+              <div>
+                <p className="font-mono text-sm font-semibold text-indigo-600">
+                  2026-05-18-001
                 </p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-y border-slate-200 bg-slate-50 py-16 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-              Evidence, export, and sharing are part of the report.
-            </h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              A useful 8D tool must preserve supporting evidence. The current
-              product direction keeps photos visible and files included in the
-              exported package.
-            </p>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {evidenceItems.map((item) => (
-              <article key={item.title} className="rounded-lg bg-white p-5 shadow-sm">
-                <item.icon className="h-5 w-5 text-indigo-600" />
-                <h3 className="mt-4 text-base font-semibold text-slate-950">
-                  {item.title}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {item.text}
-                </p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="py-16 sm:py-20">
-        <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:items-center">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-              <Search className="h-4 w-4 text-slate-500" />
-              <span className="text-sm text-slate-700">fixture cleaning skipped</span>
-              <span className="ml-auto rounded bg-indigo-50 px-2 py-0.5 text-xs font-medium text-indigo-700">
-                Pro
+                <h2 className="mt-1 text-xl font-semibold text-slate-950">
+                  Brake bracket coating failure
+                </h2>
+              </div>
+              <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
+                Completed
               </span>
             </div>
-            <div className="mt-4 space-y-3">
+            <dl className="mt-5 grid gap-3 sm:grid-cols-3">
               {[
-                "Root Cause matched: fixture cleaning check was skipped before line change.",
-                "Corrective Action matched: mandatory cleaning sign-off added to startup checklist.",
-                "Lessons Learned matched: reuse this checklist on coating line changeovers.",
-              ].map((text) => (
-                <div key={text} className="rounded-lg border border-slate-200 p-3 text-sm leading-6 text-slate-700">
-                  {text}
+                ["Customer", "Northline Motors"],
+                ["Affected scope", "18 / 500 pcs"],
+                ["Owner", "Quality engineering"],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-lg bg-slate-50 p-3">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 text-sm font-semibold text-slate-800">
+                    {value}
+                  </dd>
                 </div>
               ))}
-            </div>
-          </div>
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-slate-950">
-              The Pro value is not just removing a watermark.
-            </h2>
-            <p className="mt-4 text-base leading-7 text-slate-600">
-              Once users have multiple completed reports, historical search
-              turns the tool into a lightweight quality knowledge base.
+            </dl>
+            <p className="mt-5 text-sm leading-6 text-slate-600">
+              The report shows a controlled response: immediate containment,
+              verified fixture-cleaning cause, checklist update, retraining, and
+              three clean follow-up lots.
             </p>
-            <div className="mt-6 space-y-3">
-              {[
-                "Free: 3 lifetime reports and basic dashboard search.",
-                "Pro: unlimited personal reports, Word export, no watermark, company logo, editable sharing, and deep history search.",
-                "Team: 5 seats, shared report workspace, and team-wide search/export permissions.",
-                "Single export: $4.99 unlocks no-watermark PDF and Word export for one selected report.",
-              ].map((item) => (
-                <div key={item} className="flex gap-3">
-                  <Check className="mt-1 h-4 w-4 shrink-0 text-emerald-600" />
-                  <p className="text-sm leading-6 text-slate-700">{item}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
-      </section>
+      </PageHero>
 
-      <section className="border-t border-slate-200 bg-slate-950 py-14 text-white">
-        <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight">
-              Ready to create your own report?
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">
-              Start with the full editor for free. Upgrade only when formal
-              delivery and historical reuse become valuable.
-            </p>
-          </div>
+      <Section>
+        <SectionHeader
+          title="Browse the D0-D8 report"
+          description="The most important proof steps are open by default. You can expand the rest without reading the same content twice."
+        />
+        <div className="mt-8">
+          <StepAccordion
+            items={sampleReportSteps}
+            defaultOpen={["D2", "D4", "D5"]}
+            page="sample_report"
+          />
+        </div>
+      </Section>
+
+      <Section className="border-y border-slate-200 bg-slate-50">
+        <SectionHeader
+          title="Evidence and export package"
+          description="A complete response is more than D0-D8 text. The final deliverable should carry the evidence needed for customer review."
+        />
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {evidenceItems.map((item) => (
+            <article key={item.title} className="rounded-lg border border-slate-200 bg-white p-5">
+              <item.icon className="h-5 w-5 text-indigo-600" />
+              <h3 className="mt-4 text-base font-semibold text-slate-950">
+                {item.title}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{item.text}</p>
+            </article>
+          ))}
+        </div>
+      </Section>
+
+      <Section>
+        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <SectionHeader
+            title="What makes this report credible"
+            description="A customer-ready 8D report shows how the facts, causes, actions, and verification fit together."
+          />
+          <ul className="space-y-3">
+            {credibilityChecks.map((check) => (
+              <li key={check} className="flex gap-3 rounded-lg border border-slate-200 p-4">
+                <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+                <span className="text-sm leading-6 text-slate-700">{check}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Section>
+
+      <Section className="border-y border-slate-200 bg-slate-50">
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <SectionHeader
+            title="Related industry examples"
+            description="Use these examples when the issue type or customer context is closer to your own report."
+          />
           <Link
-            href="/login"
-            className={cn(
-              buttonVariants({ variant: "default", size: "lg" }),
-              "h-11 shrink-0 bg-indigo-600 px-6 hover:bg-indigo-700"
-            )}
+            href="/resources"
+            className="text-sm font-semibold text-indigo-700 hover:text-indigo-800"
           >
-            Create free report
-            <ArrowRight className="h-4 w-4" />
+            Browse all resources
           </Link>
         </div>
-      </section>
-    </div>
+        <div className="mt-8 grid gap-4 md:grid-cols-3">
+          {relatedExamples.map((example) => (
+            <Link
+              key={example.href}
+              href={example.href}
+              className="rounded-lg border border-slate-200 bg-white p-5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
+            >
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
+                Complete example
+              </p>
+              <h3 className="mt-3 text-base font-semibold text-slate-950">
+                {example.label}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Review a practical D0-D8 response for a related quality scenario.
+              </p>
+            </Link>
+          ))}
+        </div>
+      </Section>
+
+      <Section className="bg-slate-950 text-white">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              Ready to structure your own 8D response?
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+              Start from the same D0-D8 workflow and export when your report is
+              ready for customer delivery.
+            </p>
+          </div>
+          <PrimaryCTA
+            href="/signup"
+            page="sample_report"
+            location="final_cta"
+            className="bg-white text-slate-950 hover:bg-slate-100"
+          >
+            Start free with 3 reports
+          </PrimaryCTA>
+        </div>
+      </Section>
+    </PageShell>
   )
 }

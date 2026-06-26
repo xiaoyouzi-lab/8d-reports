@@ -1,50 +1,83 @@
 import type { Metadata } from "next"
-import { getTranslations } from "next-intl/server"
-import Link from "next/link"
+import { PrimaryCTA } from "@/components/marketing/MarketingActions"
+import { FaqAccordion } from "@/components/marketing/FaqAccordion"
+import {
+  Breadcrumbs,
+  JsonLd,
+  PageShell,
+  Section,
+  SectionHeader,
+  breadcrumbJsonLd,
+} from "@/components/marketing/MarketingPrimitives"
+import { allFaqs, faqGroups, siteUrl } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
-  alternates: { canonical: "https://www.8d-reports.com/faq" },
+  title: "8D Reports FAQ | Plans, Exports, Sharing, Security, and AI",
+  description:
+    "Answers about free reports, billing, PDF Word Excel export, attachments, sharing, Team workflow, security, and AI Quality Check.",
+  alternates: { canonical: `${siteUrl}/faq` },
+  openGraph: {
+    title: "8D Reports FAQ",
+    description:
+      "Plans, exports, sharing, Team workflow, security, and AI answers for 8D Reports.",
+    url: `${siteUrl}/faq`,
+    type: "website",
+  },
 }
 
-export default async function FaqPage() {
-  const t = await getTranslations({ locale: "en", namespace: "marketing" })
+const breadcrumbItems = [
+  { label: "Home", href: siteUrl },
+  { label: "FAQ", href: `${siteUrl}/faq` },
+]
 
-  const faqs = [
-    { q: t("faq1Q"), a: t("faq1A") },
-    { q: t("faq2Q"), a: t("faq2A") },
-    { q: t("faq3Q"), a: t("faq3A") },
-    { q: t("faq4Q"), a: t("faq4A") },
-    { q: t("faq5Q"), a: t("faq5A") },
-    { q: t("faq6Q"), a: t("faq6A") },
-  ]
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: allFaqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+}
 
+export default function FaqPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-      <div className="mb-12 text-center">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-          {t("faqTitle")}
-        </h1>
-        <p className="mt-3 text-muted-foreground">{t("faqDesc")}</p>
-      </div>
-
-      <div className="space-y-6">
-        {faqs.map((faq, i) => (
-          <div key={i} className="rounded-lg border bg-card p-6">
-            <h3 className="font-semibold text-foreground">{faq.q}</h3>
-            <p className="mt-2 text-sm text-muted-foreground leading-relaxed">{faq.a}</p>
+    <PageShell>
+      <JsonLd data={breadcrumbJsonLd(breadcrumbItems)} />
+      <JsonLd data={faqJsonLd} />
+      <Breadcrumbs items={breadcrumbItems} />
+      <section className="border-b border-slate-200">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Frequently asked questions
+          </h1>
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+            Practical answers about starting free, exporting formal deliverables,
+            sharing reports, team workflow, data handling, and AI Quality Check.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <PrimaryCTA href="/signup" page="faq" location="hero">
+              Start free with 3 reports
+            </PrimaryCTA>
+            <PrimaryCTA href="/docs" page="faq" location="hero" variant="secondary">
+              Read docs
+            </PrimaryCTA>
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
 
-      <div className="mt-12 text-center">
-        <p className="text-muted-foreground mb-4">Ready to get started?</p>
-        <Link
-          href="/login"
-          className="inline-flex items-center justify-center rounded-md bg-indigo-600 px-6 py-3 text-sm font-medium text-white hover:bg-indigo-700"
-        >
-          {t("ctaStart")}
-        </Link>
-      </div>
-    </div>
+      <Section>
+        <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+          <SectionHeader
+            title="Answers by topic"
+            description="Open the category that matches the decision you are trying to make."
+          />
+          <FaqAccordion groups={faqGroups} />
+        </div>
+      </Section>
+    </PageShell>
   )
 }
