@@ -9,19 +9,20 @@ import {
   SectionHeader,
   breadcrumbJsonLd,
 } from "@/components/marketing/MarketingPrimitives"
-import { allFaqs, faqGroups, siteUrl } from "@/lib/marketing-content"
+import { allFaqs, faqGroups, siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
-  title: "8D Reports FAQ | Plans, Exports, Sharing, Security, and AI",
+  title: "FAQ: Plans, Exports, Sharing, Security, and AI",
   description:
     "Answers about free reports, billing, PDF Word Excel export, attachments, sharing, Team workflow, security, and AI Quality Check.",
   alternates: { canonical: `${siteUrl}/faq` },
   openGraph: {
-    title: "8D Reports FAQ",
+    title: "FAQ: Plans, Exports, Sharing, Security, and AI",
     description:
       "Plans, exports, sharing, Team workflow, security, and AI answers for 8D Reports.",
     url: `${siteUrl}/faq`,
     type: "website",
+    images: [socialOpenGraphImage],
   },
 }
 

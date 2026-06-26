@@ -3,6 +3,7 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { ArrowRight, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { CheckoutButton } from "@/components/CheckoutButton"
 import { buttonVariants } from "@/components/ui/button"
 import { trackEvent } from "@/lib/analytics"
@@ -149,13 +150,21 @@ export function CopyTemplateButton({
         className,
       )}
       onClick={async () => {
-        await navigator.clipboard?.writeText(text)
-        trackEvent("marketing_cta_clicked", {
-          page,
-          location,
-          destination: "clipboard",
-          action: "copy_blank_template",
-        })
+        try {
+          if (!navigator.clipboard?.writeText) {
+            throw new Error("Clipboard unavailable")
+          }
+          await navigator.clipboard.writeText(text)
+          toast.success("Template copied")
+          trackEvent("marketing_cta_clicked", {
+            page,
+            location,
+            destination: "clipboard",
+            action: "copy_blank_template",
+          })
+        } catch {
+          toast.error("Could not copy the template. Select and copy the text manually.")
+        }
       }}
     >
       Copy blank template

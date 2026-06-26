@@ -2,7 +2,7 @@
 
 ## Latest Task
 
-Public SaaS Experience Redesign for PR #7.
+PR #7 content accuracy, analytics integrity, metadata, and functionality-claim hardening.
 
 ## Changed Files
 
@@ -12,6 +12,8 @@ Primary areas:
 - Homepage, sample report, resources, FAQ, docs, pricing, and 8D template page.
 - Docs topic routes.
 - Public SaaS redesign spec and marketing workflow documentation.
+- Open Graph and Twitter shared image metadata.
+- Public copy evidence audit for export packaging, subscription cancellation, data deletion, and Team deletion claims.
 
 Live GSC / GA4 CSV exports, `data/marketing/weekly_report.md`, Google JSON keys, and `.secrets` remain excluded from Git.
 
@@ -24,6 +26,16 @@ Live GSC / GA4 CSV exports, `data/marketing/weekly_report.md`, Google JSON keys,
 
 ## Implementation Summary
 
+- Completed a pre-merge hardening pass for PR #7 without changing auth, signup, checkout, subscription logic, database schema, report editor, export generators, ZIP implementation, AI backend gating, credentials, or production configuration.
+- Removed public user-facing copy that exposed implementation, indexing, or SEO process language.
+- Changed FAQ expansion analytics to `faq_opened` and D0-D8/content expansion analytics to `content_step_opened`; `marketing_cta_clicked` remains reserved for real next-step actions.
+- Added Header Start free tracking with `page=global_header`, `location=header`, and `destination=/signup`.
+- Removed the duplicate Resources `Industry Examples` filter, added search and filter accessibility attributes, and reset visible results when query or filter changes.
+- Added `opengraph-image.tsx` and `twitter-image.tsx`, plus explicit page-level `og:image` metadata where page OpenGraph metadata overrides root metadata.
+- Corrected export/ZIP copy to say that the selected report format and attachments download together as a ZIP when attachments exist.
+- Updated cancellation and data deletion public copy to avoid claiming unavailable self-service cancellation, report deletion, account deletion, or Team workspace deletion.
+- Added copy-template success/failure toast feedback and only records copy analytics after a successful clipboard write.
+- Audited docs topic word counts: topics currently range from 73 to 114 visible words and each has unique operational content, but several should be enriched later with screenshots or more specific UI steps.
 - Reworked public positioning around: “Finish customer-ready 8D reports without rebuilding them in Excel.”
 - Reduced top-level navigation to Product, Examples, Resources, and Pricing.
 - Moved FAQ, Docs, Security, Contact, Privacy, and Terms into footer navigation groups.
@@ -46,7 +58,7 @@ Live GSC / GA4 CSV exports, `data/marketing/weekly_report.md`, Google JSON keys,
 - `npm run check:seo` passed with 82 sitemap URLs and 11 redirects checked.
 - `npm run marketing:report` passed.
 - Playwright desktop/mobile checks passed for `/`, `/sample-report`, `/resources`, `/pricing`, `/faq`, `/docs`, `/docs/getting-started`, `/docs/export-and-zip`, and `/8d-report-template`.
-- Playwright verified 200 responses, no console errors, no horizontal overflow, correct Start free destinations, desktop navigation, resource filters, FAQ accordion, sample/template accordions, docs mobile selector, canonical links, and JSON-LD presence.
+- Playwright verified final rendered document titles with no duplicated site brand, `og:image` and `twitter:image` PNG routes, no framework overlay, no horizontal overflow, FAQ expansion without CTA pollution, D0-D8 step expansion without CTA pollution, Header Start free CTA tracking, resource filters, copy-template success/failure feedback, internal-copy cleanup, and ZIP copy accuracy.
 
 ## Risks
 

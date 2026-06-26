@@ -10,7 +10,7 @@ import {
   PageShell,
   breadcrumbJsonLd,
 } from "@/components/marketing/MarketingPrimitives"
-import { docsTopicUrl, docsTopics, getDocsTopic, siteUrl } from "@/lib/marketing-content"
+import { docsTopicUrl, docsTopics, getDocsTopic, siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const dynamicParams = false
 
@@ -28,14 +28,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!topic) return {}
 
   return {
-    title: `${topic.title} | 8D Reports Docs`,
+    title: `${topic.title} | Product Docs`,
     description: topic.summary,
     alternates: { canonical: docsTopicUrl(topic.slug) },
     openGraph: {
-      title: `${topic.title} | 8D Reports Docs`,
+      title: `${topic.title} | Product Docs`,
       description: topic.summary,
       url: docsTopicUrl(topic.slug),
       type: "article",
+      images: [socialOpenGraphImage],
     },
   }
 }

@@ -18,9 +18,11 @@ export type FaqGroup = {
 export function FaqAccordion({
   groups,
   defaultGroup = 0,
+  page = "faq",
 }: {
   groups: FaqGroup[]
   defaultGroup?: number
+  page?: string
 }) {
   const [openGroup, setOpenGroup] = useState(defaultGroup)
   const [openQuestion, setOpenQuestion] = useState<Record<string, boolean>>(() => ({
@@ -69,15 +71,18 @@ export function FaqAccordion({
                         className="flex w-full items-center justify-between gap-4 py-4 text-left"
                         aria-expanded={isOpen}
                         onClick={() => {
+                          const nextOpen = !isOpen
                           setOpenQuestion((current) => ({
                             ...current,
-                            [key]: !current[key],
+                            [key]: nextOpen,
                           }))
-                          trackEvent("marketing_cta_clicked", {
-                            page: "faq",
-                            location: "faq_accordion",
-                            destination: item.question,
-                          })
+                          if (nextOpen) {
+                            trackEvent("faq_opened", {
+                              page,
+                              group: group.title,
+                              question: item.question,
+                            })
+                          }
                         }}
                       >
                         <span className="text-sm font-semibold text-slate-900">
@@ -137,12 +142,14 @@ export function StepAccordion({
               className="grid w-full grid-cols-[56px_1fr_auto] items-center gap-4 px-4 py-4 text-left sm:px-5"
               aria-expanded={isOpen}
               onClick={() => {
-                setOpen((current) => ({ ...current, [item.id]: !current[item.id] }))
-                trackEvent("marketing_cta_clicked", {
-                  page,
-                  location: "step_accordion",
-                  destination: item.id,
-                })
+                const nextOpen = !isOpen
+                setOpen((current) => ({ ...current, [item.id]: nextOpen }))
+                if (nextOpen) {
+                  trackEvent("content_step_opened", {
+                    page,
+                    step: item.id,
+                  })
+                }
               }}
             >
               <span className="rounded-md bg-indigo-50 px-2.5 py-1 text-center font-mono text-sm font-semibold text-indigo-700">

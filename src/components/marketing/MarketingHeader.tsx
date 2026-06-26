@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import { LayoutDashboard, LogOut } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { TrackedLink } from "@/components/marketing/MarketingActions"
 import { cn } from "@/lib/utils"
 import { authClient } from "@/lib/auth-client"
 
@@ -170,15 +171,20 @@ export function MarketingHeader() {
               >
                 Log in
               </Link>
-              <Link
+              <TrackedLink
                 href="/signup"
+                eventData={{
+                  page: "global_header",
+                  location: "header",
+                  destination: "/signup",
+                }}
                 className={cn(
                   buttonVariants({ variant: "default", size: "sm" }),
                   "bg-[#4F46E5] px-2 hover:bg-[#4F46E5]/90 sm:px-2.5"
                 )}
               >
                 Start free
-              </Link>
+              </TrackedLink>
             </>
           )}
         </div>

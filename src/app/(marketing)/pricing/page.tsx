@@ -13,19 +13,20 @@ import {
   breadcrumbJsonLd,
 } from "@/components/marketing/MarketingPrimitives"
 import { PlanCard } from "@/components/marketing/PlanCard"
-import { siteUrl } from "@/lib/marketing-content"
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
-  title: "8D Reports Pricing | Free, Pro, Team, and Single Export",
+  title: "Pricing: Free, Pro, Team, and Single Export",
   description:
     "Start with 3 free reports. Upgrade to Pro for formal personal delivery, Team for shared control, or unlock one selected report with single export.",
   alternates: { canonical: `${siteUrl}/pricing` },
   openGraph: {
-    title: "8D Reports Pricing",
+    title: "Pricing: Free, Pro, Team, and Single Export",
     description:
       "Free, Pro, Team, and single report export options for customer-ready 8D reports.",
     url: `${siteUrl}/pricing`,
     type: "website",
+    images: [socialOpenGraphImage],
   },
 }
 
@@ -74,7 +75,7 @@ const plans = [
       "Shared workspace",
       "Owner / Editor / Viewer roles",
       "Approval status, report locking, and revisions",
-      "Revisions and activity log",
+      "Activity log",
     ],
   },
 ]
@@ -105,7 +106,7 @@ const billingFaqs = [
   {
     question: "Can I cancel a subscription?",
     answer:
-      "Yes. Subscriptions can be canceled. Plan access and billing are handled by the checkout and subscription flow.",
+      "Contact support for cancellation or billing changes. Subscription status is updated through the billing provider and reflected in the product after the billing event is processed.",
   },
   {
     question: "Does Team include enterprise procurement features?",

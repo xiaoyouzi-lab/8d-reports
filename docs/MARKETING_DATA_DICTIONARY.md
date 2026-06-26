@@ -81,6 +81,14 @@ Current event-name normalization:
 | `checkout_started` | `checkout_started` | Exact match. |
 | webhook `checkout_completed` | Not yet sent to GA4 | Product analytics receives it server-side; GA4 needs a separate safe design. |
 
+Public marketing interaction events:
+
+| Event | Reliability use | Notes |
+| --- | --- | --- |
+| `marketing_cta_clicked` | A-grade first-party product event | Reserved for true next-step actions such as signup, pricing, sample, docs/contact navigation, and successful blank-template copy. |
+| `faq_opened` | A-grade first-party product event | Records FAQ expansion with `page`, `group`, and `question`; not counted as CTA intent. |
+| `content_step_opened` | A-grade first-party product event | Records D0-D8 or content-step expansion with `page` and `step`; not counted as CTA intent. |
+
 Primary uses:
 
 - Find traffic quality: sessions, engaged sessions, engagement rate.

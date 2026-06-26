@@ -31,6 +31,20 @@ Customer complaint / supplier issue -> collect evidence -> complete D0-D8 -> rev
 
 Redesign the public SaaS experience across information architecture, navigation, homepage, sample report, resources, FAQ, docs, pricing, and the 8D template page so the site feels like a clear, professional B2B SaaS product rather than a collection of isolated SEO pages.
 
+## Pre-Merge Hardening Addendum
+
+Before merging PR #7, complete a content accuracy, analytics integrity, and metadata hardening pass without expanding the public site scope again.
+
+Hardening requirements:
+
+- Remove public copy that exposes implementation, indexing, or SEO process language to users.
+- Keep CTA analytics reserved for true next-step actions and use separate events for FAQ or content-step expansion.
+- Ensure page-level metadata does not duplicate the site brand when the root title template is applied.
+- Add supported Open Graph and Twitter social images without fake customer data, logos, metrics, or testimonials.
+- Keep export and attachment copy aligned with the actual selected-format ZIP behavior.
+- Audit subscription cancellation, report deletion, account deletion, and Team workspace deletion claims against code evidence before stating public copy.
+- Keep docs routes in place, but treat thin docs pages as future enrichment candidates rather than assuming indexing quality from URL checks alone.
+
 ## Scope
 
 - Desktop navigation limited to Product, Examples, Resources, and Pricing.

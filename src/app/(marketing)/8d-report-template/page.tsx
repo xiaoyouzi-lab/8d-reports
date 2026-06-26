@@ -19,6 +19,7 @@ import {
 } from "@/components/marketing/MarketingPrimitives"
 import {
   blankTemplateText,
+  socialOpenGraphImage,
   siteUrl,
   templateSteps,
   type SimpleFaq,
@@ -35,6 +36,7 @@ export const metadata: Metadata = {
       "A practical D0-D8 template for quality engineers who need customer-ready 8D reports without rebuilding them in Excel.",
     url: `${siteUrl}/8d-report-template`,
     type: "website",
+    images: [socialOpenGraphImage],
   },
 }
 
@@ -121,7 +123,7 @@ export default function EightDReportTemplatePage() {
       <Breadcrumbs items={breadcrumbItems} />
       <PageHero
         title="8D report template for customer-ready corrective action responses."
-        description="Use a structured D0-D8 template online, copy a blank version when needed, and compare PDF, Word, and Excel delivery formats without turning the page into a keyword checklist."
+        description="Use a structured D0-D8 workflow online, copy a blank outline when needed, and export the finished response in the format your customer requires."
         actions={
           <>
             <PrimaryCTA href="/signup" page="8d_report_template" location="hero">
@@ -232,7 +234,10 @@ export default function EightDReportTemplatePage() {
             title="Template FAQ"
             description="Short answers for teams choosing a practical 8D format."
           />
-          <FaqAccordion groups={[{ title: "8D template", items: faqs }]} />
+          <FaqAccordion
+            groups={[{ title: "8D template", items: faqs }]}
+            page="8d_report_template"
+          />
         </div>
       </Section>
 

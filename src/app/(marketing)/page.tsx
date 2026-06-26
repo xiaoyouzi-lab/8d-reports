@@ -12,11 +12,12 @@ import {
 } from "lucide-react"
 import { PrimaryCTA } from "@/components/marketing/MarketingActions"
 import { JsonLd, PageHero, PageShell, Section, SectionHeader } from "@/components/marketing/MarketingPrimitives"
+import { socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
   title: "8D Report Software for Customer-Ready Quality Reports",
   description:
-    "Finish customer-ready 8D reports without rebuilding them in Excel. Capture D0-D8, evidence, review, and export PDF, Word, Excel, and attachments.",
+    "Finish customer-ready 8D reports without rebuilding them in Excel. Capture D0-D8, evidence, review, and export PDF, Word, or Excel with attachments when present.",
   alternates: { canonical: "https://www.8d-reports.com" },
   openGraph: {
     title: "8D Report Software for Customer-Ready Quality Reports",
@@ -24,6 +25,7 @@ export const metadata: Metadata = {
       "A lightweight 8D response and delivery workspace for quality engineers, SQEs, and small manufacturing quality teams.",
     url: "https://www.8d-reports.com",
     type: "website",
+    images: [socialOpenGraphImage],
   },
 }
 
@@ -48,7 +50,7 @@ const facts = [
   "Complete D0-D8 workflow",
   "Evidence and attachments",
   "PDF / Word / Excel exports",
-  "Approval, revisions, and activity history",
+  "Team approval, revisions, and activity history",
 ]
 
 const workflow = [
@@ -70,7 +72,7 @@ const workflow = [
   {
     icon: PackageCheck,
     title: "Deliver",
-    text: "Export PDF, Word, Excel, and attachments without rebuilding separate customer files.",
+    text: "Export the selected PDF, Word, or Excel format; when attachments exist, download them with that format as a ZIP.",
   },
 ]
 
@@ -191,7 +193,7 @@ export default function LandingPage() {
       <JsonLd data={productJsonLd} />
       <PageHero
         title="Finish customer-ready 8D reports without rebuilding them in Excel."
-        description="Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, Excel, and attachments from one controlled workspace."
+        description="Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, or Excel with attachments when present."
         actions={
           <>
             <PrimaryCTA href="/signup" page="home" location="hero">

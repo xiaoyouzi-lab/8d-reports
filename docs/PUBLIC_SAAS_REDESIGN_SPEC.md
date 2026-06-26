@@ -191,6 +191,8 @@ Events:
 - `resource_filter_used`
 - `pricing_plan_clicked`
 - `docs_topic_opened`
+- `faq_opened`
+- `content_step_opened`
 
 Do not change checkout, auth, export, or report workflow business logic to create analytics events.
 

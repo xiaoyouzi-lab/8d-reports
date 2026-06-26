@@ -67,6 +67,11 @@ The funnel taxonomy is:
 
 The client analytics helper now translates `signup_success` to `sign_up`, `report_created` to `create_report`, and generic export clicks to a format-specific GA4 name. The existing internal product-event names are preserved for product analytics and governance history.
 
+Public marketing pages should keep `marketing_cta_clicked` for real next-step actions only, such as signup, pricing, sample downloads, docs/contact navigation, and copying the blank template after the clipboard write succeeds. Informational expansion events use separate names:
+
+- `faq_opened` with `page`, `group`, and `question`.
+- `content_step_opened` with `page` and `step`.
+
 `checkout_completed` is currently written by the payment webhook to product analytics only. Sending it to GA4 requires a separate, privacy-safe server-side measurement design; do not change payment success behavior merely to create a browser event.
 
 Until the normalized names appear in GA4 DebugView and a new export, zero-valued funnel steps indicate Measurement risk, not proof that users did not complete those actions.

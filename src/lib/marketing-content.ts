@@ -1,5 +1,12 @@
 export const siteUrl = "https://www.8d-reports.com"
 
+export const socialOpenGraphImage = {
+  url: `${siteUrl}/opengraph-image`,
+  width: 1200,
+  height: 630,
+  alt: "8D Reports customer-ready 8D reports",
+}
+
 export type SimpleFaq = {
   question: string
   answer: string
@@ -42,7 +49,7 @@ export const faqGroups = [
       {
         question: "Are attachments included?",
         answer:
-          "Attachments can be added to report steps. When a report has attachments, the export package can include the report files and attachments together as a ZIP package.",
+          "Attachments can be added to report steps. When attachments exist, the selected report format and the attachment files are downloaded together as a ZIP package.",
       },
     ],
   },
@@ -67,7 +74,7 @@ export const faqGroups = [
       {
         question: "Can I cancel?",
         answer:
-          "Yes. Paid subscriptions can be canceled. The product keeps plan boundaries simple: Free for evaluation, Pro for regular personal delivery, and Team for shared quality work.",
+          "Contact support for cancellation or billing changes. Subscription status is updated through the billing provider and reflected in the product after the billing event is processed.",
       },
       {
         question: "Can I pay for only one report?",
@@ -92,7 +99,7 @@ export const faqGroups = [
       {
         question: "Can I delete my data?",
         answer:
-          "You can remove report content you control in the app. For account-level or workspace-level deletion questions, contact support so the request can be handled safely.",
+          "You can edit report content you control in the app and delete attachments or share links where those controls are available. For account-level, full report, or workspace-level deletion questions, contact support so the request can be handled safely.",
       },
     ],
   },
@@ -117,7 +124,7 @@ export const sampleReportSteps = [
     id: "D2",
     title: "Describe the problem",
     body: "18 of 500 brake brackets showed visible coating peel-off after salt spray validation. The issue was limited to coating line 2, shift B, production date 2026-05-18, batch B26-041.",
-    details: "This is the default open step because it proves the report starts with measurable facts.",
+    details: "A strong report starts with measurable facts.",
   },
   {
     id: "D3",
@@ -129,13 +136,13 @@ export const sampleReportSteps = [
     id: "D4",
     title: "Verify root cause",
     body: "Occurrence cause: fixture cleaning check was skipped before line change. Escape cause: outgoing inspection checklist did not include coating edge adhesion.",
-    details: "This is open by default because credible 8D reports separate occurrence and escape causes.",
+    details: "Credible 8D reports separate occurrence and escape causes.",
   },
   {
     id: "D5",
     title: "Choose corrective actions",
     body: "The team added mandatory fixture cleaning sign-off, updated the coating setup checklist, and retrained shift B operators before restart.",
-    details: "This is open by default because actions must trace back to verified causes.",
+    details: "Actions must trace back to verified causes.",
   },
   {
     id: "D6",
@@ -246,7 +253,7 @@ export const docsTopics: DocsTopic[] = [
     slug: "create-report",
     title: "Create a report",
     summary:
-      "A report should start with a real complaint, defect, supplier issue, or recurring internal problem. 8D Reports keeps the report structured so the final PDF, Word, Excel, and attachment package can be delivered without rebuilding it in separate files.",
+      "A report should start with a real complaint, defect, supplier issue, or recurring internal problem. 8D Reports keeps the report structured so the final PDF, Word, or Excel file can be delivered with attachments when present.",
     steps: [
       "Choose New report from the dashboard.",
       "Enter a concise title and report number or customer reference when available.",
@@ -296,10 +303,10 @@ export const docsTopics: DocsTopic[] = [
       "Choose PDF when the recipient needs a fixed final record.",
       "Choose Word when the recipient requires an editable document.",
       "Choose Excel when a tabular customer format is expected.",
-      "Use the ZIP package when attachments need to be delivered with the report files.",
+      "When attachments exist, use the ZIP package generated for the selected report format.",
     ],
     callout:
-      "When a report has attachments, the export package can include PDF / Word / Excel outputs and attachments together as a ZIP package.",
+      "When attachments exist, the selected report format and the attachment files are downloaded together as a ZIP package.",
   },
   {
     slug: "sharing",
@@ -328,7 +335,7 @@ export const docsTopics: DocsTopic[] = [
       "Use revisions and activity history to understand what changed.",
     ],
     callout:
-      "Team is not positioned as a full QMS. It is a lightweight 8D response and delivery workspace.",
+      "Team is a lightweight 8D response and delivery workspace for shared review and control.",
   },
   {
     slug: "plans-and-billing",
@@ -348,7 +355,7 @@ export const docsTopics: DocsTopic[] = [
     slug: "security-and-data",
     title: "Security and data",
     summary:
-      "8D Reports keeps product claims conservative: it is a report workflow and delivery workspace, not a full enterprise QMS. Security details, sharing behavior, data deletion questions, and AI handling should be reviewed before broader team rollout.",
+      "8D Reports keeps product claims conservative as a report workflow and delivery workspace. Security details, sharing behavior, data deletion questions, and AI handling should be reviewed before broader team rollout.",
     steps: [
       "Use role and sharing controls to limit who can view or edit reports.",
       "Avoid placing unnecessary confidential data in a report.",

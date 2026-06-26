@@ -13,11 +13,11 @@ import {
   breadcrumbJsonLd,
 } from "@/components/marketing/MarketingPrimitives"
 import { buttonVariants } from "@/components/ui/button"
-import { sampleReportSteps, siteUrl } from "@/lib/marketing-content"
+import { sampleReportSteps, siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: "Complete 8D Example Report | 8D Reports",
+  title: "Complete 8D Example Report",
   description:
     "See a complete 8D example from containment to verified corrective action, with evidence, export package, and related industry examples.",
   alternates: { canonical: `${siteUrl}/sample-report` },
@@ -27,6 +27,7 @@ export const metadata: Metadata = {
       "Review a finished D0-D8 report example before creating your own customer-ready 8D response.",
     url: `${siteUrl}/sample-report`,
     type: "website",
+    images: [socialOpenGraphImage],
   },
 }
 
@@ -49,7 +50,7 @@ const evidenceItems = [
   {
     icon: FileArchive,
     title: "Attachment package",
-    text: "When attachments are present, the export package can include report files and evidence together.",
+    text: "When attachments exist, the selected report format and the attachment files are downloaded together as a ZIP package.",
   },
 ]
 
@@ -78,7 +79,7 @@ export default function SampleReportPage() {
         actions={
           <>
             <PrimaryCTA href="/signup" page="sample_report" location="hero">
-              Use this structure
+              Create a free 8D report
             </PrimaryCTA>
             <TrackedLink
               href="/api/sample-reports/automotive"
@@ -147,7 +148,7 @@ export default function SampleReportPage() {
       <Section>
         <SectionHeader
           title="Browse the D0-D8 report"
-          description="The most important proof steps are open by default. You can expand the rest without reading the same content twice."
+          description="Expand each discipline to review the evidence, reasoning, actions, and validation behind the completed report."
         />
         <div className="mt-8">
           <StepAccordion

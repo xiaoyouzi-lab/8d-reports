@@ -9,19 +9,20 @@ import {
   PageShell,
   breadcrumbJsonLd,
 } from "@/components/marketing/MarketingPrimitives"
-import { docsTopics, siteUrl } from "@/lib/marketing-content"
+import { docsTopics, siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
-  title: "8D Reports Docs | Getting Started, Reports, Exports, Sharing",
+  title: "Product Docs: Reports, Exports, and Sharing",
   description:
-    "Learn how to create reports, edit D0-D8, manage attachments, export PDF Word Excel and ZIP packages, share reports, use Team, and review AI Quality Check.",
+    "Learn how to create reports, edit D0-D8, manage attachments, export PDF Word or Excel, package attachments when present, share reports, use Team, and review AI Quality Check.",
   alternates: { canonical: `${siteUrl}/docs` },
   openGraph: {
-    title: "8D Reports Docs",
+    title: "Product Docs: Reports, Exports, and Sharing",
     description:
       "Practical product docs for creating, editing, exporting, sharing, and reviewing 8D reports.",
     url: `${siteUrl}/docs`,
     type: "website",
+    images: [socialOpenGraphImage],
   },
 }
 
@@ -42,8 +43,9 @@ export default function DocsPage() {
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
             Short operating guides for creating a report, editing D0-D8,
-            attaching evidence, exporting PDF / Word / Excel and ZIP packages,
-            sharing, Team workflow, billing, security, and AI Quality Check.
+            attaching evidence, exporting PDF / Word / Excel, packaging
+            attachments when present, sharing, Team workflow, billing,
+            security, and AI Quality Check.
           </p>
           <div className="mt-8">
             <PrimaryCTA href="/docs/getting-started" page="docs" location="hero">

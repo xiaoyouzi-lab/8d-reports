@@ -4,12 +4,11 @@ import {
   JsonLd,
   PageShell,
   Section,
-  SectionHeader,
   breadcrumbJsonLd,
 } from "@/components/marketing/MarketingPrimitives"
 import { ResourcesExplorer, type ResourceCardData } from "@/components/marketing/ResourcesExplorer"
 import { seoPages } from "@/content/seo-pages"
-import { siteUrl } from "@/lib/marketing-content"
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
   title: "8D Templates, Examples, and Root-Cause Tools",
@@ -22,6 +21,7 @@ export const metadata: Metadata = {
       "Practical resources for quality engineers, SQEs, and manufacturing quality teams.",
     url: `${siteUrl}/resources`,
     type: "website",
+    images: [socialOpenGraphImage],
   },
 }
 
@@ -118,23 +118,14 @@ export default function ResourcesPage() {
             Practical 8D templates, examples, and root-cause tools.
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-            Find reusable structures for customer complaints, supplier issues,
-            root-cause analysis, corrective actions, and prevention work. The
-            resource list is curated for scanning rather than exposing internal
-            URL slugs.
+            Find practical structures for customer complaints, supplier issues,
+            root-cause analysis, corrective actions, and recurrence prevention.
           </p>
         </div>
       </section>
 
       <Section>
         <ResourcesExplorer featured={featured} resources={resources} />
-      </Section>
-
-      <Section className="border-t border-slate-200 bg-slate-50">
-        <SectionHeader
-          title="All resource URLs remain available"
-          description="The resources page now starts with the most useful items, but existing SEO pages remain live, crawlable, and included in the sitemap."
-        />
       </Section>
     </PageShell>
   )

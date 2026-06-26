@@ -76,7 +76,7 @@ export function MarketingFooter() {
       </div>
       <div className="border-t border-white/10 px-4 py-4">
         <p className="mx-auto max-w-6xl text-xs text-slate-400">
-          © 2026 8D Reports. 8D Reports is not a full QMS, ERP, MES, or PLM.
+          © 2026 8D Reports. A focused 8D response and delivery workspace.
         </p>
       </div>
     </footer>

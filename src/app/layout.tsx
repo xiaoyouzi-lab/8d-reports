@@ -5,16 +5,17 @@ import { Toaster } from "sonner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { FeedbackWrapper } from "@/components/feedback/FeedbackWrapper";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { socialOpenGraphImage, siteUrl } from "@/lib/marketing-content";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.8d-reports.com"),
+  metadataBase: new URL(siteUrl),
   title: {
-    default: "8D Reports — Professional 8D Problem-Solving Software",
+    default: "8D Reports - Customer-Ready 8D Report Software",
     template: "%s | 8D Reports",
   },
   description:
-    "Create, manage, and export professional 8D reports directly from the factory floor. Structured D0-D8 workflow, one-click PDF/Word export, real-time team collaboration. No spreadsheets.",
+    "Create customer-ready 8D reports with a structured D0-D8 workflow, evidence and attachments, sharing and review, PDF / Word / Excel export, and Team approval, locking, and revision controls.",
   keywords: [
     "8D report",
     "8D problem solving",
@@ -28,16 +29,19 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://www.8d-reports.com",
+    url: siteUrl,
     siteName: "8D Reports",
-    title: "8D Reports — Professional 8D Problem-Solving Software",
+    title: "8D Reports - Customer-Ready 8D Report Software",
     description:
-      "Create professional 8D reports. No spreadsheets needed.",
+      "A focused D0-D8 response and delivery workspace for quality teams that need evidence, review, sharing, and PDF / Word / Excel export.",
+    images: [socialOpenGraphImage],
   },
   twitter: {
     card: "summary_large_image",
-    title: "8D Reports — Professional 8D Reporting",
-    description: "Professional 8D reports. No spreadsheets.",
+    title: "8D Reports - Customer-Ready 8D Reports",
+    description:
+      "Create structured D0-D8 reports with evidence, review, sharing, and PDF / Word / Excel export.",
+    images: [`${siteUrl}/twitter-image`],
   },
   robots: { index: true, follow: true },
 };

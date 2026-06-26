@@ -21,13 +21,11 @@ const filters = [
   { label: "Root Cause Tools", key: "root-cause" },
   { label: "Corrective Actions", key: "corrective-action" },
   { label: "Preventive Actions", key: "preventive-action" },
-  { label: "Industry Examples", key: "industry" },
 ]
 
 function matchesFilter(resource: ResourceCardData, filter: string) {
   if (filter === "all") return true
   if (filter === "root-cause") return resource.categoryKey === "5why-example" || resource.categoryKey === "fishbone-example"
-  if (filter === "industry") return resource.categoryKey === "8d-example"
   return resource.categoryKey === filter
 }
 
@@ -92,7 +90,11 @@ export function ResourcesExplorer({
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value)
+                  setVisibleCount(12)
+                }}
+                aria-label="Search resources"
                 placeholder="Search templates, examples, and tools"
                 className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
               />
@@ -102,6 +104,7 @@ export function ResourcesExplorer({
                 <button
                   key={item.key}
                   type="button"
+                  aria-pressed={filter === item.key}
                   className={cn(
                     "rounded-md px-3 py-2 text-xs font-semibold transition-colors",
                     filter === item.key
