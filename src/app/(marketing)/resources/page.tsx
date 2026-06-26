@@ -1,135 +1,132 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import { seoPages, type SeoPage, type SeoPageType } from "@/content/seo-pages";
-
-const baseUrl = "https://www.8d-reports.com";
+import type { Metadata } from "next"
+import {
+  Breadcrumbs,
+  JsonLd,
+  PageShell,
+  Section,
+  breadcrumbJsonLd,
+} from "@/components/marketing/MarketingPrimitives"
+import { ResourcesExplorer, type ResourceCardData } from "@/components/marketing/ResourcesExplorer"
+import { seoPages } from "@/content/seo-pages"
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
-  title: "8D Quality Resources",
+  title: "8D Templates, Examples, and Root-Cause Tools",
   description:
-    "Browse professional 8D examples, 8D templates, 5 Why examples, fishbone examples, corrective actions, and preventive actions for quality teams.",
-  alternates: {
-    canonical: `${baseUrl}/resources`,
-  },
-};
-
-const groups: {
-  type: SeoPageType;
-  title: string;
-  description: string;
-}[] = [
-  {
-    type: "8d-example",
-    title: "8D Examples",
+    "Browse practical 8D templates, complete examples, 5 Why examples, fishbone examples, corrective actions, and preventive action resources.",
+  alternates: { canonical: `${siteUrl}/resources` },
+  openGraph: {
+    title: "8D Templates, Examples, and Root-Cause Tools",
     description:
-      "Complete 8D report examples with D0-D8 wording, containment, root cause, corrective action, prevention, and verification details.",
+      "Practical resources for quality engineers, SQEs, and manufacturing quality teams.",
+    url: `${siteUrl}/resources`,
+    type: "website",
+    images: [socialOpenGraphImage],
   },
-  {
-    type: "8d-template",
-    title: "8D Templates",
-    description:
-      "Structured 8D template pages for customer reports, supplier corrective actions, regulated complaints, and manufacturing investigations.",
-  },
-  {
-    type: "5why-example",
-    title: "5 Why Examples",
-    description:
-      "Root-cause chains that show why the problem happened, why it escaped, and why the selected corrective action is credible.",
-  },
-  {
-    type: "fishbone-example",
-    title: "Fishbone Examples",
-    description:
-      "6M fishbone analysis pages covering Man, Machine, Method, Material, Measurement, and Environment prompts.",
-  },
-  {
-    type: "corrective-action",
-    title: "Corrective Actions",
-    description:
-      "Corrective action examples with ownership, due dates, verification evidence, and effectiveness checks.",
-  },
-  {
-    type: "preventive-action",
-    title: "Preventive Actions",
-    description:
-      "Preventive action examples focused on recurrence prevention, control-plan updates, audits, and lessons learned.",
-  },
-];
-
-function pagesByType(type: SeoPageType): SeoPage[] {
-  return seoPages.filter((page) => page.type === type);
 }
 
+const categoryLabel: Record<string, string> = {
+  "8d-example": "Complete example",
+  "8d-template": "8D template",
+  "5why-example": "Root cause tool",
+  "fishbone-example": "Root cause tool",
+  "corrective-action": "Corrective action",
+  "preventive-action": "Preventive action",
+}
+
+const breadcrumbItems = [
+  { label: "Home", href: siteUrl },
+  { label: "Resources", href: `${siteUrl}/resources` },
+]
+
+const manualResources: ResourceCardData[] = [
+  {
+    href: "/8d-report-template",
+    title: "8D Report Template",
+    description:
+      "A copyable D0-D8 structure with online template actions, common mistakes, and format guidance.",
+    category: "8D template",
+    categoryKey: "8d-template",
+  },
+  {
+    href: "/sample-report",
+    title: "Complete 8D Example",
+    description:
+      "A finished 8D report example from containment to verified corrective action.",
+    category: "Complete example",
+    categoryKey: "8d-example",
+  },
+]
+
+const featured: ResourceCardData[] = [
+  manualResources[0],
+  manualResources[1],
+  {
+    href: "/8d-report-example/supplier-quality",
+    title: "Supplier 8D Example",
+    description:
+      "A supplier corrective action example with incoming inspection failure, containment, and supplier control-plan follow-up.",
+    category: "Complete example",
+    categoryKey: "8d-example",
+  },
+  {
+    href: "/8d-report-example/customer-complaint",
+    title: "Customer Complaint 8D",
+    description:
+      "A practical customer complaint response with field logs, containment, firmware correction, and verification.",
+    category: "Complete example",
+    categoryKey: "8d-example",
+  },
+  {
+    href: "/5-why-example/customer-complaint",
+    title: "5 Why Example",
+    description:
+      "A root-cause chain that connects the complaint, escape point, and corrective action.",
+    category: "Root cause tool",
+    categoryKey: "5why-example",
+  },
+  {
+    href: "/fishbone-diagram-example/manufacturing-defect",
+    title: "Fishbone Example",
+    description:
+      "A 6M fishbone example for structuring possible manufacturing defect causes.",
+    category: "Root cause tool",
+    categoryKey: "fishbone-example",
+  },
+]
+
+const generatedResources: ResourceCardData[] = seoPages.map((page) => ({
+  href: `/${page.slug}`,
+  title: page.title,
+  description: page.metaDescription,
+  category: categoryLabel[page.type] || "Resource",
+  categoryKey: page.type,
+}))
+
+const resources = [...manualResources, ...generatedResources].filter(
+  (resource, index, all) => all.findIndex((item) => item.href === resource.href) === index,
+)
+
 export default function ResourcesPage() {
-  const total = seoPages.length;
-
   return (
-    <div className="bg-white text-slate-950">
+    <PageShell>
+      <JsonLd data={breadcrumbJsonLd(breadcrumbItems)} />
+      <Breadcrumbs items={breadcrumbItems} />
       <section className="border-b border-slate-200">
-        <div className="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-indigo-600">
-            Quality resources
-          </p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight sm:text-5xl">
-            Professional 8D, 5 Why, fishbone, corrective action, and preventive
-            action resources
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            Practical 8D templates, examples, and root-cause tools.
           </h1>
-          <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">
-            Browse {total} practical pages written for quality engineers,
-            supplier quality teams, process owners, and quality managers who
-            need clear examples rather than generic headings.
+          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
+            Find practical structures for customer complaints, supplier issues,
+            root-cause analysis, corrective actions, and recurrence prevention.
           </p>
         </div>
       </section>
 
-      <section className="py-14 sm:py-16">
-        <div className="mx-auto max-w-6xl space-y-14 px-4 sm:px-6">
-          {groups.map((group) => {
-            const pages = pagesByType(group.type);
-
-            return (
-              <section key={group.type} id={group.type}>
-                <div className="flex flex-col justify-between gap-3 border-b border-slate-200 pb-5 sm:flex-row sm:items-end">
-                  <div>
-                    <h2 className="text-2xl font-semibold tracking-tight">
-                      {group.title}
-                    </h2>
-                    <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-                      {group.description}
-                    </p>
-                  </div>
-                  <p className="text-sm font-medium text-slate-500">
-                    {pages.length} pages
-                  </p>
-                </div>
-
-                <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {pages.map((page) => (
-                    <Link
-                      key={page.slug}
-                      href={`/${page.slug}`}
-                      className="rounded-lg border border-slate-200 p-5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/40"
-                    >
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-600">
-                        /{page.slug}
-                      </p>
-                      <h3 className="mt-3 text-base font-semibold text-slate-950">
-                        {page.title}
-                      </h3>
-                      <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
-                        {page.metaDescription}
-                      </p>
-                      <p className="mt-4 text-xs leading-5 text-slate-500">
-                        Scope: {page.professional.affectedScope}
-                      </p>
-                    </Link>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      </section>
-    </div>
-  );
+      <Section>
+        <ResourcesExplorer featured={featured} resources={resources} />
+      </Section>
+    </PageShell>
+  )
 }

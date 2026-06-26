@@ -1,131 +1,148 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
-import { ArrowRight, Check, FileDown, Wrench } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { CheckoutButton } from "@/components/CheckoutButton"
+import { FileDown, ShieldCheck, Wrench } from "lucide-react"
 import { AutoCheckout } from "@/components/AutoCheckout"
-import { cn } from "@/lib/utils"
+import { PrimaryCTA, TrackedCheckoutButton } from "@/components/marketing/MarketingActions"
+import {
+  Breadcrumbs,
+  JsonLd,
+  PageShell,
+  Section,
+  SectionHeader,
+  breadcrumbJsonLd,
+} from "@/components/marketing/MarketingPrimitives"
+import { PlanCard } from "@/components/marketing/PlanCard"
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
-  alternates: { canonical: "https://www.8d-reports.com/pricing" },
+  title: "Pricing: Free, Pro, Team, and Single Export",
+  description:
+    "Start with 3 free reports. Upgrade to Pro for formal personal delivery, Team for shared control, or unlock one selected report with single export.",
+  alternates: { canonical: `${siteUrl}/pricing` },
+  openGraph: {
+    title: "Pricing: Free, Pro, Team, and Single Export",
+    description:
+      "Free, Pro, Team, and single report export options for customer-ready 8D reports.",
+    url: `${siteUrl}/pricing`,
+    type: "website",
+    images: [socialOpenGraphImage],
+  },
 }
+
+const breadcrumbItems = [
+  { label: "Home", href: siteUrl },
+  { label: "Pricing", href: `${siteUrl}/pricing` },
+]
 
 const plans = [
   {
     name: "Free",
     price: "$0",
-    period: "/forever",
-    description: "Try the full D0-D8 workflow and create up to 3 lifetime reports.",
+    period: "forever",
+    description: "Evaluate the workflow and complete up to 3 lifetime reports.",
     features: [
       "3 lifetime reports",
-      "Complete D0-D8 editor",
-      "PDF export with watermark",
-      "Basic dashboard search",
-      "View-only share links",
+      "D0-D8 editor",
+      "Attachments",
+      "View-only sharing",
+      "Watermarked PDF",
     ],
-    cta: (
-      <Link
-        href="/login"
-        className={cn(buttonVariants({ variant: "outline", size: "lg" }), "mt-8 h-11 w-full")}
-      >
-        Get started
-      </Link>
-    ),
   },
   {
     name: "Pro",
     price: "$19",
-    period: "/month",
-    description: "For individual quality engineers who deliver 8D reports regularly.",
+    period: "month",
+    description: "For individual quality engineers who deliver reports regularly.",
     recommended: true,
     features: [
       "Unlimited personal reports",
-      "No-watermark PDF export",
-      "Word export",
-      "Company logo on exports",
-      "Editable share links",
-      "Deep historical 8D search",
+      "PDF without watermark",
+      "Word and Excel export",
+      "Company logo",
+      "Editable sharing",
+      "Deep historical search",
     ],
-    cta: (
-      <CheckoutButton
-        planType="pro_monthly"
-        className="mt-8 h-11 w-full bg-[#4F46E5] hover:bg-[#4F46E5]/90"
-      >
-        Start Pro monthly
-      </CheckoutButton>
-    ),
   },
   {
     name: "Team",
     price: "$99",
-    period: "/month",
-    description: "For small quality teams that need a shared report workspace.",
+    period: "month",
+    description: "For small teams that need shared report control.",
     features: [
       "Everything in Pro",
-      "5 seats included",
-      "Team report workspace",
+      "5 seats",
+      "Shared workspace",
       "Owner / Editor / Viewer roles",
       "Approval status, report locking, and revisions",
-      "Activity log for report changes and delivery",
-      "Shared deep search across team reports",
-      "Owner-managed team access and formal exports",
+      "Activity log",
     ],
-    cta: (
-      <CheckoutButton
-        planType="team_monthly"
-        className="mt-8 h-11 w-full bg-slate-950 text-white hover:bg-slate-800"
-      >
-        Start Team monthly
-      </CheckoutButton>
-    ),
   },
 ]
 
-const addOns = [
+const comparisonRows = [
+  ["Reports", "3 lifetime", "Unlimited personal", "Shared workspace"],
+  ["PDF export", "Watermarked", "No watermark", "No watermark"],
+  ["Word and Excel", "Single export only", "Included", "Included"],
+  ["Sharing", "View-only", "Editable", "Editable with roles"],
+  ["Team controls", "—", "—", "Roles, approval, locking"],
+]
+
+const billingFaqs = [
   {
-    icon: FileDown,
-    title: "Single report export",
-    price: "$4.99/report",
-    text: "Unlock no-watermark PDF and Word export for one report only. It does not unlock unlimited personal reports, logo upload, editable sharing, or deep search.",
+    question: "Do I need a credit card for Free?",
+    answer: "No. Free starts with 3 lifetime reports and no credit card requirement.",
   },
   {
-    icon: Wrench,
-    title: "Enterprise template customization",
-    price: "From $499",
-    text: "Custom 8D format, customer-specific fields, branded export layout, and supplier-facing template setup.",
-    href: "/custom-8d-template-setup",
+    question: "What happens after I use 3 reports?",
+    answer:
+      "Existing reports remain accessible. Creating more reports requires Pro or Team, while one selected report can be unlocked with single export.",
   },
   {
-    icon: Wrench,
-    title: "Team Launch",
-    price: "From $999",
-    text: "We configure your template, Team workspace, roles, first real 8D report, and team training.",
-    href: "/team-launch",
+    question: "What does single export unlock?",
+    answer:
+      "Single export is $4.99 for one selected report and unlocks no-watermark PDF, Word, and Excel for that report.",
+  },
+  {
+    question: "Can I cancel a subscription?",
+    answer:
+      "Contact support for cancellation or billing changes. Subscription status is updated through the billing provider and reflected in the product after the billing event is processed.",
+  },
+  {
+    question: "Does Team include enterprise procurement features?",
+    answer:
+      "Team is a lightweight shared 8D workspace. Review Security or contact us before broader enterprise rollout requirements.",
   },
 ]
 
-const teamTrustItems = [
-  "Owner-managed members with 5 seats included",
-  "Owner / Editor / Viewer roles with owner-controlled approval and unlock",
-  "View-only and editable share links can be revoked",
-  "Report locking, revisions, and a lightweight activity log",
-  "Security / Data Privacy page explains storage, AI handling, deletion, and sharing",
-  "Enterprise requests such as DPA, SSO, audit-log exports, and support SLA should be scoped before company-wide rollout",
-]
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: billingFaqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+}
 
 export default function PricingPage() {
   return (
-    <div className="font-sans">
-      <section className="py-20 sm:py-24">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6">
-          <div className="mx-auto max-w-2xl text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              Pricing that matches how 8D reports are delivered
+    <PageShell>
+      <JsonLd data={breadcrumbJsonLd(breadcrumbItems)} />
+      <JsonLd data={faqJsonLd} />
+      <Breadcrumbs items={breadcrumbItems} />
+      <section className="border-b border-slate-200">
+        <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+          <div className="max-w-3xl">
+            <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+              Start with 3 free reports. Pay when you need formal delivery or team control.
             </h1>
-            <p className="mt-4 text-muted-foreground">
-              Free is for evaluation. Pro is for regular delivery. Team is for a shared quality workspace. One-time export is available when you only need one customer-ready report.
+            <p className="mt-5 text-lg leading-8 text-slate-600">
+              Free is for evaluation, Pro is for regular personal delivery, and
+              Team is for a shared quality workspace with review controls.
             </p>
           </div>
 
@@ -133,118 +150,168 @@ export default function PricingPage() {
             <AutoCheckout />
           </Suspense>
 
-          <div className="mx-auto mt-14 grid max-w-6xl gap-6 lg:grid-cols-3">
+          <div className="mt-10 grid gap-5 lg:grid-cols-3">
             {plans.map((plan) => (
-              <div
+              <PlanCard
                 key={plan.name}
-                className={cn(
-                  "relative rounded-xl border bg-card p-8",
-                  plan.recommended
-                    ? "border-2 border-[#4F46E5] shadow-[0_0_24px_rgba(79,70,229,0.12)]"
-                    : "border-border",
-                )}
+                name={plan.name}
+                price={plan.price}
+                period={plan.period}
+                description={plan.description}
+                features={plan.features}
+                recommended={plan.recommended}
               >
-                {plan.recommended && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <Badge className="border-[#4F46E5]/30 bg-[#4F46E5] text-white">
-                      Recommended
-                    </Badge>
-                  </div>
+                {plan.name === "Free" ? (
+                  <PrimaryCTA
+                    href="/signup"
+                    page="pricing"
+                    location="free_plan"
+                    variant="secondary"
+                    className="w-full"
+                    eventName="pricing_plan_clicked"
+                    eventData={{ plan: "free" }}
+                  >
+                    Start free
+                  </PrimaryCTA>
+                ) : plan.name === "Pro" ? (
+                  <TrackedCheckoutButton
+                    plan="pro"
+                    planType="pro_monthly"
+                    className="h-11 w-full bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    Start Pro monthly
+                  </TrackedCheckoutButton>
+                ) : (
+                  <TrackedCheckoutButton
+                    plan="team"
+                    planType="team_monthly"
+                    className="h-11 w-full bg-slate-950 text-white hover:bg-slate-800"
+                  >
+                    Start Team monthly
+                  </TrackedCheckoutButton>
                 )}
-                <h2 className="text-lg font-semibold text-foreground">{plan.name}</h2>
-                <div className="mt-3 flex items-baseline gap-1">
-                  <span className="font-mono text-4xl font-bold text-foreground">
-                    {plan.price}
-                  </span>
-                  <span className="text-sm text-muted-foreground">{plan.period}</span>
-                </div>
-                <p className="mt-3 min-h-12 text-sm leading-6 text-muted-foreground">
-                  {plan.description}
-                </p>
-                <ul className="mt-6 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2.5 text-sm text-foreground/80">
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#059669]" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                {plan.cta}
-              </div>
+              </PlanCard>
             ))}
-          </div>
-          <div className="mx-auto mt-8 flex max-w-3xl flex-col items-center gap-3 rounded-xl border border-indigo-200 bg-indigo-50 p-5 text-center sm:flex-row sm:justify-between sm:text-left">
-            <div>
-              <p className="font-semibold text-indigo-950">Need help launching the workflow?</p>
-              <p className="mt-1 text-sm text-indigo-700">We convert your template, configure roles, and help complete the first customer-ready report.</p>
-            </div>
-            <Link href="/team-launch" className={cn(buttonVariants({ size: "lg" }), "shrink-0 bg-indigo-600 text-white hover:bg-indigo-700")}>
-              Book Team Launch
-            </Link>
-          </div>
-
-          <div className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-2">
-            {addOns.map((item) => (
-              <div key={item.title} className="rounded-xl border border-border bg-card p-6">
-                <div className="flex items-start gap-3">
-                  <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
-                    <item.icon className="size-5" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-semibold text-foreground">{item.title}</h2>
-                    <p className="mt-1 font-mono text-xl font-semibold text-foreground">{item.price}</p>
-                    <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.text}</p>
-                    {"href" in item && item.href ? (
-                      <Link
-                        href={item.href}
-                        className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700"
-                      >
-                        Learn about setup
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <p className="mx-auto mt-8 max-w-3xl text-center text-xs leading-5 text-muted-foreground">
-            Team access is implemented as a shared team workspace with owner-managed members. Single report export unlocks only the selected report.
-            {" "}
-            <Link href="/security" className="font-medium text-indigo-600 hover:text-indigo-700">Security and data privacy</Link>
-            {" · "}
-            <Link href="/8d-report-review-service" className="font-medium text-indigo-600 hover:text-indigo-700">8D report review service</Link>
-            {" · "}
-            <Link href="/sample-report" className="font-medium text-indigo-600 hover:text-indigo-700">Review sample report downloads</Link>
-          </p>
-
-          <div className="mx-auto mt-12 max-w-5xl rounded-xl border border-slate-200 bg-slate-50 p-6">
-            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-              <div>
-                <h2 className="text-xl font-semibold text-slate-950">
-                  What Team means today
-                </h2>
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Team is suitable for small quality teams that need a shared report workspace now. Larger companies can evaluate the workflow, but procurement requirements such as DPA, SSO, audit exports, and formal support terms should be discussed before broad deployment.
-                </p>
-                <Link href="/security" className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-indigo-600 hover:text-indigo-700">
-                  Review security details
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-              <ul className="grid gap-2 text-sm text-slate-700 sm:grid-cols-2">
-                {teamTrustItems.map((item) => (
-                  <li key={item} className="flex gap-2 rounded-lg bg-white p-3">
-                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
           </div>
         </div>
       </section>
-    </div>
+
+      <Section>
+        <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <SectionHeader
+            title="Single report export"
+            description="Use this when you only need one formal deliverable and do not need ongoing Pro or Team features."
+          />
+          <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-5">
+            <div className="flex gap-3">
+              <FileDown className="mt-0.5 h-5 w-5 shrink-0 text-indigo-700" />
+              <div>
+                <h2 className="text-lg font-semibold text-indigo-950">
+                  $4.99 unlocks one selected report
+                </h2>
+                <ul className="mt-4 grid gap-2 text-sm text-indigo-900 sm:grid-cols-3">
+                  <li>no-watermark PDF</li>
+                  <li>Word</li>
+                  <li>Excel</li>
+                </ul>
+                <p className="mt-4 text-sm leading-6 text-indigo-900">
+                  Single export is started from a report export flow so the
+                  selected report is clear.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
+      <Section className="border-y border-slate-200 bg-slate-50">
+        <SectionHeader
+          title="Compact comparison"
+          description="The main difference is when you need formal exports, reusable history, or team control."
+        />
+        <div className="mt-8 overflow-x-auto rounded-lg border border-slate-200 bg-white">
+          <table className="min-w-[720px] w-full border-collapse text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50 text-left">
+                <th className="px-4 py-3 font-semibold text-slate-950">Feature</th>
+                <th className="px-4 py-3 font-semibold text-slate-950">Free</th>
+                <th className="px-4 py-3 font-semibold text-slate-950">Pro</th>
+                <th className="px-4 py-3 font-semibold text-slate-950">Team</th>
+              </tr>
+            </thead>
+            <tbody>
+              {comparisonRows.map((row) => (
+                <tr key={row[0]} className="border-b border-slate-100 last:border-b-0">
+                  {row.map((cell, cellIndex) => (
+                    <td key={`${row[0]}-${cellIndex}`} className="px-4 py-3 text-slate-700">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Section>
+
+      <Section>
+        <SectionHeader
+          title="Professional Services"
+          description="Optional help for teams that need their template and workflow configured before rollout."
+        />
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {[
+            {
+              icon: Wrench,
+              title: "Template Setup",
+              price: "From $499",
+              text: "Convert your customer-specific 8D format into a practical setup path.",
+              href: "/custom-8d-template-setup",
+            },
+            {
+              icon: ShieldCheck,
+              title: "Team Launch",
+              price: "From $999",
+              text: "Configure the workspace, roles, first report, and team training.",
+              href: "/team-launch",
+            },
+          ].map((service) => (
+            <Link
+              key={service.title}
+              href={service.href}
+              className="rounded-lg border border-slate-200 p-5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
+            >
+              <service.icon className="h-5 w-5 text-indigo-600" />
+              <h3 className="mt-4 text-base font-semibold text-slate-950">
+                {service.title}
+              </h3>
+              <p className="mt-1 font-mono text-lg font-semibold text-slate-950">
+                {service.price}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{service.text}</p>
+            </Link>
+          ))}
+        </div>
+        <p className="mt-6 text-sm leading-6 text-slate-600">
+          For security, data, and rollout questions, review{" "}
+          <Link href="/security" className="font-semibold text-indigo-700 hover:text-indigo-800">
+            Security
+          </Link>
+          .
+        </p>
+      </Section>
+
+      <Section className="border-t border-slate-200 bg-slate-50">
+        <SectionHeader title="Billing FAQ" />
+        <div className="mt-8 grid gap-4 md:grid-cols-2">
+          {billingFaqs.map((faq) => (
+            <article key={faq.question} className="rounded-lg border border-slate-200 bg-white p-5">
+              <h3 className="text-base font-semibold text-slate-950">{faq.question}</h3>
+              <p className="mt-2 text-sm leading-6 text-slate-600">{faq.answer}</p>
+            </article>
+          ))}
+        </div>
+      </Section>
+    </PageShell>
   )
 }
