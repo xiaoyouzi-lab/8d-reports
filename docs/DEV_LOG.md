@@ -2,9 +2,68 @@
 
 ## Latest Task
 
-PR #7 content accuracy, analytics integrity, metadata, and functionality-claim hardening.
+PR #8 Quality Knowledge Base v1.
 
 ## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/MARKETING_WORKFLOW.md`
+- `docs/QUALITY_KNOWLEDGE_BASE_SPEC.md`
+- `scripts/team-governance.test.ts`
+- `src/app/(app)/knowledge/page.tsx`
+- `src/app/(app)/layout.tsx`
+- `src/app/api/events/route.ts`
+- `src/app/api/knowledge/search/route.ts`
+- `src/components/knowledge/KnowledgeBaseClient.tsx`
+- `src/lib/report-knowledge.ts`
+
+## Implementation Summary
+
+- Added a logged-in `/knowledge` page for completed 8D report search and reuse.
+- Added `src/lib/report-knowledge.ts` to centralize Knowledge Base eligibility, status filtering, safe report-field extraction, and in-memory search over whitelisted report fields.
+- Added POST-only `/api/knowledge/search`, which requires an authenticated user, reuses `getAccessibleUserIds`, and only returns completed reports or locked workflow records (`approved`, `submitted`, `closed`).
+- Added result cards showing problem context, root cause, corrective action, lessons learned, workflow status, revision, priority, and updated date.
+- Added copy actions for root cause, corrective action, and lessons learned.
+- Added a Knowledge Base entry to the logged-in app menu.
+- Added analytics allowlist entries for Knowledge Base search, no-results, result opens, filters, root cause copy, corrective action copy, and lessons learned copy.
+- Analytics metadata intentionally records safe operational fields only, such as query length, result count, filter, event type, plan, and report id. It does not record full query text or report content.
+- Updated governance checks to verify Knowledge Base eligibility, access-scope reuse, status filtering, safe analytics, and no share-token dependency.
+- Added `docs/QUALITY_KNOWLEDGE_BASE_SPEC.md` and Knowledge Base operating metrics in `docs/MARKETING_WORKFLOW.md`.
+- No AI, iOS, External 8D Request, public site redesign, payment, checkout, subscription, export, workflow, database schema, vector database, or attachment parsing changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run test:governance` passed.
+- `npm run lint` passed with existing warnings only.
+- `npm run build` passed.
+- API verification: `GET /api/knowledge/search` returns `405 Method Not Allowed`, confirming the endpoint is POST-only.
+- API verification: unauthenticated `POST /api/knowledge/search` returns `401 Unauthorized`.
+- Browser verification: unauthenticated `/knowledge` routes to `/login` with no captured console warnings or errors.
+- Authenticated browser verification was not run because no `AUTH_SMOKE_*` session cookies or test report id are configured in the local environment.
+
+## Risks
+
+- Knowledge Base depends on existing Team report access scope. Any future change to `getAccessibleUserIds` affects visible knowledge assets.
+- V1 scans recent eligible JSONB report rows in application code. This is conservative and avoids schema migration, but large workspaces may eventually need indexed/materialized search.
+- Free users can access their own completed-report Knowledge Base assets; this adds a focused completed-report reuse surface without changing pricing configuration.
+
+## Unfinished / Needs Human Review
+
+- Confirm whether Knowledge Base should remain available to all logged-in users or become a Pro/Team entitlement later.
+- Validate copy/reuse language with real completed 8D reports.
+
+## Suggested Next Task
+
+After PR #8 deploys, review Knowledge Base usage analytics and decide whether v2 needs indexed search, more filters, or controlled template/action reuse.
+
+## Previous Task
+
+PR #7 content accuracy, analytics integrity, metadata, and functionality-claim hardening.
+
+## Previous Changed Files
 
 Primary areas:
 
@@ -13,7 +72,7 @@ Primary areas:
 - Docs topic routes.
 - Public SaaS redesign spec and marketing workflow documentation.
 - Open Graph and Twitter shared image metadata.
-- Public copy evidence audit for export packaging, subscription cancellation, data deletion, and Team deletion claims.
+- Public copy evidence audit for export packaging, subscription cancellation, data deletion, and Team workspace deletion claims.
 
 Live GSC / GA4 CSV exports, `data/marketing/weekly_report.md`, Google JSON keys, and `.secrets` remain excluded from Git.
 

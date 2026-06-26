@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
 import { useTranslations, useLocale } from "next-intl"
-import { LayoutDashboard, LogOut } from "lucide-react"
+import { BookOpen, LayoutDashboard, LogOut } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -124,6 +124,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   >
                     <LayoutDashboard className="size-4" />
                     {t("dashboard.myReports")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { router.push("/knowledge"); setMenuOpen(false) }}
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <BookOpen className="size-4" />
+                    Knowledge Base
                   </button>
                   <div className="-mx-1 my-1 h-px bg-border" />
                   <button

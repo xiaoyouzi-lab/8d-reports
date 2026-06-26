@@ -11,6 +11,12 @@ import {
   WORKFLOW_STATUSES,
   type TeamRole,
 } from "../src/lib/report-workflow";
+import {
+  buildKnowledgeEntry,
+  isKnowledgeEligibleReport,
+  normalizeKnowledgeFilter,
+  searchKnowledgeEntries,
+} from "../src/lib/report-knowledge";
 import { aiUnavailableMessage, type AiTaskType } from "../src/lib/ai/deepseek";
 import {
   isSupportedServiceRequestFile,
@@ -95,6 +101,39 @@ assert.equal(access("owner", "draft", new Date()).locked, true, "lockedAt should
 const preview = previewValue("x".repeat(400));
 assert.equal(preview?.length, 303, "Activity value previews should be truncated to 300 chars plus ellipsis");
 
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "draft" }), true, "Completed reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "approved" }), true, "Locked approved reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "internal_review" }), false, "Internal review reports should not enter Knowledge Base");
+assert.equal(normalizeKnowledgeFilter("submitted"), "submitted", "Knowledge Base should accept supported status filters");
+assert.equal(normalizeKnowledgeFilter("unknown"), "all", "Knowledge Base should reject unsupported status filters safely");
+
+const knowledgeFixture = {
+  id: "11111111-1111-4111-8111-111111111111",
+  title: "Paint blister customer 8D",
+  status: "completed",
+  workflowStatus: "approved",
+  revision: 0,
+  lockedAt: new Date("2026-06-01T00:00:00Z"),
+  reportType: "customer_8d",
+  priority: "high",
+  source: "customer complaint",
+  data: {
+    reportNumber: "2026-06-001",
+    problemDescription: "Paint blisters found after humidity exposure",
+    confirmedRootCause: "Primer flash time was shortened below the approved process window.",
+    selectedCorrectiveAction: "Restore flash time and add line clearance verification.",
+    lessonsLearned: "Recipe changes require independent quality approval before release.",
+  },
+  createdAt: new Date("2026-06-01T00:00:00Z"),
+  updatedAt: new Date("2026-06-02T00:00:00Z"),
+};
+const knowledgeEntry = buildKnowledgeEntry(knowledgeFixture);
+assert.match(knowledgeEntry.rootCause || "", /Primer flash time/, "Knowledge entries should extract root cause text");
+assert.match(knowledgeEntry.correctiveAction || "", /Restore flash time/, "Knowledge entries should extract corrective action text");
+assert.match(knowledgeEntry.lessonsLearned || "", /independent quality approval/, "Knowledge entries should extract lessons learned text");
+assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all" }).length, 1, "Knowledge search should match completed report problem text");
+assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "closed" }).length, 0, "Knowledge search should respect status filters");
+
 const reportRoute = read("src/app/api/reports/[id]/route.ts");
 assert.match(reportRoute, /access\.canEdit/, "Report save must use shared role and lock access gate");
 assert.match(reportRoute, /report_field_updated/, "Report field updates must write Activity Log entries");
@@ -171,6 +210,15 @@ assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard
 assert.match(reportsRoute, /revision: reports\.revision/, "Dashboard report API must expose revision number");
 assert.match(reportsRoute, /lockedAt: reports\.lockedAt/, "Dashboard report API must expose lock state");
 
+const knowledgeRoute = read("src/app/api/knowledge/search/route.ts");
+assert.match(knowledgeRoute, /export async function POST/, "Knowledge search API must be POST-only");
+assert.doesNotMatch(knowledgeRoute, /export async function GET/, "Knowledge search API must not expose GET");
+assert.match(knowledgeRoute, /getSessionUser/, "Knowledge search must require an authenticated user");
+assert.match(knowledgeRoute, /getAccessibleUserIds/, "Knowledge search must reuse Team report access scope");
+assert.match(knowledgeRoute, /eq\(reports\.status, "completed"\)/, "Knowledge search must include completed reports");
+assert.match(knowledgeRoute, /KNOWLEDGE_WORKFLOW_STATUSES/, "Knowledge search must include locked workflow records");
+assert.doesNotMatch(knowledgeRoute, /reportShares|accessToken/, "Knowledge search must not use external share tokens");
+
 const teamRoute = read("src/app/api/team/route.ts");
 assert.match(teamRoute, /requireActiveTeamOwner/, "Team management routes should use one active-Team-owner gate");
 assert.match(teamRoute, /entitlements\.plan !== "team"/, "Team management must require an active Team plan");
@@ -227,6 +275,42 @@ assert.match(dashboardPage, /activity\.message/, "Dashboard Team activity should
 
 const appLayout = read("src/app/(app)/layout.tsx");
 assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
+assert.match(appLayout, /Knowledge Base/, "App header menu should expose Knowledge Base");
+
+const knowledgePage = read("src/components/knowledge/KnowledgeBaseClient.tsx");
+assert.match(knowledgePage, /\/api\/knowledge\/search/, "Knowledge page should use the dedicated Knowledge API");
+assert.match(knowledgePage, /method: "POST"/, "Knowledge page should call the Knowledge API with POST");
+assert.match(knowledgePage, /knowledge_search_used/, "Knowledge page should track safe search analytics");
+assert.match(knowledgePage, /knowledge_result_opened/, "Knowledge page should track result opens");
+assert.match(knowledgePage, /knowledge_root_cause_copied/, "Knowledge page should track root cause reuse");
+assert.match(knowledgePage, /knowledge_corrective_action_copied/, "Knowledge page should track corrective action reuse");
+assert.match(knowledgePage, /knowledge_lesson_copied/, "Knowledge page should track lessons learned reuse");
+assert.doesNotMatch(knowledgePage, /knowledge_[a-z]+_clicked/, "Knowledge page should not use deprecated generic Knowledge clicked events");
+assert.match(knowledgePage, /navigator\.clipboard\.writeText/, "Knowledge page should support copying reusable fields");
+assert.doesNotMatch(knowledgePage, /\/api\/share\//, "Knowledge page must not rely on public share links");
+
+const eventsRoute = read("src/app/api/events/route.ts");
+assert.match(eventsRoute, /knowledge_search_used/, "Analytics allowlist should include Knowledge search");
+assert.match(eventsRoute, /knowledge_result_opened/, "Analytics allowlist should include Knowledge result opens");
+assert.match(eventsRoute, /knowledge_root_cause_copied/, "Analytics allowlist should include root cause copy");
+assert.match(eventsRoute, /knowledge_corrective_action_copied/, "Analytics allowlist should include corrective action copy");
+assert.match(eventsRoute, /knowledge_lesson_copied/, "Analytics allowlist should include lessons learned copy");
+assert.doesNotMatch(eventsRoute, /knowledge_[a-z]+_clicked/, "Analytics allowlist should not include deprecated generic Knowledge clicked events");
+
+const knowledgeSpec = read("docs/QUALITY_KNOWLEDGE_BASE_SPEC.md");
+assert.match(knowledgeSpec, /Every completed 8D report/, "Knowledge spec should state the core asset principle");
+assert.match(knowledgeSpec, /v1 does not add AI|V1 does not add AI/, "Knowledge spec should keep AI out of v1");
+assert.match(knowledgeSpec, /Vector database|vector database/, "Knowledge spec should document no vector database in v1");
+assert.match(knowledgeSpec, /Attachment parsing|attachment parsing/, "Knowledge spec should document no attachment parsing in v1");
+assert.match(knowledgeSpec, /Database schema migration|database schema migration/, "Knowledge spec should document no schema migration in v1");
+assert.match(knowledgeSpec, /Permission Matrix/, "Knowledge spec should include a permission matrix");
+assert.match(knowledgeSpec, /report\.data/, "Knowledge spec should map report.data fields");
+
+const marketingWorkflow = read("docs/MARKETING_WORKFLOW.md");
+assert.match(marketingWorkflow, /Knowledge Base Metrics/, "Marketing workflow should include Knowledge Base metrics");
+assert.match(marketingWorkflow, /knowledge_result_opened/, "Marketing workflow should track Knowledge result open rate");
+assert.match(marketingWorkflow, /knowledge_root_cause_copied/, "Marketing workflow should track root cause reuse");
+assert.match(marketingWorkflow, /repeat knowledge users/i, "Marketing workflow should track repeat Knowledge Base users");
 
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");

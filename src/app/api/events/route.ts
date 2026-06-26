@@ -45,6 +45,13 @@ const ALLOWED_EVENTS = new Set([
   "docs_topic_opened",
   "faq_opened",
   "content_step_opened",
+  "knowledge_search_used",
+  "knowledge_no_results",
+  "knowledge_result_opened",
+  "knowledge_filter_used",
+  "knowledge_root_cause_copied",
+  "knowledge_corrective_action_copied",
+  "knowledge_lesson_copied",
 ]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
