@@ -76,6 +76,30 @@ Public marketing pages should keep `marketing_cta_clicked` for real next-step ac
 
 Until the normalized names appear in GA4 DebugView and a new export, zero-valued funnel steps indicate Measurement risk, not proof that users did not complete those actions.
 
+## Knowledge Base Metrics
+
+After Knowledge Base v1 ships, weekly marketing and product reviews must track whether users treat 8D Reports as a reusable quality workspace rather than a one-time export tool.
+
+Core metrics:
+
+- Completed reports count: total eligible completed or locked reports that can become knowledge assets.
+- Knowledge searches: `knowledge_search_used`.
+- Result open rate: `knowledge_result_opened` divided by knowledge searches.
+- Root cause copied: `knowledge_root_cause_copied`.
+- Corrective action copied: `knowledge_corrective_action_copied`.
+- Lessons learned copied: `knowledge_lesson_copied`.
+- Repeat knowledge users: distinct users with Knowledge Base activity in more than one weekly period.
+
+Commercial interpretation:
+
+- Completed reports count shows whether the product is accumulating reusable quality knowledge.
+- Knowledge searches show whether users expect historical reports to help with new problems.
+- Result open rate shows whether the search experience returns useful assets.
+- Root cause, corrective action, and lessons learned copy events show whether users are reusing quality knowledge rather than only exporting finished documents.
+- Repeat knowledge users show whether 8D Reports is becoming part of an ongoing quality operating rhythm.
+- These metrics help judge whether Team / Pro value is real, especially for teams that benefit from shared historical learning.
+- They also provide the usage base for future AI Quality Check, because AI should be grounded in permission-safe completed-report knowledge rather than generic or invented advice.
+
 ## First Manual SERP Sample
 
 Collect live B-grade samples for these keywords before making competitor or GEO positioning claims:
