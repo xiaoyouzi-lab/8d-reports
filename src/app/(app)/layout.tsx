@@ -1,10 +1,10 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
 import { useTranslations, useLocale } from "next-intl"
-import { BookOpen, LayoutDashboard, LogOut } from "lucide-react"
+import { BookOpen, LayoutDashboard, LogOut, PlusCircle } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -15,6 +15,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const t = useTranslations()
   const locale = useLocale()
   const router = useRouter()
+  const pathname = usePathname()
   const { data: session, isPending } = authClient.useSession()
   const { plan } = usePlan((session?.user as Record<string, unknown> | undefined)?.plan)
 
@@ -71,11 +72,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const user = session.user
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"
+  const navItems = [
+    { href: "/dashboard", label: t("dashboard.myReports"), icon: LayoutDashboard },
+    { href: "/knowledge", label: "Knowledge Base", icon: BookOpen },
+    { href: "/reports/new", label: "New Report", icon: PlusCircle },
+  ]
+  const navLinkClass = (href: string) => {
+    const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
+    return [
+      "inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors",
+      active
+        ? "bg-indigo-50 text-indigo-700"
+        : "text-muted-foreground hover:bg-slate-100 hover:text-foreground",
+    ].join(" ")
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FB]">
       <header className="sticky top-0 z-40 border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="flex h-14 items-center justify-between px-4 lg:px-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center gap-2.5">
               <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
                 8D
@@ -84,6 +100,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 8D Reports
               </span>
             </Link>
+            <nav className="hidden items-center gap-1 md:flex" aria-label="Primary app navigation">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                    <Icon className="size-4" />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </nav>
           </div>
 
           <div className="flex items-center gap-3">
@@ -147,6 +174,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
+        <nav
+          className="flex h-10 items-center gap-2 overflow-x-auto border-t border-border/40 px-4 md:hidden"
+          aria-label="Primary app navigation"
+        >
+          {navItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                <Icon className="size-4" />
+                <span className="whitespace-nowrap">{item.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
       </header>
 
       <main className="flex-1">{children}</main>

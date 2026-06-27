@@ -1,7 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { History, Lock, Unlock } from "lucide-react"
+import Link from "next/link"
+import { BookOpen, History, Lock, Unlock } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -147,6 +148,18 @@ export function ReportWorkflowPanel({
         <div className="rounded-lg border bg-slate-50 p-3 text-sm">
           <div className="font-medium">Revision {revision} · {STATUSES.find(([value]) => value === workflowStatus)?.[1] || workflowStatus}</div>
           <div className="mt-1 text-xs text-muted-foreground">{locked ? "Locked against edits, attachment deletion, and signature replacement." : "Open for editing."}</div>
+          <div className="mt-3 flex flex-col gap-2 rounded-md border border-indigo-100 bg-white p-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+            <span>
+              Completed and closed reports become reusable knowledge for future root-cause and corrective-action work.
+            </span>
+            <Link
+              href="/knowledge"
+              className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 font-medium text-indigo-700 hover:bg-indigo-100"
+            >
+              <BookOpen className="size-3.5" />
+              Knowledge Base
+            </Link>
+          </div>
           {canManageWorkflow && !locked && (
             <select
               className="mt-3 h-9 w-full rounded-md border bg-white px-2 text-sm"

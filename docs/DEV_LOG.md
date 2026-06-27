@@ -2,9 +2,56 @@
 
 ## Latest Task
 
-PR #8 Quality Knowledge Base v1.
+Authenticated App Feature Discoverability v1.
 
 ## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `scripts/team-governance.test.ts`
+- `src/components/report/ReportWorkflowPanel.tsx`
+- `src/app/(app)/dashboard/page.tsx`
+- `src/app/(app)/layout.tsx`
+
+## Implementation Summary
+
+- Added persistent authenticated app navigation for Reports, Knowledge Base, and New Report outside the avatar menu.
+- Added a mobile authenticated app navigation bar so Knowledge Base is visible without opening the user menu.
+- Added a dashboard first-screen workflow panel that explains the path from creating reports, to completing and closing them, to reusing completed reports as quality knowledge.
+- Added visible Knowledge Base actions on the dashboard and inside the report workflow panel.
+- Updated empty-report onboarding to include Knowledge Base reuse as a normal part of the workflow after completion.
+- Updated governance checks to protect the new discoverability requirements.
+- Updated `docs/CURRENT_TASK.md` from the completed PR #8 task to the current authenticated app discoverability task.
+- No auth, payment, checkout, subscription, export, AI, public marketing, Knowledge Base search logic, database schema, or production configuration changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npm run test:governance` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- Browser smoke passed against local `next dev` with mocked authenticated session and mocked API fixtures only. It verified desktop dashboard navigation, mobile Knowledge Base navigation, the dashboard create -> complete -> reuse prompt, the visible dashboard Knowledge Base link, the report workflow panel Knowledge Base link, and no horizontal overflow on desktop or mobile.
+
+## Risks
+
+- Header navigation could become crowded on small screens, so mobile uses a compact secondary app nav row.
+- Dashboard copy should remain operational and not become a public-site-style marketing hero.
+- Discoverability is improved through navigation and guidance only; no new entitlement or feature behavior is introduced.
+
+## Unfinished / Needs Human Review
+
+- Review whether the dashboard workflow copy is concise enough for repeat daily use.
+
+## Suggested Next Task
+
+After this PR, consider adding a lightweight onboarding checklist only if usage data shows users still miss the create -> complete -> reuse workflow.
+
+## Previous Task
+
+PR #8 Quality Knowledge Base v1.
+
+## Previous Changed Files
 
 - `docs/CURRENT_TASK.md`
 - `docs/DEV_LOG.md`
@@ -18,7 +65,7 @@ PR #8 Quality Knowledge Base v1.
 - `src/components/knowledge/KnowledgeBaseClient.tsx`
 - `src/lib/report-knowledge.ts`
 
-## Implementation Summary
+## Previous Implementation Summary
 
 - Added a logged-in `/knowledge` page for completed 8D report search and reuse.
 - Added `src/lib/report-knowledge.ts` to centralize Knowledge Base eligibility, status/report type/priority filtering, safe limit handling, safe report-field extraction, and in-memory search over whitelisted report fields.
@@ -34,7 +81,7 @@ PR #8 Quality Knowledge Base v1.
 - Added `docs/QUALITY_KNOWLEDGE_BASE_SPEC.md` and Knowledge Base operating metrics in `docs/MARKETING_WORKFLOW.md`.
 - No AI, iOS, External 8D Request, public site redesign, payment, checkout, subscription, export, workflow, database schema, vector database, or attachment parsing changes were made.
 
-## Tests / Verification
+## Previous Tests / Verification
 
 - `git diff --check` passed.
 - `npx tsc --noEmit` passed.
@@ -47,19 +94,19 @@ PR #8 Quality Knowledge Base v1.
 - Authenticated Knowledge Base smoke passed against a temporary isolated Neon branch, which was deleted after testing. The smoke covered empty state, completed legacy workflow eligibility, draft/in-progress/internal-review exclusion, Team access, outsider exclusion, search, filters, result cards, open report, copy success/failure, share-token rejection, analytics metadata safety, and mobile layout.
 - Security preflight: changed-file scan found no database schema/migration, payment, export, AI, public marketing runtime, `.env`, `.secrets`, local database, GSC/GA4 CSV, weekly report, Google key, or obvious secret-pattern changes.
 
-## Risks
+## Previous Risks
 
 - Knowledge Base depends on existing Team report access scope. Any future change to `getAccessibleUserIds` affects visible knowledge assets.
 - V1 scans recent eligible JSONB report rows in application code. This is conservative and avoids schema migration, but large workspaces may eventually need indexed/materialized search.
 - Free users can access their own completed-report Knowledge Base assets; this adds a focused completed-report reuse surface without changing pricing configuration.
 
-## Unfinished / Needs Human Review
+## Previous Unfinished / Needs Human Review
 
 - Confirm whether Knowledge Base should remain available to all logged-in users or become a Pro/Team entitlement later.
 - Validate copy/reuse language with real completed 8D reports.
 - Vercel Preview remains unreachable from this execution environment, so authenticated smoke was completed locally against an isolated temporary database instead.
 
-## Suggested Next Task
+## Previous Suggested Next Task
 
 After PR #8 deploys, review Knowledge Base usage analytics and decide whether v2 needs indexed search, more filters, or controlled template/action reuse.
 
