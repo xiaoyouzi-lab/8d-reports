@@ -88,7 +88,7 @@ The UI emphasizes root cause, corrective action, and lessons learned. Prevention
 
 ## 5. Eligibility Rules
 
-A report can enter Knowledge Base v1 when either condition is true:
+A report can enter Knowledge Base v1 when `reports.workflowStatus` is not `draft` or `internal_review`, and either condition is true:
 
 - `reports.status = "completed"`
 - `reports.workflowStatus` is one of `approved`, `submitted`, or `closed`
@@ -98,6 +98,7 @@ Excluded:
 - Draft reports.
 - In-progress reports that are not in a locked workflow status.
 - Internal review reports.
+- Reports with `workflowStatus = "draft"` even if legacy completion fields are inconsistent.
 - Any public-share-only access path.
 
 Rationale:
@@ -143,6 +144,10 @@ Search behavior:
 
 - Query text shorter than two characters returns recent eligible assets without match filtering.
 - Query text of two or more characters filters against the whitelisted fields.
+- `status` accepts only `all`, `completed`, `approved`, `submitted`, or `closed`.
+- `reportType` accepts only `all`, `customer_8d`, or `internal_8d`.
+- `priority` accepts only `all`, `critical`, `high`, `medium`, or `low`.
+- `limit` is clamped between 1 and the v1 maximum result limit.
 - Results are ordered by recent report update before application-side filtering.
 - Results are capped to keep the v1 implementation predictable.
 

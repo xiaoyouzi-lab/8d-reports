@@ -1,13 +1,19 @@
 import type { reports } from "@/lib/db/schema";
 
 export const KNOWLEDGE_WORKFLOW_STATUSES = ["approved", "submitted", "closed"] as const;
+export const KNOWLEDGE_REPORT_TYPES = ["customer_8d", "internal_8d"] as const;
+export const KNOWLEDGE_PRIORITIES = ["critical", "high", "medium", "low"] as const;
 export const KNOWLEDGE_SEARCH_LIMIT = 50;
 export const KNOWLEDGE_SCAN_LIMIT = 250;
 
 export type KnowledgeWorkflowStatus = (typeof KNOWLEDGE_WORKFLOW_STATUSES)[number];
 export type KnowledgeFilter = "all" | "completed" | KnowledgeWorkflowStatus;
+export type KnowledgeReportTypeFilter = "all" | (typeof KNOWLEDGE_REPORT_TYPES)[number];
+export type KnowledgePriorityFilter = "all" | (typeof KNOWLEDGE_PRIORITIES)[number];
 
 export const KNOWLEDGE_FILTERS: KnowledgeFilter[] = ["all", "completed", ...KNOWLEDGE_WORKFLOW_STATUSES];
+export const KNOWLEDGE_REPORT_TYPE_FILTERS: KnowledgeReportTypeFilter[] = ["all", ...KNOWLEDGE_REPORT_TYPES];
+export const KNOWLEDGE_PRIORITY_FILTERS: KnowledgePriorityFilter[] = ["all", ...KNOWLEDGE_PRIORITIES];
 
 type ReportLike = Pick<
   typeof reports.$inferSelect,
@@ -82,11 +88,34 @@ export function normalizeKnowledgeFilter(value: unknown): KnowledgeFilter {
     : "all";
 }
 
+export function normalizeKnowledgeReportTypeFilter(value: unknown): KnowledgeReportTypeFilter {
+  return typeof value === "string" && (KNOWLEDGE_REPORT_TYPE_FILTERS as string[]).includes(value)
+    ? value as KnowledgeReportTypeFilter
+    : "all";
+}
+
+export function normalizeKnowledgePriorityFilter(value: unknown): KnowledgePriorityFilter {
+  return typeof value === "string" && (KNOWLEDGE_PRIORITY_FILTERS as string[]).includes(value)
+    ? value as KnowledgePriorityFilter
+    : "all";
+}
+
+export function normalizeKnowledgeLimit(value: unknown) {
+  const numeric = typeof value === "number" ? value : Number(value);
+  if (!Number.isFinite(numeric)) return KNOWLEDGE_SEARCH_LIMIT;
+  return Math.min(KNOWLEDGE_SEARCH_LIMIT, Math.max(1, Math.floor(numeric)));
+}
+
+export function normalizeKnowledgeQuery(value: unknown) {
+  return (typeof value === "string" ? value : "").trim().slice(0, 120);
+}
+
 export function isKnowledgeWorkflowStatus(value: unknown): value is KnowledgeWorkflowStatus {
   return typeof value === "string" && (KNOWLEDGE_WORKFLOW_STATUSES as readonly string[]).includes(value);
 }
 
 export function isKnowledgeEligibleReport(report: Pick<ReportLike, "status" | "workflowStatus">) {
+  if (report.workflowStatus === "draft" || report.workflowStatus === "internal_review") return false;
   return report.status === "completed" || isKnowledgeWorkflowStatus(report.workflowStatus);
 }
 
@@ -97,6 +126,20 @@ export function reportMatchesKnowledgeFilter(
   if (filter === "all") return true;
   if (filter === "completed") return report.status === "completed";
   return report.workflowStatus === filter;
+}
+
+export function reportMatchesKnowledgeFacets(
+  report: Pick<ReportLike, "status" | "workflowStatus" | "reportType" | "priority">,
+  input: {
+    filter: KnowledgeFilter;
+    reportType: KnowledgeReportTypeFilter;
+    priority: KnowledgePriorityFilter;
+  },
+) {
+  if (!reportMatchesKnowledgeFilter(report, input.filter)) return false;
+  if (input.reportType !== "all" && report.reportType !== input.reportType) return false;
+  if (input.priority !== "all" && report.priority !== input.priority) return false;
+  return true;
 }
 
 export function buildKnowledgeEntry(report: ReportLike): KnowledgeEntry {
@@ -152,15 +195,23 @@ export function buildKnowledgeEntry(report: ReportLike): KnowledgeEntry {
 
 export function searchKnowledgeEntries(
   reportsToSearch: ReportLike[],
-  input: { query?: string | null; filter?: KnowledgeFilter; limit?: number },
+  input: {
+    query?: string | null;
+    filter?: KnowledgeFilter;
+    reportType?: KnowledgeReportTypeFilter;
+    priority?: KnowledgePriorityFilter;
+    limit?: number;
+  },
 ) {
   const query = (input.query || "").trim().toLowerCase();
   const filter = input.filter || "all";
+  const reportType = input.reportType || "all";
+  const priority = input.priority || "all";
   const limit = input.limit || KNOWLEDGE_SEARCH_LIMIT;
 
   return reportsToSearch
     .filter(isKnowledgeEligibleReport)
-    .filter((report) => reportMatchesKnowledgeFilter(report, filter))
+    .filter((report) => reportMatchesKnowledgeFacets(report, { filter, reportType, priority }))
     .map(buildKnowledgeEntry)
     .map((entry) => {
       if (query.length < 2) return entry;

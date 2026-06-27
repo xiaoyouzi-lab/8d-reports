@@ -25,6 +25,7 @@ Add a logged-in `/knowledge` page where users can search completed or locked 8D 
 ## Scope
 
 - Search completed reports and locked approval workflow records.
+- Support safe status, report type, priority, and limit filters on the Knowledge API.
 - Reuse existing Team workspace report-access scope.
 - Provide copy actions for root cause, corrective action, and lessons learned.
 - Add safe analytics for Knowledge Base search, copy, filters, result clicks, and no-results states.
@@ -47,9 +48,10 @@ Add a logged-in `/knowledge` page where users can search completed or locked 8D 
 ## Acceptance Criteria
 
 - `/knowledge` is available after login.
-- `/api/knowledge/search` is POST-only.
+- `/api/knowledge/search` is POST-only and accepts safe `query`, `status`, `reportType`, `priority`, and `limit` inputs.
 - Knowledge search only returns reports the signed-in user can already access.
 - Draft and in-progress reports are excluded unless they are in a locked workflow state.
+- Reports with `workflowStatus` set to `draft` or `internal_review` are excluded.
 - Results expose reusable report fields without exposing attachments or share tokens.
 - Root cause, corrective action, and lessons learned can be copied.
 - Analytics metadata avoids full report content and query text.

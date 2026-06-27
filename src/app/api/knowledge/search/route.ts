@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, inArray, or, eq } from "drizzle-orm";
+import { and, desc, inArray, or, eq, type SQL } from "drizzle-orm";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
 import { getAccessibleUserIds } from "@/lib/report-access";
 import {
   KNOWLEDGE_SCAN_LIMIT,
-  KNOWLEDGE_SEARCH_LIMIT,
   KNOWLEDGE_WORKFLOW_STATUSES,
   normalizeKnowledgeFilter,
+  normalizeKnowledgeLimit,
+  normalizeKnowledgePriorityFilter,
+  normalizeKnowledgeQuery,
+  normalizeKnowledgeReportTypeFilter,
   searchKnowledgeEntries,
 } from "@/lib/report-knowledge";
 
@@ -17,9 +20,22 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorizedResponse();
 
   const body = await req.json().catch(() => ({}));
-  const query = (typeof body.q === "string" ? body.q : "").trim();
+  const query = normalizeKnowledgeQuery(body.q);
   const filter = normalizeKnowledgeFilter(body.status);
+  const reportType = normalizeKnowledgeReportTypeFilter(body.reportType);
+  const priority = normalizeKnowledgePriorityFilter(body.priority);
+  const limit = normalizeKnowledgeLimit(body.limit);
   const accessibleUserIds = await getAccessibleUserIds(user.id);
+  const whereConditions: SQL[] = [
+    inArray(reports.userId, accessibleUserIds),
+    or(
+      eq(reports.status, "completed"),
+      inArray(reports.workflowStatus, [...KNOWLEDGE_WORKFLOW_STATUSES]),
+    )!,
+  ];
+
+  if (reportType !== "all") whereConditions.push(eq(reports.reportType, reportType));
+  if (priority !== "all") whereConditions.push(eq(reports.priority, priority));
 
   const rows = await db
     .select({
@@ -37,13 +53,7 @@ export async function POST(req: NextRequest) {
       updatedAt: reports.updatedAt,
     })
     .from(reports)
-    .where(and(
-      inArray(reports.userId, accessibleUserIds),
-      or(
-        eq(reports.status, "completed"),
-        inArray(reports.workflowStatus, [...KNOWLEDGE_WORKFLOW_STATUSES]),
-      ),
-    ))
+    .where(and(...whereConditions))
     .orderBy(desc(reports.updatedAt))
     .limit(KNOWLEDGE_SCAN_LIMIT);
 
@@ -51,9 +61,14 @@ export async function POST(req: NextRequest) {
     results: searchKnowledgeEntries(rows, {
       query,
       filter,
-      limit: KNOWLEDGE_SEARCH_LIMIT,
+      reportType,
+      priority,
+      limit,
     }),
     queryLength: query.length,
     filter,
+    reportType,
+    priority,
+    limit,
   });
 }

@@ -21,14 +21,14 @@ PR #8 Quality Knowledge Base v1.
 ## Implementation Summary
 
 - Added a logged-in `/knowledge` page for completed 8D report search and reuse.
-- Added `src/lib/report-knowledge.ts` to centralize Knowledge Base eligibility, status filtering, safe report-field extraction, and in-memory search over whitelisted report fields.
-- Added POST-only `/api/knowledge/search`, which requires an authenticated user, reuses `getAccessibleUserIds`, and only returns completed reports or locked workflow records (`approved`, `submitted`, `closed`).
-- Added result cards showing problem context, root cause, corrective action, lessons learned, workflow status, revision, priority, and updated date.
+- Added `src/lib/report-knowledge.ts` to centralize Knowledge Base eligibility, status/report type/priority filtering, safe limit handling, safe report-field extraction, and in-memory search over whitelisted report fields.
+- Added POST-only `/api/knowledge/search`, which requires an authenticated user, reuses `getAccessibleUserIds`, accepts whitelisted `query`, `status`, `reportType`, `priority`, and `limit` inputs, and only returns completed reports or locked workflow records (`approved`, `submitted`, `closed`) after excluding `workflowStatus=draft/internal_review`.
+- Added result cards showing problem context, root cause, corrective action, lessons learned, workflow status, report type, revision, priority, and updated date.
 - Added copy actions for root cause, corrective action, and lessons learned.
 - Added a Knowledge Base entry to the logged-in app menu.
 - Added analytics allowlist entries for Knowledge Base search, no-results, result opens, filters, root cause copy, corrective action copy, and lessons learned copy.
-- Analytics metadata intentionally records safe operational fields only, such as query length, result count, filter, event type, plan, and report id. It does not record full query text or report content.
-- Updated governance checks to verify Knowledge Base eligibility, access-scope reuse, status filtering, safe analytics, and no share-token dependency.
+- Analytics metadata intentionally records safe operational fields only, such as query length, result count, status/report type/priority filter values, event type, plan, and report id. It does not record full query text, problem, root cause, corrective action, lessons learned, customer, supplier, product, or batch content.
+- Updated governance checks to verify Knowledge Base eligibility, access-scope reuse, status/report type/priority/limit filtering, required UI states, safe analytics metadata, required docs, and no share-token dependency.
 - Added `docs/QUALITY_KNOWLEDGE_BASE_SPEC.md` and Knowledge Base operating metrics in `docs/MARKETING_WORKFLOW.md`.
 - No AI, iOS, External 8D Request, public site redesign, payment, checkout, subscription, export, workflow, database schema, vector database, or attachment parsing changes were made.
 
@@ -43,6 +43,7 @@ PR #8 Quality Knowledge Base v1.
 - API verification: unauthenticated `POST /api/knowledge/search` returns `401 Unauthorized`.
 - Browser verification: unauthenticated `/knowledge` routes to `/login` with no captured console warnings or errors.
 - Authenticated browser verification was not run because no `AUTH_SMOKE_*` session cookies or test report id are configured in the local environment.
+- Security preflight: changed-file scan found no database schema/migration, payment, export, AI, public marketing runtime, `.env`, `.secrets`, local database, GSC/GA4 CSV, weekly report, Google key, or obvious secret-pattern changes.
 
 ## Risks
 

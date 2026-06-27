@@ -14,6 +14,8 @@ import { usePlan } from "@/lib/use-plan"
 import { cn } from "@/lib/utils"
 
 type KnowledgeFilter = "all" | "completed" | "approved" | "submitted" | "closed"
+type KnowledgeReportTypeFilter = "all" | "customer_8d" | "internal_8d"
+type KnowledgePriorityFilter = "all" | "critical" | "high" | "medium" | "low"
 
 interface KnowledgeEntry {
   id: string
@@ -46,6 +48,20 @@ const filters: Array<{ value: KnowledgeFilter; label: string }> = [
   { value: "approved", label: "Approved" },
   { value: "submitted", label: "Submitted" },
   { value: "closed", label: "Closed" },
+]
+
+const reportTypeFilters: Array<{ value: KnowledgeReportTypeFilter; label: string }> = [
+  { value: "all", label: "All types" },
+  { value: "customer_8d", label: "Customer 8D" },
+  { value: "internal_8d", label: "Internal 8D" },
+]
+
+const priorityFilters: Array<{ value: KnowledgePriorityFilter; label: string }> = [
+  { value: "all", label: "All priorities" },
+  { value: "critical", label: "Critical" },
+  { value: "high", label: "High" },
+  { value: "medium", label: "Medium" },
+  { value: "low", label: "Low" },
 ]
 
 const workflowStyles: Record<string, string> = {
@@ -103,9 +119,9 @@ function CopyButton({
         try {
           await navigator.clipboard.writeText(value)
           trackEvent(eventName, { plan }, reportId)
-          toast.success(`${label} copied`)
+          toast.success("Copied")
         } catch {
-          toast.error("Copy failed")
+          toast.error("Could not copy. Select and copy manually.")
         }
       }}
     >
@@ -136,6 +152,7 @@ function KnowledgeCard({ entry, plan, hasQuery }: { entry: KnowledgeEntry; plan:
                 <span className={cn("inline-block size-2 rounded-full", priorityDot[entry.priority] || priorityDot.medium)} />
                 {titleCase(entry.priority)}
               </span>
+              <span className="text-xs text-muted-foreground">{titleCase(entry.reportType)}</span>
               <span className="text-xs text-muted-foreground">Rev.{entry.revision}</span>
             </div>
             <h2 className="text-base font-semibold leading-snug text-foreground">
@@ -153,7 +170,7 @@ function KnowledgeCard({ entry, plan, hasQuery }: { entry: KnowledgeEntry; plan:
             className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-sm font-medium hover:bg-muted"
           >
             <FileText className="size-3.5" />
-            Open
+            Open report
             <ArrowUpRight className="size-3.5" />
           </Link>
         </div>
@@ -209,6 +226,8 @@ export function KnowledgeBaseClient() {
   const { plan } = usePlan((session?.user as Record<string, unknown> | undefined)?.plan)
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<KnowledgeFilter>("all")
+  const [reportType, setReportType] = useState<KnowledgeReportTypeFilter>("all")
+  const [priority, setPriority] = useState<KnowledgePriorityFilter>("all")
   const [results, setResults] = useState<KnowledgeEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -216,14 +235,25 @@ export function KnowledgeBaseClient() {
   const normalizedQuery = query.trim()
   const hasQuery = normalizedQuery.length >= 2
 
-  const loadKnowledge = useCallback(async (inputQuery: string, inputFilter: KnowledgeFilter) => {
+  const loadKnowledge = useCallback(async (
+    inputQuery: string,
+    inputFilter: KnowledgeFilter,
+    inputReportType: KnowledgeReportTypeFilter,
+    inputPriority: KnowledgePriorityFilter,
+  ) => {
     setLoading(true)
     setError(null)
     try {
       const res = await fetch("/api/knowledge/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ q: inputQuery.trim(), status: inputFilter }),
+        body: JSON.stringify({
+          q: inputQuery.trim(),
+          status: inputFilter,
+          reportType: inputReportType,
+          priority: inputPriority,
+          limit: 50,
+        }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || "Knowledge search failed")
@@ -234,12 +264,16 @@ export function KnowledgeBaseClient() {
           queryLength: inputQuery.trim().length,
           resultCount: nextResults.length,
           filter: inputFilter,
+          reportType: inputReportType,
+          priority: inputPriority,
           plan,
         })
         if (nextResults.length === 0) {
           trackEvent("knowledge_no_results", {
             queryLength: inputQuery.trim().length,
             filter: inputFilter,
+            reportType: inputReportType,
+            priority: inputPriority,
             plan,
           })
         }
@@ -255,10 +289,10 @@ export function KnowledgeBaseClient() {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!session) return
-      void loadKnowledge(query, filter)
+      void loadKnowledge(query, filter, reportType, priority)
     }, hasQuery ? 250 : 0)
     return () => clearTimeout(timer)
-  }, [filter, hasQuery, loadKnowledge, query, session])
+  }, [filter, hasQuery, loadKnowledge, priority, query, reportType, session])
 
   const assetCount = results.length
   const lockedCount = useMemo(
@@ -275,7 +309,7 @@ export function KnowledgeBaseClient() {
               <BookOpen className="size-4" />
             </div>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-              Knowledge Base
+              Quality Knowledge Base
             </h1>
           </div>
           <p className="max-w-2xl text-sm text-muted-foreground">
@@ -324,6 +358,46 @@ export function KnowledgeBaseClient() {
             </button>
           ))}
         </div>
+        <div className="flex flex-wrap gap-2">
+          {reportTypeFilters.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => {
+                setReportType(item.value)
+                trackEvent("knowledge_filter_used", { reportType: item.value, plan })
+              }}
+              className={cn(
+                "inline-flex h-8 items-center rounded-lg border px-3 text-sm font-medium transition-colors",
+                reportType === item.value
+                  ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {priorityFilters.map((item) => (
+            <button
+              key={item.value}
+              type="button"
+              onClick={() => {
+                setPriority(item.value)
+                trackEvent("knowledge_filter_used", { priority: item.value, plan })
+              }}
+              className={cn(
+                "inline-flex h-8 items-center rounded-lg border px-3 text-sm font-medium transition-colors",
+                priority === item.value
+                  ? "border-indigo-600 bg-indigo-50 text-indigo-700"
+                  : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && (
@@ -339,9 +413,15 @@ export function KnowledgeBaseClient() {
           <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-lg bg-slate-100">
             <BookOpen className="size-5 text-slate-500" />
           </div>
-          <h2 className="text-base font-semibold text-foreground">No matching completed reports</h2>
+          <h2 className="text-base font-semibold text-foreground">
+            {hasQuery || filter !== "all" || reportType !== "all" || priority !== "all"
+              ? "No matching knowledge assets"
+              : "No completed reports yet"}
+          </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            Completed and approved reports will appear here when they match the current search.
+            {hasQuery || filter !== "all" || reportType !== "all" || priority !== "all"
+              ? "Try a broader search, status, report type, or priority filter."
+              : "Completed and approved reports will appear here as reusable quality knowledge."}
           </p>
         </div>
       ) : (

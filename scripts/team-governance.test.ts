@@ -15,6 +15,10 @@ import {
   buildKnowledgeEntry,
   isKnowledgeEligibleReport,
   normalizeKnowledgeFilter,
+  normalizeKnowledgeLimit,
+  normalizeKnowledgePriorityFilter,
+  normalizeKnowledgeQuery,
+  normalizeKnowledgeReportTypeFilter,
   searchKnowledgeEntries,
 } from "../src/lib/report-knowledge";
 import { aiUnavailableMessage, type AiTaskType } from "../src/lib/ai/deepseek";
@@ -101,11 +105,22 @@ assert.equal(access("owner", "draft", new Date()).locked, true, "lockedAt should
 const preview = previewValue("x".repeat(400));
 assert.equal(preview?.length, 303, "Activity value previews should be truncated to 300 chars plus ellipsis");
 
-assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "draft" }), true, "Completed reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "draft", workflowStatus: "draft" }), false, "Draft reports should not enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "draft" }), false, "In-progress draft reports should not enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "draft" }), false, "Workflow draft reports should not enter Knowledge Base even if legacy status is completed");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "internal_review" }), false, "Internal review reports should not enter Knowledge Base even if legacy status is completed");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "approved" }), true, "Completed approved reports should enter Knowledge Base");
 assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "approved" }), true, "Locked approved reports should enter Knowledge Base");
 assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "internal_review" }), false, "Internal review reports should not enter Knowledge Base");
 assert.equal(normalizeKnowledgeFilter("submitted"), "submitted", "Knowledge Base should accept supported status filters");
 assert.equal(normalizeKnowledgeFilter("unknown"), "all", "Knowledge Base should reject unsupported status filters safely");
+assert.equal(normalizeKnowledgeReportTypeFilter("customer_8d"), "customer_8d", "Knowledge Base should accept supported report type filters");
+assert.equal(normalizeKnowledgeReportTypeFilter("supplier_8d"), "all", "Knowledge Base should reject unsupported report type filters");
+assert.equal(normalizeKnowledgePriorityFilter("critical"), "critical", "Knowledge Base should accept supported priority filters");
+assert.equal(normalizeKnowledgePriorityFilter("urgent"), "all", "Knowledge Base should reject unsupported priority filters");
+assert.equal(normalizeKnowledgeLimit(999), 50, "Knowledge Base should clamp large limits");
+assert.equal(normalizeKnowledgeLimit(0), 1, "Knowledge Base should clamp low limits");
+assert.equal(normalizeKnowledgeQuery("x".repeat(140)).length, 120, "Knowledge Base should bound query length");
 
 const knowledgeFixture = {
   id: "11111111-1111-4111-8111-111111111111",
@@ -133,6 +148,9 @@ assert.match(knowledgeEntry.correctiveAction || "", /Restore flash time/, "Knowl
 assert.match(knowledgeEntry.lessonsLearned || "", /independent quality approval/, "Knowledge entries should extract lessons learned text");
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all" }).length, 1, "Knowledge search should match completed report problem text");
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "closed" }).length, 0, "Knowledge search should respect status filters");
+assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "customer_8d", priority: "high" }).length, 1, "Knowledge search should respect matching report type and priority filters");
+assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "internal_8d", priority: "high" }).length, 0, "Knowledge search should reject non-matching report type filters");
+assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "customer_8d", priority: "low" }).length, 0, "Knowledge search should reject non-matching priority filters");
 
 const reportRoute = read("src/app/api/reports/[id]/route.ts");
 assert.match(reportRoute, /access\.canEdit/, "Report save must use shared role and lock access gate");
@@ -215,8 +233,12 @@ assert.match(knowledgeRoute, /export async function POST/, "Knowledge search API
 assert.doesNotMatch(knowledgeRoute, /export async function GET/, "Knowledge search API must not expose GET");
 assert.match(knowledgeRoute, /getSessionUser/, "Knowledge search must require an authenticated user");
 assert.match(knowledgeRoute, /getAccessibleUserIds/, "Knowledge search must reuse Team report access scope");
+assert.match(knowledgeRoute, /normalizeKnowledgeQuery/, "Knowledge search must safely normalize query text");
 assert.match(knowledgeRoute, /eq\(reports\.status, "completed"\)/, "Knowledge search must include completed reports");
 assert.match(knowledgeRoute, /KNOWLEDGE_WORKFLOW_STATUSES/, "Knowledge search must include locked workflow records");
+assert.match(knowledgeRoute, /normalizeKnowledgeReportTypeFilter/, "Knowledge search must whitelist report type filters");
+assert.match(knowledgeRoute, /normalizeKnowledgePriorityFilter/, "Knowledge search must whitelist priority filters");
+assert.match(knowledgeRoute, /normalizeKnowledgeLimit/, "Knowledge search must clamp result limits");
 assert.doesNotMatch(knowledgeRoute, /reportShares|accessToken/, "Knowledge search must not use external share tokens");
 
 const teamRoute = read("src/app/api/team/route.ts");
@@ -280,6 +302,14 @@ assert.match(appLayout, /Knowledge Base/, "App header menu should expose Knowled
 const knowledgePage = read("src/components/knowledge/KnowledgeBaseClient.tsx");
 assert.match(knowledgePage, /\/api\/knowledge\/search/, "Knowledge page should use the dedicated Knowledge API");
 assert.match(knowledgePage, /method: "POST"/, "Knowledge page should call the Knowledge API with POST");
+assert.match(knowledgePage, /Quality Knowledge Base/, "Knowledge page should use the required page title");
+assert.match(knowledgePage, /reportTypeFilters/, "Knowledge page should expose report type filters");
+assert.match(knowledgePage, /priorityFilters/, "Knowledge page should expose priority filters");
+assert.match(knowledgePage, /No completed reports yet/, "Knowledge page should include the completed-report empty state");
+assert.match(knowledgePage, /No matching knowledge assets/, "Knowledge page should include the no-results state");
+assert.match(knowledgePage, /Open report/, "Knowledge result cards should open source reports");
+assert.match(knowledgePage, /Copied/, "Knowledge copy success should use the required message");
+assert.match(knowledgePage, /Could not copy\. Select and copy manually\./, "Knowledge copy failure should use the required message");
 assert.match(knowledgePage, /knowledge_search_used/, "Knowledge page should track safe search analytics");
 assert.match(knowledgePage, /knowledge_result_opened/, "Knowledge page should track result opens");
 assert.match(knowledgePage, /knowledge_root_cause_copied/, "Knowledge page should track root cause reuse");
@@ -288,6 +318,11 @@ assert.match(knowledgePage, /knowledge_lesson_copied/, "Knowledge page should tr
 assert.doesNotMatch(knowledgePage, /knowledge_[a-z]+_clicked/, "Knowledge page should not use deprecated generic Knowledge clicked events");
 assert.match(knowledgePage, /navigator\.clipboard\.writeText/, "Knowledge page should support copying reusable fields");
 assert.doesNotMatch(knowledgePage, /\/api\/share\//, "Knowledge page must not rely on public share links");
+assert.doesNotMatch(
+  knowledgePage,
+  /trackEvent\([\s\S]{0,260}(query:|problem:|rootCause:|correctiveAction:|lessonsLearned:|customer:|supplier:|product:|batch:)/,
+  "Knowledge analytics metadata must not include raw query or report content fields",
+);
 
 const eventsRoute = read("src/app/api/events/route.ts");
 assert.match(eventsRoute, /knowledge_search_used/, "Analytics allowlist should include Knowledge search");
