@@ -248,7 +248,7 @@ export function KnowledgeBaseClient() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          q: inputQuery.trim(),
+          query: inputQuery.trim(),
           status: inputFilter,
           reportType: inputReportType,
           priority: inputPriority,

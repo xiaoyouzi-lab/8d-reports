@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   if (!user) return unauthorizedResponse();
 
   const body = await req.json().catch(() => ({}));
-  const query = normalizeKnowledgeQuery(body.q);
+  const query = normalizeKnowledgeQuery(body.query ?? body.q);
   const filter = normalizeKnowledgeFilter(body.status);
   const reportType = normalizeKnowledgeReportTypeFilter(body.reportType);
   const priority = normalizeKnowledgePriorityFilter(body.priority);

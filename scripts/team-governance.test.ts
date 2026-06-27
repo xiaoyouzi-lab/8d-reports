@@ -234,6 +234,7 @@ assert.doesNotMatch(knowledgeRoute, /export async function GET/, "Knowledge sear
 assert.match(knowledgeRoute, /getSessionUser/, "Knowledge search must require an authenticated user");
 assert.match(knowledgeRoute, /getAccessibleUserIds/, "Knowledge search must reuse Team report access scope");
 assert.match(knowledgeRoute, /normalizeKnowledgeQuery/, "Knowledge search must safely normalize query text");
+assert.match(knowledgeRoute, /body\.query \?\? body\.q/, "Knowledge search must support the documented query field while keeping q compatibility");
 assert.match(knowledgeRoute, /eq\(reports\.status, "completed"\)/, "Knowledge search must include completed reports");
 assert.match(knowledgeRoute, /KNOWLEDGE_WORKFLOW_STATUSES/, "Knowledge search must include locked workflow records");
 assert.match(knowledgeRoute, /normalizeKnowledgeReportTypeFilter/, "Knowledge search must whitelist report type filters");
@@ -302,6 +303,7 @@ assert.match(appLayout, /Knowledge Base/, "App header menu should expose Knowled
 const knowledgePage = read("src/components/knowledge/KnowledgeBaseClient.tsx");
 assert.match(knowledgePage, /\/api\/knowledge\/search/, "Knowledge page should use the dedicated Knowledge API");
 assert.match(knowledgePage, /method: "POST"/, "Knowledge page should call the Knowledge API with POST");
+assert.match(knowledgePage, /query: inputQuery\.trim\(\)/, "Knowledge page should send query in the POST body, not the URL");
 assert.match(knowledgePage, /Quality Knowledge Base/, "Knowledge page should use the required page title");
 assert.match(knowledgePage, /reportTypeFilters/, "Knowledge page should expose report type filters");
 assert.match(knowledgePage, /priorityFilters/, "Knowledge page should expose priority filters");
