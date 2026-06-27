@@ -84,27 +84,29 @@ Knowledge Base v1 extracts only whitelisted report fields.
 | Prevention | `systemChanges`, `processUpdates`, `horizontalDeployment`, `trainingNeeds` | Searchable D7 prevention context. |
 | Validation | `testingResults`, `validationMethod`, `validationResults` | Searchable D4/D6 verification context. |
 
-The UI emphasizes root cause, corrective action, and lessons learned. Prevention and validation are included in search and may support future richer displays.
+The UI emphasizes problem summary, root cause, corrective action, lessons learned, validation, and prevention so users can judge whether a historical report is reusable.
 
 ## 5. Eligibility Rules
 
-A report can enter Knowledge Base v1 when `reports.workflowStatus` is not `draft` or `internal_review`, and either condition is true:
+A report can enter Knowledge Base v1 when `reports.workflowStatus` is not `internal_review`, `reports.status` is not `draft` or `in_progress`, and either condition is true:
 
 - `reports.status = "completed"`
 - `reports.workflowStatus` is one of `approved`, `submitted`, or `closed`
 
+`reports.status = "completed"` is the primary entry condition. Legacy completed reports may still have `workflowStatus = "draft"`, an empty workflow value, or an unset workflow value; v1 treats them as eligible knowledge assets and displays the trust label as `Completed`.
+
 Excluded:
 
-- Draft reports.
-- In-progress reports that are not in a locked workflow status.
+- Draft reports, even if `workflowStatus` is `approved`, `submitted`, or `closed`.
+- In-progress reports, even if `workflowStatus` is `approved`, `submitted`, or `closed`.
 - Internal review reports.
-- Reports with `workflowStatus = "draft"` even if legacy completion fields are inconsistent.
 - Any public-share-only access path.
 
 Rationale:
 
 - Completed reports represent finished quality work.
-- Approved, submitted, and closed workflow states are locked states and can represent approved knowledge even if the legacy `status` value remains `in_progress`.
+- Approved, submitted, and closed workflow states are higher-trust labels for completed reports.
+- Legacy completed reports should not disappear from Knowledge Base just because they predate workflow adoption.
 - Draft and internal review content may contain weak, unverified, or unfinished root cause and action statements.
 
 ## 6. Permission Matrix

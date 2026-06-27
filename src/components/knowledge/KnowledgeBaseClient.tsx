@@ -22,7 +22,8 @@ interface KnowledgeEntry {
   title: string
   reportNumber: string | null
   status: string
-  workflowStatus: string
+  workflowStatus: string | null
+  trustLabel: string
   revision: number
   lockedAt: string | null
   reportType: string
@@ -65,10 +66,10 @@ const priorityFilters: Array<{ value: KnowledgePriorityFilter; label: string }> 
 ]
 
 const workflowStyles: Record<string, string> = {
-  completed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  approved: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
-  submitted: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
-  closed: "bg-slate-100 text-slate-700 ring-slate-600/20",
+  Completed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+  Approved: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
+  Submitted: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
+  Closed: "bg-slate-100 text-slate-700 ring-slate-600/20",
 }
 
 const priorityDot: Record<string, string> = {
@@ -132,7 +133,7 @@ function CopyButton({
 }
 
 function KnowledgeCard({ entry, plan, hasQuery }: { entry: KnowledgeEntry; plan: string; hasQuery: boolean }) {
-  const status = entry.workflowStatus === "draft" ? entry.status : entry.workflowStatus
+  const trustLabel = entry.trustLabel || "Completed"
   return (
     <Card className="bg-white">
       <CardContent className="space-y-4 p-4 lg:p-5">
@@ -144,9 +145,9 @@ function KnowledgeCard({ entry, plan, hasQuery }: { entry: KnowledgeEntry; plan:
               </span>
               <Badge
                 variant="outline"
-                className={cn("ring-1 ring-inset", workflowStyles[status] || workflowStyles.completed)}
+                className={cn("ring-1 ring-inset", workflowStyles[trustLabel] || workflowStyles.Completed)}
               >
-                {titleCase(status)}
+                {trustLabel}
               </Badge>
               <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <span className={cn("inline-block size-2 rounded-full", priorityDot[entry.priority] || priorityDot.medium)} />
@@ -181,6 +182,16 @@ function KnowledgeCard({ entry, plan, hasQuery }: { entry: KnowledgeEntry; plan:
           </div>
         )}
 
+        <div className="rounded-lg border border-slate-200 bg-white p-3">
+          <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            <FileText className="size-3.5" />
+            Problem Summary
+          </div>
+          <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
+            {trimText(entry.problem)}
+          </p>
+        </div>
+
         <div className="grid gap-3 lg:grid-cols-3">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -207,6 +218,27 @@ function KnowledgeCard({ entry, plan, hasQuery }: { entry: KnowledgeEntry; plan:
             </div>
             <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
               {trimText(entry.lessonsLearned)}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-3 lg:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <CheckCircle2 className="size-3.5" />
+              Validation
+            </div>
+            <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
+              {trimText(entry.validation)}
+            </p>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-white p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <ShieldCheck className="size-3.5" />
+              Prevention
+            </div>
+            <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
+              {trimText(entry.prevention)}
             </p>
           </div>
         </div>
@@ -296,7 +328,7 @@ export function KnowledgeBaseClient() {
 
   const assetCount = results.length
   const lockedCount = useMemo(
-    () => results.filter((entry) => ["approved", "submitted", "closed"].includes(entry.workflowStatus)).length,
+    () => results.filter((entry) => ["Approved", "Submitted", "Closed"].includes(entry.trustLabel)).length,
     [results],
   )
 
@@ -415,14 +447,30 @@ export function KnowledgeBaseClient() {
           </div>
           <h2 className="text-base font-semibold text-foreground">
             {hasQuery || filter !== "all" || reportType !== "all" || priority !== "all"
-              ? "No matching knowledge assets"
-              : "No completed reports yet"}
+              ? "No matching knowledge found."
+              : "Complete your first report to build your knowledge base."}
           </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
             {hasQuery || filter !== "all" || reportType !== "all" || priority !== "all"
-              ? "Try a broader search, status, report type, or priority filter."
-              : "Completed and approved reports will appear here as reusable quality knowledge."}
+              ? "Try a product name, symptom, root cause, corrective action, or customer reference."
+              : "Closed and completed 8D reports become searchable knowledge for future root-cause and corrective-action work."}
           </p>
+          {!hasQuery && filter === "all" && reportType === "all" && priority === "all" && (
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <Link
+                href="/dashboard"
+                className="inline-flex h-7 items-center justify-center rounded-lg bg-primary px-2.5 text-[0.8rem] font-medium text-primary-foreground hover:bg-primary/80"
+              >
+                Create report
+              </Link>
+              <Link
+                href="/sample-report"
+                className="inline-flex h-7 items-center justify-center rounded-lg border border-border bg-background px-2.5 text-[0.8rem] font-medium hover:bg-muted hover:text-foreground"
+              >
+                View sample report
+              </Link>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

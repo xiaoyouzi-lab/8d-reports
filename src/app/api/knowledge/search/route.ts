@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { and, desc, inArray, or, eq, type SQL } from "drizzle-orm";
+import { and, desc, inArray, or, eq, ne, type SQL } from "drizzle-orm";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
@@ -28,9 +28,14 @@ export async function POST(req: NextRequest) {
   const accessibleUserIds = await getAccessibleUserIds(user.id);
   const whereConditions: SQL[] = [
     inArray(reports.userId, accessibleUserIds),
+    ne(reports.workflowStatus, "internal_review"),
     or(
       eq(reports.status, "completed"),
-      inArray(reports.workflowStatus, [...KNOWLEDGE_WORKFLOW_STATUSES]),
+      and(
+        inArray(reports.workflowStatus, [...KNOWLEDGE_WORKFLOW_STATUSES]),
+        ne(reports.status, "draft"),
+        ne(reports.status, "in_progress"),
+      ),
     )!,
   ];
 

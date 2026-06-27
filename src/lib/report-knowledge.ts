@@ -25,7 +25,8 @@ export interface KnowledgeEntry {
   title: string;
   reportNumber: string | null;
   status: string;
-  workflowStatus: string;
+  workflowStatus: string | null;
+  trustLabel: string;
   revision: number;
   lockedAt: Date | null;
   reportType: string;
@@ -114,8 +115,17 @@ export function isKnowledgeWorkflowStatus(value: unknown): value is KnowledgeWor
   return typeof value === "string" && (KNOWLEDGE_WORKFLOW_STATUSES as readonly string[]).includes(value);
 }
 
-export function isKnowledgeEligibleReport(report: Pick<ReportLike, "status" | "workflowStatus">) {
-  if (report.workflowStatus === "draft" || report.workflowStatus === "internal_review") return false;
+export function getKnowledgeTrustLabel(report: { status?: string | null; workflowStatus?: string | null }) {
+  if (report.workflowStatus === "approved") return "Approved";
+  if (report.workflowStatus === "submitted") return "Submitted";
+  if (report.workflowStatus === "closed") return "Closed";
+  if (report.status === "completed") return "Completed";
+  return "Completed";
+}
+
+export function isKnowledgeEligibleReport(report: { status?: string | null; workflowStatus?: string | null }) {
+  if (report.status === "draft" || report.status === "in_progress") return false;
+  if (report.workflowStatus === "internal_review") return false;
   return report.status === "completed" || isKnowledgeWorkflowStatus(report.workflowStatus);
 }
 
@@ -150,6 +160,7 @@ export function buildKnowledgeEntry(report: ReportLike): KnowledgeEntry {
     reportNumber: stringValue(data.reportNumber),
     status: report.status,
     workflowStatus: report.workflowStatus,
+    trustLabel: getKnowledgeTrustLabel(report),
     revision: report.revision,
     lockedAt: report.lockedAt,
     reportType: report.reportType,

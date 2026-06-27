@@ -50,8 +50,9 @@ Add a logged-in `/knowledge` page where users can search completed or locked 8D 
 - `/knowledge` is available after login.
 - `/api/knowledge/search` is POST-only and accepts safe `query`, `status`, `reportType`, `priority`, and `limit` inputs.
 - Knowledge search only returns reports the signed-in user can already access.
-- Draft and in-progress reports are excluded unless they are in a locked workflow state.
-- Reports with `workflowStatus` set to `draft` or `internal_review` are excluded.
+- `status = completed` is the primary Knowledge Base entry condition, including legacy completed reports whose workflow status is still `draft`, empty, or unset.
+- `workflowStatus` values `approved`, `submitted`, and `closed` are higher-trust labels, but do not override `status = draft` or `status = in_progress`.
+- Reports with `status = draft`, `status = in_progress`, or `workflowStatus = internal_review` are excluded.
 - Results expose reusable report fields without exposing attachments or share tokens.
 - Root cause, corrective action, and lessons learned can be copied.
 - Analytics metadata avoids full report content and query text.

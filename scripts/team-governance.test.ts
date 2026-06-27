@@ -13,6 +13,7 @@ import {
 } from "../src/lib/report-workflow";
 import {
   buildKnowledgeEntry,
+  getKnowledgeTrustLabel,
   isKnowledgeEligibleReport,
   normalizeKnowledgeFilter,
   normalizeKnowledgeLimit,
@@ -107,11 +108,22 @@ assert.equal(preview?.length, 303, "Activity value previews should be truncated 
 
 assert.equal(isKnowledgeEligibleReport({ status: "draft", workflowStatus: "draft" }), false, "Draft reports should not enter Knowledge Base");
 assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "draft" }), false, "In-progress draft reports should not enter Knowledge Base");
-assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "draft" }), false, "Workflow draft reports should not enter Knowledge Base even if legacy status is completed");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "draft" }), true, "Legacy completed draft-workflow reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: null }), true, "Legacy completed null-workflow reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "" }), true, "Legacy completed empty-workflow reports should enter Knowledge Base");
 assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "internal_review" }), false, "Internal review reports should not enter Knowledge Base even if legacy status is completed");
 assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "approved" }), true, "Completed approved reports should enter Knowledge Base");
-assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "approved" }), true, "Locked approved reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "submitted" }), true, "Completed submitted reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "completed", workflowStatus: "closed" }), true, "Completed closed reports should enter Knowledge Base");
+assert.equal(isKnowledgeEligibleReport({ status: "draft", workflowStatus: "approved" }), false, "Draft reports should not enter Knowledge Base even when workflow is approved");
+assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "closed" }), false, "In-progress reports should not enter Knowledge Base even when workflow is closed");
 assert.equal(isKnowledgeEligibleReport({ status: "in_progress", workflowStatus: "internal_review" }), false, "Internal review reports should not enter Knowledge Base");
+assert.equal(getKnowledgeTrustLabel({ status: "completed", workflowStatus: "draft" }), "Completed", "Legacy completed draft-workflow reports should show Completed trust");
+assert.equal(getKnowledgeTrustLabel({ status: "completed", workflowStatus: null }), "Completed", "Legacy completed null-workflow reports should show Completed trust");
+assert.equal(getKnowledgeTrustLabel({ status: "completed", workflowStatus: "" }), "Completed", "Legacy completed empty-workflow reports should show Completed trust");
+assert.equal(getKnowledgeTrustLabel({ status: "completed", workflowStatus: "approved" }), "Approved", "Approved workflow reports should show Approved trust");
+assert.equal(getKnowledgeTrustLabel({ status: "completed", workflowStatus: "submitted" }), "Submitted", "Submitted workflow reports should show Submitted trust");
+assert.equal(getKnowledgeTrustLabel({ status: "completed", workflowStatus: "closed" }), "Closed", "Closed workflow reports should show Closed trust");
 assert.equal(normalizeKnowledgeFilter("submitted"), "submitted", "Knowledge Base should accept supported status filters");
 assert.equal(normalizeKnowledgeFilter("unknown"), "all", "Knowledge Base should reject unsupported status filters safely");
 assert.equal(normalizeKnowledgeReportTypeFilter("customer_8d"), "customer_8d", "Knowledge Base should accept supported report type filters");
@@ -146,6 +158,7 @@ const knowledgeEntry = buildKnowledgeEntry(knowledgeFixture);
 assert.match(knowledgeEntry.rootCause || "", /Primer flash time/, "Knowledge entries should extract root cause text");
 assert.match(knowledgeEntry.correctiveAction || "", /Restore flash time/, "Knowledge entries should extract corrective action text");
 assert.match(knowledgeEntry.lessonsLearned || "", /independent quality approval/, "Knowledge entries should extract lessons learned text");
+assert.equal(knowledgeEntry.trustLabel, "Approved", "Knowledge entries should expose the display trust label");
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all" }).length, 1, "Knowledge search should match completed report problem text");
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "closed" }).length, 0, "Knowledge search should respect status filters");
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "customer_8d", priority: "high" }).length, 1, "Knowledge search should respect matching report type and priority filters");
@@ -307,8 +320,15 @@ assert.match(knowledgePage, /query: inputQuery\.trim\(\)/, "Knowledge page shoul
 assert.match(knowledgePage, /Quality Knowledge Base/, "Knowledge page should use the required page title");
 assert.match(knowledgePage, /reportTypeFilters/, "Knowledge page should expose report type filters");
 assert.match(knowledgePage, /priorityFilters/, "Knowledge page should expose priority filters");
-assert.match(knowledgePage, /No completed reports yet/, "Knowledge page should include the completed-report empty state");
-assert.match(knowledgePage, /No matching knowledge assets/, "Knowledge page should include the no-results state");
+assert.match(knowledgePage, /Complete your first report to build your knowledge base\./, "Knowledge page should include the required empty state");
+assert.match(knowledgePage, /Closed and completed 8D reports become searchable knowledge/, "Knowledge page should explain completed report reuse");
+assert.match(knowledgePage, /No matching knowledge found\./, "Knowledge page should include the required no-results state");
+assert.match(knowledgePage, /Try a product name, symptom, root cause, corrective action, or customer reference\./, "Knowledge page should include the required no-results guidance");
+assert.match(knowledgePage, /Create report/, "Knowledge empty state should link to report creation");
+assert.match(knowledgePage, /View sample report/, "Knowledge empty state should link to the sample report");
+assert.match(knowledgePage, /Problem Summary/, "Knowledge result cards should show the problem summary");
+assert.match(knowledgePage, /Validation/, "Knowledge result cards should show validation content");
+assert.match(knowledgePage, /Prevention/, "Knowledge result cards should show prevention content");
 assert.match(knowledgePage, /Open report/, "Knowledge result cards should open source reports");
 assert.match(knowledgePage, /Copied/, "Knowledge copy success should use the required message");
 assert.match(knowledgePage, /Could not copy\. Select and copy manually\./, "Knowledge copy failure should use the required message");

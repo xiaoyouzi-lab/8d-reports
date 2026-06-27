@@ -22,8 +22,10 @@ PR #8 Quality Knowledge Base v1.
 
 - Added a logged-in `/knowledge` page for completed 8D report search and reuse.
 - Added `src/lib/report-knowledge.ts` to centralize Knowledge Base eligibility, status/report type/priority filtering, safe limit handling, safe report-field extraction, and in-memory search over whitelisted report fields.
-- Added POST-only `/api/knowledge/search`, which requires an authenticated user, reuses `getAccessibleUserIds`, accepts whitelisted `query`, `status`, `reportType`, `priority`, and `limit` inputs, and only returns completed reports or locked workflow records (`approved`, `submitted`, `closed`) after excluding `workflowStatus=draft/internal_review`.
-- Added result cards showing problem context, root cause, corrective action, lessons learned, workflow status, report type, revision, priority, and updated date.
+- Added POST-only `/api/knowledge/search`, which requires an authenticated user, reuses `getAccessibleUserIds`, accepts whitelisted `query`, `status`, `reportType`, `priority`, and `limit` inputs, and returns eligible completed reports or higher-trust workflow records after excluding draft, in-progress, and internal-review content.
+- Adjusted Knowledge Base eligibility after authenticated smoke testing: `status=completed` is the primary entry condition, including legacy completed reports with `workflowStatus=draft`, empty, or unset; `approved`, `submitted`, and `closed` remain higher-trust labels.
+- Added result cards showing problem summary, root cause, corrective action, lessons learned, validation, prevention, trust label, report type, revision, priority, and updated date.
+- Updated the empty state to `Complete your first report to build your knowledge base.` and the no-result state to `No matching knowledge found.` with the required supporting copy and empty-state CTAs.
 - Added copy actions for root cause, corrective action, and lessons learned.
 - Added a Knowledge Base entry to the logged-in app menu.
 - Added analytics allowlist entries for Knowledge Base search, no-results, result opens, filters, root cause copy, corrective action copy, and lessons learned copy.
@@ -42,7 +44,7 @@ PR #8 Quality Knowledge Base v1.
 - API verification: `GET /api/knowledge/search` returns `405 Method Not Allowed`, confirming the endpoint is POST-only.
 - API verification: unauthenticated `POST /api/knowledge/search` returns `401 Unauthorized`.
 - Browser verification: unauthenticated `/knowledge` routes to `/login` with no captured console warnings or errors.
-- Authenticated browser verification was not run because no `AUTH_SMOKE_*` session cookies or test report id are configured in the local environment.
+- Authenticated Knowledge Base smoke passed against a temporary isolated Neon branch, which was deleted after testing. The smoke covered empty state, completed legacy workflow eligibility, draft/in-progress/internal-review exclusion, Team access, outsider exclusion, search, filters, result cards, open report, copy success/failure, share-token rejection, analytics metadata safety, and mobile layout.
 - Security preflight: changed-file scan found no database schema/migration, payment, export, AI, public marketing runtime, `.env`, `.secrets`, local database, GSC/GA4 CSV, weekly report, Google key, or obvious secret-pattern changes.
 
 ## Risks
@@ -55,6 +57,7 @@ PR #8 Quality Knowledge Base v1.
 
 - Confirm whether Knowledge Base should remain available to all logged-in users or become a Pro/Team entitlement later.
 - Validate copy/reuse language with real completed 8D reports.
+- Vercel Preview remains unreachable from this execution environment, so authenticated smoke was completed locally against an isolated temporary database instead.
 
 ## Suggested Next Task
 
