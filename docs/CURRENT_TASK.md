@@ -27,6 +27,7 @@ Improve the logged-in app experience so users can quickly understand:
 
 - Add persistent authenticated app navigation for Reports, Knowledge Base, and New Report.
 - Keep Knowledge Base discoverable on mobile without requiring the avatar menu.
+- Keep the authenticated app logo inside the logged-in workspace by routing it to `/dashboard`.
 - Add dashboard guidance that connects report creation, completion/closure, and Knowledge Base reuse.
 - Add an explicit Knowledge Base action near normal report workflow controls.
 - Add an internal feature discoverability audit with stage full-score criteria, current score, remaining gaps, and future-only items.
@@ -48,6 +49,7 @@ Improve the logged-in app experience so users can quickly understand:
 
 - Logged-in header exposes primary navigation outside the avatar menu.
 - Dashboard, Knowledge Base, and New Report are visible as authenticated app actions.
+- Authenticated app logo routes to `/dashboard`, not the public homepage.
 - Mobile logged-in navigation exposes Knowledge Base without relying on the avatar menu.
 - Dashboard first screen explains the create -> complete -> reuse workflow.
 - Dashboard includes a visible Knowledge Base link near report workflow controls.

@@ -19,6 +19,7 @@ Authenticated App Feature Discoverability v1.
 
 - Added persistent authenticated app navigation for Reports, Knowledge Base, and New Report outside the avatar menu.
 - Added a mobile authenticated app navigation bar so Knowledge Base is visible without opening the user menu.
+- Changed the authenticated app logo link to `/dashboard` so logged-in users stay in the workspace rather than returning to the public homepage.
 - Added a dashboard first-screen workflow panel that explains the path from creating reports, to completing and closing them, to reusing completed reports as quality knowledge.
 - Added visible Knowledge Base actions on the dashboard and inside the report workflow panel.
 - Added an internal authenticated app feature discoverability audit with stage full-score standards, current score judgments, no remaining should-be-full-score gaps, future-only items, and a ready-to-merge checklist.
@@ -36,7 +37,7 @@ Authenticated App Feature Discoverability v1.
 - `npx tsc --noEmit` passed.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
-- Browser smoke passed against local `next dev` with mocked authenticated session and mocked API fixtures only. It verified desktop dashboard navigation, mobile Knowledge Base navigation, the dashboard create -> complete -> reuse prompt, dashboard metric semantics labels, the visible dashboard Knowledge Base link, the report workflow panel Knowledge Base link, no horizontal overflow on desktop or mobile, and safe analytics payloads for `app_navigation_clicked` and `dashboard_feature_entry_clicked`.
+- Browser smoke passed against local `next dev` with mocked authenticated session and mocked API fixtures only. It verified desktop dashboard navigation, mobile Knowledge Base navigation, the authenticated logo returning to `/dashboard`, the dashboard create -> complete -> reuse prompt, dashboard metric semantics labels, the visible dashboard Knowledge Base link, the report workflow panel Knowledge Base link, no horizontal overflow on desktop or mobile, and safe analytics payloads for `app_navigation_clicked` and `dashboard_feature_entry_clicked`.
 
 ## Risks
 

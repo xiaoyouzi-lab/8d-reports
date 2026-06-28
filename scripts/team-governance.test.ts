@@ -329,6 +329,7 @@ const appLayout = read("src/app/(app)/layout.tsx");
 assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
 assert.match(appLayout, /Knowledge Base/, "App header menu should expose Knowledge Base");
 assert.match(appLayout, /Primary app navigation/, "App header should expose primary navigation outside the avatar menu");
+assert.match(appLayout, /href="\/dashboard"[\s\S]*navItem: "app_logo"/, "Authenticated app logo should route users back to the Dashboard");
 assert.match(appLayout, /href: "\/knowledge"/, "App header primary navigation should include Knowledge Base");
 assert.match(appLayout, /href: "\/reports\/new"/, "App header primary navigation should include New Report");
 assert.match(appLayout, /md:hidden/, "App header should keep app navigation discoverable on mobile");
@@ -394,6 +395,8 @@ assert.match(discoverabilityAudit, /Stage Full Score Standard/, "Discoverability
 assert.match(discoverabilityAudit, /Current Stage Scores/, "Discoverability audit should score current authenticated feature discovery");
 assert.match(discoverabilityAudit, /Should Be Full Score But Is Not Yet/, "Discoverability audit should distinguish required gaps from future work");
 assert.match(discoverabilityAudit, /None after this PR/, "Discoverability audit should state no remaining should-be-full-score gaps after this PR");
+assert.match(discoverabilityAudit, /Acceptable V1 Non-Full Items/, "Discoverability audit should document acceptable v1 non-full-score items");
+assert.match(discoverabilityAudit, /Personalized onboarding checklist/, "Discoverability audit should separate onboarding checklist work from PR #9");
 assert.match(discoverabilityAudit, /Future Items/, "Discoverability audit should list future-only discoverability ideas");
 assert.match(discoverabilityAudit, /app_navigation_clicked/, "Discoverability audit should document app navigation analytics");
 assert.match(discoverabilityAudit, /dashboard_feature_entry_clicked/, "Discoverability audit should document dashboard feature-entry analytics");

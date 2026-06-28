@@ -104,7 +104,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="sticky top-0 z-40 border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="flex h-14 items-center justify-between px-4 lg:px-6">
           <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2.5">
+            <Link
+              href="/dashboard"
+              onClick={() => trackEvent("app_navigation_clicked", {
+                navItem: "app_logo",
+                destination: "/dashboard",
+                location: "header_logo",
+                plan,
+              })}
+              className="flex items-center gap-2.5"
+            >
               <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
                 8D
               </div>

@@ -43,6 +43,17 @@ None after this PR.
 
 Before this PR, Quality Knowledge Base discovery was below stage full score because it was primarily available through the avatar menu. This PR closes that gap with persistent app navigation, dashboard entry points, workflow-context entry, and safe click analytics.
 
+## Acceptable V1 Non-Full Items
+
+These items are not stage full score, but they are acceptable for PR #9 because reaching full score would require new product surface, new infrastructure, or usage data beyond this discoverability pass.
+
+| Area | Current status | Why acceptable in PR #9 |
+| --- | --- | --- |
+| Personalized onboarding checklist | Not full score | Would add a new onboarding product surface. This PR keeps the dashboard guidance compact and operational. |
+| Discoverability analytics dashboard | Not full score | Events are captured safely, but no internal reporting dashboard is added. Reporting should be driven by later usage data. |
+| Contextual product tours or coach marks | Not full score | Tours can interrupt repeat quality-engineering workflows. This PR uses persistent navigation and workflow-context links instead. |
+| Deeper report-editor education outside the workflow panel | Partial | The workflow panel now explains Knowledge Base reuse near completion/closure. Broader editor coaching would be a separate UX task. |
+
 ## Future Items
 
 These are intentionally outside the PR #9 scope:
