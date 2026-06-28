@@ -7,6 +7,7 @@ import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
+import { trackEvent } from "@/lib/analytics"
 
 const STATUSES = [
   ["draft", "Draft"],
@@ -154,6 +155,11 @@ export function ReportWorkflowPanel({
             </span>
             <Link
               href="/knowledge"
+              onClick={() => trackEvent("app_navigation_clicked", {
+                navItem: "knowledge_base",
+                destination: "/knowledge",
+                location: "workflow_panel",
+              })}
               className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 font-medium text-indigo-700 hover:bg-indigo-100"
             >
               <BookOpen className="size-3.5" />

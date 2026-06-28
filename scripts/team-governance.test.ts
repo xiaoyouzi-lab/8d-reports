@@ -237,6 +237,8 @@ assert.match(workflowPanel, /metadata\?\.format/, "Activity panel must show expo
 assert.match(workflowPanel, /Reason:/, "Activity panel must show unlock reasons");
 assert.match(workflowPanel, /href="\/knowledge"/, "Workflow panel should expose Knowledge Base near completion workflow controls");
 assert.match(workflowPanel, /Completed and closed reports become reusable knowledge/, "Workflow panel should explain why completed reports feed the Knowledge Base");
+assert.match(workflowPanel, /app_navigation_clicked/, "Workflow panel Knowledge Base link should use safe app navigation analytics");
+assert.match(workflowPanel, /location: "workflow_panel"/, "Workflow panel analytics should use enum-like location metadata");
 
 const reportsRoute = read("src/app/api/reports/route.ts");
 assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard report API must expose workflow status");
@@ -311,6 +313,12 @@ assert.match(dashboardPage, /Create reports/, "Dashboard should orient users to 
 assert.match(dashboardPage, /Complete and close/, "Dashboard should orient users to completing reports");
 assert.match(dashboardPage, /Reuse knowledge/, "Dashboard should orient users to Knowledge Base reuse");
 assert.match(dashboardPage, /href="\/knowledge"/, "Dashboard should expose a visible Knowledge Base link");
+assert.match(dashboardPage, /dashboard_feature_entry_clicked/, "Dashboard feature entries should use safe analytics");
+assert.match(dashboardPage, /trackEvent\("dashboard_feature_entry_clicked", \{ entry, location, plan \}\)/, "Dashboard feature analytics metadata should stay enum-like and plan-only");
+assert.match(dashboardPage, /Total accessible reports/, "Dashboard total report metric should explain what it counts");
+assert.match(dashboardPage, /Not submitted or closed/, "Dashboard in-workflow metric should explain what it counts");
+assert.match(dashboardPage, /Eligible knowledge assets/, "Dashboard Knowledge Base metric should explain what it counts");
+assert.match(dashboardPage, /Excludes closed reports/, "Dashboard approved/submitted metric should explain its closed-report boundary");
 assert.match(dashboardPage, /removeTeamMember/, "Dashboard Team workspace should let Owners remove members");
 assert.match(dashboardPage, /method: "DELETE"/, "Dashboard member removal should call the Team DELETE API");
 assert.match(dashboardPage, /Remove \$\{member\.name \|\| member\.email\}/, "Dashboard member removal should expose an accessible remove label");
@@ -324,6 +332,10 @@ assert.match(appLayout, /Primary app navigation/, "App header should expose prim
 assert.match(appLayout, /href: "\/knowledge"/, "App header primary navigation should include Knowledge Base");
 assert.match(appLayout, /href: "\/reports\/new"/, "App header primary navigation should include New Report");
 assert.match(appLayout, /md:hidden/, "App header should keep app navigation discoverable on mobile");
+assert.match(appLayout, /app_navigation_clicked/, "App navigation should use safe analytics");
+assert.match(appLayout, /navItem: item\.navItem/, "App navigation analytics should use enum-like nav item metadata");
+assert.match(appLayout, /destination: item\.href/, "App navigation analytics should use destination route metadata");
+assert.match(appLayout, /location,\s*plan/, "App navigation analytics should include safe location and plan metadata");
 
 const knowledgePage = read("src/components/knowledge/KnowledgeBaseClient.tsx");
 assert.match(knowledgePage, /\/api\/knowledge\/search/, "Knowledge page should use the dedicated Knowledge API");
@@ -359,6 +371,8 @@ assert.doesNotMatch(
 );
 
 const eventsRoute = read("src/app/api/events/route.ts");
+assert.match(eventsRoute, /app_navigation_clicked/, "Analytics allowlist should include app navigation clicks");
+assert.match(eventsRoute, /dashboard_feature_entry_clicked/, "Analytics allowlist should include dashboard feature-entry clicks");
 assert.match(eventsRoute, /knowledge_search_used/, "Analytics allowlist should include Knowledge search");
 assert.match(eventsRoute, /knowledge_result_opened/, "Analytics allowlist should include Knowledge result opens");
 assert.match(eventsRoute, /knowledge_root_cause_copied/, "Analytics allowlist should include root cause copy");
@@ -374,6 +388,17 @@ assert.match(knowledgeSpec, /Attachment parsing|attachment parsing/, "Knowledge 
 assert.match(knowledgeSpec, /Database schema migration|database schema migration/, "Knowledge spec should document no schema migration in v1");
 assert.match(knowledgeSpec, /Permission Matrix/, "Knowledge spec should include a permission matrix");
 assert.match(knowledgeSpec, /report\.data/, "Knowledge spec should map report.data fields");
+
+const discoverabilityAudit = read("docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md");
+assert.match(discoverabilityAudit, /Stage Full Score Standard/, "Discoverability audit should define full-score criteria");
+assert.match(discoverabilityAudit, /Current Stage Scores/, "Discoverability audit should score current authenticated feature discovery");
+assert.match(discoverabilityAudit, /Should Be Full Score But Is Not Yet/, "Discoverability audit should distinguish required gaps from future work");
+assert.match(discoverabilityAudit, /None after this PR/, "Discoverability audit should state no remaining should-be-full-score gaps after this PR");
+assert.match(discoverabilityAudit, /Future Items/, "Discoverability audit should list future-only discoverability ideas");
+assert.match(discoverabilityAudit, /app_navigation_clicked/, "Discoverability audit should document app navigation analytics");
+assert.match(discoverabilityAudit, /dashboard_feature_entry_clicked/, "Discoverability audit should document dashboard feature-entry analytics");
+assert.match(discoverabilityAudit, /Do not send/, "Discoverability audit should document sensitive analytics exclusions");
+assert.match(discoverabilityAudit, /No public marketing, payment, export, AI, auth, database schema, or Knowledge Base search logic changes/, "Discoverability audit should preserve task scope boundaries");
 
 const marketingWorkflow = read("docs/MARKETING_WORKFLOW.md");
 assert.match(marketingWorkflow, /Knowledge Base Metrics/, "Marketing workflow should include Knowledge Base metrics");

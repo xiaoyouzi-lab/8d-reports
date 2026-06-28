@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { QualityAgentFab } from "@/components/quality-agent/QualityAgentFab"
+import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -73,10 +74,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const user = session.user
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"
   const navItems = [
-    { href: "/dashboard", label: t("dashboard.myReports"), icon: LayoutDashboard },
-    { href: "/knowledge", label: "Knowledge Base", icon: BookOpen },
-    { href: "/reports/new", label: "New Report", icon: PlusCircle },
+    { href: "/dashboard", label: t("dashboard.myReports"), icon: LayoutDashboard, navItem: "dashboard" },
+    { href: "/knowledge", label: "Knowledge Base", icon: BookOpen, navItem: "knowledge_base" },
+    { href: "/reports/new", label: "New Report", icon: PlusCircle, navItem: "new_report" },
   ]
+  const trackNavigation = (
+    item: { href: string; navItem: string },
+    location: "header_desktop" | "header_mobile" | "avatar_menu",
+  ) => {
+    trackEvent("app_navigation_clicked", {
+      navItem: item.navItem,
+      destination: item.href,
+      location,
+      plan,
+    })
+  }
   const navLinkClass = (href: string) => {
     const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
     return [
@@ -104,7 +116,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {navItems.map((item) => {
                 const Icon = item.icon
                 return (
-                  <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={navLinkClass(item.href)}
+                    onClick={() => trackNavigation(item, "header_desktop")}
+                  >
                     <Icon className="size-4" />
                     {item.label}
                   </Link>
@@ -146,7 +163,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <div className="-mx-1 my-1 h-px bg-border" />
                   <button
                     type="button"
-                    onClick={() => { router.push("/dashboard"); setMenuOpen(false) }}
+                    onClick={() => {
+                      trackNavigation(navItems[0], "avatar_menu")
+                      router.push("/dashboard")
+                      setMenuOpen(false)
+                    }}
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <LayoutDashboard className="size-4" />
@@ -154,7 +175,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </button>
                   <button
                     type="button"
-                    onClick={() => { router.push("/knowledge"); setMenuOpen(false) }}
+                    onClick={() => {
+                      trackNavigation(navItems[1], "avatar_menu")
+                      router.push("/knowledge")
+                      setMenuOpen(false)
+                    }}
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <BookOpen className="size-4" />
@@ -181,7 +206,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const Icon = item.icon
             return (
-              <Link key={item.href} href={item.href} className={navLinkClass(item.href)}>
+              <Link
+                key={item.href}
+                href={item.href}
+                className={navLinkClass(item.href)}
+                onClick={() => trackNavigation(item, "header_mobile")}
+              >
                 <Icon className="size-4" />
                 <span className="whitespace-nowrap">{item.label}</span>
               </Link>

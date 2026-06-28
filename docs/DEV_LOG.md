@@ -8,7 +8,9 @@ Authenticated App Feature Discoverability v1.
 
 - `docs/CURRENT_TASK.md`
 - `docs/DEV_LOG.md`
+- `docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md`
 - `scripts/team-governance.test.ts`
+- `src/app/api/events/route.ts`
 - `src/components/report/ReportWorkflowPanel.tsx`
 - `src/app/(app)/dashboard/page.tsx`
 - `src/app/(app)/layout.tsx`
@@ -19,6 +21,9 @@ Authenticated App Feature Discoverability v1.
 - Added a mobile authenticated app navigation bar so Knowledge Base is visible without opening the user menu.
 - Added a dashboard first-screen workflow panel that explains the path from creating reports, to completing and closing them, to reusing completed reports as quality knowledge.
 - Added visible Knowledge Base actions on the dashboard and inside the report workflow panel.
+- Added an internal authenticated app feature discoverability audit with stage full-score standards, current score judgments, no remaining should-be-full-score gaps, future-only items, and a ready-to-merge checklist.
+- Added safe analytics for authenticated app navigation and dashboard feature-entry clicks.
+- Clarified Dashboard count labels so the visible numbers match their data semantics.
 - Updated empty-report onboarding to include Knowledge Base reuse as a normal part of the workflow after completion.
 - Updated governance checks to protect the new discoverability requirements.
 - Updated `docs/CURRENT_TASK.md` from the completed PR #8 task to the current authenticated app discoverability task.
@@ -31,7 +36,7 @@ Authenticated App Feature Discoverability v1.
 - `npx tsc --noEmit` passed.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
-- Browser smoke passed against local `next dev` with mocked authenticated session and mocked API fixtures only. It verified desktop dashboard navigation, mobile Knowledge Base navigation, the dashboard create -> complete -> reuse prompt, the visible dashboard Knowledge Base link, the report workflow panel Knowledge Base link, and no horizontal overflow on desktop or mobile.
+- Browser smoke passed against local `next dev` with mocked authenticated session and mocked API fixtures only. It verified desktop dashboard navigation, mobile Knowledge Base navigation, the dashboard create -> complete -> reuse prompt, dashboard metric semantics labels, the visible dashboard Knowledge Base link, the report workflow panel Knowledge Base link, no horizontal overflow on desktop or mobile, and safe analytics payloads for `app_navigation_clicked` and `dashboard_feature_entry_clicked`.
 
 ## Risks
 
@@ -41,7 +46,7 @@ Authenticated App Feature Discoverability v1.
 
 ## Unfinished / Needs Human Review
 
-- Review whether the dashboard workflow copy is concise enough for repeat daily use.
+- None for PR #9 readiness. Optional product review can still tune copy after merge if usage data suggests it.
 
 ## Suggested Next Task
 

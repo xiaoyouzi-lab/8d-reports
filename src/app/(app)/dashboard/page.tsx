@@ -224,6 +224,13 @@ export default function DashboardPage() {
     }
   }
 
+  function trackDashboardEntry(
+    entry: "new_report" | "knowledge_base",
+    location: "workflow_prompt" | "reuse_card" | "report_actions" | "empty_state",
+  ) {
+    trackEvent("dashboard_feature_entry_clicked", { entry, location, plan })
+  }
+
   async function addTeamMember() {
     if (!teamEmail.trim()) return
     setTeamSaving(true)
@@ -325,13 +332,19 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/reports/new">
+            <Link
+              href="/reports/new"
+              onClick={() => trackDashboardEntry("new_report", "workflow_prompt")}
+            >
               <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700">
                 <Plus className="size-4" />
                 New report
               </Button>
             </Link>
-            <Link href="/knowledge">
+            <Link
+              href="/knowledge"
+              onClick={() => trackDashboardEntry("knowledge_base", "workflow_prompt")}
+            >
               <Button size="sm" variant="outline">
                 <BookOpen className="size-4" />
                 Knowledge Base
@@ -350,6 +363,7 @@ export default function DashboardPage() {
               Capture the complaint, team, containment, evidence, and D0-D8 structure in one place.
             </p>
             <div className="mt-3 font-mono text-xl font-semibold text-slate-900">{loading ? "-" : totalReports}</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">Total accessible reports</div>
           </div>
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
@@ -360,6 +374,7 @@ export default function DashboardPage() {
               Move reports through review, approval, submission, or closure so the result can be trusted later.
             </p>
             <div className="mt-3 font-mono text-xl font-semibold text-slate-900">{loading ? "-" : activeWorkflow}</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">Not submitted or closed</div>
           </div>
           <div className="rounded-lg border border-slate-200 bg-indigo-50 p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-950">
@@ -369,11 +384,16 @@ export default function DashboardPage() {
             <p className="text-sm leading-5 text-indigo-800">
               Completed reports become searchable assets for future root-cause and corrective-action work.
             </p>
-            <Link href="/knowledge" className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-700 hover:text-indigo-900">
+            <Link
+              href="/knowledge"
+              onClick={() => trackDashboardEntry("knowledge_base", "reuse_card")}
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-700 hover:text-indigo-900"
+            >
               Open Knowledge Base
               <ArrowRight className="size-3.5" />
             </Link>
             <div className="mt-2 font-mono text-xl font-semibold text-indigo-950">{loading ? "-" : knowledgeAssets}</div>
+            <div className="mt-0.5 text-xs text-indigo-800">Eligible knowledge assets</div>
           </div>
         </div>
       </section>
@@ -393,10 +413,13 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="flex flex-col gap-1 p-4 lg:p-5">
             <span className="text-xs font-medium text-muted-foreground">
-              Active Workflow
+              In Workflow
             </span>
             <span className="text-2xl font-semibold tabular-nums tracking-tight text-amber-600 font-mono">
               {loading ? "—" : activeWorkflow}
+            </span>
+            <span className="text-[11px] leading-4 text-muted-foreground">
+              Not submitted or closed
             </span>
           </CardContent>
         </Card>
@@ -408,6 +431,9 @@ export default function DashboardPage() {
             </span>
             <span className="text-2xl font-semibold tabular-nums tracking-tight text-emerald-600 font-mono">
               {loading ? "—" : approvedOrSubmitted}
+            </span>
+            <span className="text-[11px] leading-4 text-muted-foreground">
+              Excludes closed reports
             </span>
           </CardContent>
         </Card>
@@ -508,13 +534,19 @@ export default function DashboardPage() {
           />
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/knowledge">
+          <Link
+            href="/knowledge"
+            onClick={() => trackDashboardEntry("knowledge_base", "report_actions")}
+          >
             <Button variant="outline">
               <BookOpen className="size-4" />
               <span>Knowledge Base</span>
             </Button>
           </Link>
-          <Link href="/reports/new">
+          <Link
+            href="/reports/new"
+            onClick={() => trackDashboardEntry("new_report", "report_actions")}
+          >
             <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
               <Plus className="size-4" />
               <span>New Report</span>
@@ -558,7 +590,10 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Link href="/reports/new">
+              <Link
+                href="/reports/new"
+                onClick={() => trackDashboardEntry("new_report", "empty_state")}
+              >
                 <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700">
                   <Plus className="size-4" />
                   Create your first report

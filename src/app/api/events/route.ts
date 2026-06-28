@@ -26,6 +26,8 @@ const ALLOWED_EVENTS = new Set([
   "upgrade_clicked",
   "checkout_started",
   "checkout_completed",
+  "app_navigation_clicked",
+  "dashboard_feature_entry_clicked",
   "dashboard_search_used",
   "search_result_clicked",
   "search_no_results",

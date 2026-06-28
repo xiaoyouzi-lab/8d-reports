@@ -29,6 +29,9 @@ Improve the logged-in app experience so users can quickly understand:
 - Keep Knowledge Base discoverable on mobile without requiring the avatar menu.
 - Add dashboard guidance that connects report creation, completion/closure, and Knowledge Base reuse.
 - Add an explicit Knowledge Base action near normal report workflow controls.
+- Add an internal feature discoverability audit with stage full-score criteria, current score, remaining gaps, and future-only items.
+- Add safe authenticated app analytics for navigation and dashboard feature-entry clicks.
+- Clarify Dashboard metric labels so visible counts match the underlying data.
 - Preserve existing report creation, editing, sharing, workflow, export, payment, AI, auth, and public marketing behavior.
 
 ## Non-Goals
@@ -49,6 +52,9 @@ Improve the logged-in app experience so users can quickly understand:
 - Dashboard first screen explains the create -> complete -> reuse workflow.
 - Dashboard includes a visible Knowledge Base link near report workflow controls.
 - Empty-report onboarding explains that completed reports become reusable knowledge assets.
+- `docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md` documents stage full-score standards, current scores, no remaining should-be-full-score gaps, future-only items, safe analytics, and the ready-to-merge checklist.
+- App navigation and dashboard feature-entry clicks use safe analytics metadata only.
+- Dashboard counts use labels that match their data semantics.
 - Existing report list, Team workspace, search, workflow status, quota, and upgrade surfaces remain usable.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 
