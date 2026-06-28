@@ -18,13 +18,14 @@ Authenticated App Feature Discoverability v1.
 ## Implementation Summary
 
 - Added persistent authenticated app navigation for Reports, Knowledge Base, and New Report outside the avatar menu.
+- Labeled the authenticated workspace home as `Dashboard` in desktop, mobile, and avatar-menu navigation.
 - Added a mobile authenticated app navigation bar so Knowledge Base is visible without opening the user menu.
 - Changed the authenticated app logo link to `/dashboard` so logged-in users stay in the workspace rather than returning to the public homepage.
 - Added a dashboard first-screen workflow panel that explains the path from creating reports, to completing and closing them, to reusing completed reports as quality knowledge.
 - Added visible Knowledge Base actions on the dashboard and inside the report workflow panel.
-- Added an internal authenticated app feature discoverability audit with stage full-score standards, current score judgments, no remaining should-be-full-score gaps, future-only items, and a ready-to-merge checklist.
+- Added an internal authenticated app feature discoverability audit with stage full-score standards, a 12-feature logged-in audit table, target judgments, acceptable non-primary items, future-only items, and a ready-to-merge checklist.
 - Added safe analytics for authenticated app navigation and dashboard feature-entry clicks.
-- Clarified Dashboard count labels so the visible numbers match their data semantics.
+- Clarified Dashboard count labels and the workflow card title so the visible numbers match their data semantics.
 - Updated empty-report onboarding to include Knowledge Base reuse as a normal part of the workflow after completion.
 - Updated governance checks to protect the new discoverability requirements.
 - Updated `docs/CURRENT_TASK.md` from the completed PR #8 task to the current authenticated app discoverability task.

@@ -368,10 +368,10 @@ export default function DashboardPage() {
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
               <CheckCircle2 className="size-4 text-emerald-600" />
-              Complete and close
+              In workflow
             </div>
             <p className="text-sm leading-5 text-muted-foreground">
-              Move reports through review, approval, submission, or closure so the result can be trusted later.
+              Reports still moving through review, approval, submission, or closure before the result can be trusted later.
             </p>
             <div className="mt-3 font-mono text-xl font-semibold text-slate-900">{loading ? "-" : activeWorkflow}</div>
             <div className="mt-0.5 text-xs text-muted-foreground">Not submitted or closed</div>

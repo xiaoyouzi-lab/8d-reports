@@ -3,7 +3,7 @@
 import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
-import { useTranslations, useLocale } from "next-intl"
+import { useLocale } from "next-intl"
 import { BookOpen, LayoutDashboard, LogOut, PlusCircle } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -13,7 +13,6 @@ import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const t = useTranslations()
   const locale = useLocale()
   const router = useRouter()
   const pathname = usePathname()
@@ -74,7 +73,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const user = session.user
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"
   const navItems = [
-    { href: "/dashboard", label: t("dashboard.myReports"), icon: LayoutDashboard, navItem: "dashboard" },
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, navItem: "dashboard" },
     { href: "/knowledge", label: "Knowledge Base", icon: BookOpen, navItem: "knowledge_base" },
     { href: "/reports/new", label: "New Report", icon: PlusCircle, navItem: "new_report" },
   ]
@@ -180,7 +179,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <LayoutDashboard className="size-4" />
-                    {t("dashboard.myReports")}
+                    Dashboard
                   </button>
                   <button
                     type="button"

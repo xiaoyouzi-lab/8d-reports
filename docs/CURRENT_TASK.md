@@ -54,7 +54,7 @@ Improve the logged-in app experience so users can quickly understand:
 - Dashboard first screen explains the create -> complete -> reuse workflow.
 - Dashboard includes a visible Knowledge Base link near report workflow controls.
 - Empty-report onboarding explains that completed reports become reusable knowledge assets.
-- `docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md` documents stage full-score standards, current scores, no remaining should-be-full-score gaps, future-only items, safe analytics, and the ready-to-merge checklist.
+- `docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md` documents stage full-score standards, a 12-feature logged-in audit, features that meet the PR #9 target, acceptable non-primary items, future-only items, safe analytics, and the ready-to-merge checklist.
 - App navigation and dashboard feature-entry clicks use safe analytics metadata only.
 - Dashboard counts use labels that match their data semantics.
 - Existing report list, Team workspace, search, workflow status, quota, and upgrade surfaces remain usable.
