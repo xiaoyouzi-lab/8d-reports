@@ -235,6 +235,10 @@ assert.match(workflowPanel, /newValuePreview/, "Activity panel must show new val
 assert.match(workflowPanel, /metadata\?\.filename/, "Activity panel must show attachment filenames from metadata");
 assert.match(workflowPanel, /metadata\?\.format/, "Activity panel must show export format metadata");
 assert.match(workflowPanel, /Reason:/, "Activity panel must show unlock reasons");
+assert.match(workflowPanel, /href="\/knowledge"/, "Workflow panel should expose Knowledge Base near completion workflow controls");
+assert.match(workflowPanel, /Completed and closed reports become reusable knowledge/, "Workflow panel should explain why completed reports feed the Knowledge Base");
+assert.match(workflowPanel, /app_navigation_clicked/, "Workflow panel Knowledge Base link should use safe app navigation analytics");
+assert.match(workflowPanel, /location: "workflow_panel"/, "Workflow panel analytics should use enum-like location metadata");
 
 const reportsRoute = read("src/app/api/reports/route.ts");
 assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard report API must expose workflow status");
@@ -303,6 +307,21 @@ assert.match(templateRequestRoute, /normalizeServiceQuoteAmount/, "Service admin
 const dashboardPage = read("src/app/(app)/dashboard/page.tsx");
 assert.match(dashboardPage, /Workflow/, "Dashboard report list should show workflow status, not only completion status");
 assert.match(dashboardPage, /Rev\./, "Dashboard report list should show revision number");
+assert.match(dashboardPage, /What to do next/, "Dashboard should show a first-screen feature discovery prompt");
+assert.match(dashboardPage, /Turn each completed 8D into reusable quality knowledge/, "Dashboard should explain the Knowledge Base value");
+assert.match(dashboardPage, /Create reports/, "Dashboard should orient users to report creation");
+assert.match(dashboardPage, /Complete and close/, "Dashboard should orient users to completing reports");
+assert.match(dashboardPage, /Reuse knowledge/, "Dashboard should orient users to Knowledge Base reuse");
+assert.match(dashboardPage, /href="\/knowledge"/, "Dashboard should expose a visible Knowledge Base link");
+assert.match(dashboardPage, /dashboard_feature_entry_clicked/, "Dashboard feature entries should use safe analytics");
+assert.match(dashboardPage, /trackEvent\("dashboard_feature_entry_clicked", \{ entry, location, plan \}\)/, "Dashboard feature analytics metadata should stay enum-like and plan-only");
+assert.match(dashboardPage, /Total accessible reports/, "Dashboard total report metric should explain what it counts");
+assert.match(dashboardPage, /In workflow/, "Dashboard active-workflow card title should match activeWorkflow semantics");
+assert.match(dashboardPage, /Reports still moving through review, approval, submission, or closure/, "Dashboard active-workflow card should explain that it counts reports still in workflow");
+assert.match(dashboardPage, /Not submitted or closed/, "Dashboard in-workflow metric should explain what it counts");
+assert.match(dashboardPage, /Eligible knowledge assets/, "Dashboard Knowledge Base metric should explain what it counts");
+assert.match(dashboardPage, /Excludes closed reports/, "Dashboard approved/submitted metric should explain its closed-report boundary");
+assert.doesNotMatch(dashboardPage, /<CheckCircle2[\s\S]{0,260}Complete and close/, "Dashboard activeWorkflow metric card must not be titled as if the count is completed reports");
 assert.match(dashboardPage, /removeTeamMember/, "Dashboard Team workspace should let Owners remove members");
 assert.match(dashboardPage, /method: "DELETE"/, "Dashboard member removal should call the Team DELETE API");
 assert.match(dashboardPage, /Remove \$\{member\.name \|\| member\.email\}/, "Dashboard member removal should expose an accessible remove label");
@@ -311,7 +330,17 @@ assert.match(dashboardPage, /activity\.message/, "Dashboard Team activity should
 
 const appLayout = read("src/app/(app)/layout.tsx");
 assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
+assert.match(appLayout, /label: "Dashboard"/, "App header primary navigation should label the workspace home as Dashboard");
 assert.match(appLayout, /Knowledge Base/, "App header menu should expose Knowledge Base");
+assert.match(appLayout, /Primary app navigation/, "App header should expose primary navigation outside the avatar menu");
+assert.match(appLayout, /href="\/dashboard"[\s\S]*navItem: "app_logo"/, "Authenticated app logo should route users back to the Dashboard");
+assert.match(appLayout, /href: "\/knowledge"/, "App header primary navigation should include Knowledge Base");
+assert.match(appLayout, /href: "\/reports\/new"/, "App header primary navigation should include New Report");
+assert.match(appLayout, /md:hidden/, "App header should keep app navigation discoverable on mobile");
+assert.match(appLayout, /app_navigation_clicked/, "App navigation should use safe analytics");
+assert.match(appLayout, /navItem: item\.navItem/, "App navigation analytics should use enum-like nav item metadata");
+assert.match(appLayout, /destination: item\.href/, "App navigation analytics should use destination route metadata");
+assert.match(appLayout, /location,\s*plan/, "App navigation analytics should include safe location and plan metadata");
 
 const knowledgePage = read("src/components/knowledge/KnowledgeBaseClient.tsx");
 assert.match(knowledgePage, /\/api\/knowledge\/search/, "Knowledge page should use the dedicated Knowledge API");
@@ -347,6 +376,8 @@ assert.doesNotMatch(
 );
 
 const eventsRoute = read("src/app/api/events/route.ts");
+assert.match(eventsRoute, /app_navigation_clicked/, "Analytics allowlist should include app navigation clicks");
+assert.match(eventsRoute, /dashboard_feature_entry_clicked/, "Analytics allowlist should include dashboard feature-entry clicks");
 assert.match(eventsRoute, /knowledge_search_used/, "Analytics allowlist should include Knowledge search");
 assert.match(eventsRoute, /knowledge_result_opened/, "Analytics allowlist should include Knowledge result opens");
 assert.match(eventsRoute, /knowledge_root_cause_copied/, "Analytics allowlist should include root cause copy");
@@ -362,6 +393,43 @@ assert.match(knowledgeSpec, /Attachment parsing|attachment parsing/, "Knowledge 
 assert.match(knowledgeSpec, /Database schema migration|database schema migration/, "Knowledge spec should document no schema migration in v1");
 assert.match(knowledgeSpec, /Permission Matrix/, "Knowledge spec should include a permission matrix");
 assert.match(knowledgeSpec, /report\.data/, "Knowledge spec should map report.data fields");
+
+const discoverabilityAudit = read("docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md");
+assert.match(discoverabilityAudit, /Stage Full Score Standard/, "Discoverability audit should define full-score criteria");
+assert.match(
+  discoverabilityAudit,
+  /\| Feature \| User value \| Target user \| Current location before PR9 \| Location after PR9 \| Current discoverability score \| Target discoverability score \| Status \| Should be primary \/ secondary \/ contextual \/ advanced \| Current analytics \| Problem \| Recommendation \| This PR action \| Future action \|/,
+  "Discoverability audit should use the required 12-feature audit table columns",
+);
+for (const feature of [
+  "Dashboard / My Reports",
+  "New Report",
+  "Knowledge Base",
+  "Report editor D0-D8",
+  "Attachments / Evidence",
+  "Share link",
+  "Export PDF / Word / Excel",
+  "Activity Log / revision history",
+  "AI Quality Check",
+  "Team workspace / roles / approval",
+  "Pricing / upgrade / single export",
+  "Search / historical reuse",
+]) {
+  assert.match(discoverabilityAudit, new RegExp(feature.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Discoverability audit should cover ${feature}`);
+}
+const retiredDiscoverabilityOverclaims = new RegExp(
+  [["Should Be", "Full Score But Is Not Yet"].join(" "), ["None after", "this PR"].join(" ")]
+    .map((phrase) => phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join("|"),
+);
+assert.doesNotMatch(discoverabilityAudit, retiredDiscoverabilityOverclaims, "Discoverability audit should not overclaim that all future/full-score gaps are gone");
+assert.match(discoverabilityAudit, /Remaining Non-Primary Items/, "Discoverability audit should document acceptable non-primary items");
+assert.match(discoverabilityAudit, /Personalized onboarding checklist/, "Discoverability audit should separate onboarding checklist work from PR #9");
+assert.match(discoverabilityAudit, /Future Items/, "Discoverability audit should list future-only discoverability ideas");
+assert.match(discoverabilityAudit, /app_navigation_clicked/, "Discoverability audit should document app navigation analytics");
+assert.match(discoverabilityAudit, /dashboard_feature_entry_clicked/, "Discoverability audit should document dashboard feature-entry analytics");
+assert.match(discoverabilityAudit, /Do not send/, "Discoverability audit should document sensitive analytics exclusions");
+assert.match(discoverabilityAudit, /No public marketing, payment, export, AI, auth, database schema, or Knowledge Base search logic changes/, "Discoverability audit should preserve task scope boundaries");
 
 const marketingWorkflow = read("docs/MARKETING_WORKFLOW.md");
 assert.match(marketingWorkflow, /Knowledge Base Metrics/, "Marketing workflow should include Knowledge Base metrics");

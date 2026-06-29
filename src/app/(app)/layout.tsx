@@ -1,20 +1,21 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
-import { useTranslations, useLocale } from "next-intl"
-import { BookOpen, LayoutDashboard, LogOut } from "lucide-react"
+import { useLocale } from "next-intl"
+import { BookOpen, LayoutDashboard, LogOut, PlusCircle } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { QualityAgentFab } from "@/components/quality-agent/QualityAgentFab"
+import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const t = useTranslations()
   const locale = useLocale()
   const router = useRouter()
+  const pathname = usePathname()
   const { data: session, isPending } = authClient.useSession()
   const { plan } = usePlan((session?.user as Record<string, unknown> | undefined)?.plan)
 
@@ -71,12 +72,47 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const user = session.user
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"
+  const navItems = [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, navItem: "dashboard" },
+    { href: "/knowledge", label: "Knowledge Base", icon: BookOpen, navItem: "knowledge_base" },
+    { href: "/reports/new", label: "New Report", icon: PlusCircle, navItem: "new_report" },
+  ]
+  const trackNavigation = (
+    item: { href: string; navItem: string },
+    location: "header_desktop" | "header_mobile" | "avatar_menu",
+  ) => {
+    trackEvent("app_navigation_clicked", {
+      navItem: item.navItem,
+      destination: item.href,
+      location,
+      plan,
+    })
+  }
+  const navLinkClass = (href: string) => {
+    const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(href))
+    return [
+      "inline-flex h-9 items-center gap-2 rounded-lg px-3 text-sm font-medium transition-colors",
+      active
+        ? "bg-indigo-50 text-indigo-700"
+        : "text-muted-foreground hover:bg-slate-100 hover:text-foreground",
+    ].join(" ")
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-[#F8F9FB]">
       <header className="sticky top-0 z-40 border-b border-border/40 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="flex h-14 items-center justify-between px-4 lg:px-6">
-          <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2.5">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard"
+              onClick={() => trackEvent("app_navigation_clicked", {
+                navItem: "app_logo",
+                destination: "/dashboard",
+                location: "header_logo",
+                plan,
+              })}
+              className="flex items-center gap-2.5"
+            >
               <div className="flex size-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
                 8D
               </div>
@@ -84,6 +120,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 8D Reports
               </span>
             </Link>
+            <nav className="hidden items-center gap-1 md:flex" aria-label="Primary app navigation">
+              {navItems.map((item) => {
+                const Icon = item.icon
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={navLinkClass(item.href)}
+                    onClick={() => trackNavigation(item, "header_desktop")}
+                  >
+                    <Icon className="size-4" />
+                    {item.label}
+                  </Link>
+                )
+              })}
+            </nav>
           </div>
 
           <div className="flex items-center gap-3">
@@ -119,15 +171,23 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <div className="-mx-1 my-1 h-px bg-border" />
                   <button
                     type="button"
-                    onClick={() => { router.push("/dashboard"); setMenuOpen(false) }}
+                    onClick={() => {
+                      trackNavigation(navItems[0], "avatar_menu")
+                      router.push("/dashboard")
+                      setMenuOpen(false)
+                    }}
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <LayoutDashboard className="size-4" />
-                    {t("dashboard.myReports")}
+                    Dashboard
                   </button>
                   <button
                     type="button"
-                    onClick={() => { router.push("/knowledge"); setMenuOpen(false) }}
+                    onClick={() => {
+                      trackNavigation(navItems[1], "avatar_menu")
+                      router.push("/knowledge")
+                      setMenuOpen(false)
+                    }}
                     className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground"
                   >
                     <BookOpen className="size-4" />
@@ -147,6 +207,25 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
+        <nav
+          className="flex h-10 items-center gap-2 overflow-x-auto border-t border-border/40 px-4 md:hidden"
+          aria-label="Primary app navigation"
+        >
+          {navItems.map((item) => {
+            const Icon = item.icon
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={navLinkClass(item.href)}
+                onClick={() => trackNavigation(item, "header_mobile")}
+              >
+                <Icon className="size-4" />
+                <span className="whitespace-nowrap">{item.label}</span>
+              </Link>
+            )
+          })}
+        </nav>
       </header>
 
       <main className="flex-1">{children}</main>

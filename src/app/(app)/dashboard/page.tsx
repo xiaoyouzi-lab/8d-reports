@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { History, Lock, Plus, Search, FileText, Sparkles, Trash2 } from "lucide-react"
+import { ArrowRight, BookOpen, CheckCircle2, History, Lock, Plus, Search, FileText, Sparkles, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -145,6 +145,12 @@ export default function DashboardPage() {
   const totalReports = reports.length
   const activeWorkflow = reports.filter((r) => !["submitted", "closed"].includes(r.workflowStatus || "draft")).length
   const approvedOrSubmitted = reports.filter((r) => ["approved", "submitted"].includes(r.workflowStatus || "draft")).length
+  const knowledgeAssets = reports.filter((report) => {
+    const status = report.status || "draft"
+    const workflowStatus = report.workflowStatus || "draft"
+    if (status === "draft" || status === "in_progress" || workflowStatus === "internal_review") return false
+    return status === "completed" || ["approved", "submitted", "closed"].includes(workflowStatus)
+  }).length
   const normalizedQuery = query.trim().toLowerCase()
   const freeVisibleReports = normalizedQuery
     ? reports.filter((report) => {
@@ -218,6 +224,13 @@ export default function DashboardPage() {
     }
   }
 
+  function trackDashboardEntry(
+    entry: "new_report" | "knowledge_base",
+    location: "workflow_prompt" | "reuse_card" | "report_actions" | "empty_state",
+  ) {
+    trackEvent("dashboard_feature_entry_clicked", { entry, location, plan })
+  }
+
   async function addTeamMember() {
     if (!teamEmail.trim()) return
     setTeamSaving(true)
@@ -278,7 +291,7 @@ export default function DashboardPage() {
               My Reports
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Quality issue tracking & 8D problem solving
+              Create, complete, and reuse 8D knowledge from one workspace.
             </p>
           </div>
           {!entitlements.unlimitedReports && (
@@ -303,6 +316,88 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 lg:p-5">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-indigo-700">
+              <Sparkles className="size-3.5" />
+              What to do next
+            </div>
+            <h2 className="mt-2 text-lg font-semibold tracking-tight text-foreground">
+              Turn each completed 8D into reusable quality knowledge.
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-muted-foreground">
+              Start a report, finish the corrective-action workflow, then search past root causes,
+              actions, and lessons learned when similar problems come back.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/reports/new"
+              onClick={() => trackDashboardEntry("new_report", "workflow_prompt")}
+            >
+              <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700">
+                <Plus className="size-4" />
+                New report
+              </Button>
+            </Link>
+            <Link
+              href="/knowledge"
+              onClick={() => trackDashboardEntry("knowledge_base", "workflow_prompt")}
+            >
+              <Button size="sm" variant="outline">
+                <BookOpen className="size-4" />
+                Knowledge Base
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <FileText className="size-4 text-indigo-600" />
+              Create reports
+            </div>
+            <p className="text-sm leading-5 text-muted-foreground">
+              Capture the complaint, team, containment, evidence, and D0-D8 structure in one place.
+            </p>
+            <div className="mt-3 font-mono text-xl font-semibold text-slate-900">{loading ? "-" : totalReports}</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">Total accessible reports</div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
+              <CheckCircle2 className="size-4 text-emerald-600" />
+              In workflow
+            </div>
+            <p className="text-sm leading-5 text-muted-foreground">
+              Reports still moving through review, approval, submission, or closure before the result can be trusted later.
+            </p>
+            <div className="mt-3 font-mono text-xl font-semibold text-slate-900">{loading ? "-" : activeWorkflow}</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">Not submitted or closed</div>
+          </div>
+          <div className="rounded-lg border border-slate-200 bg-indigo-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-indigo-950">
+              <BookOpen className="size-4 text-indigo-600" />
+              Reuse knowledge
+            </div>
+            <p className="text-sm leading-5 text-indigo-800">
+              Completed reports become searchable assets for future root-cause and corrective-action work.
+            </p>
+            <Link
+              href="/knowledge"
+              onClick={() => trackDashboardEntry("knowledge_base", "reuse_card")}
+              className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-indigo-700 hover:text-indigo-900"
+            >
+              Open Knowledge Base
+              <ArrowRight className="size-3.5" />
+            </Link>
+            <div className="mt-2 font-mono text-xl font-semibold text-indigo-950">{loading ? "-" : knowledgeAssets}</div>
+            <div className="mt-0.5 text-xs text-indigo-800">Eligible knowledge assets</div>
+          </div>
+        </div>
+      </section>
+
       <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <Card>
           <CardContent className="flex flex-col gap-1 p-4 lg:p-5">
@@ -318,10 +413,13 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="flex flex-col gap-1 p-4 lg:p-5">
             <span className="text-xs font-medium text-muted-foreground">
-              Active Workflow
+              In Workflow
             </span>
             <span className="text-2xl font-semibold tabular-nums tracking-tight text-amber-600 font-mono">
               {loading ? "—" : activeWorkflow}
+            </span>
+            <span className="text-[11px] leading-4 text-muted-foreground">
+              Not submitted or closed
             </span>
           </CardContent>
         </Card>
@@ -333,6 +431,9 @@ export default function DashboardPage() {
             </span>
             <span className="text-2xl font-semibold tabular-nums tracking-tight text-emerald-600 font-mono">
               {loading ? "—" : approvedOrSubmitted}
+            </span>
+            <span className="text-[11px] leading-4 text-muted-foreground">
+              Excludes closed reports
             </span>
           </CardContent>
         </Card>
@@ -422,7 +523,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="mb-4 flex items-center gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -432,12 +533,26 @@ export default function DashboardPage() {
             onChange={(event) => setQuery(event.target.value)}
           />
         </div>
-        <Link href="/reports/new">
-          <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
-            <Plus className="size-4" />
-            <span className="hidden sm:inline">New Report</span>
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/knowledge"
+            onClick={() => trackDashboardEntry("knowledge_base", "report_actions")}
+          >
+            <Button variant="outline">
+              <BookOpen className="size-4" />
+              <span>Knowledge Base</span>
+            </Button>
+          </Link>
+          <Link
+            href="/reports/new"
+            onClick={() => trackDashboardEntry("new_report", "report_actions")}
+          >
+            <Button className="bg-indigo-600 text-white hover:bg-indigo-700">
+              <Plus className="size-4" />
+              <span>New Report</span>
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {normalizedQuery && !entitlements.deepSearch && (
@@ -475,7 +590,10 @@ export default function DashboardPage() {
               </p>
             </div>
             <div className="flex gap-3">
-              <Link href="/reports/new">
+              <Link
+                href="/reports/new"
+                onClick={() => trackDashboardEntry("new_report", "empty_state")}
+              >
                 <Button size="sm" className="bg-indigo-600 text-white hover:bg-indigo-700">
                   <Plus className="size-4" />
                   Create your first report
@@ -510,13 +628,19 @@ export default function DashboardPage() {
               <div className="flex items-start gap-3">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">3</span>
                 <span className="text-sm text-muted-foreground">
-                  Export PDF — generate a professional PDF report in one click
+                  Complete and close — make the corrective action ready for future reference
                 </span>
               </div>
               <div className="flex items-start gap-3">
                 <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">4</span>
                 <span className="text-sm text-muted-foreground">
-                  Share with your customer — send a secure link or the PDF
+                  Reuse knowledge — search completed reports for similar problems, causes, and actions
+                </span>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-indigo-100 text-xs font-bold text-indigo-600">5</span>
+                <span className="text-sm text-muted-foreground">
+                  Export and share — deliver the customer-ready report when the work is done
                 </span>
               </div>
             </div>
