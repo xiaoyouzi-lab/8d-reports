@@ -2,9 +2,63 @@
 
 ## Latest Task
 
-Authenticated App Feature Discoverability v1.
+Authenticated Smoke Test Infrastructure v1.
 
 ## Changed Files
+
+- `.github/workflows/authenticated-smoke.yml`
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `package.json`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/smoke/neon-branch.ts`
+- `scripts/smoke/reset-smoke-schema.ts`
+- `scripts/smoke/seed-auth-smoke.ts`
+- `scripts/smoke/smoke-safety.ts`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added a manual `workflow_dispatch` GitHub Actions workflow for authenticated smoke testing.
+- Added Neon API automation to create and delete a temporary `auth-smoke-*` branch.
+- Added a smoke database safety helper that requires `SMOKE_DB=true`, explicit smoke/test/preview/local database or branch evidence, and rejects parent-branch use.
+- Added a schema reset step for cloned Neon branches before Drizzle initializes the temporary database.
+- Added Better Auth smoke seeding for owner/member/outsider users, active Team subscription, Team workspace membership, and report fixtures covering completed, closed, draft, in-progress, internal-review, outsider, and accessible Team member cases.
+- Added a Playwright authenticated smoke that verifies unauthenticated redirects/API boundaries, logged-in navigation, Dashboard discovery, Knowledge Base eligibility/search/filter/copy/open behavior, report workflow Knowledge Base entry, mobile layout, and safe analytics metadata.
+- Added authenticated smoke documentation covering secrets, repo vars, safety gates, seeded data, cleanup, local use, and non-goals.
+- Updated governance checks to protect workflow trigger scope, Neon cleanup, smoke safety guards, seed/browser coverage, docs, and secret hygiene.
+- Updated `docs/CURRENT_TASK.md` from the completed PR #9 task to the current authenticated smoke infrastructure task.
+- No product feature, public marketing, payment, checkout, subscription, export, AI, Knowledge Base search logic, production auth behavior, production configuration, or permanent database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Local `npm run smoke:auth` was not run because this shell has no `NEON_API_KEY`, `NEON_PROJECT_ID`, `NEON_PARENT_BRANCH_ID`, `NEON_DATABASE_NAME`, `SMOKE_DB`, or explicit safe `SMOKE_DATABASE_URL`; the script is intentionally fail-closed without those values.
+
+## Risks
+
+- Neon cleanup can still require manual cleanup if GitHub Actions or Neon is unavailable after a branch is created.
+- The workflow is intentionally manual because it needs privileged `NEON_API_KEY` access.
+- Browser smoke selectors depend on current authenticated app labels and should be updated when those labels intentionally change.
+
+## Unfinished / Needs Human Review
+
+- None expected after checks pass. The workflow still needs repository variables configured if they are not already present: `NEON_PROJECT_ID`, `NEON_PARENT_BRANCH_ID`, and `NEON_DATABASE_NAME`.
+
+## Suggested Next Task
+
+After this PR, run the manual authenticated smoke workflow before merging authenticated app feature PRs that touch Dashboard, Knowledge Base, report access, or analytics.
+
+## Previous Task
+
+Authenticated App Feature Discoverability v1.
+
+## Previous Changed Files
 
 - `docs/CURRENT_TASK.md`
 - `docs/DEV_LOG.md`
@@ -15,7 +69,7 @@ Authenticated App Feature Discoverability v1.
 - `src/app/(app)/dashboard/page.tsx`
 - `src/app/(app)/layout.tsx`
 
-## Implementation Summary
+## Previous Implementation Summary
 
 - Added persistent authenticated app navigation for Reports, Knowledge Base, and New Report outside the avatar menu.
 - Labeled the authenticated workspace home as `Dashboard` in desktop, mobile, and avatar-menu navigation.
@@ -31,7 +85,7 @@ Authenticated App Feature Discoverability v1.
 - Updated `docs/CURRENT_TASK.md` from the completed PR #8 task to the current authenticated app discoverability task.
 - No auth, payment, checkout, subscription, export, AI, public marketing, Knowledge Base search logic, database schema, or production configuration changes were made.
 
-## Tests / Verification
+## Previous Tests / Verification
 
 - `git diff --check` passed.
 - `npm run test:governance` passed.
@@ -40,17 +94,17 @@ Authenticated App Feature Discoverability v1.
 - `npm run build` passed.
 - Browser smoke passed against local `next dev` with mocked authenticated session and mocked API fixtures only. It verified desktop dashboard navigation, mobile Knowledge Base navigation, the authenticated logo returning to `/dashboard`, the dashboard create -> complete -> reuse prompt, dashboard metric semantics labels, the visible dashboard Knowledge Base link, the report workflow panel Knowledge Base link, no horizontal overflow on desktop or mobile, and safe analytics payloads for `app_navigation_clicked` and `dashboard_feature_entry_clicked`.
 
-## Risks
+## Previous Risks
 
 - Header navigation could become crowded on small screens, so mobile uses a compact secondary app nav row.
 - Dashboard copy should remain operational and not become a public-site-style marketing hero.
 - Discoverability is improved through navigation and guidance only; no new entitlement or feature behavior is introduced.
 
-## Unfinished / Needs Human Review
+## Previous Unfinished / Needs Human Review
 
 - None for PR #9 readiness. Optional product review can still tune copy after merge if usage data suggests it.
 
-## Suggested Next Task
+## Previous Suggested Next Task
 
 After this PR, consider adding a lightweight onboarding checklist only if usage data shows users still miss the create -> complete -> reuse workflow.
 
