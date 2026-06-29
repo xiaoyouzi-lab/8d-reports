@@ -38,7 +38,25 @@ The workflow must fail clearly if these values are missing. It must not guess a 
 - Scripts do not import `dotenv/config`, so local `.env` is not loaded implicitly.
 - The workflow resets the cloned branch schema before initializing and seeding data.
 - Full database URLs, passwords, tokens, and cookies must not be printed.
+- Runtime-generated secrets must be masked with `::add-mask::` before they are written to `$GITHUB_ENV`.
 - Production data must not be created, mutated, or deleted by smoke tests.
+
+## Failure Diagnostics
+
+The browser smoke writes `output/authenticated-smoke-result.json` on both pass and fail. Failed runs should still upload this artifact so the failure can be diagnosed without re-running against production data or reading secrets from logs.
+
+The artifact records:
+
+- `status`
+- `failedStep`
+- `completedSteps`
+- a bounded, redacted `errorMessage`
+- the current browser URL when available
+- captured analytics event names and counts
+- high-level check status
+- a sanitized smoke database summary
+
+The artifact must not include passwords, tokens, cookies, full database URLs, report text, customer/product names, root cause, corrective action, lessons learned, batch numbers, or raw search queries. If the browser is waiting for expected text, timeout errors include a short redacted body excerpt and the named smoke step so failures are actionable without exposing report content.
 
 ## Seeded Data
 
@@ -106,3 +124,5 @@ Do not use the local `.env` production or preview database as a fallback. If the
 ## Operational Risk
 
 The largest risk is cleanup failure after a partially failed run. The workflow mitigates this by writing the temporary branch id to `$GITHUB_ENV` and deleting it with `if: always()`. If GitHub or Neon has an outage, the branch may need manual cleanup in Neon using the branch name pattern `auth-smoke-<run_id>-<run_attempt>`.
+
+The next largest risk is an opaque UI assertion timeout. The smoke mitigates this by naming each browser step, writing the failure artifact before exiting, and redacting sensitive fixture text from logs and artifacts.

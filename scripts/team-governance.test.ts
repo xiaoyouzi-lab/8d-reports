@@ -308,6 +308,9 @@ assert.match(authenticatedSmokeWorkflow, /npm run smoke:db:reset[\s\S]*npx drizz
 assert.match(authenticatedSmokeWorkflow, /npm run dev -- --hostname 127\.0\.0\.1 --port 3028/, "Authenticated smoke workflow should run the local app in dev mode for non-secure local auth cookies");
 assert.match(authenticatedSmokeWorkflow, /if: always\(\)[\s\S]*Delete temporary Neon branch[\s\S]*npm run smoke:neon -- delete/, "Authenticated smoke workflow should delete temporary Neon branch even after failures");
 assert.match(authenticatedSmokeWorkflow, /SMOKE_RESULT_PATH: output\/authenticated-smoke-result\.json/, "Authenticated smoke workflow should save a bounded smoke artifact");
+assert.match(authenticatedSmokeWorkflow, /AUTH_SECRET="\$\(openssl rand -hex 32\)"/, "Authenticated smoke workflow should generate the Better Auth runtime secret into a variable");
+assert.match(authenticatedSmokeWorkflow, /echo "::add-mask::\$AUTH_SECRET"[\s\S]*printf 'BETTER_AUTH_SECRET=%s\\n' "\$AUTH_SECRET" >> "\$GITHUB_ENV"/, "Authenticated smoke workflow should mask the generated Better Auth secret before writing it to GitHub env");
+assert.doesNotMatch(authenticatedSmokeWorkflow, /BETTER_AUTH_SECRET=\$\(openssl rand -hex 32\)/, "Authenticated smoke workflow must not write an unmasked generated Better Auth secret directly to GitHub env");
 
 const smokeSafety = read("scripts/smoke/smoke-safety.ts");
 assert.match(smokeSafety, /SMOKE_DB !== "true"/, "Smoke scripts must fail closed unless SMOKE_DB=true");
@@ -361,6 +364,17 @@ assert.doesNotMatch(seedAuthSmoke, /dotenv\/config/, "Authenticated seed must no
 
 const authenticatedBrowserSmoke = read("scripts/smoke/authenticated-smoke.ts");
 assert.match(authenticatedBrowserSmoke, /configureSmokeDatabase/, "Authenticated browser smoke should run smoke DB safety checks first");
+assert.match(authenticatedBrowserSmoke, /resultPath = process\.env\.SMOKE_RESULT_PATH \|\| "output\/authenticated-smoke-result\.json"/, "Authenticated browser smoke should have a default smoke result artifact path");
+assert.match(authenticatedBrowserSmoke, /completedSteps/, "Authenticated browser smoke should track completed steps for failure diagnostics");
+assert.match(authenticatedBrowserSmoke, /failedStep/, "Authenticated browser smoke should track the failed step for failure diagnostics");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("knowledge search fixture cleaning"/, "Authenticated browser smoke should name specific Knowledge search steps");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("analytics payload safety"/, "Authenticated browser smoke should name analytics payload safety checks");
+assert.match(authenticatedBrowserSmoke, /safeBodyExcerpt/, "Authenticated browser smoke should include a bounded body excerpt for UI timeouts");
+assert.match(authenticatedBrowserSmoke, /redactSensitiveText/, "Authenticated browser smoke should redact sensitive diagnostic text");
+assert.match(authenticatedBrowserSmoke, /REDACTED_ARTIFACT_TERMS/, "Authenticated browser smoke should list fixture terms that must not leak into artifacts");
+assert.match(authenticatedBrowserSmoke, /writeSmokeResult\("passed"/, "Authenticated browser smoke should write a success artifact");
+assert.match(authenticatedBrowserSmoke, /writeSmokeResult\("failed"/, "Authenticated browser smoke should write a failure artifact before exiting");
+assert.match(authenticatedBrowserSmoke, /capturedEventNames/, "Authenticated browser smoke artifacts should include event names rather than full payload values");
 assert.match(authenticatedBrowserSmoke, /\/dashboard[\s\S]*\/login/, "Authenticated smoke should verify unauthenticated dashboard redirect");
 assert.match(authenticatedBrowserSmoke, /\/knowledge[\s\S]*\/login/, "Authenticated smoke should verify unauthenticated Knowledge redirect");
 assert.match(authenticatedBrowserSmoke, /GET \/api\/knowledge\/search should be 405/, "Authenticated smoke should verify Knowledge GET is blocked");
@@ -391,6 +405,19 @@ assert.match(authenticatedBrowserSmoke, /assertNoHorizontalOverflow/, "Authentic
 assert.match(authenticatedBrowserSmoke, /forbiddenKeys/, "Authenticated smoke should reject sensitive analytics metadata keys");
 assert.match(authenticatedBrowserSmoke, /forbiddenTerms/, "Authenticated smoke should reject sensitive analytics metadata values");
 assert.doesNotMatch(authenticatedBrowserSmoke, /dotenv\/config/, "Authenticated browser smoke must not load local .env implicitly");
+for (const forbiddenArtifactTerm of [
+  "SmokeTest#2026!",
+  "Customer found coating peel-off on brake bracket batch KB-001.",
+  "Brake bracket",
+  "KB Test Customer",
+  "KB-001",
+  "Fixture cleaning check was skipped before line change.",
+  "Add mandatory fixture cleaning sign-off before production restart.",
+  "Line-change controls must include fixture cleaning verification.",
+  "zzzz-no-result",
+]) {
+  assert.match(authenticatedBrowserSmoke, new RegExp(forbiddenArtifactTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Authenticated browser smoke should redact fixture artifact term: ${forbiddenArtifactTerm}`);
+}
 
 const authenticatedSmokeDocs = read("docs/AUTHENTICATED_SMOKE_TESTING.md");
 assert.match(authenticatedSmokeDocs, /workflow_dispatch/, "Authenticated smoke docs should document manual workflow trigger");
@@ -405,6 +432,10 @@ assert.match(authenticatedSmokeDocs, /deleted in an `if: always\(\)`/, "Authenti
 assert.match(authenticatedSmokeDocs, /Production data must not be created/, "Authenticated smoke docs should prohibit production data writes");
 assert.match(authenticatedSmokeDocs, /does not include the full query/, "Authenticated smoke docs should document analytics sensitivity checks");
 assert.match(authenticatedSmokeDocs, /Do not use the local `\.env`/, "Authenticated smoke docs should forbid .env fallback");
+assert.match(authenticatedSmokeDocs, /Runtime-generated secrets must be masked/, "Authenticated smoke docs should require masking runtime-generated secrets before GitHub env writes");
+assert.match(authenticatedSmokeDocs, /Failure Diagnostics/, "Authenticated smoke docs should document failure diagnostics");
+assert.match(authenticatedSmokeDocs, /failedStep/, "Authenticated smoke docs should document failed-step artifacts");
+assert.match(authenticatedSmokeDocs, /must not include passwords, tokens, cookies, full database URLs, report text/, "Authenticated smoke docs should document artifact redaction boundaries");
 
 assert.equal(MAX_SERVICE_REQUEST_FILES, 5, "Service requests should keep a clear 5-file limit");
 assert.equal(isValidServiceContactEmail("quality@example.com"), true, "Service request email validation should accept normal business emails");

@@ -2,60 +2,53 @@
 
 ## Task Name
 
-Authenticated Smoke Test Infrastructure v1.
+Authenticated Smoke Workflow Diagnostics Hotfix.
 
 ## Context
 
-PR #8 added Quality Knowledge Base v1. PR #9 improved authenticated app discoverability. Both PRs revealed that logged-in browser validation is too dependent on one-off local setup or manual production checks.
+PR #10 added Authenticated Smoke Test Infrastructure v1. The first default-branch workflow validation created and cleaned up its temporary Neon branch, but the browser smoke failed with an opaque Playwright timeout and did not upload a smoke result artifact.
 
-The product needs a safe, repeatable authenticated smoke test path for future PRs. The smoke path must verify logged-in features without writing to production data or requiring a human to create production test reports.
+That run also exposed a logging risk: the workflow generated `BETTER_AUTH_SECRET` at runtime and wrote it to `$GITHUB_ENV` before masking it. This task hardens diagnostics and masking only.
 
 ## Goal
 
-Create authenticated smoke test infrastructure that can be run by GitHub Actions or a local developer against an explicitly safe temporary database.
+Hotfix the authenticated smoke workflow and browser smoke so failures are safe, diagnosable, and artifact-backed before the workflow is relied on for future authenticated feature PRs.
 
 ## Scope
 
-- Add a manual GitHub Actions workflow for authenticated smoke testing.
-- Use `NEON_API_KEY` to create a temporary Neon branch.
-- Reset the temporary branch schema before seeding.
-- Initialize schema with Drizzle.
-- Seed smoke users, Team workspace, and reports covering eligible and excluded Knowledge Base states.
-- Start a local Next app.
-- Run Playwright authenticated browser smoke.
-- Verify unauthenticated security boundaries.
-- Verify logged-in Dashboard, Knowledge Base, report workflow panel, search, filters, copy actions, access boundaries, mobile layout, and safe analytics metadata.
-- Delete the temporary Neon branch whether the workflow succeeds or fails.
-- Document required secrets/vars, safety gates, fixtures, and local run rules.
-- Add governance checks to keep the workflow, scripts, docs, and safety boundaries from regressing.
+- Mask runtime-generated `BETTER_AUTH_SECRET` before writing it to `$GITHUB_ENV`.
+- Keep upload of `output/authenticated-smoke-result.json` on `if: always()`.
+- Make the authenticated browser smoke write a bounded, redacted failure artifact before exiting.
+- Add named smoke steps, completed-step tracking, failed-step tracking, and safer timeout messages with redacted body excerpts.
+- Document the masking and failure artifact guarantees.
+- Add governance checks so diagnostics, artifact redaction, and cleanup behavior do not regress.
+- Re-run the authenticated smoke workflow against the hotfix branch after the hotfix PR is created.
 
 ## Non-Goals
 
 - No production data writes.
 - No production test users or reports.
-- No automatic privileged `pull_request` workflow.
 - No product feature changes.
 - No public marketing changes.
 - No payment, subscription, checkout, export, AI, auth production behavior, or Knowledge Base search logic changes.
 - No permanent database schema migration.
+- No change to smoke fixture eligibility rules unless a real fixture bug is found and called out first.
 
 ## Acceptance Criteria
 
-- `.github/workflows/authenticated-smoke.yml` exists and is `workflow_dispatch` only.
-- Workflow requires `NEON_API_KEY` and explicit Neon project/parent/database vars.
-- Workflow creates an `auth-smoke-*` temporary Neon branch.
-- Workflow resets the cloned branch schema before `drizzle-kit push`.
-- Workflow seeds smoke users, Team membership, completed/closed reports, draft/in-progress/internal-review exclusions, outsider data, and Team member accessible data.
-- Workflow runs Playwright authenticated smoke against local Next app.
-- Workflow cleanup deletes the temporary Neon branch with `if: always()`.
-- Smoke scripts fail closed unless `SMOKE_DB=true` and an explicit safe smoke/test/preview/local database or branch is present.
-- Scripts do not load `.env` implicitly and do not print full database URLs, passwords, tokens, cookies, or secrets.
-- Smoke verifies safe analytics metadata for app navigation, dashboard feature-entry clicks, and Knowledge Base events.
-- `docs/AUTHENTICATED_SMOKE_TESTING.md` documents operation and safety.
+- `BETTER_AUTH_SECRET` is masked before being written to `$GITHUB_ENV`.
+- The browser smoke writes `output/authenticated-smoke-result.json` on failure and success.
+- Failure artifacts include `failedStep`, `completedSteps`, high-level check statuses, current URL, bounded redacted error text, and captured analytics event names/counts.
+- Failure artifacts and logs do not include full database URLs, passwords, tokens, cookies, raw search queries, report content, customer/product names, root cause, corrective action, lessons learned, or batch values.
+- `npm run smoke:auth` without `SMOKE_DB=true` fails closed and writes a safe failure artifact.
+- Workflow cleanup still deletes the temporary Neon branch with `if: always()`.
+- `docs/AUTHENTICATED_SMOKE_TESTING.md` documents masking and failure diagnostics.
+- Governance tests protect the masking, artifact, diagnostics, and cleanup guarantees.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
+- Hotfix branch workflow run is triggered and inspected after PR creation.
 
 ## Risks
 
-- Neon API cleanup could fail during a platform outage, leaving a temporary branch to delete manually.
-- The workflow is intentionally manual because it uses privileged secrets.
-- The browser smoke depends on current UI labels and may need updates when authenticated navigation or Knowledge Base UI changes intentionally.
+- The app smoke may still fail on an actual UI assertion after diagnostics are improved; that should be reported as an app-smoke failure rather than hidden by missing artifacts.
+- GitHub or Neon outages can still affect cleanup, so the run must be inspected for deletion.
+- Logs from earlier workflow attempts may remain visible in GitHub history; this hotfix prevents new unmasked runtime secrets from being emitted.
