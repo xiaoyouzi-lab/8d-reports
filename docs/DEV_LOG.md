@@ -2,6 +2,59 @@
 
 ## Latest Task
 
+Knowledge Reuse in Editor v1.
+
+## Changed Files
+
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/KNOWLEDGE_REUSE_IN_EDITOR_SPEC.md`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/team-governance.test.ts`
+- `src/app/(app)/reports/[id]/page.tsx`
+- `src/app/api/events/route.ts`
+- `src/components/knowledge/KnowledgeReusePanel.tsx`
+- `src/components/report/StepForm.tsx`
+
+## Implementation Summary
+
+- Added a report editor `Reuse Knowledge` action in the top tool area.
+- Added a Knowledge Reuse drawer that reuses the existing POST-only Knowledge Base API.
+- Added copy-only reuse for root cause, corrective action, and lessons learned.
+- Kept reuse strictly read-only: no report field writes, no report save, no AI generation, and no automatic apply behavior.
+- Added contextual hints for D4 root cause, D5 corrective action, D7 prevention, and D8 lessons learned. The D8 hint is the only lessons-learned step hint.
+- Open report links from the reuse panel open in a new tab to preserve the current editor context.
+- Added safe editor reuse analytics events and allowlist entries.
+- Extended authenticated smoke coverage for editor reuse search, eligibility boundaries, copy success/failure, new-tab open behavior, mobile overflow, and analytics payload safety.
+- Added governance checks and a dedicated editor reuse spec.
+- No public marketing, payment, checkout, subscription, export, auth, Resend, AI backend, Knowledge Base search permission/eligibility logic, production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Pending: authenticated smoke workflow on `codex/knowledge-reuse-in-editor-v1`.
+
+## Risks
+
+- The editor toolbar is crowded, so the desktop label is compact and mobile uses the button accessible name.
+- Search remains v1 keyword search through the existing Knowledge Base API.
+- Future AI Quality Check with Knowledge Context should wait until copy-only reuse behavior is validated.
+
+## Unfinished / Needs Human Review
+
+- Final checks and authenticated smoke workflow run are pending until implementation verification is complete.
+
+## Suggested Next Task
+
+After PR #12 merges, review Knowledge Reuse analytics to decide whether AI Quality Check should use historical Knowledge Context.
+
+## Previous Task
+
 Authenticated Smoke Workflow Diagnostics Hotfix.
 
 ## Changed Files

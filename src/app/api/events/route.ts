@@ -54,6 +54,12 @@ const ALLOWED_EVENTS = new Set([
   "knowledge_root_cause_copied",
   "knowledge_corrective_action_copied",
   "knowledge_lesson_copied",
+  "knowledge_reuse_panel_opened",
+  "knowledge_reuse_search_used",
+  "knowledge_reuse_result_opened",
+  "knowledge_reuse_root_cause_copied",
+  "knowledge_reuse_corrective_action_copied",
+  "knowledge_reuse_lesson_copied",
 ]);
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {

@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useTranslations } from "next-intl"
 import {
   ArrowLeft,
+  BookOpen,
   Save,
   ChevronLeft,
   ChevronRight,
@@ -20,6 +21,7 @@ import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
 import { AiReportTools } from "@/components/report/AiReportTools"
 import { ReportWorkflowPanel } from "@/components/report/ReportWorkflowPanel"
+import { KnowledgeReusePanel, type KnowledgeReuseLocation } from "@/components/knowledge/KnowledgeReusePanel"
 import { STEPS, DEFAULT_REPORT_DATA, getCompletedStepIds, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
@@ -84,6 +86,8 @@ export default function ReportEditorPage({
   const [loadError, setLoadError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [knowledgeReuseOpen, setKnowledgeReuseOpen] = useState(false)
+  const [knowledgeReuseLocation, setKnowledgeReuseLocation] = useState<KnowledgeReuseLocation>("editor_top")
   const [workflowStatus, setWorkflowStatus] = useState("draft")
   const [revision, setRevision] = useState(0)
   const [reportPermissions, setReportPermissions] = useState({
@@ -239,6 +243,12 @@ export default function ReportEditorPage({
     setActiveStepIndex(index)
   }
 
+  const openKnowledgeReuse = useCallback((location: KnowledgeReuseLocation) => {
+    setKnowledgeReuseLocation(location)
+    setKnowledgeReuseOpen(true)
+    trackEvent("knowledge_reuse_panel_opened", { source: "editor", location, plan }, reportId)
+  }, [plan, reportId])
+
   const handleLogoClick = () => {
     if (!entitlements.companyLogo && !reportPermissions.canUseLogo) {
       trackEvent("logo_upload_gate_clicked", { plan: "free" }, reportId)
@@ -357,6 +367,17 @@ export default function ReportEditorPage({
             >
               {te(STATUS_KEY[status] || "draft")}
             </Badge>
+
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              aria-label="Reuse Knowledge"
+              onClick={() => openKnowledgeReuse("editor_top")}
+            >
+              <BookOpen className="size-3.5" />
+              <span className="hidden lg:inline">Reuse Knowledge</span>
+            </Button>
 
             {reportPermissions.canEdit && (
               <AiReportTools
@@ -493,6 +514,7 @@ export default function ReportEditorPage({
                     reportId={reportId}
                     isPro={isPro}
                     canEdit={reportPermissions.canEdit}
+                    onOpenKnowledgeReuse={openKnowledgeReuse}
                   />
                 </CardContent>
               </Card>
@@ -558,6 +580,12 @@ export default function ReportEditorPage({
           </div>
         </div>
       </div>
+      <KnowledgeReusePanel
+        open={knowledgeReuseOpen}
+        onOpenChange={setKnowledgeReuseOpen}
+        location={knowledgeReuseLocation}
+        plan={plan}
+      />
     </div>
   )
 }
