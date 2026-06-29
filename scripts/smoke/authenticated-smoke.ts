@@ -220,7 +220,12 @@ async function verifyKnowledge(page: Page, events: CapturedEvent[]) {
   });
 
   await runAndWaitForEvent(events, "knowledge_search_used", async () => {
-    await search.fill("adhesion verification");
+    await search.fill("fixture cleaning");
+    await waitForBodyText(page, completedTitle);
+  });
+
+  await runAndWaitForEvent(events, "knowledge_search_used", async () => {
+    await search.fill("adhesion");
     await waitForBodyText(page, completedTitle);
   });
 
@@ -349,10 +354,13 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "coating peel-off",
     "brake bracket",
     "kb test customer",
-    "kb-smoke-batch",
+    "kb-001",
     "fixture cleaning",
     "outgoing inspection",
-    "adhesion verification",
+    "coating edge adhesion",
+    "mandatory fixture cleaning sign-off",
+    "layered audit checklist",
+    "line change work instruction",
     "line-change controls",
     "zzzz-no-result",
   ];
@@ -427,7 +435,7 @@ const result = {
     "dashboard create-complete-reuse guidance is visible",
     "Knowledge Base includes completed, closed, and accessible Team member approved assets",
     "draft, in_progress, internal_review, and outsider reports are excluded",
-    "Knowledge search, filters, open report, copy success, copy failure, mobile, and workflow panel passed",
+    "Knowledge search for coating, fixture cleaning, adhesion, product/customer terms, filters, open report, copy success, copy failure, mobile, and workflow panel passed",
     "analytics metadata excludes sensitive query and report content",
   ],
 };

@@ -28,6 +28,7 @@ Authenticated Smoke Test Infrastructure v1.
 - Added a Playwright authenticated smoke that verifies unauthenticated redirects/API boundaries, logged-in navigation, Dashboard discovery, Knowledge Base eligibility/search/filter/copy/open behavior, report workflow Knowledge Base entry, mobile layout, and safe analytics metadata.
 - Added authenticated smoke documentation covering secrets, repo vars, safety gates, seeded data, cleanup, local use, and non-goals.
 - Updated governance checks to protect workflow trigger scope, Neon cleanup, smoke safety guards, seed/browser coverage, docs, and secret hygiene.
+- Tightened the completed-report seed fixture and browser search checks to match the required coating, fixture-cleaning, adhesion, and KB-001 Knowledge Base smoke scenario.
 - Updated `docs/CURRENT_TASK.md` from the completed PR #9 task to the current authenticated smoke infrastructure task.
 - No product feature, public marketing, payment, checkout, subscription, export, AI, Knowledge Base search logic, production auth behavior, production configuration, or permanent database schema changes were made.
 

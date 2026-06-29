@@ -346,6 +346,11 @@ assert.match(seedAuthSmoke, /Smoke Outsider/, "Authenticated seed should create 
 assert.match(seedAuthSmoke, /role: "owner"/, "Authenticated seed should add Team owner membership");
 assert.match(seedAuthSmoke, /role: "editor"/, "Authenticated seed should add Team editor membership");
 assert.match(seedAuthSmoke, /status: "completed"[\s\S]*workflowStatus: "draft"/, "Authenticated seed should include legacy completed draft-workflow report");
+assert.match(seedAuthSmoke, /Customer found coating peel-off on brake bracket batch KB-001\./, "Authenticated seed should use the required completed-report problem fixture");
+assert.match(seedAuthSmoke, /Fixture cleaning check was skipped before line change\./, "Authenticated seed should use the required occurrence root-cause fixture");
+assert.match(seedAuthSmoke, /Outgoing inspection did not check coating edge adhesion\./, "Authenticated seed should use the required escape root-cause fixture");
+assert.match(seedAuthSmoke, /Add mandatory fixture cleaning sign-off before production restart\./, "Authenticated seed should use the required corrective-action fixture");
+assert.match(seedAuthSmoke, /Line-change controls must include fixture cleaning verification\./, "Authenticated seed should use the required lessons-learned fixture");
 assert.match(seedAuthSmoke, /workflowStatus: "closed"/, "Authenticated seed should include closed report");
 assert.match(seedAuthSmoke, /status: "draft"/, "Authenticated seed should include draft exclusion fixture");
 assert.match(seedAuthSmoke, /status: "in_progress"/, "Authenticated seed should include in-progress exclusion fixture");
@@ -369,6 +374,10 @@ assert.match(authenticatedBrowserSmoke, /KB Smoke Test - Draft Containment/, "Au
 assert.match(authenticatedBrowserSmoke, /KB Smoke Test - In Progress Torque/, "Authenticated smoke should verify in-progress exclusion");
 assert.match(authenticatedBrowserSmoke, /KB Smoke Test - Internal Review Leak/, "Authenticated smoke should verify internal-review exclusion");
 assert.match(authenticatedBrowserSmoke, /KB Smoke Test - Outsider Visible Risk/, "Authenticated smoke should verify outsider report exclusion");
+assert.match(authenticatedBrowserSmoke, /search\.fill\("coating"\)/, "Authenticated smoke should search for coating");
+assert.match(authenticatedBrowserSmoke, /search\.fill\("fixture cleaning"\)/, "Authenticated smoke should search for fixture cleaning");
+assert.match(authenticatedBrowserSmoke, /search\.fill\("adhesion"\)/, "Authenticated smoke should search for adhesion");
+assert.match(authenticatedBrowserSmoke, /search\.fill\("zzzz-no-result"\)/, "Authenticated smoke should verify no-result query");
 assert.match(authenticatedBrowserSmoke, /knowledge_search_used/, "Authenticated smoke should verify Knowledge search analytics");
 assert.match(authenticatedBrowserSmoke, /knowledge_filter_used/, "Authenticated smoke should verify Knowledge filter analytics");
 assert.match(authenticatedBrowserSmoke, /knowledge_result_opened/, "Authenticated smoke should verify Knowledge open analytics");
