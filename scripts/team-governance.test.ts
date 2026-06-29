@@ -403,6 +403,7 @@ assert.match(authenticatedBrowserSmoke, /knowledge_lesson_copied/, "Authenticate
 assert.match(authenticatedBrowserSmoke, /dashboard_feature_entry_clicked/, "Authenticated smoke should verify Dashboard entry analytics");
 assert.match(authenticatedBrowserSmoke, /app_navigation_clicked/, "Authenticated smoke should verify app navigation analytics");
 assert.match(authenticatedBrowserSmoke, /Could not copy\. Select and copy manually\./, "Authenticated smoke should verify copy failure state");
+assert.doesNotMatch(authenticatedBrowserSmoke, /writeText: \(\) => Promise\.reject/, "Clipboard failure stub should avoid transpiled browser-context helper references");
 assert.match(authenticatedBrowserSmoke, /assertNoHorizontalOverflow/, "Authenticated smoke should verify mobile and desktop overflow safety");
 assert.match(authenticatedBrowserSmoke, /forbiddenKeys/, "Authenticated smoke should reject sensitive analytics metadata keys");
 assert.match(authenticatedBrowserSmoke, /forbiddenTerms/, "Authenticated smoke should reject sensitive analytics metadata values");

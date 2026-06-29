@@ -22,6 +22,7 @@ Authenticated Smoke Workflow Diagnostics Hotfix.
 - Added redaction for passwords, database URLs, cookie names, long hex secrets, search terms, customer/product/batch values, root cause, corrective action, validation, prevention, and lessons-learned fixture text.
 - Improved text-wait timeouts with current URL, named step, and a short redacted body excerpt.
 - Made only the Dashboard `What to do next` smoke assertion case-insensitive so uppercase rendering does not fail the workflow while Knowledge Base fixture/content checks remain strict.
+- Changed the clipboard-failure smoke stub to string-evaluated browser code so TS helper wrapping does not introduce `__name` into the Playwright page context.
 - Documented masking and failure diagnostics in the authenticated smoke runbook.
 - Updated governance checks to protect masking, failure artifacts, named diagnostics, redaction boundaries, and cleanup behavior.
 - No product feature, public marketing, payment, checkout, subscription, export, AI, Knowledge Base search logic, auth production behavior, production configuration, fixture eligibility rule, or database schema changes were made.

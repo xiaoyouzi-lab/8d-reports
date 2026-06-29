@@ -470,12 +470,16 @@ async function verifyKnowledge(page: Page, events: CapturedEvent[]) {
   }).then(() => undefined));
 
   await smokeStep("knowledge copy failure", async () => {
-    await page.evaluate(() => {
+    await page.evaluate(`
       Object.defineProperty(navigator, "clipboard", {
-        value: { writeText: () => Promise.reject(new Error("blocked by authenticated smoke")) },
+        value: {
+          writeText: function () {
+            return Promise.reject(new Error("blocked by authenticated smoke"));
+          }
+        },
         configurable: true,
       });
-    });
+    `);
     await page.getByRole("button", { name: "Root cause" }).first().click();
     await waitForBodyText(page, "Could not copy. Select and copy manually.");
   });
