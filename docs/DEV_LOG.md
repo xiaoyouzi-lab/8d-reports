@@ -21,19 +21,20 @@ Authenticated Smoke Workflow Diagnostics Hotfix.
 - Added failure artifact writing in the top-level smoke catch path so opaque Playwright failures still upload diagnostics.
 - Added redaction for passwords, database URLs, cookie names, long hex secrets, search terms, customer/product/batch values, root cause, corrective action, validation, prevention, and lessons-learned fixture text.
 - Improved text-wait timeouts with current URL, named step, and a short redacted body excerpt.
+- Made only the Dashboard `What to do next` smoke assertion case-insensitive so uppercase rendering does not fail the workflow while Knowledge Base fixture/content checks remain strict.
 - Documented masking and failure diagnostics in the authenticated smoke runbook.
 - Updated governance checks to protect masking, failure artifacts, named diagnostics, redaction boundaries, and cleanup behavior.
 - No product feature, public marketing, payment, checkout, subscription, export, AI, Knowledge Base search logic, auth production behavior, production configuration, fixture eligibility rule, or database schema changes were made.
 
 ## Tests / Verification
 
-- `git diff --check` passed.
-- `npx tsc --noEmit` passed.
-- `npm run lint` passed with 11 existing warnings and 0 errors.
-- `npm run build` passed.
-- `npm run test:governance` passed.
-- Local fail-closed `npm run smoke:auth` without `SMOKE_DB=true` refused to run and wrote a safe failure artifact with `failedStep: smoke database safety`.
-- Pending final run for this hotfix: GitHub Actions `authenticated-smoke.yml` on `codex/harden-authenticated-smoke-diagnostics`.
+- Re-ran after the Dashboard assertion fix: `git diff --check` passed.
+- Re-ran after the Dashboard assertion fix: `npx tsc --noEmit` passed.
+- Re-ran after the Dashboard assertion fix: `npm run lint` passed with 11 existing warnings and 0 errors.
+- Re-ran after the Dashboard assertion fix: `npm run build` passed.
+- Re-ran after the Dashboard assertion fix: `npm run test:governance` passed.
+- Re-ran after the Dashboard assertion fix: local fail-closed `npm run smoke:auth` without `SMOKE_DB=true` refused to run and wrote a safe failure artifact with `failedStep: smoke database safety`.
+- Pending final rerun after the Dashboard assertion fix: GitHub Actions `authenticated-smoke.yml` on `codex/harden-authenticated-smoke-diagnostics`.
 
 ## Risks
 

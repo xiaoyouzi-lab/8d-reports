@@ -182,20 +182,30 @@ function writeSmokeResult(status: "passed" | "failed", details: {
   writeJsonFile(resultPath, result);
 }
 
-async function waitForBodyText(page: Page, text: string, options: { step?: string; timeout?: number } = {}) {
+async function waitForBodyText(
+  page: Page,
+  text: string,
+  options: { step?: string; timeout?: number; caseInsensitive?: boolean } = {},
+) {
   activePage = page;
   const timeout = options.timeout ?? 12000;
   const step = options.step || currentStep;
+  const caseInsensitive = options.caseInsensitive ?? false;
   try {
     await page.waitForFunction(
-      (expected) => document.body.innerText.includes(expected),
-      text,
+      ({ expected, ignoreCase }) => {
+        const bodyText = document.body.innerText;
+        return ignoreCase
+          ? bodyText.toLowerCase().includes(expected.toLowerCase())
+          : bodyText.includes(expected);
+      },
+      { expected: text, ignoreCase: caseInsensitive },
       { timeout },
     );
   } catch (error) {
     const excerpt = await safeBodyExcerpt(page);
     throw new Error(
-      `Timed out waiting for body text "${redactSensitiveText(text)}" during step "${step}", url="${page.url()}", timeout=${timeout}ms, bodyExcerpt="${excerpt}"`,
+      `Timed out waiting for ${caseInsensitive ? "case-insensitive " : ""}body text "${redactSensitiveText(text)}" during step "${step}", url="${page.url()}", timeout=${timeout}ms, bodyExcerpt="${excerpt}"`,
       { cause: error },
     );
   }
@@ -337,7 +347,7 @@ async function verifyDashboardAndNavigation(page: Page, events: CapturedEvent[])
     await waitForBodyText(page, "Dashboard");
     await waitForBodyText(page, "Knowledge Base");
     await waitForBodyText(page, "New Report");
-    await waitForBodyText(page, "What to do next");
+    await waitForBodyText(page, "What to do next", { caseInsensitive: true });
     await waitForBodyText(page, "Turn each completed 8D into reusable quality knowledge.");
     await waitForBodyText(page, "Open Knowledge Base");
     await assertNoHorizontalOverflow(page, "Desktop dashboard");

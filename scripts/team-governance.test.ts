@@ -369,6 +369,8 @@ assert.match(authenticatedBrowserSmoke, /completedSteps/, "Authenticated browser
 assert.match(authenticatedBrowserSmoke, /failedStep/, "Authenticated browser smoke should track the failed step for failure diagnostics");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("knowledge search fixture cleaning"/, "Authenticated browser smoke should name specific Knowledge search steps");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("analytics payload safety"/, "Authenticated browser smoke should name analytics payload safety checks");
+assert.match(authenticatedBrowserSmoke, /caseInsensitive\?: boolean/, "Authenticated browser smoke should support targeted case-insensitive text waits");
+assert.match(authenticatedBrowserSmoke, /waitForBodyText\(page, "What to do next", \{ caseInsensitive: true \}\)/, "Dashboard heading smoke assertion should tolerate uppercase rendering without changing product copy");
 assert.match(authenticatedBrowserSmoke, /safeBodyExcerpt/, "Authenticated browser smoke should include a bounded body excerpt for UI timeouts");
 assert.match(authenticatedBrowserSmoke, /redactSensitiveText/, "Authenticated browser smoke should redact sensitive diagnostic text");
 assert.match(authenticatedBrowserSmoke, /REDACTED_ARTIFACT_TERMS/, "Authenticated browser smoke should list fixture terms that must not leak into artifacts");
