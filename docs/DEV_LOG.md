@@ -2,9 +2,60 @@
 
 ## Latest Task
 
-Authenticated Smoke Test Infrastructure v1.
+Authenticated Smoke Workflow Diagnostics Hotfix.
 
 ## Changed Files
+
+- `.github/workflows/authenticated-smoke.yml`
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Masked the runtime-generated `BETTER_AUTH_SECRET` before writing it to `$GITHUB_ENV`.
+- Added named smoke-step tracking, completed-step tracking, failed-step tracking, and check status output to the authenticated browser smoke.
+- Added a bounded smoke result artifact path for local and workflow runs.
+- Added failure artifact writing in the top-level smoke catch path so opaque Playwright failures still upload diagnostics.
+- Added redaction for passwords, database URLs, cookie names, long hex secrets, search terms, customer/product/batch values, root cause, corrective action, validation, prevention, and lessons-learned fixture text.
+- Improved text-wait timeouts with current URL, named step, and a short redacted body excerpt.
+- Made only the Dashboard `What to do next` smoke assertion case-insensitive so uppercase rendering does not fail the workflow while Knowledge Base fixture/content checks remain strict.
+- Changed the clipboard-failure smoke stub to string-evaluated browser code so TS helper wrapping does not introduce `__name` into the Playwright page context.
+- Documented masking and failure diagnostics in the authenticated smoke runbook.
+- Updated governance checks to protect masking, failure artifacts, named diagnostics, redaction boundaries, and cleanup behavior.
+- No product feature, public marketing, payment, checkout, subscription, export, AI, Knowledge Base search logic, auth production behavior, production configuration, fixture eligibility rule, or database schema changes were made.
+
+## Tests / Verification
+
+- Re-ran after the Dashboard assertion fix: `git diff --check` passed.
+- Re-ran after the Dashboard assertion fix: `npx tsc --noEmit` passed.
+- Re-ran after the Dashboard assertion fix: `npm run lint` passed with 11 existing warnings and 0 errors.
+- Re-ran after the Dashboard assertion fix: `npm run build` passed.
+- Re-ran after the Dashboard assertion fix: `npm run test:governance` passed.
+- Re-ran after the Dashboard assertion fix: local fail-closed `npm run smoke:auth` without `SMOKE_DB=true` refused to run and wrote a safe failure artifact with `failedStep: smoke database safety`.
+- Pending final rerun after the Dashboard assertion fix: GitHub Actions `authenticated-smoke.yml` on `codex/harden-authenticated-smoke-diagnostics`.
+
+## Risks
+
+- The workflow may still expose a real app-smoke failure after diagnostics are fixed; that should be reported as an app smoke issue rather than hidden by missing artifacts.
+- GitHub Actions or Neon outages can still require manual cleanup, so the hotfix branch workflow run must be inspected for deletion.
+- Prior failed workflow logs may retain previously exposed runtime secret output in GitHub history; this hotfix prevents new unmasked runtime secret emission.
+
+## Unfinished / Needs Human Review
+
+- Hotfix PR and branch workflow verification are pending.
+
+## Suggested Next Task
+
+After this hotfix merges, use the authenticated smoke workflow as the standard manual readiness check for authenticated app PRs that touch Dashboard, Knowledge Base, report access, or analytics.
+
+## Previous Task
+
+Authenticated Smoke Test Infrastructure v1.
+
+## Previous Changed Files
 
 - `.github/workflows/authenticated-smoke.yml`
 - `docs/AUTHENTICATED_SMOKE_TESTING.md`
@@ -18,45 +69,25 @@ Authenticated Smoke Test Infrastructure v1.
 - `scripts/smoke/smoke-safety.ts`
 - `scripts/team-governance.test.ts`
 
-## Implementation Summary
+## Previous Implementation Summary
 
 - Added a manual `workflow_dispatch` GitHub Actions workflow for authenticated smoke testing.
 - Added Neon API automation to create and delete a temporary `auth-smoke-*` branch.
 - Added a smoke database safety helper that requires `SMOKE_DB=true`, explicit smoke/test/preview/local database or branch evidence, and rejects parent-branch use.
 - Added a schema reset step for cloned Neon branches before Drizzle initializes the temporary database.
-- Added Better Auth smoke seeding for owner/member/outsider users, active Team subscription, Team workspace membership, and report fixtures covering completed, closed, draft, in-progress, internal-review, outsider, and accessible Team member cases.
-- Added a Playwright authenticated smoke that verifies unauthenticated redirects/API boundaries, logged-in navigation, Dashboard discovery, Knowledge Base eligibility/search/filter/copy/open behavior, report workflow Knowledge Base entry, mobile layout, and safe analytics metadata.
-- Added authenticated smoke documentation covering secrets, repo vars, safety gates, seeded data, cleanup, local use, and non-goals.
-- Updated governance checks to protect workflow trigger scope, Neon cleanup, smoke safety guards, seed/browser coverage, docs, and secret hygiene.
-- Tightened the completed-report seed fixture and browser search checks to match the required coating, fixture-cleaning, adhesion, and KB-001 Knowledge Base smoke scenario.
-- Wrapped smoke scripts in explicit `main().catch(...)` entry points so `tsx` can run them in the current package format.
-- Updated `docs/CURRENT_TASK.md` from the completed PR #9 task to the current authenticated smoke infrastructure task.
+- Added Better Auth smoke seeding for owner/member/outsider users, active Team subscription, Team workspace membership, and report fixtures covering eligible and excluded Knowledge Base cases.
+- Added Playwright authenticated smoke coverage for unauthenticated redirects/API boundaries, logged-in navigation, Dashboard discovery, Knowledge Base behavior, workflow panel entry, mobile layout, and safe analytics metadata.
+- Added authenticated smoke documentation and governance checks for workflow trigger scope, Neon cleanup, smoke safety guards, fixtures, browser coverage, docs, and secret hygiene.
 - No product feature, public marketing, payment, checkout, subscription, export, AI, Knowledge Base search logic, production auth behavior, production configuration, or permanent database schema changes were made.
 
-## Tests / Verification
+## Previous Tests / Verification
 
 - `git diff --check` passed.
 - `npx tsc --noEmit` passed.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
 - `npm run test:governance` passed.
-- Local `npm run smoke:auth`, `npm run smoke:seed-auth`, and `npm run smoke:db:reset` were run without smoke DB inputs and failed closed with `SMOKE_DB=true is required`.
-- Local `npm run smoke:neon -- create` was run without Neon inputs and failed closed with missing `NEON_API_KEY`.
-- `gh workflow run authenticated-smoke.yml --ref codex/authenticated-smoke-infrastructure-v1` could not run before merge because GitHub only dispatches workflows that already exist on the default branch.
-
-## Risks
-
-- Neon cleanup can still require manual cleanup if GitHub Actions or Neon is unavailable after a branch is created.
-- The workflow is intentionally manual because it needs privileged `NEON_API_KEY` access.
-- Browser smoke selectors depend on current authenticated app labels and should be updated when those labels intentionally change.
-
-## Unfinished / Needs Human Review
-
-- None expected after checks pass. The workflow still needs repository variables configured if they are not already present: `NEON_PROJECT_ID`, `NEON_PARENT_BRANCH_ID`, and `NEON_DATABASE_NAME`.
-
-## Suggested Next Task
-
-After this PR, run the manual authenticated smoke workflow before merging authenticated app feature PRs that touch Dashboard, Knowledge Base, report access, or analytics.
+- Local fail-closed checks passed for smoke scripts without safe smoke inputs.
 
 ## Previous Task
 
