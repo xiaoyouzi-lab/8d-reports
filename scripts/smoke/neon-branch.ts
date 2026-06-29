@@ -180,12 +180,19 @@ async function deleteBranch() {
   console.log("Temporary Neon branch delete requested", { branchId });
 }
 
-const command = process.argv[2];
+async function main() {
+  const command = process.argv[2];
 
-if (command === "create") {
-  await createBranch();
-} else if (command === "delete") {
-  await deleteBranch();
-} else {
-  throw new Error("Usage: npm run smoke:neon -- create|delete");
+  if (command === "create") {
+    await createBranch();
+  } else if (command === "delete") {
+    await deleteBranch();
+  } else {
+    throw new Error("Usage: npm run smoke:neon -- create|delete");
+  }
 }
+
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : "Neon smoke branch operation failed");
+  process.exit(1);
+});

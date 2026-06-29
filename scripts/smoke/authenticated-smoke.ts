@@ -10,7 +10,6 @@ interface CapturedEvent {
   reportId: string | null;
 }
 
-const summary = configureSmokeDatabase();
 const baseUrl = (process.env.SMOKE_BASE_URL || "http://127.0.0.1:3028").replace(/\/$/, "");
 const ownerEmail = process.env.SMOKE_OWNER_EMAIL || "smoke-owner@example.test";
 const ownerPassword = process.env.SMOKE_OWNER_PASSWORD || "SmokeTest#2026!";
@@ -417,35 +416,44 @@ async function verifyAuthenticatedFlow() {
   }
 }
 
-await verifyUnauthenticatedSecurity();
-const authenticated = await verifyAuthenticatedFlow();
+async function main() {
+  const summary = configureSmokeDatabase();
 
-const result = {
-  status: "passed",
-  checkedAt: new Date().toISOString(),
-  baseUrl,
-  database: summary,
-  authenticated,
-  assertions: [
-    "unauthenticated dashboard redirects to login",
-    "unauthenticated knowledge redirects to login",
-    "GET knowledge search is 405",
-    "unauthenticated POST knowledge search is 401",
-    "authenticated nav exposes Dashboard, Knowledge Base, New Report",
-    "dashboard create-complete-reuse guidance is visible",
-    "Knowledge Base includes completed, closed, and accessible Team member approved assets",
-    "draft, in_progress, internal_review, and outsider reports are excluded",
-    "Knowledge search for coating, fixture cleaning, adhesion, product/customer terms, filters, open report, copy success, copy failure, mobile, and workflow panel passed",
-    "analytics metadata excludes sensitive query and report content",
-  ],
-};
+  await verifyUnauthenticatedSecurity();
+  const authenticated = await verifyAuthenticatedFlow();
 
-if (process.env.SMOKE_RESULT_PATH) {
-  writeJsonFile(process.env.SMOKE_RESULT_PATH, result);
+  const result = {
+    status: "passed",
+    checkedAt: new Date().toISOString(),
+    baseUrl,
+    database: summary,
+    authenticated,
+    assertions: [
+      "unauthenticated dashboard redirects to login",
+      "unauthenticated knowledge redirects to login",
+      "GET knowledge search is 405",
+      "unauthenticated POST knowledge search is 401",
+      "authenticated nav exposes Dashboard, Knowledge Base, New Report",
+      "dashboard create-complete-reuse guidance is visible",
+      "Knowledge Base includes completed, closed, and accessible Team member approved assets",
+      "draft, in_progress, internal_review, and outsider reports are excluded",
+      "Knowledge search for coating, fixture cleaning, adhesion, product/customer terms, filters, open report, copy success, copy failure, mobile, and workflow panel passed",
+      "analytics metadata excludes sensitive query and report content",
+    ],
+  };
+
+  if (process.env.SMOKE_RESULT_PATH) {
+    writeJsonFile(process.env.SMOKE_RESULT_PATH, result);
+  }
+
+  console.log("Authenticated smoke passed", {
+    baseUrl,
+    database: summary,
+    eventCount: authenticated.eventCount,
+  });
 }
 
-console.log("Authenticated smoke passed", {
-  baseUrl,
-  database: summary,
-  eventCount: authenticated.eventCount,
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : "Authenticated smoke failed");
+  process.exit(1);
 });

@@ -9,31 +9,7 @@ const smokeEmails = [OWNER_EMAIL, MEMBER_EMAIL, OUTSIDER_EMAIL];
 const now = new Date();
 const future = new Date(now.getTime() + 1000 * 60 * 60 * 24 * 30);
 
-configureSmokeDatabase();
-
-const { auth } = await import("../../src/lib/auth");
-const { db } = await import("../../src/lib/db");
-const schema = await import("../../src/lib/db/schema");
-
-const {
-  users,
-  plans,
-  subscriptions,
-  teamWorkspaces,
-  teamMembers,
-  reports,
-} = schema;
-
 type SignUpEmail = (input: { body: { email: string; password: string; name: string } }) => Promise<unknown>;
-
-async function createSmokeUser(email: string, name: string) {
-  const signUpEmail = auth.api.signUpEmail as SignUpEmail;
-  await signUpEmail({ body: { email, password: SMOKE_PASSWORD, name } });
-  await db.update(users).set({ emailVerified: true, updatedAt: now }).where(eq(users.email, email));
-  const [user] = await db.select().from(users).where(eq(users.email, email));
-  if (!user) throw new Error(`Smoke user was not created: ${email}`);
-  return user;
-}
 
 function smokeReportData(overrides: Record<string, unknown> = {}) {
   return {
@@ -71,9 +47,34 @@ function stepStatus(status = "completed") {
   };
 }
 
-await db.delete(users).where(inArray(users.email, smokeEmails));
+async function main() {
+  configureSmokeDatabase();
 
-await db.insert(plans).values([
+  const { auth } = await import("../../src/lib/auth");
+  const { db } = await import("../../src/lib/db");
+  const schema = await import("../../src/lib/db/schema");
+
+  const {
+    users,
+    plans,
+    subscriptions,
+    teamWorkspaces,
+    teamMembers,
+    reports,
+  } = schema;
+
+  async function createSmokeUser(email: string, name: string) {
+    const signUpEmail = auth.api.signUpEmail as SignUpEmail;
+    await signUpEmail({ body: { email, password: SMOKE_PASSWORD, name } });
+    await db.update(users).set({ emailVerified: true, updatedAt: now }).where(eq(users.email, email));
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    if (!user) throw new Error(`Smoke user was not created: ${email}`);
+    return user;
+  }
+
+  await db.delete(users).where(inArray(users.email, smokeEmails));
+
+  await db.insert(plans).values([
   {
     creemProductId: "smoke_free_plan",
     name: "Free",
@@ -96,23 +97,23 @@ await db.insert(plans).values([
     features: ["team", "workflow", "knowledge"],
     isActive: true,
   },
-]).onConflictDoUpdate({
-  target: plans.creemProductId,
-  set: {
-    isActive: true,
-    reportsPerMonth: -1,
-    maxTeamMembers: 5,
-  },
-});
+  ]).onConflictDoUpdate({
+    target: plans.creemProductId,
+    set: {
+      isActive: true,
+      reportsPerMonth: -1,
+      maxTeamMembers: 5,
+    },
+  });
 
-const owner = await createSmokeUser(OWNER_EMAIL, "Smoke Owner");
-const member = await createSmokeUser(MEMBER_EMAIL, "Smoke Member");
-const outsider = await createSmokeUser(OUTSIDER_EMAIL, "Smoke Outsider");
+  const owner = await createSmokeUser(OWNER_EMAIL, "Smoke Owner");
+  const member = await createSmokeUser(MEMBER_EMAIL, "Smoke Member");
+  const outsider = await createSmokeUser(OUTSIDER_EMAIL, "Smoke Outsider");
 
-const [teamPlan] = await db.select().from(plans).where(eq(plans.creemProductId, "smoke_team_plan"));
-if (!teamPlan) throw new Error("Smoke Team plan was not available after seeding.");
+  const [teamPlan] = await db.select().from(plans).where(eq(plans.creemProductId, "smoke_team_plan"));
+  if (!teamPlan) throw new Error("Smoke Team plan was not available after seeding.");
 
-await db.insert(subscriptions).values({
+  await db.insert(subscriptions).values({
   userId: owner.id,
   planId: teamPlan.id,
   creemSubscriptionId: "smoke-team-subscription",
@@ -122,20 +123,20 @@ await db.insert(subscriptions).values({
   currentPeriodEnd: future,
   cancelAtPeriodEnd: false,
   reportsUsedThisPeriod: 0,
-});
+  });
 
-const [team] = await db.insert(teamWorkspaces).values({
+  const [team] = await db.insert(teamWorkspaces).values({
   ownerId: owner.id,
   name: "Smoke Quality Team",
   maxSeats: 5,
-}).returning();
+  }).returning();
 
-await db.insert(teamMembers).values([
-  { teamId: team.id, userId: owner.id, role: "owner" },
-  { teamId: team.id, userId: member.id, role: "editor" },
-]);
+  await db.insert(teamMembers).values([
+    { teamId: team.id, userId: owner.id, role: "owner" },
+    { teamId: team.id, userId: member.id, role: "editor" },
+  ]);
 
-const insertedReports = await db.insert(reports).values([
+  const insertedReports = await db.insert(reports).values([
   {
     userId: owner.id,
     title: "KB Smoke Test - Coating Peel-off",
@@ -248,30 +249,36 @@ const insertedReports = await db.insert(reports).values([
     stepStatus: stepStatus(),
     updatedAt: now,
   },
-]).returning({
-  id: reports.id,
-  title: reports.title,
-});
+  ]).returning({
+    id: reports.id,
+    title: reports.title,
+  });
 
-const reportByTitle = new Map(insertedReports.map((report) => [report.title, report.id]));
-const completedReportId = reportByTitle.get("KB Smoke Test - Coating Peel-off") || "";
-const closedReportId = reportByTitle.get("KB Smoke Test - Closed Bearing Noise") || "";
-const memberReportId = reportByTitle.get("KB Smoke Test - Member Approved Internal 8D") || "";
+  const reportByTitle = new Map(insertedReports.map((report) => [report.title, report.id]));
+  const completedReportId = reportByTitle.get("KB Smoke Test - Coating Peel-off") || "";
+  const closedReportId = reportByTitle.get("KB Smoke Test - Closed Bearing Noise") || "";
+  const memberReportId = reportByTitle.get("KB Smoke Test - Member Approved Internal 8D") || "";
 
-maskGithubSecret(SMOKE_PASSWORD);
-writeGithubEnv({
-  SMOKE_OWNER_EMAIL: OWNER_EMAIL,
-  SMOKE_OWNER_PASSWORD: SMOKE_PASSWORD,
-  SMOKE_COMPLETED_REPORT_ID: completedReportId,
-  SMOKE_CLOSED_REPORT_ID: closedReportId,
-  SMOKE_MEMBER_REPORT_ID: memberReportId,
-});
+  maskGithubSecret(SMOKE_PASSWORD);
+  writeGithubEnv({
+    SMOKE_OWNER_EMAIL: OWNER_EMAIL,
+    SMOKE_OWNER_PASSWORD: SMOKE_PASSWORD,
+    SMOKE_COMPLETED_REPORT_ID: completedReportId,
+    SMOKE_CLOSED_REPORT_ID: closedReportId,
+    SMOKE_MEMBER_REPORT_ID: memberReportId,
+  });
 
-console.log("Authenticated smoke fixtures seeded", {
-  users: smokeEmails.length,
-  reports: insertedReports.length,
-  ownerEmail: OWNER_EMAIL,
-  completedReportId,
-  closedReportId,
-  memberReportId,
+  console.log("Authenticated smoke fixtures seeded", {
+    users: smokeEmails.length,
+    reports: insertedReports.length,
+    ownerEmail: OWNER_EMAIL,
+    completedReportId,
+    closedReportId,
+    memberReportId,
+  });
+}
+
+main().catch((error: unknown) => {
+  console.error(error instanceof Error ? error.message : "Authenticated smoke seed failed");
+  process.exit(1);
 });

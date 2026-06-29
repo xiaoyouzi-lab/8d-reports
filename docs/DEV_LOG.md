@@ -29,6 +29,7 @@ Authenticated Smoke Test Infrastructure v1.
 - Added authenticated smoke documentation covering secrets, repo vars, safety gates, seeded data, cleanup, local use, and non-goals.
 - Updated governance checks to protect workflow trigger scope, Neon cleanup, smoke safety guards, seed/browser coverage, docs, and secret hygiene.
 - Tightened the completed-report seed fixture and browser search checks to match the required coating, fixture-cleaning, adhesion, and KB-001 Knowledge Base smoke scenario.
+- Wrapped smoke scripts in explicit `main().catch(...)` entry points so `tsx` can run them in the current package format.
 - Updated `docs/CURRENT_TASK.md` from the completed PR #9 task to the current authenticated smoke infrastructure task.
 - No product feature, public marketing, payment, checkout, subscription, export, AI, Knowledge Base search logic, production auth behavior, production configuration, or permanent database schema changes were made.
 
@@ -39,7 +40,9 @@ Authenticated Smoke Test Infrastructure v1.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
 - `npm run test:governance` passed.
-- Local `npm run smoke:auth` was not run because this shell has no `NEON_API_KEY`, `NEON_PROJECT_ID`, `NEON_PARENT_BRANCH_ID`, `NEON_DATABASE_NAME`, `SMOKE_DB`, or explicit safe `SMOKE_DATABASE_URL`; the script is intentionally fail-closed without those values.
+- Local `npm run smoke:auth`, `npm run smoke:seed-auth`, and `npm run smoke:db:reset` were run without smoke DB inputs and failed closed with `SMOKE_DB=true is required`.
+- Local `npm run smoke:neon -- create` was run without Neon inputs and failed closed with missing `NEON_API_KEY`.
+- `gh workflow run authenticated-smoke.yml --ref codex/authenticated-smoke-infrastructure-v1` could not run before merge because GitHub only dispatches workflows that already exist on the default branch.
 
 ## Risks
 
