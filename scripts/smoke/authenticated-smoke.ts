@@ -21,6 +21,7 @@ const inProgressTitle = "KB Smoke Test - In Progress Torque";
 const internalReviewTitle = "KB Smoke Test - Internal Review Leak";
 const outsiderTitle = "KB Smoke Test - Outsider Visible Risk";
 const resultPath = process.env.SMOKE_RESULT_PATH || "output/authenticated-smoke-result.json";
+const completedReportId = process.env.SMOKE_COMPLETED_REPORT_ID || "";
 
 type SmokeCheckStatus = "passed" | "failed" | "skipped";
 
@@ -35,6 +36,7 @@ const checks: Record<string, SmokeCheckStatus> = {
   login: "skipped",
   dashboardNavigation: "skipped",
   knowledgeEligibility: "skipped",
+  editorKnowledgeReuse: "skipped",
   analyticsPayloadSafety: "skipped",
 };
 
@@ -107,6 +109,7 @@ function markCheckForStep(stepName: string, status: SmokeCheckStatus) {
   ) {
     checks.knowledgeEligibility = status;
   }
+  if (stepName.startsWith("editor knowledge reuse")) checks.editorKnowledgeReuse = status;
   if (stepName === "analytics payload safety") checks.analyticsPayloadSafety = status;
 }
 
@@ -507,6 +510,90 @@ async function verifyWorkflowPanel(page: Page, events: CapturedEvent[]) {
   });
 }
 
+async function verifyEditorKnowledgeReuse(page: Page, events: CapturedEvent[]) {
+  assert.ok(completedReportId, "SMOKE_COMPLETED_REPORT_ID is required for editor reuse smoke");
+
+  await smokeStep("editor knowledge reuse entry", async () => {
+    await page.goto(toUrl(`/reports/${completedReportId}`), { waitUntil: "domcontentloaded" });
+    await waitForBodyText(page, "Reuse Knowledge");
+    await assertNoHorizontalOverflow(page, "Report editor desktop");
+  });
+
+  await smokeStep("editor knowledge reuse panel", async () => {
+    const event = await runAndWaitForEvent(events, "knowledge_reuse_panel_opened", async () => {
+      await page.getByRole("button", { name: "Reuse Knowledge" }).click();
+      await waitForBodyText(page, "Search completed 8D reports and copy proven root causes, corrective actions, and lessons learned.");
+    });
+    assert.equal(event.metadata.source, "editor", "Editor reuse panel event should use editor source metadata");
+    assert.equal(event.metadata.location, "editor_top", "Editor top entry should use editor_top location metadata");
+
+    await waitForBodyText(page, completedTitle);
+    await waitForBodyText(page, closedTitle);
+    await waitForBodyText(page, memberTitle);
+    await assertBodyExcludes(page, draftTitle);
+    await assertBodyExcludes(page, inProgressTitle);
+    await assertBodyExcludes(page, internalReviewTitle);
+    await assertBodyExcludes(page, outsiderTitle);
+  });
+
+  const panel = page.locator('[data-slot="sheet-content"]').last();
+  const search = panel.getByPlaceholder("Search problem, root cause, corrective action, lessons learned...");
+
+  await smokeStep("editor knowledge reuse search coating", () => runAndWaitForEvent(events, "knowledge_reuse_search_used", async () => {
+    await search.fill("coating");
+    await waitForBodyText(page, completedTitle);
+  }).then(() => undefined));
+
+  await smokeStep("editor knowledge reuse copy root cause", () => runAndWaitForEvent(events, "knowledge_reuse_root_cause_copied", async () => {
+    await panel.getByRole("button", { name: "Copy root cause" }).first().click();
+    await waitForBodyText(page, "Copied");
+  }).then(() => undefined));
+
+  await smokeStep("editor knowledge reuse copy corrective action", () => runAndWaitForEvent(events, "knowledge_reuse_corrective_action_copied", async () => {
+    await panel.getByRole("button", { name: "Copy corrective action" }).first().click();
+    await waitForBodyText(page, "Copied");
+  }).then(() => undefined));
+
+  await smokeStep("editor knowledge reuse copy lessons learned", () => runAndWaitForEvent(events, "knowledge_reuse_lesson_copied", async () => {
+    await panel.getByRole("button", { name: "Copy lessons learned" }).first().click();
+    await waitForBodyText(page, "Copied");
+  }).then(() => undefined));
+
+  await smokeStep("editor knowledge reuse open report", () => runAndWaitForEvent(events, "knowledge_reuse_result_opened", async () => {
+    const originalUrl = page.url();
+    const [newPage] = await Promise.all([
+      page.context().waitForEvent("page"),
+      panel.getByRole("link", { name: /Open report/i }).first().click(),
+    ]);
+    await newPage.waitForLoadState("domcontentloaded");
+    assert.match(newPage.url(), /\/reports\//, "Editor reuse Open report should open a report page");
+    assert.equal(page.url(), originalUrl, "Editor reuse Open report should preserve the current editor tab");
+    await newPage.close();
+  }).then(() => undefined));
+
+  await smokeStep("editor knowledge reuse mobile", async () => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await assertNoHorizontalOverflow(page, "Editor reuse panel mobile");
+    await page.setViewportSize({ width: 1440, height: 900 });
+  });
+
+  await smokeStep("editor knowledge reuse copy failure", async () => {
+    await page.evaluate(`
+      Object.defineProperty(navigator, "clipboard", {
+        value: {
+          writeText: function () {
+            return Promise.reject(new Error("blocked by authenticated smoke"));
+          }
+        },
+        configurable: true,
+      });
+    `);
+    await panel.getByRole("button", { name: "Copy root cause" }).first().click();
+    await waitForBodyText(page, "Could not copy. Select and copy manually.");
+    await page.keyboard.press("Escape");
+  });
+}
+
 function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
   const allowedKeys = new Set([
     "destination",
@@ -586,6 +673,7 @@ async function verifyAuthenticatedFlow() {
     await smokeStep("login", () => login(page));
     await verifyDashboardAndNavigation(page, capturedEvents);
     await verifyKnowledge(page, capturedEvents);
+    await verifyEditorKnowledgeReuse(page, capturedEvents);
     await verifyWorkflowPanel(page, capturedEvents);
 
     await smokeStep("analytics payload safety", async () => {
@@ -599,6 +687,12 @@ async function verifyAuthenticatedFlow() {
         "knowledge_root_cause_copied",
         "knowledge_corrective_action_copied",
         "knowledge_lesson_copied",
+        "knowledge_reuse_panel_opened",
+        "knowledge_reuse_search_used",
+        "knowledge_reuse_result_opened",
+        "knowledge_reuse_root_cause_copied",
+        "knowledge_reuse_corrective_action_copied",
+        "knowledge_reuse_lesson_copied",
       ]) {
         assert.ok(capturedEvents.some((event) => event.eventName === requiredEvent), `Missing analytics event: ${requiredEvent}`);
       }

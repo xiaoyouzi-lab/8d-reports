@@ -210,6 +210,11 @@ assert.match(reportEditorPage, /reportPermissions\.canEdit && \(\s*<Button[\s\S]
 assert.match(reportEditorPage, /reportPermissions\.canShare && \(\s*<ShareDialog/, "Report editor should hide share management from Viewers");
 assert.match(reportEditorPage, /reportPermissions\.canExportDraft && \(\s*<ExportMenu/, "Report editor should hide export controls from Viewers");
 assert.match(reportEditorPage, /canEdit=\{reportPermissions\.canEdit\}/, "Report editor should pass edit access into step fields and evidence controls");
+assert.match(reportEditorPage, /KnowledgeReusePanel/, "Report editor should render the Knowledge Reuse panel");
+assert.match(reportEditorPage, /Reuse Knowledge/, "Report editor should expose a visible Knowledge Reuse entry");
+assert.match(reportEditorPage, /knowledge_reuse_panel_opened/, "Report editor should track safe Knowledge Reuse panel opens");
+assert.match(reportEditorPage, /source: "editor", location, plan/, "Report editor reuse analytics should use editor source, enum location, and plan only");
+assert.match(reportEditorPage, /onOpenKnowledgeReuse=\{openKnowledgeReuse\}/, "Report editor should pass a panel opener into step forms for contextual hints");
 assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*try \{\s*await saveToServer/, "Report editor should not silently save when a Viewer only changes steps");
 assert.doesNotMatch(reportEditorPage, /pointer-events-none opacity-75/, "Read-only reports should still allow attachment preview and navigation");
 
@@ -219,6 +224,12 @@ assert.match(stepForm, /readOnly=\{!canEdit\}/, "Step text fields should become 
 assert.match(stepForm, /disabled=\{!canEdit\}/, "Step select fields should be disabled for Viewers");
 assert.match(stepForm, /<AttachmentArea[\s\S]*canEdit=\{canEdit\}/, "Attachment controls should receive edit permission");
 assert.match(stepForm, /<SignatureApprovalArea[\s\S]*canEdit=\{canEdit\}/, "Signature controls should receive edit permission");
+assert.match(stepForm, /onOpenKnowledgeReuse\?:/, "Step form should accept a read-only Knowledge Reuse opener");
+assert.match(stepForm, /Search past root causes before finalizing this section\./, "D4 should expose the required root-cause reuse hint");
+assert.match(stepForm, /Reuse proven corrective actions from completed reports\./, "D5 should expose the required corrective-action reuse hint");
+assert.match(stepForm, /Check prevention and system-change ideas from similar issues\./, "D7 should expose the required prevention reuse hint");
+assert.match(stepForm, /Check lessons learned from similar completed reports\./, "D8 should expose the required lessons-learned reuse hint");
+assert.doesNotMatch(stepForm, /lessons learned.*D7|D7.*lessons learned/i, "Step form should not imply lessons learned is a D7 field");
 
 const attachmentArea = read("src/components/report/AttachmentArea.tsx");
 assert.match(attachmentArea, /canEdit = true/, "Attachment area should default to editable for existing callers");
@@ -400,6 +411,19 @@ assert.match(authenticatedBrowserSmoke, /knowledge_result_opened/, "Authenticate
 assert.match(authenticatedBrowserSmoke, /knowledge_root_cause_copied/, "Authenticated smoke should verify root cause copy analytics");
 assert.match(authenticatedBrowserSmoke, /knowledge_corrective_action_copied/, "Authenticated smoke should verify corrective action copy analytics");
 assert.match(authenticatedBrowserSmoke, /knowledge_lesson_copied/, "Authenticated smoke should verify lesson copy analytics");
+assert.match(authenticatedBrowserSmoke, /verifyEditorKnowledgeReuse/, "Authenticated smoke should cover editor Knowledge Reuse");
+assert.match(authenticatedBrowserSmoke, /SMOKE_COMPLETED_REPORT_ID/, "Authenticated smoke should open a seeded completed report in the editor");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse entry"/, "Authenticated smoke should verify the editor Knowledge Reuse entry");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse panel"/, "Authenticated smoke should verify the editor Knowledge Reuse panel opens");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse search coating"/, "Authenticated smoke should search coating inside editor reuse");
+assert.match(authenticatedBrowserSmoke, /knowledge_reuse_panel_opened/, "Authenticated smoke should verify editor reuse panel analytics");
+assert.match(authenticatedBrowserSmoke, /knowledge_reuse_search_used/, "Authenticated smoke should verify editor reuse search analytics");
+assert.match(authenticatedBrowserSmoke, /knowledge_reuse_result_opened/, "Authenticated smoke should verify editor reuse result open analytics");
+assert.match(authenticatedBrowserSmoke, /knowledge_reuse_root_cause_copied/, "Authenticated smoke should verify editor reuse root cause copy analytics");
+assert.match(authenticatedBrowserSmoke, /knowledge_reuse_corrective_action_copied/, "Authenticated smoke should verify editor reuse corrective action copy analytics");
+assert.match(authenticatedBrowserSmoke, /knowledge_reuse_lesson_copied/, "Authenticated smoke should verify editor reuse lessons learned copy analytics");
+assert.match(authenticatedBrowserSmoke, /waitForEvent\("page"\)/, "Authenticated smoke should verify editor reuse opens reports in a new tab");
+assert.match(authenticatedBrowserSmoke, /Editor reuse Open report should preserve the current editor tab/, "Authenticated smoke should protect current editor context");
 assert.match(authenticatedBrowserSmoke, /dashboard_feature_entry_clicked/, "Authenticated smoke should verify Dashboard entry analytics");
 assert.match(authenticatedBrowserSmoke, /app_navigation_clicked/, "Authenticated smoke should verify app navigation analytics");
 assert.match(authenticatedBrowserSmoke, /Could not copy\. Select and copy manually\./, "Authenticated smoke should verify copy failure state");
@@ -526,6 +550,34 @@ assert.doesNotMatch(
   "Knowledge analytics metadata must not include raw query or report content fields",
 );
 
+const knowledgeReusePanel = read("src/components/knowledge/KnowledgeReusePanel.tsx");
+assert.match(knowledgeReusePanel, /export function KnowledgeReusePanel/, "Knowledge Reuse panel should exist as a dedicated component");
+assert.match(knowledgeReusePanel, /\/api\/knowledge\/search/, "Knowledge Reuse panel should reuse the existing Knowledge search API");
+assert.match(knowledgeReusePanel, /method: "POST"/, "Knowledge Reuse panel should call Knowledge search with POST");
+assert.match(knowledgeReusePanel, /query: inputQuery\.trim\(\)/, "Knowledge Reuse panel should send query in the POST body, not the URL");
+assert.match(knowledgeReusePanel, /Copy-only reuse/, "Knowledge Reuse panel should explain copy-only behavior");
+assert.match(knowledgeReusePanel, /Copy root cause/, "Knowledge Reuse panel should expose root cause copy");
+assert.match(knowledgeReusePanel, /Copy corrective action/, "Knowledge Reuse panel should expose corrective action copy");
+assert.match(knowledgeReusePanel, /Copy lessons learned/, "Knowledge Reuse panel should expose lessons learned copy");
+assert.match(knowledgeReusePanel, /navigator\.clipboard\.writeText/, "Knowledge Reuse panel should copy values to the clipboard");
+assert.match(knowledgeReusePanel, /Copied/, "Knowledge Reuse copy success should use the required message");
+assert.match(knowledgeReusePanel, /Could not copy\. Select and copy manually\./, "Knowledge Reuse copy failure should use the required message");
+assert.match(knowledgeReusePanel, /target="_blank"/, "Knowledge Reuse Open report should preserve editor context by opening a new tab");
+assert.match(knowledgeReusePanel, /rel="noreferrer"/, "Knowledge Reuse new-tab links should avoid leaking referrer context");
+assert.match(knowledgeReusePanel, /knowledge_reuse_search_used/, "Knowledge Reuse panel should track safe search analytics");
+assert.match(knowledgeReusePanel, /knowledge_reuse_result_opened/, "Knowledge Reuse panel should track result opens");
+assert.match(knowledgeReusePanel, /knowledge_reuse_root_cause_copied/, "Knowledge Reuse panel should track root cause copies");
+assert.match(knowledgeReusePanel, /knowledge_reuse_corrective_action_copied/, "Knowledge Reuse panel should track corrective action copies");
+assert.match(knowledgeReusePanel, /knowledge_reuse_lesson_copied/, "Knowledge Reuse panel should track lessons learned copies");
+assert.match(knowledgeReusePanel, /source: "editor"/, "Knowledge Reuse analytics should use editor source metadata");
+assert.match(knowledgeReusePanel, /queryLength/, "Knowledge Reuse analytics should track query length instead of raw query text");
+assert.match(knowledgeReusePanel, /resultCount/, "Knowledge Reuse analytics should track result count");
+assert.match(knowledgeReusePanel, /copiedField/, "Knowledge Reuse copy analytics should track the copied field enum");
+assert.doesNotMatch(knowledgeReusePanel, /handleFieldChange|saveToServer|report_saved|onApplyDraft|method: "PUT"|\/api\/reports\//, "Knowledge Reuse panel must not write report fields or save reports");
+assert.doesNotMatch(knowledgeReusePanel, /trackEvent\([\s\S]{0,280}(query:|problem:|rootCause:|correctiveAction:|lessonsLearned:|customer:|supplier:|product:|batch:)/, "Knowledge Reuse analytics metadata must not include raw query or report content fields");
+assert.doesNotMatch(knowledgeReusePanel, /AiReportTools|ai\/|ExportMenu|Checkout|pricing|drizzle|db\/schema|CREATE TABLE|ALTER TABLE/, "Knowledge Reuse panel must not couple to AI, export, payment, or database schema code");
+assert.doesNotMatch(knowledgeReusePanel, /reportShares|accessToken|share token/i, "Knowledge Reuse panel must not rely on public share tokens");
+
 const eventsRoute = read("src/app/api/events/route.ts");
 assert.match(eventsRoute, /app_navigation_clicked/, "Analytics allowlist should include app navigation clicks");
 assert.match(eventsRoute, /dashboard_feature_entry_clicked/, "Analytics allowlist should include dashboard feature-entry clicks");
@@ -534,6 +586,12 @@ assert.match(eventsRoute, /knowledge_result_opened/, "Analytics allowlist should
 assert.match(eventsRoute, /knowledge_root_cause_copied/, "Analytics allowlist should include root cause copy");
 assert.match(eventsRoute, /knowledge_corrective_action_copied/, "Analytics allowlist should include corrective action copy");
 assert.match(eventsRoute, /knowledge_lesson_copied/, "Analytics allowlist should include lessons learned copy");
+assert.match(eventsRoute, /knowledge_reuse_panel_opened/, "Analytics allowlist should include editor Knowledge Reuse panel opens");
+assert.match(eventsRoute, /knowledge_reuse_search_used/, "Analytics allowlist should include editor Knowledge Reuse search");
+assert.match(eventsRoute, /knowledge_reuse_result_opened/, "Analytics allowlist should include editor Knowledge Reuse result opens");
+assert.match(eventsRoute, /knowledge_reuse_root_cause_copied/, "Analytics allowlist should include editor Knowledge Reuse root cause copies");
+assert.match(eventsRoute, /knowledge_reuse_corrective_action_copied/, "Analytics allowlist should include editor Knowledge Reuse corrective action copies");
+assert.match(eventsRoute, /knowledge_reuse_lesson_copied/, "Analytics allowlist should include editor Knowledge Reuse lessons learned copies");
 assert.doesNotMatch(eventsRoute, /knowledge_[a-z]+_clicked/, "Analytics allowlist should not include deprecated generic Knowledge clicked events");
 
 const knowledgeSpec = read("docs/QUALITY_KNOWLEDGE_BASE_SPEC.md");

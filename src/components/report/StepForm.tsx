@@ -1,8 +1,10 @@
 "use client"
 
+import { BookOpen } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 import {
   Select,
   SelectContent,
@@ -14,6 +16,7 @@ import { cn } from "@/lib/utils"
 import { AttachmentArea } from "@/components/report/AttachmentArea"
 import { SignatureApprovalArea } from "@/components/report/SignatureApprovalArea"
 import type { ReportStep, ReportField, ReportData } from "@/lib/report-steps"
+import type { KnowledgeReuseLocation } from "@/components/knowledge/KnowledgeReusePanel"
 
 interface StepFormProps {
   step: ReportStep
@@ -22,6 +25,7 @@ interface StepFormProps {
   reportId: string
   isPro?: boolean
   canEdit?: boolean
+  onOpenKnowledgeReuse?: (location: KnowledgeReuseLocation) => void
 }
 
 function renderField(
@@ -138,12 +142,43 @@ const FISHBONE_FIELDS = new Set([
   "fishboneEnvironment",
 ])
 
-export function StepForm({ step, data, onChange, reportId, isPro = false, canEdit = true }: StepFormProps) {
+const KNOWLEDGE_HINTS: Partial<Record<ReportStep["id"], {
+  location: KnowledgeReuseLocation
+  text: string
+}>> = {
+  D4: {
+    location: "d4",
+    text: "Search past root causes before finalizing this section.",
+  },
+  D5: {
+    location: "d5",
+    text: "Reuse proven corrective actions from completed reports.",
+  },
+  D7: {
+    location: "d7",
+    text: "Check prevention and system-change ideas from similar issues.",
+  },
+  D8: {
+    location: "d8",
+    text: "Check lessons learned from similar completed reports.",
+  },
+}
+
+export function StepForm({
+  step,
+  data,
+  onChange,
+  reportId,
+  isPro = false,
+  canEdit = true,
+  onOpenKnowledgeReuse,
+}: StepFormProps) {
   const isRootCauseStep = step.id === "D4"
   const fiveWhyFields = step.fields.filter((f) => f.name.startsWith("why"))
   const fishboneFields = step.fields.filter((f) => FISHBONE_FIELDS.has(f.name))
   const otherFields = step.fields.filter((f) => !f.name.startsWith("why") && !FISHBONE_FIELDS.has(f.name))
   const showAttachments = ATTACHMENT_STEPS.has(step.id)
+  const knowledgeHint = KNOWLEDGE_HINTS[step.id]
 
   return (
     <div className="space-y-5">
@@ -155,6 +190,24 @@ export function StepForm({ step, data, onChange, reportId, isPro = false, canEdi
           {step.description}
         </p>
       </div>
+
+      {knowledgeHint && onOpenKnowledgeReuse && (
+        <div className="flex flex-col gap-3 rounded-lg border border-indigo-100 bg-indigo-50 px-3 py-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex min-w-0 items-start gap-2">
+            <BookOpen className="mt-0.5 size-4 shrink-0 text-indigo-600" />
+            <p className="text-indigo-900">{knowledgeHint.text}</p>
+          </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            className="shrink-0 border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-100"
+            onClick={() => onOpenKnowledgeReuse(knowledgeHint.location)}
+          >
+            Search past reports
+          </Button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {otherFields.map((field) => (
