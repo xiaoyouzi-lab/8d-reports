@@ -1,0 +1,98 @@
+name: Authenticated Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  authenticated-smoke:
+    name: Authenticated app smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Configure local auth runtime
+        run: |
+          echo "BETTER_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+          echo "BETTER_AUTH_URL=http://127.0.0.1:3028" >> "$GITHUB_ENV"
+          echo "BETTER_AUTH_TRUSTED_ORIGINS=http://127.0.0.1:3028" >> "$GITHUB_ENV"
+
+      - name: Create temporary Neon branch
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+          NEON_PARENT_BRANCH_ID: ${{ vars.NEON_PARENT_BRANCH_ID }}
+          NEON_DATABASE_NAME: ${{ vars.NEON_DATABASE_NAME }}
+          NEON_BRANCH_NAME: auth-smoke-${{ github.run_id }}-${{ github.run_attempt }}
+        run: npm run smoke:neon -- create
+
+      - name: Reset temporary smoke schema
+        run: npm run smoke:db:reset
+
+      - name: Initialize schema
+        run: npx drizzle-kit push --force
+
+      - name: Seed authenticated smoke fixtures
+        run: npm run smoke:seed-auth
+
+      - name: Build app
+        run: npm run build
+
+      - name: Start local Next app
+        run: |
+          npm run dev -- --hostname 127.0.0.1 --port 3028 > /tmp/auth-smoke-next.log 2>&1 &
+          echo $! > /tmp/auth-smoke-next.pid
+          for i in {1..60}; do
+            if curl -fsS http://127.0.0.1:3028/login > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          tail -200 /tmp/auth-smoke-next.log
+          exit 1
+
+      - name: Run authenticated browser smoke
+        env:
+          SMOKE_BASE_URL: http://127.0.0.1:3028
+          SMOKE_RESULT_PATH: output/authenticated-smoke-result.json
+        run: npm run smoke:auth
+
+      - name: Upload smoke result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: authenticated-smoke-result
+          path: output/authenticated-smoke-result.json
+          if-no-files-found: ignore
+
+      - name: Stop local Next app
+        if: always()
+        run: |
+          if [ -f /tmp/auth-smoke-next.pid ]; then
+            kill "$(cat /tmp/auth-smoke-next.pid)" 2>/dev/null || true
+          fi
+
+      - name: Delete temporary Neon branch
+        if: always()
+        env:
+          NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+          NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+          NEON_PARENT_BRANCH_ID: ${{ vars.NEON_PARENT_BRANCH_ID }}
+        run: npm run smoke:neon -- delete

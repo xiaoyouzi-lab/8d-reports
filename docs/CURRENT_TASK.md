@@ -2,66 +2,60 @@
 
 ## Task Name
 
-Authenticated App Feature Discoverability v1.
+Authenticated Smoke Test Infrastructure v1.
 
 ## Context
 
-PR #7 completed the public SaaS redesign. PR #8 added Quality Knowledge Base v1 and deployed it to production. After logging in, the Knowledge Base is currently too hard to discover because the main entry point is inside the user avatar menu.
+PR #8 added Quality Knowledge Base v1. PR #9 improved authenticated app discoverability. Both PRs revealed that logged-in browser validation is too dependent on one-off local setup or manual production checks.
 
-The app should make its core logged-in workflow clearer immediately after sign-in:
-
-- Create an 8D report.
-- Complete and close the corrective-action workflow.
-- Reuse completed-report knowledge through the Quality Knowledge Base.
+The product needs a safe, repeatable authenticated smoke test path for future PRs. The smoke path must verify logged-in features without writing to production data or requiring a human to create production test reports.
 
 ## Goal
 
-Improve the logged-in app experience so users can quickly understand:
-
-- What they can do now.
-- Which authenticated app features matter most.
-- Why the Quality Knowledge Base is valuable.
-- How report creation leads to completed reports and reusable quality knowledge.
+Create authenticated smoke test infrastructure that can be run by GitHub Actions or a local developer against an explicitly safe temporary database.
 
 ## Scope
 
-- Add persistent authenticated app navigation for Reports, Knowledge Base, and New Report.
-- Keep Knowledge Base discoverable on mobile without requiring the avatar menu.
-- Keep the authenticated app logo inside the logged-in workspace by routing it to `/dashboard`.
-- Add dashboard guidance that connects report creation, completion/closure, and Knowledge Base reuse.
-- Add an explicit Knowledge Base action near normal report workflow controls.
-- Add an internal feature discoverability audit with stage full-score criteria, current score, remaining gaps, and future-only items.
-- Add safe authenticated app analytics for navigation and dashboard feature-entry clicks.
-- Clarify Dashboard metric labels so visible counts match the underlying data.
-- Preserve existing report creation, editing, sharing, workflow, export, payment, AI, auth, and public marketing behavior.
+- Add a manual GitHub Actions workflow for authenticated smoke testing.
+- Use `NEON_API_KEY` to create a temporary Neon branch.
+- Reset the temporary branch schema before seeding.
+- Initialize schema with Drizzle.
+- Seed smoke users, Team workspace, and reports covering eligible and excluded Knowledge Base states.
+- Start a local Next app.
+- Run Playwright authenticated browser smoke.
+- Verify unauthenticated security boundaries.
+- Verify logged-in Dashboard, Knowledge Base, report workflow panel, search, filters, copy actions, access boundaries, mobile layout, and safe analytics metadata.
+- Delete the temporary Neon branch whether the workflow succeeds or fails.
+- Document required secrets/vars, safety gates, fixtures, and local run rules.
+- Add governance checks to keep the workflow, scripts, docs, and safety boundaries from regressing.
 
 ## Non-Goals
 
-- No public marketing redesign.
-- No new product feature beyond discoverability and navigation.
-- No AI changes.
-- No payment, checkout, subscription, pricing, or export changes.
-- No auth or database schema changes.
-- No Knowledge Base search logic changes.
-- No production configuration changes.
+- No production data writes.
+- No production test users or reports.
+- No automatic privileged `pull_request` workflow.
+- No product feature changes.
+- No public marketing changes.
+- No payment, subscription, checkout, export, AI, auth production behavior, or Knowledge Base search logic changes.
+- No permanent database schema migration.
 
 ## Acceptance Criteria
 
-- Logged-in header exposes primary navigation outside the avatar menu.
-- Dashboard, Knowledge Base, and New Report are visible as authenticated app actions.
-- Authenticated app logo routes to `/dashboard`, not the public homepage.
-- Mobile logged-in navigation exposes Knowledge Base without relying on the avatar menu.
-- Dashboard first screen explains the create -> complete -> reuse workflow.
-- Dashboard includes a visible Knowledge Base link near report workflow controls.
-- Empty-report onboarding explains that completed reports become reusable knowledge assets.
-- `docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md` documents stage full-score standards, a 12-feature logged-in audit, features that meet the PR #9 target, acceptable non-primary items, future-only items, safe analytics, and the ready-to-merge checklist.
-- App navigation and dashboard feature-entry clicks use safe analytics metadata only.
-- Dashboard counts use labels that match their data semantics.
-- Existing report list, Team workspace, search, workflow status, quota, and upgrade surfaces remain usable.
+- `.github/workflows/authenticated-smoke.yml` exists and is `workflow_dispatch` only.
+- Workflow requires `NEON_API_KEY` and explicit Neon project/parent/database vars.
+- Workflow creates an `auth-smoke-*` temporary Neon branch.
+- Workflow resets the cloned branch schema before `drizzle-kit push`.
+- Workflow seeds smoke users, Team membership, completed/closed reports, draft/in-progress/internal-review exclusions, outsider data, and Team member accessible data.
+- Workflow runs Playwright authenticated smoke against local Next app.
+- Workflow cleanup deletes the temporary Neon branch with `if: always()`.
+- Smoke scripts fail closed unless `SMOKE_DB=true` and an explicit safe smoke/test/preview/local database or branch is present.
+- Scripts do not load `.env` implicitly and do not print full database URLs, passwords, tokens, cookies, or secrets.
+- Smoke verifies safe analytics metadata for app navigation, dashboard feature-entry clicks, and Knowledge Base events.
+- `docs/AUTHENTICATED_SMOKE_TESTING.md` documents operation and safety.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Header navigation could become crowded on smaller screens.
-- Dashboard guidance could feel too promotional if it is not compact and work-oriented.
-- Adding new copy must not overpromise unsupported QMS, AI, or automation features.
+- Neon API cleanup could fail during a platform outage, leaving a temporary branch to delete manually.
+- The workflow is intentionally manual because it uses privileged secrets.
+- The browser smoke depends on current UI labels and may need updates when authenticated navigation or Knowledge Base UI changes intentionally.
