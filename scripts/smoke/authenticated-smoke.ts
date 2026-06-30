@@ -611,10 +611,11 @@ async function verifyAiQualityCheck(page: Page, events: CapturedEvent[]) {
 
   await smokeStep("ai quality check knowledge context unavailable fallback", async () => {
     await page.goto(toUrl(`/reports/${completedReportId}`), { waitUntil: "domcontentloaded" });
-    await waitForBodyText(page, "AI");
+    const aiTrigger = page.getByRole("button", { name: /^AI$/ });
+    await aiTrigger.waitFor({ timeout: 12000 });
 
     const startIndex = events.length;
-    await page.getByRole("button", { name: "AI" }).click();
+    await aiTrigger.click();
     await waitForBodyText(page, "AI Quality Check — Beta");
     await page.getByRole("button", { name: "Review report" }).click();
     await waitForBodyText(page, "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.", {
