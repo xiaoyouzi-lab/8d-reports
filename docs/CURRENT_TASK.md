@@ -2,82 +2,85 @@
 
 ## Task Name
 
-Revenue Evidence Sprint v1.
+GEO Content Production Plan v1.
 
 ## Context
 
-Knowledge Base, Knowledge Reuse, AI Quality Check with Knowledge Context, and
-Knowledge Capture now provide enough product capability for the current stage.
-The next priority is not another feature expansion. The priority is to collect
-commercial conversion evidence: whether visitors click, download demos, upload
-templates, submit service requests, sign up, and attempt exports.
+Revenue Evidence Sprint v1 is deployed. The product now needs an executable
+30-day content plan that turns revenue-near GEO/SEO intent into a small,
+disciplined production calendar instead of scattered article ideas or low-value
+SEO batches.
+
+This task is docs and governance only. It does not publish runtime pages.
 
 ## Goal
 
-Turn 8D Reports into a measurable revenue-learning system for Template Setup,
-Team Launch, and Assisted First 8D / SCAR Delivery without changing auth,
-payment, export entitlements, Knowledge permissions, or database schema.
+Create a 30-day GEO content production plan that prioritizes Template Setup,
+Team Launch, Assisted First 8D / SCAR Delivery, demo downloads, signup, Knowledge
+Base reuse, and conservative AI Quality Check interest while avoiding fake
+statistics, spam, keyword stuffing, and unsupported claims.
 
 ## Scope
 
-- Upgrade homepage, Pricing, and demo report CTAs for service conversion.
-- Make the Template Setup / service lead funnel usable with required fields,
-  success and failure states, email notifications, and file-upload fallback.
-- Reuse the existing service request table for Template Setup, Team Launch, and
-  Assisted First 8D / SCAR Delivery leads.
-- Add privacy-safe revenue analytics events and safe referrer / UTM /
-  anonymous-session metadata.
-- Add admin-only revenue evidence metrics for the last 7 and 30 days.
-- Add Excel downloads to demo report sales assets using the existing quality
-  workbook generator.
-- Extend unauthenticated, production, governance, and authenticated smoke
-  coverage for the revenue evidence path.
-- Update the development log.
+- Add `docs/GEO_CONTENT_PRODUCTION_PLAN.md`.
+- Define a 30-day content calendar with at least 30 content items.
+- Cover:
+  - Week 1: revenue pages / high-intent service content
+  - Week 2: core 8D instructional content
+  - Week 3: industry examples
+  - Week 4: comparison / AI / Knowledge Base
+- For every article, document:
+  - target query
+  - title
+  - search intent
+  - answer-first outline
+  - proof elements
+  - internal links
+  - CTA
+  - offsite repurposing target
+  - measurement event
+- Define GEO writing rules and platform repurposing rules for LinkedIn, Medium,
+  Quora, and Reddit-safe discussion.
+- Add governance coverage for the content count, week coverage, required fields,
+  writing rules, repurposing sections, anti-spam boundaries, and safe analytics.
+- Update `docs/DEV_LOG.md`.
 
 ## Non-Goals
 
-- No full QMS, APQP, PPAP, iOS, PWA, or external supplier request system.
-- No payment, checkout, subscription, pricing amount, auth, password reset, or
-  Resend infrastructure changes beyond non-blocking lead notification emails.
-- No report editor core-flow changes.
-- No PDF / Word / Excel export entitlement changes for real user reports.
-- No AI backend changes.
-- No Knowledge Base search, eligibility, permission, report access, or share
-  token logic changes.
-- No database schema migration.
-- No production data writes during development.
+- No runtime pages.
+- No public marketing page changes.
+- No auto-posting or automated offsite distribution.
+- No fake search volume, fake statistics, fake customer stories, fake logos,
+  guaranteed acceptance claims, or unsupported product claims.
+- No payment, checkout, subscription, auth, password reset, Resend, export,
+  Knowledge Base search, Knowledge permissions, AI backend, production
+  configuration, or database schema changes.
+- No production data writes.
 
 ## Acceptance Criteria
 
-- Homepage keeps Start free and adds Upload your 8D template / Request template
-  setup with the required urgent 8D/SCAR copy.
-- Pricing keeps Free / Pro / Team / Single Export and makes these services
-  prominent: 8D Template Setup from $499, Team Launch from $999, Assisted First
-  8D / SCAR Delivery from $799.
-- Demo report pages include the company-format CTA and PDF / Word / Excel / ZIP
-  download links.
-- Template Setup form includes name, company, work email, role, current process,
-  use case, required export, timeline, message, and file upload.
-- Lead save does not fail just because file upload fails; users see a clear
-  re-upload warning.
-- Admin and user email failures are logged but do not block lead save.
-- Admin can view lead and file metadata without private bucket URLs.
-- Revenue analytics events are allowlisted and avoid sensitive report content.
-- Admin metrics show page views, demo downloads, template setup submissions,
-  contact submissions, signup count, export attempts, and pricing CTA clicks for
-  the last 7 and 30 days.
+- `docs/GEO_CONTENT_PRODUCTION_PLAN.md` exists.
+- The plan includes at least 30 content items across the required four-week
+  calendar.
+- Each content item includes target query, title, search intent, answer-first
+  outline, proof elements, internal links, CTA, offsite repurposing target, and
+  measurement event.
+- The writing rules require answering in the first 80 words, practical
+  checklists, manufacturing/SQE vocabulary, example tables, common mistakes,
+  Template Setup / Assisted First 8D guidance, demo/sample links, and avoidance
+  of fake statistics, AI fluff, and keyword stuffing.
+- Platform repurposing rules cover LinkedIn, Medium, Quora, and Reddit-safe
+  discussion without auto-posting, spam, fabricated personal experience, or
+  over-linking.
+- Governance tests assert the required content calendar and safety boundaries.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, `npm run test:governance`, production smoke, and authenticated
-  smoke on a temporary Neon branch.
+  `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Service lead emails depend on existing email configuration; failure must stay
-  non-blocking and visible in logs.
-- File upload depends on R2 configuration; lead capture must remain useful when
-  storage is unavailable.
-- Event tracking can drift into sensitive quality data; metadata must stay
-  bounded to safe enums, counts, formats, paths, referrer, UTM, and anonymous
-  session id.
-- Admin metrics use JSONB/application-level event storage; larger volume may
-  later need dedicated reporting indexes or exports.
+- A content plan can become busywork if topics are produced without evidence.
+  Prioritize Week 1 revenue-near topics first.
+- Offsite content can damage trust if it looks automated or spammy. Keep it
+  manual, platform-native, and light on links.
+- Analytics metadata must stay bounded to safe enums and counts, not raw query,
+  customer, product, report, attachment, or AI prompt content.

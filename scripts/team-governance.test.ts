@@ -905,6 +905,115 @@ assert.match(productOperatingMetrics, /Knowledge asset creation should be a deri
 assert.match(productOperatingMetrics, /D4\/D5 field completion should be computed from database state/, "D4/D5 completion should be computed without raw text analytics");
 assert.doesNotMatch(productOperatingMetrics, /full QMS|\bSSO\b|automatic AI approval/i, "Product metrics should not introduce unsupported product claims");
 
+const geoContentProductionPlan = read("docs/GEO_CONTENT_PRODUCTION_PLAN.md");
+assert.match(geoContentProductionPlan, /GEO Content Production Plan/, "GEO content production plan should exist");
+assert.match(geoContentProductionPlan, /30-Day Content Calendar/, "GEO content production plan should include a 30-day calendar");
+const geoContentRows = geoContentProductionPlan.match(/^\| \d+ \| Week [1-4]:/gm) || [];
+assert.ok(geoContentRows.length >= 30, `GEO content production plan should include at least 30 article rows, found ${geoContentRows.length}`);
+for (const requiredWeek of [
+  "Week 1: Revenue pages / high-intent service content",
+  "Week 2: Core 8D instructional content",
+  "Week 3: Industry examples",
+  "Week 4: Comparison / AI / Knowledge Base",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(requiredWeek.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include ${requiredWeek}`);
+}
+for (const requiredContentColumn of [
+  "Target query",
+  "Title",
+  "Search intent",
+  "Answer-first outline",
+  "Proof elements",
+  "Internal links",
+  "CTA",
+  "Offsite repurposing target",
+  "Measurement event",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(requiredContentColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include column: ${requiredContentColumn}`);
+}
+for (const requiredTopic of [
+  "custom 8D template setup",
+  "assisted first 8D report",
+  "team 8D launch",
+  "Excel 8D template vs online 8D software",
+  "supplier corrective action request template",
+  "D4 root cause",
+  "D5 corrective action",
+  "D6 validation",
+  "D7 prevention and D8 lessons learned",
+  "automotive 8D report example",
+  "electronics 8D report example",
+  "semiconductor 8D report example",
+  "medical device corrective action report example",
+  "injection molding defect 8D example",
+  "AI 8D report checker",
+  "8D knowledge base software",
+  "reuse past root causes in 8D reports",
+  "8D vs SCAR",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(requiredTopic.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO content plan should include topic: ${requiredTopic}`);
+}
+for (const writingRule of [
+  "first 80 words",
+  "practical checklist",
+  "manufacturing",
+  "SQE",
+  "example table",
+  "Common mistakes",
+  "When to use Template Setup / Assisted First 8D",
+  "demo/sample",
+  "fake statistics",
+  "generic AI fluff",
+  "keyword stuffing",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(writingRule.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO writing rules should cover: ${writingRule}`);
+}
+for (const platformSection of [
+  "LinkedIn Post Version",
+  "Medium Article Version",
+  "Quora Answer Version",
+  "Reddit-Safe Discussion Version",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(platformSection.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include platform section: ${platformSection}`);
+}
+for (const antiSpamRule of [
+  "Do not auto-post",
+  "Do not spam",
+  "Do not fabricate personal experience",
+  "Do not over-link",
+  "No sales pitch",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(antiSpamRule.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO repurposing rules should include: ${antiSpamRule}`);
+}
+for (const safeContentEvent of [
+  "seo_page_view",
+  "marketing_cta_clicked",
+  "pricing_service_cta_clicked",
+  "demo_report_downloaded",
+  "knowledge_search_used",
+  "ai_report_review_clicked",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(safeContentEvent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include safe event: ${safeContentEvent}`);
+}
+for (const forbiddenContentAnalyticsData of [
+  "full user queries",
+  "customer names",
+  "supplier names",
+  "product names",
+  "report text",
+  "root cause text",
+  "corrective action text",
+  "lessons learned",
+  "batch or lot numbers",
+  "uploaded file content",
+  "AI prompts",
+  "raw AI output",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(forbiddenContentAnalyticsData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO content plan should forbid analytics collection of: ${forbiddenContentAnalyticsData}`);
+}
+assert.match(geoContentProductionPlan, /guaranteed acceptance claims/i, "GEO content plan should explicitly prohibit guaranteed acceptance claims");
+assert.match(geoContentProductionPlan, /certification claims/i, "GEO content plan should explicitly prohibit unsupported certification claims");
+
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");
 assert.match(pricingPage, /From \$999/, "Team Launch price should be From $999");
