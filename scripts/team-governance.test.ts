@@ -22,6 +22,7 @@ import {
   normalizeKnowledgeReportTypeFilter,
   searchKnowledgeEntries,
 } from "../src/lib/report-knowledge";
+import { DEFAULT_REPORT_DATA, getKnowledgeReadinessSummary } from "../src/lib/report-steps";
 import { aiUnavailableMessage, type AiTaskType } from "../src/lib/ai/deepseek";
 import {
   isSupportedServiceRequestFile,
@@ -165,6 +166,60 @@ assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", fil
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "internal_8d", priority: "high" }).length, 0, "Knowledge search should reject non-matching report type filters");
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "customer_8d", priority: "low" }).length, 0, "Knowledge search should reject non-matching priority filters");
 
+const emptyReadiness = getKnowledgeReadinessSummary(DEFAULT_REPORT_DATA);
+assert.deepEqual(
+  emptyReadiness.items.map((item) => item.label),
+  [
+    "Root cause captured?",
+    "Corrective action captured?",
+    "Validation captured?",
+    "Prevention/system change captured?",
+    "Lessons learned captured?",
+  ],
+  "Knowledge readiness should track the five reusable-knowledge field groups",
+);
+assert.equal(emptyReadiness.items.every((item) => item.status === "Missing"), true, "Empty reports should show missing knowledge readiness");
+assert.equal(emptyReadiness.missingCount, 5, "Empty reports should count all five knowledge groups as missing or weak");
+assert.deepEqual(
+  {
+    hasRootCause: emptyReadiness.hasRootCause,
+    hasCorrectiveAction: emptyReadiness.hasCorrectiveAction,
+    hasValidation: emptyReadiness.hasValidation,
+    hasPrevention: emptyReadiness.hasPrevention,
+    hasLessonsLearned: emptyReadiness.hasLessonsLearned,
+  },
+  {
+    hasRootCause: false,
+    hasCorrectiveAction: false,
+    hasValidation: false,
+    hasPrevention: false,
+    hasLessonsLearned: false,
+  },
+  "Empty readiness analytics flags should be booleans only, not content",
+);
+const partialReadiness = getKnowledgeReadinessSummary({
+  ...DEFAULT_REPORT_DATA,
+  selectedCorrectiveAction: "Use a verified corrective action from a prior report.",
+});
+assert.equal(
+  partialReadiness.items.find((item) => item.key === "correctiveAction")?.status,
+  "Needs detail",
+  "Single-signal corrective action readiness should ask for more detail",
+);
+const readyReadiness = getKnowledgeReadinessSummary({
+  ...DEFAULT_REPORT_DATA,
+  confirmedRootCause: "Confirmed fixture cleaning miss.",
+  rootCauseOccurrence: "Fixture cleaning was skipped.",
+  selectedCorrectiveAction: "Add cleaning sign-off.",
+  implementationPlan: "Update startup checklist.",
+  validationMethod: "Layered audit.",
+  validationResults: "Three audits passed.",
+  systemChanges: "Control plan updated.",
+  lessonsLearned: "Line-change controls need fixture verification.",
+});
+assert.equal(readyReadiness.items.every((item) => item.status === "Ready"), true, "Complete knowledge fields should be ready for future reuse");
+assert.equal(readyReadiness.missingCount, 0, "Ready knowledge fields should not count as missing");
+
 const reportRoute = read("src/app/api/reports/[id]/route.ts");
 assert.match(reportRoute, /access\.canEdit/, "Report save must use shared role and lock access gate");
 assert.match(reportRoute, /report_field_updated/, "Report field updates must write Activity Log entries");
@@ -215,6 +270,9 @@ assert.match(reportEditorPage, /Reuse Knowledge/, "Report editor should expose a
 assert.match(reportEditorPage, /knowledge_reuse_panel_opened/, "Report editor should track safe Knowledge Reuse panel opens");
 assert.match(reportEditorPage, /source: "editor", location, plan/, "Report editor reuse analytics should use editor source, enum location, and plan only");
 assert.match(reportEditorPage, /onOpenKnowledgeReuse=\{openKnowledgeReuse\}/, "Report editor should pass a panel opener into step forms for contextual hints");
+assert.match(reportEditorPage, /getKnowledgeReadinessSummary/, "Report editor should calculate Knowledge readiness from current report data");
+assert.match(reportEditorPage, /<KnowledgeReadinessPanel reportData=\{reportData\} reportId=\{reportId\} plan=\{plan\} \/>/, "Report editor should show the Knowledge readiness panel");
+assert.match(reportEditorPage, /knowledgeReadiness=\{knowledgeReadiness\}/, "Report editor should pass readiness summary into workflow controls");
 assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*try \{\s*await saveToServer/, "Report editor should not silently save when a Viewer only changes steps");
 assert.doesNotMatch(reportEditorPage, /pointer-events-none opacity-75/, "Read-only reports should still allow attachment preview and navigation");
 
@@ -250,6 +308,15 @@ assert.match(workflowPanel, /href="\/knowledge"/, "Workflow panel should expose 
 assert.match(workflowPanel, /Completed and closed reports become reusable knowledge/, "Workflow panel should explain why completed reports feed the Knowledge Base");
 assert.match(workflowPanel, /app_navigation_clicked/, "Workflow panel Knowledge Base link should use safe app navigation analytics");
 assert.match(workflowPanel, /location: "workflow_panel"/, "Workflow panel analytics should use enum-like location metadata");
+assert.match(workflowPanel, /knowledgeReadiness: KnowledgeReadinessSummary/, "Workflow panel should receive a precomputed Knowledge readiness summary");
+assert.match(workflowPanel, /<KnowledgeReadinessPanel[\s\S]*summary=\{knowledgeReadiness\}/, "Workflow dialog should show the same Knowledge readiness summary");
+assert.match(workflowPanel, /knowledge_readiness_warning_shown/, "Workflow panel should track weak-readiness warnings");
+assert.match(
+  workflowPanel,
+  /This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker\./,
+  "Workflow panel should use the required non-blocking weak-readiness warning copy",
+);
+assert.match(workflowPanel, /toast\.warning[\s\S]*void updateWorkflow\(\{ workflowStatus: nextStatus \}\)/, "Readiness warning should not block the workflow request");
 
 const reportsRoute = read("src/app/api/reports/route.ts");
 assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard report API must expose workflow status");
@@ -369,6 +436,8 @@ assert.match(seedAuthSmoke, /Add mandatory fixture cleaning sign-off before prod
 assert.match(seedAuthSmoke, /Line-change controls must include fixture cleaning verification\./, "Authenticated seed should use the required lessons-learned fixture");
 assert.match(seedAuthSmoke, /workflowStatus: "closed"/, "Authenticated seed should include closed report");
 assert.match(seedAuthSmoke, /status: "draft"/, "Authenticated seed should include draft exclusion fixture");
+assert.match(seedAuthSmoke, /SMOKE_DRAFT_REPORT_ID/, "Authenticated seed should export a draft report id for readiness smoke");
+assert.match(seedAuthSmoke, /rootCauseOccurrence: ""[\s\S]*confirmedRootCause: ""[\s\S]*selectedCorrectiveAction: ""[\s\S]*validationResults: ""[\s\S]*systemChanges: ""[\s\S]*lessonsLearned: ""/, "Authenticated seed should keep the draft fixture weak for Knowledge readiness smoke");
 assert.match(seedAuthSmoke, /status: "in_progress"/, "Authenticated seed should include in-progress exclusion fixture");
 assert.match(seedAuthSmoke, /workflowStatus: "internal_review"/, "Authenticated seed should include internal-review exclusion fixture");
 assert.match(seedAuthSmoke, /Outsider Visible Risk/, "Authenticated seed should include outsider report fixture");
@@ -415,6 +484,7 @@ assert.match(authenticatedBrowserSmoke, /knowledge_corrective_action_copied/, "A
 assert.match(authenticatedBrowserSmoke, /knowledge_lesson_copied/, "Authenticated smoke should verify lesson copy analytics");
 assert.match(authenticatedBrowserSmoke, /verifyEditorKnowledgeReuse/, "Authenticated smoke should cover editor Knowledge Reuse");
 assert.match(authenticatedBrowserSmoke, /SMOKE_COMPLETED_REPORT_ID/, "Authenticated smoke should open a seeded completed report in the editor");
+assert.match(authenticatedBrowserSmoke, /SMOKE_DRAFT_REPORT_ID/, "Authenticated smoke should open a seeded draft report for Knowledge readiness");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse entry"/, "Authenticated smoke should verify the editor Knowledge Reuse entry");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse panel"/, "Authenticated smoke should verify the editor Knowledge Reuse panel opens");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse search coating"/, "Authenticated smoke should search coating inside editor reuse");
@@ -436,6 +506,16 @@ assert.match(authenticatedBrowserSmoke, /contextCount/, "Authenticated smoke sho
 assert.match(authenticatedBrowserSmoke, /hasContext/, "Authenticated smoke should permit safe hasContext analytics metadata");
 assert.match(authenticatedBrowserSmoke, /dashboard_feature_entry_clicked/, "Authenticated smoke should verify Dashboard entry analytics");
 assert.match(authenticatedBrowserSmoke, /app_navigation_clicked/, "Authenticated smoke should verify app navigation analytics");
+assert.match(authenticatedBrowserSmoke, /verifyKnowledgeReadiness/, "Authenticated smoke should cover Knowledge readiness");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("knowledge readiness panel"/, "Authenticated smoke should verify the Knowledge readiness panel");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("knowledge readiness workflow warning"/, "Authenticated smoke should verify weak-readiness workflow warnings");
+assert.match(authenticatedBrowserSmoke, /knowledge_readiness_viewed/, "Authenticated smoke should verify Knowledge readiness view analytics");
+assert.match(authenticatedBrowserSmoke, /knowledge_readiness_warning_shown/, "Authenticated smoke should verify Knowledge readiness warning analytics");
+assert.match(authenticatedBrowserSmoke, /hasRootCause/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasCorrectiveAction/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasValidation/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasPrevention/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasLessonsLearned/, "Authenticated smoke should allow only safe readiness boolean metadata");
 assert.match(authenticatedBrowserSmoke, /Could not copy\. Select and copy manually\./, "Authenticated smoke should verify copy failure state");
 assert.doesNotMatch(authenticatedBrowserSmoke, /writeText: \(\) => Promise\.reject/, "Clipboard failure stub should avoid transpiled browser-context helper references");
 assert.match(authenticatedBrowserSmoke, /assertNoHorizontalOverflow/, "Authenticated smoke should verify mobile and desktop overflow safety");
@@ -473,6 +553,9 @@ assert.match(authenticatedSmokeDocs, /Runtime-generated secrets must be masked/,
 assert.match(authenticatedSmokeDocs, /Failure Diagnostics/, "Authenticated smoke docs should document failure diagnostics");
 assert.match(authenticatedSmokeDocs, /failedStep/, "Authenticated smoke docs should document failed-step artifacts");
 assert.match(authenticatedSmokeDocs, /must not include passwords, tokens, cookies, full database URLs, report text/, "Authenticated smoke docs should document artifact redaction boundaries");
+assert.match(authenticatedSmokeDocs, /report Knowledge readiness/, "Authenticated smoke docs should document Knowledge readiness coverage");
+assert.match(authenticatedSmokeDocs, /Draft report with weak Knowledge readiness fields/, "Authenticated smoke docs should document the readiness fixture");
+assert.match(authenticatedSmokeDocs, /Weak readiness workflow transitions/, "Authenticated smoke docs should document warning analytics coverage");
 assert.match(authenticatedSmokeDocs, /AI Quality Check Knowledge Context fallback/, "Authenticated smoke docs should document AI Quality Check Knowledge Context coverage");
 assert.match(authenticatedSmokeDocs, /must not require or print a real AI provider key/, "Authenticated smoke docs should avoid real AI provider requirements");
 assert.match(authenticatedSmokeDocs, /Knowledge context used: N similar reports/, "Authenticated smoke docs should document the AI context count state");
@@ -591,6 +674,39 @@ assert.doesNotMatch(knowledgeReusePanel, /trackEvent\([\s\S]{0,280}(query:|probl
 assert.doesNotMatch(knowledgeReusePanel, /AiReportTools|ai\/|ExportMenu|Checkout|pricing|drizzle|db\/schema|CREATE TABLE|ALTER TABLE/, "Knowledge Reuse panel must not couple to AI, export, payment, or database schema code");
 assert.doesNotMatch(knowledgeReusePanel, /reportShares|accessToken|share token/i, "Knowledge Reuse panel must not rely on public share tokens");
 
+const knowledgeReadinessPanel = read("src/components/report/KnowledgeReadinessPanel.tsx");
+const reportStepsSource = read("src/lib/report-steps.ts");
+assert.match(knowledgeReadinessPanel, /export function KnowledgeReadinessPanel/, "Knowledge readiness should exist as a reusable report component");
+assert.match(knowledgeReadinessPanel, /Knowledge readiness/, "Knowledge readiness panel should use the required title");
+assert.match(knowledgeReadinessPanel, /item\.label/, "Knowledge readiness panel should render readiness labels from the summary");
+assert.match(reportStepsSource, /Root cause captured\?/, "Knowledge readiness summary should provide root-cause readiness");
+assert.match(reportStepsSource, /Corrective action captured\?/, "Knowledge readiness summary should provide corrective-action readiness");
+assert.match(reportStepsSource, /Validation captured\?/, "Knowledge readiness summary should provide validation readiness");
+assert.match(reportStepsSource, /Prevention\/system change captured\?/, "Knowledge readiness summary should provide prevention/system-change readiness");
+assert.match(reportStepsSource, /Lessons learned captured\?/, "Knowledge readiness summary should provide lessons-learned readiness");
+assert.match(knowledgeReadinessPanel, /Ready/, "Knowledge readiness panel should expose the Ready status");
+assert.match(knowledgeReadinessPanel, /Needs detail/, "Knowledge readiness panel should expose the Needs detail status");
+assert.match(knowledgeReadinessPanel, /Missing/, "Knowledge readiness panel should expose the Missing status");
+assert.match(knowledgeReadinessPanel, /knowledge_readiness_viewed/, "Knowledge readiness panel should track safe view analytics");
+assert.match(knowledgeReadinessPanel, /knowledgeReadinessAnalytics/, "Knowledge readiness panel should centralize safe analytics metadata");
+for (const safeReadinessKey of [
+  "missingCount",
+  "hasRootCause",
+  "hasCorrectiveAction",
+  "hasValidation",
+  "hasPrevention",
+  "hasLessonsLearned",
+  "plan",
+]) {
+  assert.match(knowledgeReadinessPanel, new RegExp(safeReadinessKey), `Knowledge readiness analytics should include safe key ${safeReadinessKey}`);
+}
+assert.doesNotMatch(
+  knowledgeReadinessPanel,
+  /trackEvent\([\s\S]{0,260}(query:|problem:|rootCause:|correctiveAction:|lessonsLearned:|customer:|supplier:|product:|batch:|validationResults:|systemChanges:|processUpdates:)/,
+  "Knowledge readiness analytics metadata must not include raw query or report content fields",
+);
+assert.doesNotMatch(knowledgeReadinessPanel, /handleFieldChange|saveToServer|method: "PUT"|\/api\/reports\//, "Knowledge readiness panel must not save or mutate reports");
+
 const eventsRoute = read("src/app/api/events/route.ts");
 assert.match(eventsRoute, /app_navigation_clicked/, "Analytics allowlist should include app navigation clicks");
 assert.match(eventsRoute, /dashboard_feature_entry_clicked/, "Analytics allowlist should include dashboard feature-entry clicks");
@@ -607,6 +723,8 @@ assert.match(eventsRoute, /knowledge_reuse_result_opened/, "Analytics allowlist 
 assert.match(eventsRoute, /knowledge_reuse_root_cause_copied/, "Analytics allowlist should include editor Knowledge Reuse root cause copies");
 assert.match(eventsRoute, /knowledge_reuse_corrective_action_copied/, "Analytics allowlist should include editor Knowledge Reuse corrective action copies");
 assert.match(eventsRoute, /knowledge_reuse_lesson_copied/, "Analytics allowlist should include editor Knowledge Reuse lessons learned copies");
+assert.match(eventsRoute, /knowledge_readiness_viewed/, "Analytics allowlist should include Knowledge readiness views");
+assert.match(eventsRoute, /knowledge_readiness_warning_shown/, "Analytics allowlist should include Knowledge readiness warnings");
 assert.doesNotMatch(eventsRoute, /knowledge_[a-z]+_clicked/, "Analytics allowlist should not include deprecated generic Knowledge clicked events");
 
 const knowledgeSpec = read("docs/QUALITY_KNOWLEDGE_BASE_SPEC.md");
@@ -617,6 +735,18 @@ assert.match(knowledgeSpec, /Attachment parsing|attachment parsing/, "Knowledge 
 assert.match(knowledgeSpec, /Database schema migration|database schema migration/, "Knowledge spec should document no schema migration in v1");
 assert.match(knowledgeSpec, /Permission Matrix/, "Knowledge spec should include a permission matrix");
 assert.match(knowledgeSpec, /report\.data/, "Knowledge spec should map report.data fields");
+
+const reportCompletionKnowledgeSpec = read("docs/REPORT_COMPLETION_KNOWLEDGE_CAPTURE_SPEC.md");
+assert.match(reportCompletionKnowledgeSpec, /Completed 8D reports become valuable/, "Report completion knowledge spec should explain the business value");
+assert.match(reportCompletionKnowledgeSpec, /guidance only/, "Report completion knowledge spec should keep readiness non-blocking");
+assert.match(reportCompletionKnowledgeSpec, /No workflow eligibility changes/, "Report completion knowledge spec should prohibit workflow eligibility changes");
+assert.match(reportCompletionKnowledgeSpec, /No database schema changes/, "Report completion knowledge spec should prohibit schema changes");
+assert.match(reportCompletionKnowledgeSpec, /Root cause[\s\S]*Corrective action[\s\S]*Validation[\s\S]*Prevention[\s\S]*Lessons learned/, "Report completion knowledge spec should document the five readiness groups");
+assert.match(reportCompletionKnowledgeSpec, /knowledge_readiness_viewed/, "Report completion knowledge spec should document readiness view analytics");
+assert.match(reportCompletionKnowledgeSpec, /knowledge_readiness_warning_shown/, "Report completion knowledge spec should document readiness warning analytics");
+assert.match(reportCompletionKnowledgeSpec, /missingCount[\s\S]*hasRootCause[\s\S]*hasCorrectiveAction[\s\S]*hasValidation[\s\S]*hasPrevention[\s\S]*hasLessonsLearned[\s\S]*plan/, "Report completion knowledge analytics should remain safe and bounded");
+const dbSchema = read("src/lib/db/schema.ts");
+assert.doesNotMatch(dbSchema, /knowledgeReadiness|readinessStatus|knowledge_readiness/, "Report completion knowledge capture v1 must not add database schema fields or tables");
 
 const discoverabilityAudit = read("docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md");
 assert.match(discoverabilityAudit, /Stage Full Score Standard/, "Discoverability audit should define full-score criteria");

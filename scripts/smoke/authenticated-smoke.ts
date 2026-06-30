@@ -22,6 +22,7 @@ const internalReviewTitle = "KB Smoke Test - Internal Review Leak";
 const outsiderTitle = "KB Smoke Test - Outsider Visible Risk";
 const resultPath = process.env.SMOKE_RESULT_PATH || "output/authenticated-smoke-result.json";
 const completedReportId = process.env.SMOKE_COMPLETED_REPORT_ID || "";
+const draftReportId = process.env.SMOKE_DRAFT_REPORT_ID || "";
 
 type SmokeCheckStatus = "passed" | "failed" | "skipped";
 
@@ -37,6 +38,7 @@ const checks: Record<string, SmokeCheckStatus> = {
   dashboardNavigation: "skipped",
   knowledgeEligibility: "skipped",
   editorKnowledgeReuse: "skipped",
+  knowledgeReadiness: "skipped",
   aiQualityCheck: "skipped",
   analyticsPayloadSafety: "skipped",
 };
@@ -111,6 +113,7 @@ function markCheckForStep(stepName: string, status: SmokeCheckStatus) {
     checks.knowledgeEligibility = status;
   }
   if (stepName.startsWith("editor knowledge reuse")) checks.editorKnowledgeReuse = status;
+  if (stepName.startsWith("knowledge readiness")) checks.knowledgeReadiness = status;
   if (stepName.startsWith("ai quality check")) checks.aiQualityCheck = status;
   if (stepName === "analytics payload safety") checks.analyticsPayloadSafety = status;
 }
@@ -606,6 +609,61 @@ async function verifyEditorKnowledgeReuse(page: Page, events: CapturedEvent[]) {
   });
 }
 
+async function verifyKnowledgeReadiness(page: Page, events: CapturedEvent[]) {
+  assert.ok(draftReportId, "SMOKE_DRAFT_REPORT_ID is required for knowledge readiness smoke");
+
+  await smokeStep("knowledge readiness panel", async () => {
+    const event = await runAndWaitForEvent(events, "knowledge_readiness_viewed", async () => {
+      await page.goto(toUrl(`/reports/${draftReportId}`), { waitUntil: "domcontentloaded" });
+      await waitForBodyText(page, "Knowledge readiness");
+    });
+
+    assert.equal(event.metadata.plan, "team", "Knowledge readiness view should include safe plan metadata");
+    assert.equal(typeof event.metadata.missingCount, "number", "Knowledge readiness view should include a missing count");
+    assert.ok(Number(event.metadata.missingCount) > 0, "Draft report should have weak knowledge readiness");
+    assert.equal(event.metadata.hasRootCause, false, "Draft fixture should not have root-cause knowledge");
+    assert.equal(event.metadata.hasCorrectiveAction, false, "Draft fixture should not have corrective-action knowledge");
+    assert.equal(event.metadata.hasValidation, false, "Draft fixture should not have validation knowledge");
+    assert.equal(event.metadata.hasPrevention, false, "Draft fixture should not have prevention knowledge");
+    assert.equal(event.metadata.hasLessonsLearned, false, "Draft fixture should not have lessons-learned knowledge");
+
+    await waitForBodyText(page, "Root cause captured?");
+    await waitForBodyText(page, "Corrective action captured?");
+    await waitForBodyText(page, "Validation captured?");
+    await waitForBodyText(page, "Prevention/system change captured?");
+    await waitForBodyText(page, "Lessons learned captured?");
+    await waitForBodyText(page, "Missing");
+  });
+
+  await smokeStep("knowledge readiness workflow warning", async () => {
+    await waitForBodyText(page, "Workflow");
+    await page.getByRole("button", { name: /Workflow/i }).click();
+    await waitForBodyText(page, "Workflow and activity");
+    await waitForBodyText(page, "Knowledge readiness");
+    await waitForBodyText(page, "Root cause captured?");
+
+    const event = await runAndWaitForEvent(events, "knowledge_readiness_warning_shown", async () => {
+      await page.getByRole("dialog", { name: /Workflow and activity/i })
+        .locator("select")
+        .selectOption("approved");
+      await waitForBodyText(
+        page,
+        "This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker.",
+      );
+    });
+
+    assert.equal(event.metadata.plan, "team", "Knowledge readiness warning should include safe plan metadata");
+    assert.ok(Number(event.metadata.missingCount) > 0, "Warning event should include a missing count");
+    assert.equal(event.metadata.hasRootCause, false, "Warning event should not include raw root-cause content");
+    assert.equal(event.metadata.hasCorrectiveAction, false, "Warning event should not include raw corrective-action content");
+    assert.equal(event.metadata.hasValidation, false, "Warning event should not include raw validation content");
+    assert.equal(event.metadata.hasPrevention, false, "Warning event should not include raw prevention content");
+    assert.equal(event.metadata.hasLessonsLearned, false, "Warning event should not include raw lessons-learned content");
+
+    await page.keyboard.press("Escape");
+  });
+}
+
 async function verifyAiQualityCheck(page: Page, events: CapturedEvent[]) {
   assert.ok(completedReportId, "SMOKE_COMPLETED_REPORT_ID is required for AI Quality Check smoke");
 
@@ -660,10 +718,16 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "destination",
     "entry",
     "filter",
+    "hasCorrectiveAction",
+    "hasLessonsLearned",
+    "hasPrevention",
     "hasQuery",
+    "hasRootCause",
+    "hasValidation",
     "hasContext",
     "location",
     "method",
+    "missingCount",
     "navItem",
     "plan",
     "priority",
@@ -684,6 +748,11 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "confirmedRootCause",
     "correctiveAction",
     "selectedCorrectiveAction",
+    "validation",
+    "validationResults",
+    "prevention",
+    "systemChanges",
+    "processUpdates",
     "lessonsLearned",
     "customer",
     "customerName",
@@ -708,6 +777,7 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "outgoing inspection",
     "coating edge adhesion",
     "mandatory fixture cleaning sign-off",
+    "three follow-up lots",
     "layered audit checklist",
     "line change work instruction",
     "line-change controls",
@@ -739,6 +809,7 @@ async function verifyAuthenticatedFlow() {
     await verifyDashboardAndNavigation(page, capturedEvents);
     await verifyKnowledge(page, capturedEvents);
     await verifyEditorKnowledgeReuse(page, capturedEvents);
+    await verifyKnowledgeReadiness(page, capturedEvents);
     await verifyAiQualityCheck(page, capturedEvents);
     await verifyWorkflowPanel(page, capturedEvents);
 
@@ -763,6 +834,8 @@ async function verifyAuthenticatedFlow() {
         "knowledge_reuse_root_cause_copied",
         "knowledge_reuse_corrective_action_copied",
         "knowledge_reuse_lesson_copied",
+        "knowledge_readiness_viewed",
+        "knowledge_readiness_warning_shown",
       ]) {
         assert.ok(capturedEvents.some((event) => event.eventName === requiredEvent), `Missing analytics event: ${requiredEvent}`);
       }

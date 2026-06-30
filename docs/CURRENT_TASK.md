@@ -2,54 +2,61 @@
 
 ## Task Name
 
-AI Quality Check Knowledge Context v1.
+Report Completion Knowledge Capture v1.
 
 ## Context
 
-Quality Knowledge Base v1 made completed, approved, submitted, and closed reports searchable as quality knowledge assets. Knowledge Reuse in Editor v1 made those assets manually reusable while editing a report. Authenticated smoke infrastructure now gives PRs a safe temporary Neon branch workflow for logged-in verification.
+Quality Knowledge Base v1 turns completed and locked reports into reusable quality knowledge. Knowledge Reuse in Editor v1 makes historical root causes, corrective actions, and lessons learned available while editing. AI Quality Check with Knowledge Context v1 lets review use a small, permission-safe set of historical completed reports as reference-only context.
 
-The next product step is to let AI Quality Check use a small, permission-safe set of historical completed reports as reference context when reviewing the current report.
+The next product step is to help users understand whether the current report will become a strong future knowledge asset before they complete, approve, submit, or close it.
 
 ## Goal
 
-Add reference-only Knowledge Context to AI Quality Check so the AI can identify missing checks, weak evidence, repeated failure patterns, and prevention opportunities using up to three similar completed reports.
+Add a lightweight, non-blocking `Knowledge readiness` panel that highlights whether the report has captured root cause, corrective action, validation, prevention/system change, and lessons learned.
 
 ## Scope
 
-- Add a server helper that builds compact Knowledge Context from existing accessible Knowledge Base reports.
-- Reuse `src/lib/report-knowledge.ts` eligibility/search mapping and `getAccessibleUserIds` permission scope.
-- Inject Knowledge Context into the AI Quality Check prompt as reference-only context.
-- Add a `Knowledge-based observations` output section.
-- Show whether Knowledge Context was used or empty in the AI Quality Check UI.
-- Add safe AI Knowledge Context analytics events.
-- Update authenticated smoke coverage for the AI unavailable/no-real-key path.
+- Add reusable readiness calculation for key knowledge fields.
+- Add a `Knowledge readiness` panel in the report editor.
+- Show the same readiness panel in the workflow dialog.
+- Show a non-blocking warning when a user attempts to move to approved, submitted, or closed while readiness is weak.
+- Add safe analytics for readiness views and warnings.
+- Update authenticated smoke coverage for readiness visibility and analytics safety.
 - Update governance tests and docs.
 
 ## Non-Goals
 
-- No automatic report field writes.
-- No report save from AI Quality Check.
-- No AI approval, certification, or customer-acceptance claim.
-- No Knowledge Base eligibility, permission, search API, or share-token changes.
-- No public marketing changes.
-- No payment, pricing, checkout, subscription, export, auth, Resend, production configuration, or database schema changes.
-- No vector database, semantic search, attachment parsing, new tables, production test data, External 8D Request, Supplier Response Loop, iOS, or PWA work.
+- No save logic changes.
+- No workflow eligibility changes.
+- No forced required fields.
+- No Knowledge Base permission or eligibility changes.
+- No AI behavior changes.
+- No export changes.
+- No payment, checkout, pricing, subscription, auth, Resend, production configuration, or database schema changes.
+- No production test data.
+- No External 8D Request, Supplier Response Loop, iOS, or PWA work.
 
 ## Acceptance Criteria
 
-- AI Quality Check builds Knowledge Context with at most three accessible eligible reports.
-- The current report is excluded from its own Knowledge Context.
-- Prompt includes exact reference-only safety instructions.
-- AI output schema includes `Knowledge-based observations`.
-- UI shows `Knowledge context used: N similar reports` or `No reusable knowledge context found yet.`
-- AI unavailable / missing key path remains safe and does not leak prompt or Knowledge Context content.
-- Analytics use only `source`, `contextCount`, `hasContext`, and `plan`.
-- Authenticated smoke verifies the no-real-AI-key context/fallback path.
+- Report editor shows `Knowledge readiness`.
+- The panel includes:
+  - `Root cause captured?`
+  - `Corrective action captured?`
+  - `Validation captured?`
+  - `Prevention/system change captured?`
+  - `Lessons learned captured?`
+- Status labels are `Ready`, `Needs detail`, and `Missing`.
+- Workflow dialog shows the same readiness summary.
+- Weak readiness warning uses:
+  `This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker.`
+- Warning does not block the workflow request.
+- Analytics use only `missingCount`, `hasRootCause`, `hasCorrectiveAction`, `hasValidation`, `hasPrevention`, `hasLessonsLearned`, and `plan`.
+- Authenticated smoke verifies readiness panel visibility, warning analytics, and sensitive metadata safety.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 - Authenticated smoke workflow is triggered for the PR branch and inspected for status, artifact summary, and Neon cleanup.
 
 ## Risks
 
-- Context matching remains v1 keyword/application-level search and may need ranking improvements later.
-- AI Quality Check remains advisory only; historical context can surface patterns but cannot prove current-report correctness.
-- Authenticated smoke should not require a real AI vendor key.
+- Readiness labels are guidance, not formal customer acceptance criteria.
+- Existing server-side completion checks still apply; this PR does not relax or tighten them.
+- The editor page already has several guidance panels, so the readiness panel must stay compact.

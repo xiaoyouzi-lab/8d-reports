@@ -184,7 +184,29 @@ async function main() {
     reportType: "customer_8d",
     priority: "high",
     source: "customer complaint",
-    data: smokeReportData({ reportNumber: "KB-SMOKE-DRAFT" }),
+    data: smokeReportData({
+      reportNumber: "KB-SMOKE-DRAFT",
+      rootCauseOccurrence: "",
+      rootCauseEscape: "",
+      rootCauseSystem: "",
+      why1: "",
+      why2: "",
+      why3: "",
+      why4: "",
+      why5: "",
+      testingResults: "",
+      confirmedRootCause: "",
+      selectedCorrectiveAction: "",
+      correctiveRationale: "",
+      implementationPlan: "",
+      validationMethod: "",
+      validationResults: "",
+      systemChanges: "",
+      processUpdates: "",
+      horizontalDeployment: "",
+      trainingNeeds: "",
+      lessonsLearned: "",
+    }),
     stepStatus: stepStatus("draft"),
     updatedAt: now,
   },
@@ -258,6 +280,7 @@ async function main() {
   const completedReportId = reportByTitle.get("KB Smoke Test - Coating Peel-off") || "";
   const closedReportId = reportByTitle.get("KB Smoke Test - Closed Bearing Noise") || "";
   const memberReportId = reportByTitle.get("KB Smoke Test - Member Approved Internal 8D") || "";
+  const draftReportId = reportByTitle.get("KB Smoke Test - Draft Containment") || "";
 
   maskGithubSecret(SMOKE_PASSWORD);
   writeGithubEnv({
@@ -266,6 +289,7 @@ async function main() {
     SMOKE_COMPLETED_REPORT_ID: completedReportId,
     SMOKE_CLOSED_REPORT_ID: closedReportId,
     SMOKE_MEMBER_REPORT_ID: memberReportId,
+    SMOKE_DRAFT_REPORT_ID: draftReportId,
   });
 
   console.log("Authenticated smoke fixtures seeded", {
@@ -275,6 +299,7 @@ async function main() {
     completedReportId,
     closedReportId,
     memberReportId,
+    draftReportId,
   });
 }
 
