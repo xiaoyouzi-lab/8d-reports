@@ -415,10 +415,14 @@ async function verifyTemplateSetupLead(page: Page, events: CapturedEvent[]) {
   await smokeStep("template setup lead capture", async () => {
     await page.goto(toUrl("/custom-8d-template-setup"), { waitUntil: "domcontentloaded" });
     await waitForBodyText(page, "Submit your template for setup");
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(500);
 
+    const nameInput = page.getByRole("textbox", { name: "Name", exact: true });
     await runAndWaitForEvent(events, "template_setup_form_started", async () => {
-      await page.getByRole("textbox", { name: "Name", exact: true }).fill("Revenue Smoke");
+      await nameInput.click();
     });
+    await nameInput.fill("Revenue Smoke");
     await page.getByRole("textbox", { name: "Company name", exact: true }).fill("Revenue Smoke Manufacturing");
     await page.getByRole("textbox", { name: "Work email", exact: true }).fill("revenue-smoke@example.test");
     await page.getByRole("textbox", { name: "Role", exact: true }).fill("Quality Manager");
