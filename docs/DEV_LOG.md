@@ -2,6 +2,48 @@
 
 ## Latest Task
 
+External 8D Request / Supplier Response Loop Spec.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/EXTERNAL_8D_REQUEST_WORKFLOW_SPEC.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Completed a read-only audit of current share links, token routes, report permissions, Team roles, workflow locking, Activity Log, and email helpers.
+- Confirmed existing report share links are useful reference material but are too broad for External 8D Request because they are report-level, not request-level.
+- Documented that future implementation should use dedicated external request records and token tables instead of overloading `report_shares`.
+- Added a docs-only MVP workflow for supplier invite, secure link access, assigned-section response, internal review, revision request, acceptance, export, and close.
+- Documented permission matrix, token security model, login vs guest decision, ownership, audit logging, email notifications, data exposure rules, abuse/spam risks, future schema needs, smoke strategy, and phased implementation.
+- No runtime product feature, public marketing, payment, checkout, subscription, export, auth, Resend configuration, AI, Knowledge Base permission/eligibility, production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+
+## Risks
+
+- Future runtime implementation requires schema changes and must be reviewed separately.
+- Supplier guest access must remain much narrower than current authenticated Team access.
+- Email invites need rate limits and safe logging to avoid spam and token leakage.
+
+## Unfinished / Needs Human Review
+
+- PR #15 and final docs-only review are pending.
+
+## Suggested Next Task
+
+After this spec is reviewed, decide whether to implement request records first or define product operating metrics before runtime supplier collaboration.
+
+## Previous Task
+
 Report Completion Knowledge Capture v1.
 
 ## Changed Files
@@ -39,6 +81,8 @@ Report Completion Knowledge Capture v1.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
 - `npm run test:governance` passed.
+- Authenticated smoke workflow on `codex/report-completion-knowledge-capture-v1` passed.
+- Authenticated smoke workflow on `main` after merge passed.
 
 ## Risks
 
@@ -48,11 +92,11 @@ Report Completion Knowledge Capture v1.
 
 ## Unfinished / Needs Human Review
 
-- Authenticated smoke workflow and PR #14 are pending.
+- None for PR #14.
 
 ## Suggested Next Task
 
-After PR #14 is reviewed, decide whether External 8D Request should remain a docs-only spec or wait for more Team workflow validation.
+After PR #14, decide whether External 8D Request should remain a docs-only spec or wait for more Team workflow validation.
 
 ## Previous Task
 

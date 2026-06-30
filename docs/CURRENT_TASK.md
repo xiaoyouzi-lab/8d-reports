@@ -2,61 +2,57 @@
 
 ## Task Name
 
-Report Completion Knowledge Capture v1.
+External 8D Request / Supplier Response Loop Spec.
 
 ## Context
 
-Quality Knowledge Base v1 turns completed and locked reports into reusable quality knowledge. Knowledge Reuse in Editor v1 makes historical root causes, corrective actions, and lessons learned available while editing. AI Quality Check with Knowledge Context v1 lets review use a small, permission-safe set of historical completed reports as reference-only context.
-
-The next product step is to help users understand whether the current report will become a strong future knowledge asset before they complete, approve, submit, or close it.
+8D Reports has report editing, Team workflow, share links, Activity Log, Knowledge Base, editor knowledge reuse, AI review, and authenticated smoke infrastructure. The next product direction is controlled external supplier collaboration, but runtime implementation would require new access boundaries, schema, token handling, email flow, and smoke coverage.
 
 ## Goal
 
-Add a lightweight, non-blocking `Knowledge readiness` panel that highlights whether the report has captured root cause, corrective action, validation, prevention/system change, and lessons learned.
+Create a docs-only MVP specification for External 8D Request / Supplier Response Loop so a future PR can implement it safely without overloading existing report share links or exposing customer workspace data.
 
 ## Scope
 
-- Add reusable readiness calculation for key knowledge fields.
-- Add a `Knowledge readiness` panel in the report editor.
-- Show the same readiness panel in the workflow dialog.
-- Show a non-blocking warning when a user attempts to move to approved, submitted, or closed while readiness is weak.
-- Add safe analytics for readiness views and warnings.
-- Update authenticated smoke coverage for readiness visibility and analytics safety.
-- Update governance tests and docs.
+- Audit existing share links, report access, Team roles, workflow status, Activity Log, Resend/email capability, and guest token risks.
+- Add `docs/EXTERNAL_8D_REQUEST_WORKFLOW_SPEC.md`.
+- Document actors, MVP flow, permission matrix, token security model, login vs guest decision, ownership, audit log, email notifications, data exposure rules, abuse/spam risks, future schema needs, smoke strategy, and implementation phases.
+- Add governance checks proving the spec exists and covers the required safety topics.
 
 ## Non-Goals
 
-- No save logic changes.
-- No workflow eligibility changes.
-- No forced required fields.
-- No Knowledge Base permission or eligibility changes.
-- No AI behavior changes.
-- No export changes.
-- No payment, checkout, pricing, subscription, auth, Resend, production configuration, or database schema changes.
-- No production test data.
-- No External 8D Request, Supplier Response Loop, iOS, or PWA work.
+- No runtime external request feature.
+- No supplier portal accounts.
+- No public supplier dashboard.
+- No database schema changes.
+- No auth, payment, checkout, pricing, export, Resend configuration, AI, Knowledge Base permission/eligibility, or production configuration changes.
+- No production data writes.
 
 ## Acceptance Criteria
 
-- Report editor shows `Knowledge readiness`.
-- The panel includes:
-  - `Root cause captured?`
-  - `Corrective action captured?`
-  - `Validation captured?`
-  - `Prevention/system change captured?`
-  - `Lessons learned captured?`
-- Status labels are `Ready`, `Needs detail`, and `Missing`.
-- Workflow dialog shows the same readiness summary.
-- Weak readiness warning uses:
-  `This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker.`
-- Warning does not block the workflow request.
-- Analytics use only `missingCount`, `hasRootCause`, `hasCorrectiveAction`, `hasValidation`, `hasPrevention`, `hasLessonsLearned`, and `plan`.
-- Authenticated smoke verifies readiness panel visibility, warning analytics, and sensitive metadata safety.
-- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
-- Authenticated smoke workflow is triggered for the PR branch and inspected for status, artifact summary, and Neon cleanup.
+- Spec includes:
+  - Product goal
+  - Actors
+  - MVP flow
+  - Permission matrix
+  - Token security model
+  - Login vs guest decision
+  - Ownership model
+  - Audit log requirements
+  - Email notifications
+  - Data exposure rules
+  - Abuse / spam risk
+  - Non-goals
+  - Required schema changes for future PR
+  - Smoke strategy
+  - Recommended implementation phases
+- Governance checks cover the spec and required sections.
+- No runtime code changes except governance tests.
+- Required checks pass for a docs-only PR: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Readiness labels are guidance, not formal customer acceptance criteria.
-- Existing server-side completion checks still apply; this PR does not relax or tighten them.
-- The editor page already has several guidance panels, so the readiness panel must stay compact.
+- Existing editable share links are report-level and too broad for supplier requests.
+- Future runtime work needs schema changes and careful token design.
+- Email invites could create spam/abuse risk without rate limits.
+- Supplier guest access must remain narrower than authenticated Team access.

@@ -736,6 +736,28 @@ assert.match(knowledgeSpec, /Database schema migration|database schema migration
 assert.match(knowledgeSpec, /Permission Matrix/, "Knowledge spec should include a permission matrix");
 assert.match(knowledgeSpec, /report\.data/, "Knowledge spec should map report.data fields");
 
+const externalRequestSpec = read("docs/EXTERNAL_8D_REQUEST_WORKFLOW_SPEC.md");
+assert.match(externalRequestSpec, /External 8D Request turns 8D Reports/, "External request spec should state the product goal");
+assert.match(externalRequestSpec, /Customer quality team[\s\S]*Supplier responder[\s\S]*Internal reviewer[\s\S]*Team owner/, "External request spec should define required actors");
+assert.match(externalRequestSpec, /MVP Flow[\s\S]*create[\s\S]*invite[\s\S]*secure link[\s\S]*fills assigned sections[\s\S]*reviews[\s\S]*request revision[\s\S]*export[\s\S]*close/i, "External request spec should document the MVP flow");
+assert.match(externalRequestSpec, /Permission Matrix/, "External request spec should include a permission matrix");
+assert.match(externalRequestSpec, /Token Security Model/, "External request spec should include token security");
+assert.match(externalRequestSpec, /dedicated request tokens/, "External request spec should reject generic report share tokens for supplier requests");
+assert.match(externalRequestSpec, /Login vs Guest Decision/, "External request spec should define login vs guest behavior");
+assert.match(externalRequestSpec, /Ownership Model/, "External request spec should define ownership");
+assert.match(externalRequestSpec, /Audit Log Requirements/, "External request spec should include audit log requirements");
+assert.match(externalRequestSpec, /Email Notifications/, "External request spec should include email notification requirements");
+assert.match(externalRequestSpec, /Data Exposure Rules/, "External request spec should include data exposure rules");
+assert.match(externalRequestSpec, /Supplier guest views must not expose[\s\S]*Dashboard[\s\S]*Knowledge Base[\s\S]*team member list[\s\S]*billing/, "External request spec should restrict supplier guest access");
+assert.match(externalRequestSpec, /Abuse \/ Spam Risk/, "External request spec should document abuse and spam risks");
+assert.match(externalRequestSpec, /Non-Goals/, "External request spec should include non-goals");
+assert.match(externalRequestSpec, /No runtime external request feature/, "External request spec should remain docs-only for this PR");
+assert.match(externalRequestSpec, /Required Schema Changes For Future PR/, "External request spec should document future schema needs");
+assert.match(externalRequestSpec, /external_8d_requests[\s\S]*external_8d_request_tokens/, "External request spec should recommend dedicated future tables");
+assert.match(externalRequestSpec, /Smoke Strategy/, "External request spec should include smoke strategy");
+assert.match(externalRequestSpec, /revoked\/expired tokens fail safely/, "External request smoke strategy should cover revoked and expired tokens");
+assert.doesNotMatch(externalRequestSpec, /supports full QMS|includes SSO|provides SSO/i, "External request spec should not overclaim unsupported product scope");
+
 const reportCompletionKnowledgeSpec = read("docs/REPORT_COMPLETION_KNOWLEDGE_CAPTURE_SPEC.md");
 assert.match(reportCompletionKnowledgeSpec, /Completed 8D reports become valuable/, "Report completion knowledge spec should explain the business value");
 assert.match(reportCompletionKnowledgeSpec, /guidance only/, "Report completion knowledge spec should keep readiness non-blocking");
