@@ -2,58 +2,54 @@
 
 ## Task Name
 
-Knowledge Reuse in Editor v1.
+AI Quality Check Knowledge Context v1.
 
 ## Context
 
-Quality Knowledge Base v1 made completed, approved, submitted, and closed reports searchable as quality knowledge assets. Authenticated app discoverability made Knowledge Base visible in the logged-in app. Authenticated smoke infrastructure now gives PRs a safe temporary Neon branch workflow for logged-in verification.
+Quality Knowledge Base v1 made completed, approved, submitted, and closed reports searchable as quality knowledge assets. Knowledge Reuse in Editor v1 made those assets manually reusable while editing a report. Authenticated smoke infrastructure now gives PRs a safe temporary Neon branch workflow for logged-in verification.
 
-The next product step is to bring Knowledge Base into the report editor workflow, where users are filling D4 root cause, D5 corrective action, D7 prevention, and D8 lessons learned sections.
+The next product step is to let AI Quality Check use a small, permission-safe set of historical completed reports as reference context when reviewing the current report.
 
 ## Goal
 
-Add a copy-only Knowledge Reuse panel to the report editor so authenticated users can search existing Knowledge Base assets while editing a report and manually copy root cause, corrective action, and lessons learned text as reference.
+Add reference-only Knowledge Context to AI Quality Check so the AI can identify missing checks, weak evidence, repeated failure patterns, and prevention opportunities using up to three similar completed reports.
 
 ## Scope
 
-- Add a `Reuse Knowledge` entry in the report editor top tool area.
-- Add contextual hints for D4, D5, D7, and D8.
-- Add `src/components/knowledge/KnowledgeReusePanel.tsx`.
-- Reuse `POST /api/knowledge/search` and `src/lib/report-knowledge.ts`.
-- Add safe editor reuse analytics events.
-- Update authenticated smoke coverage for the editor reuse flow.
+- Add a server helper that builds compact Knowledge Context from existing accessible Knowledge Base reports.
+- Reuse `src/lib/report-knowledge.ts` eligibility/search mapping and `getAccessibleUserIds` permission scope.
+- Inject Knowledge Context into the AI Quality Check prompt as reference-only context.
+- Add a `Knowledge-based observations` output section.
+- Show whether Knowledge Context was used or empty in the AI Quality Check UI.
+- Add safe AI Knowledge Context analytics events.
+- Update authenticated smoke coverage for the AI unavailable/no-real-key path.
 - Update governance tests and docs.
 
 ## Non-Goals
 
 - No automatic report field writes.
-- No report save from Knowledge Reuse.
-- No AI generation or rewrite.
-- No Knowledge Base eligibility, permission, or share-token changes.
+- No report save from AI Quality Check.
+- No AI approval, certification, or customer-acceptance claim.
+- No Knowledge Base eligibility, permission, search API, or share-token changes.
 - No public marketing changes.
 - No payment, pricing, checkout, subscription, export, auth, Resend, production configuration, or database schema changes.
 - No vector database, semantic search, attachment parsing, new tables, production test data, External 8D Request, Supplier Response Loop, iOS, or PWA work.
 
 ## Acceptance Criteria
 
-- Report editor top tool area shows `Reuse Knowledge`.
-- D4 hint says: `Search past root causes before finalizing this section.`
-- D5 hint says: `Reuse proven corrective actions from completed reports.`
-- D7 hint says: `Check prevention and system-change ideas from similar issues.`
-- D8 hint says: `Check lessons learned from similar completed reports.`
-- The panel searches through `POST /api/knowledge/search`.
-- No new Knowledge API is added.
-- The panel does not call `handleFieldChange`, save reports, or update report fields.
-- Copy root cause, corrective action, and lessons learned succeeds with `Copied`.
-- Copy failure shows `Could not copy. Select and copy manually.`
-- Open report opens in a new tab and preserves the current editor tab.
-- Reuse analytics use only safe metadata and do not include raw query or report content.
-- Authenticated smoke verifies the editor reuse flow.
+- AI Quality Check builds Knowledge Context with at most three accessible eligible reports.
+- The current report is excluded from its own Knowledge Context.
+- Prompt includes exact reference-only safety instructions.
+- AI output schema includes `Knowledge-based observations`.
+- UI shows `Knowledge context used: N similar reports` or `No reusable knowledge context found yet.`
+- AI unavailable / missing key path remains safe and does not leak prompt or Knowledge Context content.
+- Analytics use only `source`, `contextCount`, `hasContext`, and `plan`.
+- Authenticated smoke verifies the no-real-AI-key context/fallback path.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 - Authenticated smoke workflow is triggered for the PR branch and inspected for status, artifact summary, and Neon cleanup.
 
 ## Risks
 
-- The report editor toolbar is already crowded, so mobile layout must stay compact.
-- Search remains v1 keyword/JSONB-backed application search through the existing Knowledge API.
-- Future AI context should wait until the copy-only reuse behavior is validated.
+- Context matching remains v1 keyword/application-level search and may need ranking improvements later.
+- AI Quality Check remains advisory only; historical context can surface patterns but cannot prove current-report correctness.
+- Authenticated smoke should not require a real AI vendor key.

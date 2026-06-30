@@ -21,6 +21,8 @@ const ALLOWED_EVENTS = new Set([
   "deep_search_gate_clicked",
   "ai_draft_interest_clicked",
   "ai_report_review_clicked",
+  "ai_quality_check_knowledge_context_used",
+  "ai_quality_check_knowledge_context_empty",
   "ai_draft_generate_clicked",
   "ai_draft_applied",
   "upgrade_clicked",

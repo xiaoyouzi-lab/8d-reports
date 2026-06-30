@@ -321,7 +321,9 @@ assert.match(authenticatedSmokeWorkflow, /if: always\(\)[\s\S]*Delete temporary 
 assert.match(authenticatedSmokeWorkflow, /SMOKE_RESULT_PATH: output\/authenticated-smoke-result\.json/, "Authenticated smoke workflow should save a bounded smoke artifact");
 assert.match(authenticatedSmokeWorkflow, /AUTH_SECRET="\$\(openssl rand -hex 32\)"/, "Authenticated smoke workflow should generate the Better Auth runtime secret into a variable");
 assert.match(authenticatedSmokeWorkflow, /echo "::add-mask::\$AUTH_SECRET"[\s\S]*printf 'BETTER_AUTH_SECRET=%s\\n' "\$AUTH_SECRET" >> "\$GITHUB_ENV"/, "Authenticated smoke workflow should mask the generated Better Auth secret before writing it to GitHub env");
+assert.match(authenticatedSmokeWorkflow, /AI_BETA_EMAILS=smoke-owner@example\.test/, "Authenticated smoke workflow should beta-gate the smoke owner for AI Quality Check without using a real AI key");
 assert.doesNotMatch(authenticatedSmokeWorkflow, /BETTER_AUTH_SECRET=\$\(openssl rand -hex 32\)/, "Authenticated smoke workflow must not write an unmasked generated Better Auth secret directly to GitHub env");
+assert.doesNotMatch(authenticatedSmokeWorkflow, /DEEPSEEK_API_KEY/, "Authenticated smoke workflow must not require a real AI provider key");
 
 const smokeSafety = read("scripts/smoke/smoke-safety.ts");
 assert.match(smokeSafety, /SMOKE_DB !== "true"/, "Smoke scripts must fail closed unless SMOKE_DB=true");
@@ -424,6 +426,14 @@ assert.match(authenticatedBrowserSmoke, /knowledge_reuse_corrective_action_copie
 assert.match(authenticatedBrowserSmoke, /knowledge_reuse_lesson_copied/, "Authenticated smoke should verify editor reuse lessons learned copy analytics");
 assert.match(authenticatedBrowserSmoke, /waitForEvent\("page"\)/, "Authenticated smoke should verify editor reuse opens reports in a new tab");
 assert.match(authenticatedBrowserSmoke, /Editor reuse Open report should preserve the current editor tab/, "Authenticated smoke should protect current editor context");
+assert.match(authenticatedBrowserSmoke, /verifyAiQualityCheck/, "Authenticated smoke should cover AI Quality Check Knowledge Context fallback");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("ai quality check knowledge context unavailable fallback"/, "Authenticated smoke should name the AI Quality Check context fallback step");
+assert.match(authenticatedBrowserSmoke, /AI Quality Check is temporarily unavailable/, "Authenticated smoke should verify safe no-real-key AI fallback");
+assert.match(authenticatedBrowserSmoke, /Knowledge context used: \\d\+ similar reports|No reusable knowledge context found yet/, "Authenticated smoke should verify AI Quality Check context count or empty state");
+assert.match(authenticatedBrowserSmoke, /ai_quality_check_knowledge_context_used/, "Authenticated smoke should accept AI Quality Check used-context analytics");
+assert.match(authenticatedBrowserSmoke, /ai_quality_check_knowledge_context_empty/, "Authenticated smoke should accept AI Quality Check empty-context analytics");
+assert.match(authenticatedBrowserSmoke, /contextCount/, "Authenticated smoke should permit safe contextCount analytics metadata");
+assert.match(authenticatedBrowserSmoke, /hasContext/, "Authenticated smoke should permit safe hasContext analytics metadata");
 assert.match(authenticatedBrowserSmoke, /dashboard_feature_entry_clicked/, "Authenticated smoke should verify Dashboard entry analytics");
 assert.match(authenticatedBrowserSmoke, /app_navigation_clicked/, "Authenticated smoke should verify app navigation analytics");
 assert.match(authenticatedBrowserSmoke, /Could not copy\. Select and copy manually\./, "Authenticated smoke should verify copy failure state");
@@ -463,6 +473,9 @@ assert.match(authenticatedSmokeDocs, /Runtime-generated secrets must be masked/,
 assert.match(authenticatedSmokeDocs, /Failure Diagnostics/, "Authenticated smoke docs should document failure diagnostics");
 assert.match(authenticatedSmokeDocs, /failedStep/, "Authenticated smoke docs should document failed-step artifacts");
 assert.match(authenticatedSmokeDocs, /must not include passwords, tokens, cookies, full database URLs, report text/, "Authenticated smoke docs should document artifact redaction boundaries");
+assert.match(authenticatedSmokeDocs, /AI Quality Check Knowledge Context fallback/, "Authenticated smoke docs should document AI Quality Check Knowledge Context coverage");
+assert.match(authenticatedSmokeDocs, /must not require or print a real AI provider key/, "Authenticated smoke docs should avoid real AI provider requirements");
+assert.match(authenticatedSmokeDocs, /Knowledge context used: N similar reports/, "Authenticated smoke docs should document the AI context count state");
 
 assert.equal(MAX_SERVICE_REQUEST_FILES, 5, "Service requests should keep a clear 5-file limit");
 assert.equal(isValidServiceContactEmail("quality@example.com"), true, "Service request email validation should accept normal business emails");
@@ -581,6 +594,8 @@ assert.doesNotMatch(knowledgeReusePanel, /reportShares|accessToken|share token/i
 const eventsRoute = read("src/app/api/events/route.ts");
 assert.match(eventsRoute, /app_navigation_clicked/, "Analytics allowlist should include app navigation clicks");
 assert.match(eventsRoute, /dashboard_feature_entry_clicked/, "Analytics allowlist should include dashboard feature-entry clicks");
+assert.match(eventsRoute, /ai_quality_check_knowledge_context_used/, "Analytics allowlist should include AI Quality Check used-context event");
+assert.match(eventsRoute, /ai_quality_check_knowledge_context_empty/, "Analytics allowlist should include AI Quality Check empty-context event");
 assert.match(eventsRoute, /knowledge_search_used/, "Analytics allowlist should include Knowledge search");
 assert.match(eventsRoute, /knowledge_result_opened/, "Analytics allowlist should include Knowledge result opens");
 assert.match(eventsRoute, /knowledge_root_cause_copied/, "Analytics allowlist should include root cause copy");
@@ -689,8 +704,49 @@ assert.match(reportReviewRoute, /isAiBetaUser/, "AI Quality Check must remain be
 assert.match(reportReviewRoute, /getReportAccess\(reportId, user\.id\)/, "AI Quality Check must use shared role and lock access gate");
 assert.match(reportReviewRoute, /access\.locked/, "AI Quality Check must reject locked reports before review");
 assert.match(reportReviewRoute, /access\.canEdit/, "AI Quality Check must require edit permission before review");
-assert.match(reportReviewRoute, /summarizeReportForAi\(reportData, report\.title\)/, "AI Quality Check input must be built from the saved report");
+assert.match(reportReviewRoute, /buildKnowledgeContextForQualityCheck\(report, user\)/, "AI Quality Check should build Knowledge Context after report access is resolved");
+assert.match(reportReviewRoute, /summarizeReportForAi\(reportData, report\.title, knowledgeContext\)/, "AI Quality Check input must be built from the saved report and bounded Knowledge Context");
+assert.match(reportReviewRoute, /knowledgeContext: knowledge/, "AI Quality Check should return only a safe Knowledge Context summary to the browser");
 assert.doesNotMatch(reportReviewRoute, /getAccessibleReport|getAccessibleUserIds|reports\/search|reportActivities/, "AI Quality Check must not bypass shared report access or read unrelated data");
+
+const aiKnowledgeContext = read("src/lib/ai/knowledge-context.ts");
+assert.match(aiKnowledgeContext, /export async function buildKnowledgeContextForQualityCheck/, "AI Knowledge Context helper should exist");
+assert.match(aiKnowledgeContext, /getAccessibleUserIds\(user\.id\)/, "AI Knowledge Context helper must reuse Team workspace access scope");
+assert.match(aiKnowledgeContext, /searchKnowledgeEntries/, "AI Knowledge Context helper must reuse Knowledge Base eligibility and search behavior");
+assert.match(aiKnowledgeContext, /QUALITY_CHECK_KNOWLEDGE_CONTEXT_LIMIT = 3/, "AI Knowledge Context helper should limit context to at most 3 reports");
+assert.match(aiKnowledgeContext, /ne\(reports\.id, report\.id\)/, "AI Knowledge Context helper should exclude the current report from candidate rows");
+assert.match(aiKnowledgeContext, /problemDescription[\s\S]*productName[\s\S]*customerName[\s\S]*confirmedRootCause[\s\S]*selectedCorrectiveAction/, "AI Knowledge Context helper should build seeds from the required current-report fields");
+assert.doesNotMatch(aiKnowledgeContext, /reportShares|accessToken|share token/i, "AI Knowledge Context helper must not rely on public share tokens");
+assert.doesNotMatch(aiKnowledgeContext, /\.insert\(|\.update\(|\.delete\(|CREATE TABLE|ALTER TABLE|drizzle-kit|migration/i, "AI Knowledge Context helper must remain read-only and avoid schema changes");
+
+const aiPrompt = read("src/lib/ai/deepseek.ts");
+assert.match(aiPrompt, /The following historical completed reports are provided only as reference context\./, "AI prompt should include reference-only context instruction");
+assert.match(aiPrompt, /Do not treat them as proof that the current report is correct\./, "AI prompt should not let history prove current correctness");
+assert.match(aiPrompt, /Do not copy them blindly\./, "AI prompt should forbid blind historical copying");
+assert.match(aiPrompt, /Use them to identify missing checks, weak evidence, repeated failure patterns, and prevention opportunities\./, "AI prompt should focus historical context on review risks");
+assert.match(aiPrompt, /You do not approve, certify, or submit the report/, "AI prompt should forbid approval behavior");
+assert.match(aiPrompt, /knowledgeBasedObservations/, "AI prompt schema should include Knowledge-based observations");
+
+const aiPayload = read("src/lib/ai/report-payload.ts");
+assert.match(aiPayload, /knowledgeContext: QualityCheckKnowledgeContextItem\[\] = \[\]/, "AI report payload should accept optional Knowledge Context");
+assert.match(aiPayload, /knowledgeContextStatus/, "AI report payload should tell the model when no context exists");
+
+const aiReportTools = read("src/components/report/AiReportTools.tsx");
+assert.match(aiReportTools, /Knowledge context used: \$\{context\.contextCount\} similar reports/, "AI UI should show Knowledge Context count");
+assert.match(aiReportTools, /No reusable knowledge context found yet\./, "AI UI should show Knowledge Context empty state");
+assert.match(aiReportTools, /Knowledge-based observations/, "AI UI should render Knowledge-based observations");
+assert.match(aiReportTools, /ai_quality_check_knowledge_context_used/, "AI UI should track used-context analytics");
+assert.match(aiReportTools, /ai_quality_check_knowledge_context_empty/, "AI UI should track empty-context analytics");
+assert.match(aiReportTools, /source: "ai_quality_check"[\s\S]*contextCount[\s\S]*hasContext[\s\S]*plan/, "AI UI analytics metadata should stay safe and bounded");
+assert.doesNotMatch(aiReportTools, /trackEvent\([\s\S]{0,320}(query:|problem:|rootCause:|correctiveAction:|lessonsLearned:|customer:|supplier:|product:|batch:|prompt:|rawAi:)/, "AI Knowledge Context analytics metadata must not include raw queries, report content, prompts, or raw AI output");
+
+const aiKnowledgeSpec = read("docs/AI_QUALITY_CHECK_KNOWLEDGE_CONTEXT_SPEC.md");
+assert.match(aiKnowledgeSpec, /reference-only/i, "AI Knowledge Context spec should define reference-only behavior");
+assert.match(aiKnowledgeSpec, /V1 does not add:[\s\S]*Database schema changes or migrations/, "AI Knowledge Context spec should reject schema changes");
+assert.match(aiKnowledgeSpec, /Allowed metadata only:[\s\S]*contextCount[\s\S]*hasContext[\s\S]*plan/, "AI Knowledge Context spec should document safe analytics metadata");
+
+const schemaFile = read("src/lib/db/schema.ts");
+assert.doesNotMatch(schemaFile, /knowledge_context|ai_knowledge|context_reports/i, "AI Knowledge Context v1 must not add database schema");
 
 const loginForm = read("src/app/(auth)/login/login-form.tsx");
 const signupForm = read("src/app/(auth)/signup/signup-form.tsx");

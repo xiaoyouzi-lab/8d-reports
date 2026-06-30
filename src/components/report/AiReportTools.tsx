@@ -12,11 +12,13 @@ import { trackEvent } from "@/lib/analytics"
 interface AiReportToolsProps {
   reportId: string
   reportData: ReportData
+  plan?: "free" | "pro" | "team"
   onApplyDraft: (fields: Partial<ReportData>) => void
 }
 
 type AiOutput = Record<string, unknown>
 type AiSection = { title: string; value: unknown }
+type ReviewKnowledgeContext = { contextCount: number; hasContext: boolean }
 
 function stripCodeFence(value: string) {
   return value
@@ -38,6 +40,18 @@ function normalizeAiOutput(value: unknown): AiOutput | null {
     return { summaryText: text }
   }
   return null
+}
+
+function normalizeKnowledgeContext(value: unknown): ReviewKnowledgeContext | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null
+  const record = value as Record<string, unknown>
+  const contextCount = typeof record.contextCount === "number" && Number.isFinite(record.contextCount)
+    ? Math.max(0, Math.floor(record.contextCount))
+    : 0
+  return {
+    contextCount,
+    hasContext: record.hasContext === true && contextCount > 0,
+  }
 }
 
 function toText(value: unknown) {
@@ -97,6 +111,7 @@ function AiReviewResult({ output }: { output: AiOutput }) {
     output.missingInformation,
     output.customerRejectionRisks,
     output.improvementSuggestions,
+    output.knowledgeBasedObservations,
     output.revisedWordingSuggestions,
     output.sectionScores,
   ].some((value) => toList(value).length > 0)
@@ -130,6 +145,7 @@ function AiReviewResult({ output }: { output: AiOutput }) {
       <ResultSection title="Missing evidence / information" value={output.missingInformation} />
       <ResultSection title="Root cause and section concerns" value={output.sectionScores} />
       <ResultSection title="Corrective action improvements" value={output.improvementSuggestions} />
+      <ResultSection title="Knowledge-based observations" value={output.knowledgeBasedObservations} />
       <ResultSection title="Customer rejection risks" value={output.customerRejectionRisks} />
       <ResultSection title="Suggested wording improvements" value={output.revisedWordingSuggestions} />
       {!hasStructuredSections && (
@@ -137,6 +153,17 @@ function AiReviewResult({ output }: { output: AiOutput }) {
           AI returned no detailed findings. Review the report manually before customer submission.
         </div>
       )}
+    </div>
+  )
+}
+
+function KnowledgeContextStatus({ context }: { context: ReviewKnowledgeContext | null }) {
+  if (!context) return null
+  return (
+    <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-950">
+      {context.hasContext
+        ? `Knowledge context used: ${context.contextCount} similar reports`
+        : "No reusable knowledge context found yet."}
     </div>
   )
 }
@@ -169,10 +196,11 @@ function AiDraftResult({ draftFields, onApply }: { draftFields: Partial<ReportDa
   )
 }
 
-export function AiReportTools({ reportId, reportData, onApplyDraft }: AiReportToolsProps) {
+export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraft }: AiReportToolsProps) {
   const [open, setOpen] = useState(false)
   const [materials, setMaterials] = useState("")
   const [review, setReview] = useState<AiOutput | null>(null)
+  const [reviewKnowledgeContext, setReviewKnowledgeContext] = useState<ReviewKnowledgeContext | null>(null)
   const [draft, setDraft] = useState<AiOutput | null>(null)
   const [reviewError, setReviewError] = useState<string | null>(null)
   const [draftError, setDraftError] = useState<string | null>(null)
@@ -180,6 +208,7 @@ export function AiReportTools({ reportId, reportData, onApplyDraft }: AiReportTo
 
   const runReview = async () => {
     setLoading("review")
+    setReviewKnowledgeContext(null)
     try {
       trackEvent("ai_report_review_clicked", {}, reportId)
       const res = await fetch("/api/ai/report-review", {
@@ -188,6 +217,22 @@ export function AiReportTools({ reportId, reportData, onApplyDraft }: AiReportTo
         body: JSON.stringify({ reportId }),
       })
       const data = await res.json().catch(() => null)
+      const knowledgeContext = normalizeKnowledgeContext(data?.knowledgeContext)
+      if (knowledgeContext) {
+        setReviewKnowledgeContext(knowledgeContext)
+        trackEvent(
+          knowledgeContext.hasContext
+            ? "ai_quality_check_knowledge_context_used"
+            : "ai_quality_check_knowledge_context_empty",
+          {
+            source: "ai_quality_check",
+            contextCount: knowledgeContext.contextCount,
+            hasContext: knowledgeContext.hasContext,
+            plan,
+          },
+          reportId,
+        )
+      }
       if (!res.ok) throw new Error(data?.error || "AI review failed")
       const output = normalizeAiOutput(data?.output)
       if (!output) throw new Error("AI returned an unreadable response. Please try again.")
@@ -289,6 +334,8 @@ export function AiReportTools({ reportId, reportData, onApplyDraft }: AiReportTo
               {reviewError}
             </div>
           )}
+
+          <KnowledgeContextStatus context={reviewKnowledgeContext} />
 
           {review && (
             <div className="rounded-lg border bg-slate-50 p-3">

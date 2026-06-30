@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Authenticated smoke testing verifies logged-in app behavior without writing to production data. It exists so Codex and GitHub Actions can validate app-only features such as Dashboard navigation, Knowledge Base reuse, editor Knowledge Reuse, report access boundaries, copy actions, and safe analytics payloads after a PR changes authenticated UX.
+Authenticated smoke testing verifies logged-in app behavior without writing to production data. It exists so Codex and GitHub Actions can validate app-only features such as Dashboard navigation, Knowledge Base reuse, editor Knowledge Reuse, AI Quality Check Knowledge Context fallback, report access boundaries, copy actions, and safe analytics payloads after a PR changes authenticated UX.
 
 ## Architecture
 
@@ -29,6 +29,8 @@ Required repository variables:
 - `NEON_DATABASE_NAME`
 
 The workflow must fail clearly if these values are missing. It must not guess a database, use `.env`, or fall back to the production `DATABASE_URL`.
+
+The workflow may set local-only smoke runtime variables such as `AI_BETA_EMAILS=smoke-owner@example.test` so authenticated smoke can exercise beta-gated UI paths. It must not require or print a real AI provider key.
 
 ## Safety Rules
 
@@ -104,6 +106,11 @@ The authenticated smoke verifies:
 - Editor Knowledge Reuse clipboard failure displays the expected manual-copy message.
 - Editor Knowledge Reuse opens source reports in a new tab and preserves the current editor tab.
 - Editor Knowledge Reuse has no horizontal overflow on narrow/mobile viewport.
+- AI Quality Check can be opened by the smoke owner.
+- AI Quality Check builds Knowledge Context before the missing-key fallback.
+- AI Quality Check shows either `Knowledge context used: N similar reports` or `No reusable knowledge context found yet.`
+- AI Quality Check missing-key fallback does not expose prompt instructions or historical report content.
+- AI Quality Check Knowledge Context analytics use only safe metadata.
 - Report workflow panel includes a Knowledge Base entry.
 - Analytics payloads use safe metadata only.
 
@@ -126,7 +133,7 @@ Do not use the local `.env` production or preview database as a fallback. If the
 - No production data writes.
 - No production user creation.
 - No product behavior changes.
-- No payment, export, AI, public marketing, or database schema changes.
+- No payment, export, real AI provider calls, public marketing, or database schema changes.
 - No automatic PR-triggered privileged workflow.
 
 ## Operational Risk

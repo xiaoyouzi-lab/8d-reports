@@ -383,6 +383,7 @@ export default function ReportEditorPage({
               <AiReportTools
                 reportId={reportId}
                 reportData={reportData}
+                plan={plan}
                 onApplyDraft={(fields) => {
                   if (!reportPermissions.canEdit) {
                     toast.error(readOnlyReason)
