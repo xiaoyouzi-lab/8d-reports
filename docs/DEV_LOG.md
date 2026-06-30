@@ -45,6 +45,163 @@ After this PR, use the metrics document to decide whether the next runtime prior
 
 ## Previous Task
 
+External 8D Request / Supplier Response Loop Spec.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/EXTERNAL_8D_REQUEST_WORKFLOW_SPEC.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Completed a read-only audit of current share links, token routes, report permissions, Team roles, workflow locking, Activity Log, and email helpers.
+- Confirmed existing report share links are useful reference material but are too broad for External 8D Request because they are report-level, not request-level.
+- Documented that future implementation should use dedicated external request records and token tables instead of overloading `report_shares`.
+- Added a docs-only MVP workflow for supplier invite, secure link access, assigned-section response, internal review, revision request, acceptance, export, and close.
+- Documented permission matrix, token security model, login vs guest decision, ownership, audit logging, email notifications, data exposure rules, abuse/spam risks, future schema needs, smoke strategy, and phased implementation.
+- No runtime product feature, public marketing, payment, checkout, subscription, export, auth, Resend configuration, AI, Knowledge Base permission/eligibility, production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+
+## Risks
+
+- Future runtime implementation requires schema changes and must be reviewed separately.
+- Supplier guest access must remain much narrower than current authenticated Team access.
+- Email invites need rate limits and safe logging to avoid spam and token leakage.
+
+## Unfinished / Needs Human Review
+
+- None for PR #15.
+
+## Suggested Next Task
+
+After this spec is reviewed, decide whether to implement request records first or define product operating metrics before runtime supplier collaboration.
+
+## Previous Task
+
+Report Completion Knowledge Capture v1.
+
+## Changed Files
+
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/REPORT_COMPLETION_KNOWLEDGE_CAPTURE_SPEC.md`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/smoke/seed-auth-smoke.ts`
+- `scripts/team-governance.test.ts`
+- `src/app/(app)/reports/[id]/page.tsx`
+- `src/app/api/events/route.ts`
+- `src/components/report/KnowledgeReadinessPanel.tsx`
+- `src/components/report/ReportWorkflowPanel.tsx`
+- `src/lib/report-steps.ts`
+
+## Implementation Summary
+
+- Read-only audit complete before implementation.
+- The most valuable Knowledge Base fields are D4 root cause, D5 corrective action, D6 validation, D7 prevention/system change, and D8 lessons learned.
+- Weak or missing values in those fields make future Knowledge Base search, editor reuse, and AI review less useful.
+- The lowest-risk product surface is a compact, non-blocking `Knowledge readiness` panel in the report editor and workflow dialog.
+- Workflow transitions already have server-side completion checks. This PR does not relax or tighten those checks, does not change workflow eligibility, and does not change save logic.
+- Added a pure readiness summary helper for root cause, corrective action, validation, prevention, and lessons learned.
+- Added a reusable `KnowledgeReadinessPanel` that shows `Ready`, `Needs detail`, or `Missing`.
+- Added a non-blocking workflow warning before moving to approved, submitted, or closed when readiness is weak.
+- Added safe analytics events for readiness views and warnings.
+- No public marketing, payment, checkout, subscription, export, auth, Resend, AI, Knowledge Base permission/eligibility, production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke workflow on `codex/report-completion-knowledge-capture-v1` passed.
+- Authenticated smoke workflow on `main` after merge passed.
+
+## Risks
+
+- Readiness is guidance only, not a formal customer approval standard.
+- Existing server-side completion checks remain separate from this panel and can still reject incomplete completion/locking attempts.
+- The editor already contains several guidance surfaces, so the panel is intentionally compact.
+
+## Unfinished / Needs Human Review
+
+- None for PR #14.
+
+## Suggested Next Task
+
+After PR #14, decide whether External 8D Request should remain a docs-only spec or wait for more Team workflow validation.
+
+## Previous Task
+
+AI Quality Check Knowledge Context v1.
+
+## Changed Files
+
+- `.github/workflows/authenticated-smoke.yml`
+- `docs/AI_QUALITY_CHECK_KNOWLEDGE_CONTEXT_SPEC.md`
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/team-governance.test.ts`
+- `src/app/(app)/reports/[id]/page.tsx`
+- `src/app/api/ai/report-review/route.ts`
+- `src/app/api/events/route.ts`
+- `src/components/report/AiReportTools.tsx`
+- `src/lib/ai/deepseek.ts`
+- `src/lib/ai/knowledge-context.ts`
+- `src/lib/ai/report-payload.ts`
+
+## Implementation Summary
+
+- Read-only audit complete before implementation.
+- Best injection point: `src/app/api/ai/report-review/route.ts` after report access is resolved and before `callDeepSeekJson`, because that route already owns AI Quality Check permissions, locked-report checks, report data assembly, and unavailable fallback behavior.
+- Knowledge Context should reuse `src/lib/report-knowledge.ts` for eligibility, trust labels, field mapping, and search behavior, and reuse `getAccessibleUserIds` for Team workspace scope. No copied permission logic is needed.
+- No new Knowledge API is needed. AI Quality Check can use a private server helper and keep `/api/knowledge/search` unchanged and POST-only.
+- Safe verification without a real AI key should set the smoke owner as an AI beta user, build Knowledge Context server-side, let the missing-key path return the existing safe unavailable message, and verify the UI context status plus analytics payload safety without calling an external AI provider.
+- No database schema migration is needed.
+- Added `buildKnowledgeContextForQualityCheck` as a private server helper that reads only accessible reports, excludes the current report, reuses Knowledge Base search/eligibility mapping, and returns at most 3 compact context items.
+- Injected bounded Knowledge Context into AI Quality Check input and updated the prompt with reference-only instructions plus a `Knowledge-based observations` output section.
+- Updated the AI Quality Check UI to show `Knowledge context used: N similar reports` or `No reusable knowledge context found yet.`
+- Preserved the no-real-AI-key fallback: the route returns the existing safe unavailable message plus only `contextCount`/`hasContext`, never prompt or historical report content.
+- Added safe analytics events `ai_quality_check_knowledge_context_used` and `ai_quality_check_knowledge_context_empty`.
+- Extended authenticated smoke to beta-gate the smoke owner locally, trigger AI Quality Check without a real provider key, verify context/fallback UI, and enforce analytics metadata safety.
+- Added the AI Quality Check Knowledge Context spec and governance checks for helper scope, prompt safety, UI states, analytics allowlist, smoke coverage, and no schema/payment/export/auth changes.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke workflow on `codex/ai-quality-check-with-knowledge-context-v1` passed.
+
+## Risks
+
+- Historical reports are reference context only; the prompt and UI must not imply AI approval or correctness proof.
+- Keyword matching may miss similar reports until future semantic/AI search work exists.
+- AI unavailable and no-key paths must not leak prompts, historical report text, or raw query seeds.
+
+## Unfinished / Needs Human Review
+
+- None for PR #13.
+
+## Suggested Next Task
+
+After PR #13, use completion readiness to improve future Knowledge Base and AI context quality.
+## Previous Task
+
 Knowledge Reuse in Editor v1.
 
 ## Changed Files
@@ -80,7 +237,7 @@ Knowledge Reuse in Editor v1.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
 - `npm run test:governance` passed.
-- Pending: authenticated smoke workflow on `codex/knowledge-reuse-in-editor-v1`.
+- Authenticated smoke workflow on `codex/knowledge-reuse-in-editor-v1` passed.
 
 ## Risks
 
@@ -90,7 +247,7 @@ Knowledge Reuse in Editor v1.
 
 ## Unfinished / Needs Human Review
 
-- Final checks and authenticated smoke workflow run are pending until implementation verification is complete.
+- None for PR #12.
 
 ## Suggested Next Task
 

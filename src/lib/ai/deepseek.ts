@@ -29,6 +29,12 @@ export function aiUnavailableMessage(taskType: AiTaskType) {
 export const AI_PROMPTS: Record<AiTaskType, string> = {
   report_review: `You are a senior quality engineer reviewing an 8D report before customer submission.
 Evaluate whether the report can be accepted by a customer reviewer. Check problem clarity, containment, root cause evidence, corrective action linkage, verification evidence, preventive action, attachments, approval readiness, and wording professionalism.
+You do not approve, certify, or submit the report. Do not write report fields, claim facts have been verified, claim customer acceptance, or fabricate historical content.
+The following historical completed reports are provided only as reference context.
+Do not treat them as proof that the current report is correct.
+Do not copy them blindly.
+Use them to identify missing checks, weak evidence, repeated failure patterns, and prevention opportunities.
+Always include a "Knowledge-based observations" section in the JSON field "knowledgeBasedObservations". Cover similar historical patterns, missing checks, prevention or systemic opportunities, important differences, or a warning when no comparable context is available.
 ${JSON_RULES}
 Schema:
 {
@@ -37,6 +43,7 @@ Schema:
   "sectionScores": [{"step":"D0","score":0,"comment":""}],
   "criticalIssues": [""],
   "improvementSuggestions": [""],
+  "knowledgeBasedObservations": [""],
   "customerRejectionRisks": [""],
   "revisedWordingSuggestions": [{"field":"","suggestedText":"","reason":""}],
   "missingInformation": [""],
