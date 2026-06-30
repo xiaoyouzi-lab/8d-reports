@@ -2,82 +2,67 @@
 
 ## Task Name
 
-Revenue Evidence Sprint v1.
+Offsite GEO Distribution Pack v1.
 
 ## Context
 
-Knowledge Base, Knowledge Reuse, AI Quality Check with Knowledge Context, and
-Knowledge Capture now provide enough product capability for the current stage.
-The next priority is not another feature expansion. The priority is to collect
-commercial conversion evidence: whether visitors click, download demos, upload
-templates, submit service requests, sign up, and attempt exports.
+Revenue Evidence Sprint v1 is deployed, and the onsite GEO/content planning work
+now needs a safe offsite distribution pack. The goal is not automated posting or
+spam. The goal is to prepare high-quality, platform-native drafts that can be
+manually reviewed and used to learn whether SQEs, quality managers, supplier
+quality engineers, and manufacturing quality teams respond to the topics.
 
 ## Goal
 
-Turn 8D Reports into a measurable revenue-learning system for Template Setup,
-Team Launch, and Assisted First 8D / SCAR Delivery without changing auth,
-payment, export entitlements, Knowledge permissions, or database schema.
+Create a docs-only offsite GEO distribution pack for LinkedIn, Medium, Quora,
+and Reddit-safe discussion that supports revenue evidence without fake stories,
+fake statistics, over-linking, or hidden product affiliation.
 
 ## Scope
 
-- Upgrade homepage, Pricing, and demo report CTAs for service conversion.
-- Make the Template Setup / service lead funnel usable with required fields,
-  success and failure states, email notifications, and file-upload fallback.
-- Reuse the existing service request table for Template Setup, Team Launch, and
-  Assisted First 8D / SCAR Delivery leads.
-- Add privacy-safe revenue analytics events and safe referrer / UTM /
-  anonymous-session metadata.
-- Add admin-only revenue evidence metrics for the last 7 and 30 days.
-- Add Excel downloads to demo report sales assets using the existing quality
-  workbook generator.
-- Extend unauthenticated, production, governance, and authenticated smoke
-  coverage for the revenue evidence path.
-- Update the development log.
+- Add `docs/OFFSITE_GEO_DISTRIBUTION_PACK.md`.
+- Include:
+  - 10 LinkedIn posts for SQE / quality manager / supplier quality roles
+  - 5 Medium article drafts/outlines
+  - 20 Quora answer drafts
+  - 10 Reddit-safe discussion prompts
+  - anti-spam and manual tracking rules
+- Update `docs/DEV_LOG.md`.
+- Add governance checks that the document contains all required platform
+  sections and anti-spam rules.
 
 ## Non-Goals
 
-- No full QMS, APQP, PPAP, iOS, PWA, or external supplier request system.
-- No payment, checkout, subscription, pricing amount, auth, password reset, or
-  Resend infrastructure changes beyond non-blocking lead notification emails.
-- No report editor core-flow changes.
-- No PDF / Word / Excel export entitlement changes for real user reports.
-- No AI backend changes.
-- No Knowledge Base search, eligibility, permission, report access, or share
-  token logic changes.
-- No database schema migration.
-- No production data writes during development.
+- No runtime pages.
+- No auto-posting.
+- No social media API integration.
+- No fake user stories, fake statistics, fake customer logos, "best in the
+  world" claims, guaranteed customer acceptance claims, or hidden affiliation.
+- No payment, checkout, subscription, auth, password reset, Resend, export,
+  Knowledge Base search, Knowledge permissions, AI backend, production
+  configuration, or database schema changes.
+- No production data writes.
 
 ## Acceptance Criteria
 
-- Homepage keeps Start free and adds Upload your 8D template / Request template
-  setup with the required urgent 8D/SCAR copy.
-- Pricing keeps Free / Pro / Team / Single Export and makes these services
-  prominent: 8D Template Setup from $499, Team Launch from $999, Assisted First
-  8D / SCAR Delivery from $799.
-- Demo report pages include the company-format CTA and PDF / Word / Excel / ZIP
-  download links.
-- Template Setup form includes name, company, work email, role, current process,
-  use case, required export, timeline, message, and file upload.
-- Lead save does not fail just because file upload fails; users see a clear
-  re-upload warning.
-- Admin and user email failures are logged but do not block lead save.
-- Admin can view lead and file metadata without private bucket URLs.
-- Revenue analytics events are allowlisted and avoid sensitive report content.
-- Admin metrics show page views, demo downloads, template setup submissions,
-  contact submissions, signup count, export attempts, and pricing CTA clicks for
-  the last 7 and 30 days.
+- Offsite distribution pack exists and covers LinkedIn, Medium, Quora, and
+  Reddit-safe discussion.
+- LinkedIn section includes 10 post drafts with role, hook, problem, takeaway,
+  soft CTA, and link suggestion.
+- Medium section includes 5 article drafts/outlines that are not duplicate
+  onsite copy.
+- Quora section includes 20 direct answer drafts, one-link guidance, and honest
+  product-context disclosure guidance.
+- Reddit section includes 10 discussion prompts, no-sales-pitch guidance, and
+  subreddit targets as suggestions only.
+- Rules prohibit automated posting, spam, fake stories, fake statistics, fake
+  logos, over-linking, hidden affiliation, and private quality data.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, `npm run test:governance`, production smoke, and authenticated
-  smoke on a temporary Neon branch.
+  `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Service lead emails depend on existing email configuration; failure must stay
-  non-blocking and visible in logs.
-- File upload depends on R2 configuration; lead capture must remain useful when
-  storage is unavailable.
-- Event tracking can drift into sensitive quality data; metadata must stay
-  bounded to safe enums, counts, formats, paths, referrer, UTM, and anonymous
-  session id.
-- Admin metrics use JSONB/application-level event storage; larger volume may
-  later need dedicated reporting indexes or exports.
+- Offsite distribution can damage trust if it is copied mechanically or posted
+  too often. Use manual review and platform-native edits.
+- Links should be used sparingly and only when they genuinely help the answer.
+- Manual tracking must avoid storing private quality-report or respondent data.
