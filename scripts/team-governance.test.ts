@@ -814,6 +814,69 @@ assert.match(marketingWorkflow, /knowledge_result_opened/, "Marketing workflow s
 assert.match(marketingWorkflow, /knowledge_root_cause_copied/, "Marketing workflow should track root cause reuse");
 assert.match(marketingWorkflow, /repeat knowledge users/i, "Marketing workflow should track repeat Knowledge Base users");
 
+const revenueLeadFollowupTemplates = read("docs/REVENUE_LEAD_FOLLOWUP_TEMPLATES.md");
+assert.match(revenueLeadFollowupTemplates, /Revenue Lead Follow-Up Templates/, "Revenue lead follow-up templates doc should exist");
+assert.ok((revenueLeadFollowupTemplates.match(/^## \d+\. /gm) || []).length >= 9, "Revenue lead follow-up templates should include at least 9 numbered templates");
+for (const requiredTemplate of [
+  "Template Setup Lead - File Received",
+  "Template Setup Lead - File Upload Failed / Ask Reply With File",
+  "Template Setup Lead - Quote / Scope Proposal",
+  "Team Launch Lead - Discovery Questions",
+  "Assisted First 8D Lead - Request Required Evidence",
+  "No-Response Follow-Up 1",
+  "No-Response Follow-Up 2",
+  "Paid Service Handoff / Invoice Note",
+  "After Delivery Feedback Request",
+]) {
+  assert.match(revenueLeadFollowupTemplates, new RegExp(requiredTemplate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue follow-up templates should include: ${requiredTemplate}`);
+}
+for (const requiredLeadInput of [
+  "industry or product family",
+  "required output format",
+  "team size",
+  "complaint / supplier corrective action volume",
+  "problem summary",
+  "customer due date",
+  "current containment action",
+  "customer-required format",
+]) {
+  assert.match(revenueLeadFollowupTemplates, new RegExp(requiredLeadInput.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up templates should ask for input: ${requiredLeadInput}`);
+}
+for (const requiredDeliverable of [
+  "mapped 8D workflow",
+  "export-format recommendation",
+  "Team Launch deliverable",
+  "structured first-response package",
+  "Planned deliverables",
+]) {
+  assert.match(revenueLeadFollowupTemplates, new RegExp(requiredDeliverable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up templates should explain deliverable: ${requiredDeliverable}`);
+}
+for (const noOverpromisePhrase of [
+  "Do not promise guaranteed customer acceptance",
+  "does not guarantee customer acceptance",
+  "I will not invent missing evidence",
+  "Keep quotes and paid scope human-reviewed",
+]) {
+  assert.match(revenueLeadFollowupTemplates, new RegExp(noOverpromisePhrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up templates should include no-overpromise phrase: ${noOverpromisePhrase}`);
+}
+for (const forbiddenLeadTrackingData of [
+  "full message bodies",
+  "customer names",
+  "supplier names",
+  "product names",
+  "batch numbers",
+  "root cause text",
+  "corrective action text",
+  "lessons learned",
+  "attachment content",
+  "credentials",
+  "payment details",
+]) {
+  assert.match(revenueLeadFollowupTemplates, new RegExp(forbiddenLeadTrackingData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up tracking should forbid: ${forbiddenLeadTrackingData}`);
+}
+assert.match(revenueLeadFollowupTemplates, /manual email or chat use only/i, "Revenue follow-up templates should stay manual");
+assert.match(revenueLeadFollowupTemplates, /Do not connect them to live email sending/i, "Revenue follow-up templates should not add live email sending");
+
 const productOperatingMetrics = read("docs/PRODUCT_OPERATING_METRICS.md");
 assert.match(productOperatingMetrics, /Product Operating Metrics/, "Product operating metrics doc should exist");
 assert.match(productOperatingMetrics, /does not add runtime tracking/, "Product metrics should not add runtime tracking");

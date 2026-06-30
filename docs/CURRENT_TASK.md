@@ -2,82 +2,67 @@
 
 ## Task Name
 
-Revenue Evidence Sprint v1.
+Revenue Lead Follow-Up Templates v1.
 
 ## Context
 
-Knowledge Base, Knowledge Reuse, AI Quality Check with Knowledge Context, and
-Knowledge Capture now provide enough product capability for the current stage.
-The next priority is not another feature expansion. The priority is to collect
-commercial conversion evidence: whether visitors click, download demos, upload
-templates, submit service requests, sign up, and attempt exports.
+Revenue Evidence Sprint v1 can now capture Template Setup, Team Launch, Assisted
+First 8D / SCAR, contact, demo, signup, and export intent. The next operational
+need is consistent manual follow-up that asks for the right inputs, explains the
+service scope, and avoids overpromising.
 
 ## Goal
 
-Turn 8D Reports into a measurable revenue-learning system for Template Setup,
-Team Launch, and Assisted First 8D / SCAR Delivery without changing auth,
-payment, export entitlements, Knowledge permissions, or database schema.
+Create docs-only follow-up templates for revenue leads so service inquiries can
+be handled professionally and consistently without connecting to live email
+sending or changing product behavior.
 
 ## Scope
 
-- Upgrade homepage, Pricing, and demo report CTAs for service conversion.
-- Make the Template Setup / service lead funnel usable with required fields,
-  success and failure states, email notifications, and file-upload fallback.
-- Reuse the existing service request table for Template Setup, Team Launch, and
-  Assisted First 8D / SCAR Delivery leads.
-- Add privacy-safe revenue analytics events and safe referrer / UTM /
-  anonymous-session metadata.
-- Add admin-only revenue evidence metrics for the last 7 and 30 days.
-- Add Excel downloads to demo report sales assets using the existing quality
-  workbook generator.
-- Extend unauthenticated, production, governance, and authenticated smoke
-  coverage for the revenue evidence path.
-- Update the development log.
+- Add `docs/REVENUE_LEAD_FOLLOWUP_TEMPLATES.md`.
+- Include templates for:
+  - Template Setup lead - file received
+  - Template Setup lead - file upload failed / ask reply with file
+  - Template Setup lead - quote/scope proposal
+  - Team Launch lead - discovery questions
+  - Assisted First 8D lead - request required evidence
+  - No-response follow-up 1
+  - No-response follow-up 2
+  - Paid service handoff / invoice note
+  - After delivery feedback request
+- Each template should be short, professional, and ask for a concrete next step.
+- Document required inputs, deliverables, and manual tracking boundaries.
+- Update `docs/DEV_LOG.md`.
+- Add governance checks for template coverage, no-overpromise language, and
+  sensitive tracking exclusions.
 
 ## Non-Goals
 
-- No full QMS, APQP, PPAP, iOS, PWA, or external supplier request system.
-- No payment, checkout, subscription, pricing amount, auth, password reset, or
-  Resend infrastructure changes beyond non-blocking lead notification emails.
-- No report editor core-flow changes.
-- No PDF / Word / Excel export entitlement changes for real user reports.
-- No AI backend changes.
-- No Knowledge Base search, eligibility, permission, report access, or share
-  token logic changes.
-- No database schema migration.
-- No production data writes during development.
+- No live email sending.
+- No Resend changes.
+- No CRM or automation integration.
+- No payment, checkout, subscription, auth, password reset, export, Knowledge
+  Base search, Knowledge permissions, AI backend, production configuration, or
+  database schema changes.
+- No production data writes.
 
 ## Acceptance Criteria
 
-- Homepage keeps Start free and adds Upload your 8D template / Request template
-  setup with the required urgent 8D/SCAR copy.
-- Pricing keeps Free / Pro / Team / Single Export and makes these services
-  prominent: 8D Template Setup from $499, Team Launch from $999, Assisted First
-  8D / SCAR Delivery from $799.
-- Demo report pages include the company-format CTA and PDF / Word / Excel / ZIP
-  download links.
-- Template Setup form includes name, company, work email, role, current process,
-  use case, required export, timeline, message, and file upload.
-- Lead save does not fail just because file upload fails; users see a clear
-  re-upload warning.
-- Admin and user email failures are logged but do not block lead save.
-- Admin can view lead and file metadata without private bucket URLs.
-- Revenue analytics events are allowlisted and avoid sensitive report content.
-- Admin metrics show page views, demo downloads, template setup submissions,
-  contact submissions, signup count, export attempts, and pricing CTA clicks for
-  the last 7 and 30 days.
+- Follow-up template doc exists.
+- All 9 required templates are present.
+- Templates ask for concrete next steps and required inputs.
+- Templates explain deliverables without promising guaranteed customer
+  acceptance, certified approval, instant turnaround, or unlimited free
+  consulting.
+- Manual tracking uses safe fields and forbids full messages, customer/supplier
+  names, product names, batch numbers, root cause, corrective action, lessons
+  learned, attachment content, credentials, and payment details.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, `npm run test:governance`, production smoke, and authenticated
-  smoke on a temporary Neon branch.
+  `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Service lead emails depend on existing email configuration; failure must stay
-  non-blocking and visible in logs.
-- File upload depends on R2 configuration; lead capture must remain useful when
-  storage is unavailable.
-- Event tracking can drift into sensitive quality data; metadata must stay
-  bounded to safe enums, counts, formats, paths, referrer, UTM, and anonymous
-  session id.
-- Admin metrics use JSONB/application-level event storage; larger volume may
-  later need dedicated reporting indexes or exports.
+- Templates are useful only if manually adapted to the actual lead context.
+- Quote/scope emails must remain human-reviewed before sending.
+- Follow-up tracking must not become a place where private customer or quality
+  report details are copied.
