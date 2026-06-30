@@ -56,6 +56,60 @@ After PR #14 is reviewed, decide whether External 8D Request should remain a doc
 
 ## Previous Task
 
+AI Quality Check Knowledge Context v1.
+
+## Changed Files
+
+- `.github/workflows/authenticated-smoke.yml`
+- `docs/AI_QUALITY_CHECK_KNOWLEDGE_CONTEXT_SPEC.md`
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/team-governance.test.ts`
+- `src/app/(app)/reports/[id]/page.tsx`
+- `src/app/api/ai/report-review/route.ts`
+- `src/app/api/events/route.ts`
+- `src/components/report/AiReportTools.tsx`
+- `src/lib/ai/deepseek.ts`
+- `src/lib/ai/knowledge-context.ts`
+- `src/lib/ai/report-payload.ts`
+
+## Implementation Summary
+
+- Added `buildKnowledgeContextForQualityCheck` as a private server helper that reads only accessible reports, excludes the current report, reuses Knowledge Base search/eligibility mapping, and returns at most 3 compact context items.
+- Injected bounded Knowledge Context into AI Quality Check input and updated the prompt with reference-only instructions plus a `Knowledge-based observations` output section.
+- Updated the AI Quality Check UI to show `Knowledge context used: N similar reports` or `No reusable knowledge context found yet.`
+- Preserved the no-real-AI-key fallback: the route returns the existing safe unavailable message plus only `contextCount`/`hasContext`, never prompt or historical report content.
+- Added safe analytics events `ai_quality_check_knowledge_context_used` and `ai_quality_check_knowledge_context_empty`.
+- Extended authenticated smoke to beta-gate the smoke owner locally, trigger AI Quality Check without a real provider key, verify context/fallback UI, and enforce analytics metadata safety.
+- Added the AI Quality Check Knowledge Context spec and governance checks for helper scope, prompt safety, UI states, analytics allowlist, smoke coverage, and no schema/payment/export/auth changes.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke workflow on `codex/ai-quality-check-with-knowledge-context-v1` passed.
+
+## Risks
+
+- Historical reports are reference context only; the prompt and UI must not imply AI approval or correctness proof.
+- Keyword matching may miss similar reports until future semantic/AI search work exists.
+- AI unavailable and no-key paths must not leak prompts, historical report text, or raw query seeds.
+
+## Unfinished / Needs Human Review
+
+- None for PR #13.
+
+## Suggested Next Task
+
+After PR #13, use completion readiness to improve future Knowledge Base and AI context quality.
+
+## Previous Task
+
 Knowledge Reuse in Editor v1.
 
 ## Changed Files
@@ -91,7 +145,7 @@ Knowledge Reuse in Editor v1.
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run build` passed.
 - `npm run test:governance` passed.
-- Pending: authenticated smoke workflow on `codex/knowledge-reuse-in-editor-v1`.
+- Authenticated smoke workflow on `codex/knowledge-reuse-in-editor-v1` passed.
 
 ## Risks
 
@@ -101,7 +155,7 @@ Knowledge Reuse in Editor v1.
 
 ## Unfinished / Needs Human Review
 
-- Final checks and authenticated smoke workflow run are pending until implementation verification is complete.
+- None for PR #12.
 
 ## Suggested Next Task
 

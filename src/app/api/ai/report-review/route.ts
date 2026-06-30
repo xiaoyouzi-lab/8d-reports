@@ -4,8 +4,16 @@ import { aiTasks } from "@/lib/db/schema";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { callDeepSeekJson, isAiBetaUser } from "@/lib/ai/deepseek";
 import { summarizeReportForAi } from "@/lib/ai/report-payload";
+import { buildKnowledgeContextForQualityCheck, type QualityCheckKnowledgeContextItem } from "@/lib/ai/knowledge-context";
 import { DEFAULT_REPORT_DATA, type ReportData } from "@/lib/report-steps";
 import { getReportAccess } from "@/lib/report-workflow";
+
+function knowledgeContextSummary(context: QualityCheckKnowledgeContextItem[]) {
+  return {
+    contextCount: context.length,
+    hasContext: context.length > 0,
+  };
+}
 
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
@@ -35,8 +43,16 @@ export async function POST(req: NextRequest) {
     priority: report.priority,
   } as ReportData;
 
+  let knowledgeContext: QualityCheckKnowledgeContextItem[] = [];
   try {
-    const output = await callDeepSeekJson("report_review", summarizeReportForAi(reportData, report.title));
+    knowledgeContext = await buildKnowledgeContextForQualityCheck(report, user);
+  } catch (err) {
+    console.warn("AI Quality Check knowledge context unavailable", { reportId, userId: user.id, err });
+  }
+  const knowledge = knowledgeContextSummary(knowledgeContext);
+
+  try {
+    const output = await callDeepSeekJson("report_review", summarizeReportForAi(reportData, report.title, knowledgeContext));
     await db.insert(aiTasks).values({
       userId: user.id,
       reportId,
@@ -45,7 +61,7 @@ export async function POST(req: NextRequest) {
       output,
       status: "completed",
     }).catch(() => {});
-    return NextResponse.json({ output });
+    return NextResponse.json({ output, knowledgeContext: knowledge });
   } catch (err) {
     console.error("AI Quality Check failed", { reportId, userId: user.id, err });
     await db.insert(aiTasks).values({
@@ -58,6 +74,7 @@ export async function POST(req: NextRequest) {
     }).catch(() => {});
     return NextResponse.json({
       error: "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.",
+      knowledgeContext: knowledge,
     }, { status: 503 });
   }
 }

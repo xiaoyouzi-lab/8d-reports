@@ -6,7 +6,7 @@ Report Completion Knowledge Capture v1.
 
 ## Context
 
-Quality Knowledge Base v1 turns completed and locked reports into reusable quality knowledge. Knowledge Reuse in Editor v1 makes historical root causes, corrective actions, and lessons learned available while editing.
+Quality Knowledge Base v1 turns completed and locked reports into reusable quality knowledge. Knowledge Reuse in Editor v1 makes historical root causes, corrective actions, and lessons learned available while editing. AI Quality Check with Knowledge Context v1 lets review use a small, permission-safe set of historical completed reports as reference-only context.
 
 The next product step is to help users understand whether the current report will become a strong future knowledge asset before they complete, approve, submit, or close it.
 
@@ -30,7 +30,7 @@ Add a lightweight, non-blocking `Knowledge readiness` panel that highlights whet
 - No workflow eligibility changes.
 - No forced required fields.
 - No Knowledge Base permission or eligibility changes.
-- No AI changes.
+- No AI behavior changes.
 - No export changes.
 - No payment, checkout, pricing, subscription, auth, Resend, production configuration, or database schema changes.
 - No production test data.

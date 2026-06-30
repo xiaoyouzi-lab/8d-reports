@@ -39,6 +39,7 @@ const checks: Record<string, SmokeCheckStatus> = {
   knowledgeEligibility: "skipped",
   editorKnowledgeReuse: "skipped",
   knowledgeReadiness: "skipped",
+  aiQualityCheck: "skipped",
   analyticsPayloadSafety: "skipped",
 };
 
@@ -113,6 +114,7 @@ function markCheckForStep(stepName: string, status: SmokeCheckStatus) {
   }
   if (stepName.startsWith("editor knowledge reuse")) checks.editorKnowledgeReuse = status;
   if (stepName.startsWith("knowledge readiness")) checks.knowledgeReadiness = status;
+  if (stepName.startsWith("ai quality check")) checks.aiQualityCheck = status;
   if (stepName === "analytics payload safety") checks.analyticsPayloadSafety = status;
 }
 
@@ -237,6 +239,16 @@ async function waitForCapturedEvent(events: CapturedEvent[], eventName: string, 
     await new Promise((resolve) => setTimeout(resolve, 100));
   }
   throw new Error(`Timed out waiting for analytics event ${eventName}`);
+}
+
+async function waitForAnyCapturedEvent(events: CapturedEvent[], eventNames: string[], startIndex = 0, timeout = 8000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeout) {
+    const event = events.slice(startIndex).find((candidate) => eventNames.includes(candidate.eventName));
+    if (event) return event;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`Timed out waiting for analytics events ${eventNames.join(", ")}`);
 }
 
 async function runAndWaitForEvent(
@@ -652,8 +664,57 @@ async function verifyKnowledgeReadiness(page: Page, events: CapturedEvent[]) {
   });
 }
 
+async function verifyAiQualityCheck(page: Page, events: CapturedEvent[]) {
+  assert.ok(completedReportId, "SMOKE_COMPLETED_REPORT_ID is required for AI Quality Check smoke");
+
+  await smokeStep("ai quality check knowledge context unavailable fallback", async () => {
+    await page.goto(toUrl(`/reports/${completedReportId}`), { waitUntil: "domcontentloaded" });
+    const aiTrigger = page.getByRole("button", { name: /^AI$/ });
+    await aiTrigger.waitFor({ timeout: 12000 });
+
+    const startIndex = events.length;
+    await aiTrigger.click();
+    await waitForBodyText(page, "AI Quality Check — Beta");
+    await page.getByRole("button", { name: "Review report" }).click();
+    await waitForBodyText(page, "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.", {
+      timeout: 20000,
+    });
+    await page.waitForFunction(
+      () => document.body.innerText.includes("Knowledge context used:") ||
+        document.body.innerText.includes("No reusable knowledge context found yet."),
+      undefined,
+      { timeout: 12000 },
+    );
+
+    const event = await waitForAnyCapturedEvent(events, [
+      "ai_quality_check_knowledge_context_used",
+      "ai_quality_check_knowledge_context_empty",
+    ], startIndex);
+    assert.equal(event.metadata.source, "ai_quality_check", "AI Quality Check knowledge analytics should use source metadata");
+    assert.equal(typeof event.metadata.contextCount, "number", "AI Quality Check knowledge analytics should include contextCount");
+    assert.equal(typeof event.metadata.hasContext, "boolean", "AI Quality Check knowledge analytics should include hasContext");
+
+    const bodyText = await page.locator("body").innerText();
+    if (event.eventName === "ai_quality_check_knowledge_context_used") {
+      assert.match(bodyText, /Knowledge context used: \d+ similar reports/, "AI Quality Check should show context count when context exists");
+      assert.ok(Number(event.metadata.contextCount) > 0, "Used-context event should report a positive context count");
+    } else {
+      assert.match(bodyText, /No reusable knowledge context found yet\./, "AI Quality Check should show empty context state when no context exists");
+      assert.equal(event.metadata.contextCount, 0, "Empty-context event should report zero context count");
+    }
+
+    assert.equal(
+      bodyText.includes("The following historical completed reports are provided only as reference context."),
+      false,
+      "AI prompt instructions should not be exposed in the UI",
+    );
+    await page.keyboard.press("Escape");
+  });
+}
+
 function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
   const allowedKeys = new Set([
+    "contextCount",
     "destination",
     "entry",
     "filter",
@@ -663,6 +724,7 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "hasQuery",
     "hasRootCause",
     "hasValidation",
+    "hasContext",
     "location",
     "method",
     "missingCount",
@@ -702,6 +764,9 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "batchNumber",
     "attachment",
     "attachments",
+    "prompt",
+    "rawAi",
+    "aiOutput",
   ]);
   const forbiddenTerms = [
     "coating peel-off",
@@ -745,9 +810,14 @@ async function verifyAuthenticatedFlow() {
     await verifyKnowledge(page, capturedEvents);
     await verifyEditorKnowledgeReuse(page, capturedEvents);
     await verifyKnowledgeReadiness(page, capturedEvents);
+    await verifyAiQualityCheck(page, capturedEvents);
     await verifyWorkflowPanel(page, capturedEvents);
 
     await smokeStep("analytics payload safety", async () => {
+      const aiKnowledgeContextEventExists = capturedEvents.some((event) =>
+        event.eventName === "ai_quality_check_knowledge_context_used" ||
+        event.eventName === "ai_quality_check_knowledge_context_empty"
+      );
       for (const requiredEvent of [
         "app_navigation_clicked",
         "dashboard_feature_entry_clicked",
@@ -769,6 +839,7 @@ async function verifyAuthenticatedFlow() {
       ]) {
         assert.ok(capturedEvents.some((event) => event.eventName === requiredEvent), `Missing analytics event: ${requiredEvent}`);
       }
+      assert.ok(aiKnowledgeContextEventExists, "Missing AI Quality Check knowledge context analytics event");
 
       assertNoSensitiveAnalyticsMetadata(capturedEvents);
     });
