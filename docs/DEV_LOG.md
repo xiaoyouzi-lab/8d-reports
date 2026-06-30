@@ -2,6 +2,49 @@
 
 ## Latest Task
 
+Product Operating Metrics v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/PRODUCT_OPERATING_METRICS.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added a privacy-safe product operating metrics definition for the core funnel from visitor signup through first report creation, D4/D5 completion, knowledge asset creation, Knowledge Base search/copy, editor reuse, AI Quality Check, export/share, and Team/service commercial intent.
+- Defined event name/source, source page or component, product reason, safe metadata, forbidden data, and target interpretation for each funnel step.
+- Kept metrics tied to existing first-party events and database-derived states where possible instead of adding new runtime tracking.
+- Documented sensitive analytics exclusions for full queries, customer/supplier/product/batch identifiers, report content, root cause, corrective action, lessons learned, attachment content, AI prompts/raw output, share tokens, payment details, and email addresses.
+- Added governance checks to protect the 10-step funnel, safe metadata dictionary, forbidden fields, existing/future event coverage, database-derived metrics, and the no-runtime-tracking boundary.
+- No public marketing pages, payment, checkout, subscription, export, auth, Resend, AI backend, Knowledge Base search logic, production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only metrics definition with no runtime app changes.
+
+## Risks
+
+- Some funnel steps, especially D4/D5 completion and knowledge asset creation, should remain database-derived to avoid collecting sensitive field text.
+- Checkout completion and service-request reporting require future privacy-safe reporting design before broader dashboarding.
+- Metrics should guide product judgment, not replace qualitative review of report-writing workflows.
+
+## Unfinished / Needs Human Review
+
+- PR creation and remote checks are pending.
+
+## Suggested Next Task
+
+After this PR, use the metrics document to decide whether the next runtime priority should be External 8D Request, AI Quality Check context improvements, or Team/service packaging.
+
+## Previous Task
+
 External 8D Request / Supplier Response Loop Spec.
 
 ## Changed Files
@@ -36,7 +79,7 @@ External 8D Request / Supplier Response Loop Spec.
 
 ## Unfinished / Needs Human Review
 
-- PR #15 and final docs-only review are pending.
+- None for PR #15.
 
 ## Suggested Next Task
 
@@ -157,7 +200,6 @@ AI Quality Check Knowledge Context v1.
 ## Suggested Next Task
 
 After PR #13, use completion readiness to improve future Knowledge Base and AI context quality.
-
 ## Previous Task
 
 Knowledge Reuse in Editor v1.
