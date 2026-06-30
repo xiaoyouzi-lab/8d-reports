@@ -2,58 +2,61 @@
 
 ## Task Name
 
-Knowledge Reuse in Editor v1.
+Report Completion Knowledge Capture v1.
 
 ## Context
 
-Quality Knowledge Base v1 made completed, approved, submitted, and closed reports searchable as quality knowledge assets. Authenticated app discoverability made Knowledge Base visible in the logged-in app. Authenticated smoke infrastructure now gives PRs a safe temporary Neon branch workflow for logged-in verification.
+Quality Knowledge Base v1 turns completed and locked reports into reusable quality knowledge. Knowledge Reuse in Editor v1 makes historical root causes, corrective actions, and lessons learned available while editing.
 
-The next product step is to bring Knowledge Base into the report editor workflow, where users are filling D4 root cause, D5 corrective action, D7 prevention, and D8 lessons learned sections.
+The next product step is to help users understand whether the current report will become a strong future knowledge asset before they complete, approve, submit, or close it.
 
 ## Goal
 
-Add a copy-only Knowledge Reuse panel to the report editor so authenticated users can search existing Knowledge Base assets while editing a report and manually copy root cause, corrective action, and lessons learned text as reference.
+Add a lightweight, non-blocking `Knowledge readiness` panel that highlights whether the report has captured root cause, corrective action, validation, prevention/system change, and lessons learned.
 
 ## Scope
 
-- Add a `Reuse Knowledge` entry in the report editor top tool area.
-- Add contextual hints for D4, D5, D7, and D8.
-- Add `src/components/knowledge/KnowledgeReusePanel.tsx`.
-- Reuse `POST /api/knowledge/search` and `src/lib/report-knowledge.ts`.
-- Add safe editor reuse analytics events.
-- Update authenticated smoke coverage for the editor reuse flow.
+- Add reusable readiness calculation for key knowledge fields.
+- Add a `Knowledge readiness` panel in the report editor.
+- Show the same readiness panel in the workflow dialog.
+- Show a non-blocking warning when a user attempts to move to approved, submitted, or closed while readiness is weak.
+- Add safe analytics for readiness views and warnings.
+- Update authenticated smoke coverage for readiness visibility and analytics safety.
 - Update governance tests and docs.
 
 ## Non-Goals
 
-- No automatic report field writes.
-- No report save from Knowledge Reuse.
-- No AI generation or rewrite.
-- No Knowledge Base eligibility, permission, or share-token changes.
-- No public marketing changes.
-- No payment, pricing, checkout, subscription, export, auth, Resend, production configuration, or database schema changes.
-- No vector database, semantic search, attachment parsing, new tables, production test data, External 8D Request, Supplier Response Loop, iOS, or PWA work.
+- No save logic changes.
+- No workflow eligibility changes.
+- No forced required fields.
+- No Knowledge Base permission or eligibility changes.
+- No AI changes.
+- No export changes.
+- No payment, checkout, pricing, subscription, auth, Resend, production configuration, or database schema changes.
+- No production test data.
+- No External 8D Request, Supplier Response Loop, iOS, or PWA work.
 
 ## Acceptance Criteria
 
-- Report editor top tool area shows `Reuse Knowledge`.
-- D4 hint says: `Search past root causes before finalizing this section.`
-- D5 hint says: `Reuse proven corrective actions from completed reports.`
-- D7 hint says: `Check prevention and system-change ideas from similar issues.`
-- D8 hint says: `Check lessons learned from similar completed reports.`
-- The panel searches through `POST /api/knowledge/search`.
-- No new Knowledge API is added.
-- The panel does not call `handleFieldChange`, save reports, or update report fields.
-- Copy root cause, corrective action, and lessons learned succeeds with `Copied`.
-- Copy failure shows `Could not copy. Select and copy manually.`
-- Open report opens in a new tab and preserves the current editor tab.
-- Reuse analytics use only safe metadata and do not include raw query or report content.
-- Authenticated smoke verifies the editor reuse flow.
+- Report editor shows `Knowledge readiness`.
+- The panel includes:
+  - `Root cause captured?`
+  - `Corrective action captured?`
+  - `Validation captured?`
+  - `Prevention/system change captured?`
+  - `Lessons learned captured?`
+- Status labels are `Ready`, `Needs detail`, and `Missing`.
+- Workflow dialog shows the same readiness summary.
+- Weak readiness warning uses:
+  `This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker.`
+- Warning does not block the workflow request.
+- Analytics use only `missingCount`, `hasRootCause`, `hasCorrectiveAction`, `hasValidation`, `hasPrevention`, `hasLessonsLearned`, and `plan`.
+- Authenticated smoke verifies readiness panel visibility, warning analytics, and sensitive metadata safety.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 - Authenticated smoke workflow is triggered for the PR branch and inspected for status, artifact summary, and Neon cleanup.
 
 ## Risks
 
-- The report editor toolbar is already crowded, so mobile layout must stay compact.
-- Search remains v1 keyword/JSONB-backed application search through the existing Knowledge API.
-- Future AI context should wait until the copy-only reuse behavior is validated.
+- Readiness labels are guidance, not formal customer acceptance criteria.
+- Existing server-side completion checks still apply; this PR does not relax or tighten them.
+- The editor page already has several guidance panels, so the readiness panel must stay compact.

@@ -212,6 +212,117 @@ export function getCompletedStepIds(data: ReportData): string[] {
     .map((requirement) => requirement.stepId)
 }
 
+export type KnowledgeReadinessKey =
+  | "rootCause"
+  | "correctiveAction"
+  | "validation"
+  | "prevention"
+  | "lessonsLearned"
+
+export type KnowledgeReadinessStatus = "Ready" | "Needs detail" | "Missing"
+
+export interface KnowledgeReadinessItem {
+  key: KnowledgeReadinessKey
+  label: string
+  status: KnowledgeReadinessStatus
+  fields: Array<keyof ReportData>
+}
+
+export interface KnowledgeReadinessSummary {
+  items: KnowledgeReadinessItem[]
+  missingCount: number
+  hasRootCause: boolean
+  hasCorrectiveAction: boolean
+  hasValidation: boolean
+  hasPrevention: boolean
+  hasLessonsLearned: boolean
+}
+
+function filledCount(data: ReportData, fields: Array<keyof ReportData>) {
+  return fields.filter((field) => hasValue(data[field])).length
+}
+
+function readinessStatus(data: ReportData, fields: Array<keyof ReportData>, readyAt = 1): KnowledgeReadinessStatus {
+  const count = filledCount(data, fields)
+  if (count === 0) return "Missing"
+  return count >= readyAt ? "Ready" : "Needs detail"
+}
+
+export function getKnowledgeReadinessSummary(data: ReportData): KnowledgeReadinessSummary {
+  const rootCauseFields: Array<keyof ReportData> = [
+    "confirmedRootCause",
+    "rootCauseOccurrence",
+    "rootCauseEscape",
+    "rootCauseSystem",
+    "why1",
+    "why2",
+    "why3",
+    "why4",
+    "why5",
+    "testingResults",
+  ]
+  const correctiveActionFields: Array<keyof ReportData> = [
+    "selectedCorrectiveAction",
+    "correctiveRationale",
+    "implementationPlan",
+  ]
+  const validationFields: Array<keyof ReportData> = [
+    "validationMethod",
+    "validationResults",
+    "testingResults",
+  ]
+  const preventionFields: Array<keyof ReportData> = [
+    "systemChanges",
+    "processUpdates",
+    "horizontalDeployment",
+    "trainingNeeds",
+  ]
+  const lessonsLearnedFields: Array<keyof ReportData> = ["lessonsLearned"]
+
+  const items: KnowledgeReadinessItem[] = [
+    {
+      key: "rootCause",
+      label: "Root cause captured?",
+      status: readinessStatus(data, rootCauseFields, 2),
+      fields: rootCauseFields,
+    },
+    {
+      key: "correctiveAction",
+      label: "Corrective action captured?",
+      status: readinessStatus(data, correctiveActionFields, 2),
+      fields: correctiveActionFields,
+    },
+    {
+      key: "validation",
+      label: "Validation captured?",
+      status: readinessStatus(data, validationFields, 2),
+      fields: validationFields,
+    },
+    {
+      key: "prevention",
+      label: "Prevention/system change captured?",
+      status: readinessStatus(data, preventionFields, 1),
+      fields: preventionFields,
+    },
+    {
+      key: "lessonsLearned",
+      label: "Lessons learned captured?",
+      status: readinessStatus(data, lessonsLearnedFields, 1),
+      fields: lessonsLearnedFields,
+    },
+  ]
+
+  return {
+    items,
+    missingCount: items.filter((item) => item.status !== "Ready").length,
+    hasRootCause: filledCount(data, rootCauseFields) > 0,
+    hasCorrectiveAction: filledCount(data, correctiveActionFields) > 0,
+    hasValidation: filledCount(data, validationFields) > 0,
+    hasPrevention: filledCount(data, preventionFields) > 0,
+    hasLessonsLearned: filledCount(data, lessonsLearnedFields) > 0,
+  }
+}
+
 const reportTypeOptions = [
   { value: "customer_8d", label: "Customer 8D" },
   { value: "internal_8d", label: "Internal 8D" },

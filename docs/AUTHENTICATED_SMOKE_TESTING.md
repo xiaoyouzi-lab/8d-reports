@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Authenticated smoke testing verifies logged-in app behavior without writing to production data. It exists so Codex and GitHub Actions can validate app-only features such as Dashboard navigation, Knowledge Base reuse, editor Knowledge Reuse, report access boundaries, copy actions, and safe analytics payloads after a PR changes authenticated UX.
+Authenticated smoke testing verifies logged-in app behavior without writing to production data. It exists so Codex and GitHub Actions can validate app-only features such as Dashboard navigation, Knowledge Base reuse, editor Knowledge Reuse, report Knowledge readiness, report access boundaries, copy actions, and safe analytics payloads after a PR changes authenticated UX.
 
 ## Architecture
 
@@ -69,7 +69,7 @@ The authenticated seed creates:
 - Team workspace with owner and editor member roles.
 - Completed legacy-workflow report that should enter Knowledge Base.
 - Closed report that should enter Knowledge Base.
-- Draft report that must be excluded.
+- Draft report with weak Knowledge readiness fields that must be excluded from Knowledge Base.
 - In-progress report that must be excluded.
 - Internal-review report that must be excluded.
 - Outsider completed report that must not leak.
@@ -104,6 +104,9 @@ The authenticated smoke verifies:
 - Editor Knowledge Reuse clipboard failure displays the expected manual-copy message.
 - Editor Knowledge Reuse opens source reports in a new tab and preserves the current editor tab.
 - Editor Knowledge Reuse has no horizontal overflow on narrow/mobile viewport.
+- Report editor shows the `Knowledge readiness` panel with root cause, corrective action, validation, prevention/system change, and lessons learned readiness rows.
+- Workflow dialog shows the `Knowledge readiness` panel.
+- Weak readiness workflow transitions show the expected non-blocking warning and emit safe readiness analytics.
 - Report workflow panel includes a Knowledge Base entry.
 - Analytics payloads use safe metadata only.
 

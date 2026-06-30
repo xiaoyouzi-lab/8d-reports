@@ -8,6 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { trackEvent } from "@/lib/analytics"
+import type { KnowledgeReadinessSummary } from "@/lib/report-steps"
+import { KnowledgeReadinessPanel, knowledgeReadinessAnalytics } from "@/components/report/KnowledgeReadinessPanel"
+
+const LOCKED_STATUSES = new Set(["approved", "submitted", "closed"])
 
 const STATUSES = [
   ["draft", "Draft"],
@@ -95,6 +99,8 @@ export function ReportWorkflowPanel({
   revision,
   locked,
   canManageWorkflow,
+  knowledgeReadiness,
+  plan,
   onUpdated,
 }: {
   reportId: string
@@ -102,6 +108,8 @@ export function ReportWorkflowPanel({
   revision: number
   locked: boolean
   canManageWorkflow: boolean
+  knowledgeReadiness: KnowledgeReadinessSummary
+  plan: "free" | "pro" | "team"
   onUpdated: (report: { workflowStatus: string; revision: number; lockedAt?: string | null }) => void
 }) {
   const [open, setOpen] = useState(false)
@@ -134,6 +142,20 @@ export function ReportWorkflowPanel({
     } finally {
       setSaving(false)
     }
+  }
+
+  function handleWorkflowStatusChange(nextStatus: string) {
+    if (LOCKED_STATUSES.has(nextStatus) && knowledgeReadiness.missingCount > 0) {
+      trackEvent(
+        "knowledge_readiness_warning_shown",
+        knowledgeReadinessAnalytics(knowledgeReadiness, plan),
+        reportId,
+      )
+      toast.warning(
+        "This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker.",
+      )
+    }
+    void updateWorkflow({ workflowStatus: nextStatus })
   }
 
   return (
@@ -171,7 +193,7 @@ export function ReportWorkflowPanel({
               className="mt-3 h-9 w-full rounded-md border bg-white px-2 text-sm"
               value={workflowStatus}
               disabled={saving}
-              onChange={(event) => void updateWorkflow({ workflowStatus: event.target.value })}
+              onChange={(event) => handleWorkflowStatusChange(event.target.value)}
             >
               {STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
@@ -185,6 +207,13 @@ export function ReportWorkflowPanel({
             </div>
           )}
         </div>
+        <KnowledgeReadinessPanel
+          summary={knowledgeReadiness}
+          reportId={reportId}
+          plan={plan}
+          location="workflow_panel"
+          trackViewed={false}
+        />
         <div>
           <h3 className="text-sm font-semibold">Activity log</h3>
           <div className="mt-2 divide-y rounded-lg border">

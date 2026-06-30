@@ -2,6 +2,60 @@
 
 ## Latest Task
 
+Report Completion Knowledge Capture v1.
+
+## Changed Files
+
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/REPORT_COMPLETION_KNOWLEDGE_CAPTURE_SPEC.md`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/smoke/seed-auth-smoke.ts`
+- `scripts/team-governance.test.ts`
+- `src/app/(app)/reports/[id]/page.tsx`
+- `src/app/api/events/route.ts`
+- `src/components/report/KnowledgeReadinessPanel.tsx`
+- `src/components/report/ReportWorkflowPanel.tsx`
+- `src/lib/report-steps.ts`
+
+## Implementation Summary
+
+- Read-only audit complete before implementation.
+- The most valuable Knowledge Base fields are D4 root cause, D5 corrective action, D6 validation, D7 prevention/system change, and D8 lessons learned.
+- Weak or missing values in those fields make future Knowledge Base search, editor reuse, and AI review less useful.
+- The lowest-risk product surface is a compact, non-blocking `Knowledge readiness` panel in the report editor and workflow dialog.
+- Workflow transitions already have server-side completion checks. This PR does not relax or tighten those checks, does not change workflow eligibility, and does not change save logic.
+- Added a pure readiness summary helper for root cause, corrective action, validation, prevention, and lessons learned.
+- Added a reusable `KnowledgeReadinessPanel` that shows `Ready`, `Needs detail`, or `Missing`.
+- Added a non-blocking workflow warning before moving to approved, submitted, or closed when readiness is weak.
+- Added safe analytics events for readiness views and warnings.
+- No public marketing, payment, checkout, subscription, export, auth, Resend, AI, Knowledge Base permission/eligibility, production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+
+## Risks
+
+- Readiness is guidance only, not a formal customer approval standard.
+- Existing server-side completion checks remain separate from this panel and can still reject incomplete completion/locking attempts.
+- The editor already contains several guidance surfaces, so the panel is intentionally compact.
+
+## Unfinished / Needs Human Review
+
+- Authenticated smoke workflow and PR #14 are pending.
+
+## Suggested Next Task
+
+After PR #14 is reviewed, decide whether External 8D Request should remain a docs-only spec or wait for more Team workflow validation.
+
+## Previous Task
+
 Knowledge Reuse in Editor v1.
 
 ## Changed Files
