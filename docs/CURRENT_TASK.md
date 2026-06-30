@@ -2,64 +2,82 @@
 
 ## Task Name
 
-Product Operating Metrics v1.
+Revenue Evidence Sprint v1.
 
 ## Context
 
-Recent product work moved 8D Reports from a single report editor toward a reusable quality response workspace:
-
-- Quality Knowledge Base turns completed reports into searchable knowledge assets.
-- Authenticated app discoverability makes Dashboard, Knowledge Base, and New Report visible in the logged-in workspace.
-- Authenticated smoke infrastructure safely verifies logged-in behavior on temporary Neon branches.
-- Knowledge Reuse brings copy-only historical knowledge into the report editor.
-
-The next step is to define the operating metrics that show whether users actually move through the product loop from visit, to report creation, to completed knowledge, to reuse, AI review, export/share, and paid value.
+Knowledge Base, Knowledge Reuse, AI Quality Check with Knowledge Context, and
+Knowledge Capture now provide enough product capability for the current stage.
+The next priority is not another feature expansion. The priority is to collect
+commercial conversion evidence: whether visitors click, download demos, upload
+templates, submit service requests, sign up, and attempt exports.
 
 ## Goal
 
-Create a privacy-safe product operating metrics definition that can guide weekly product reviews without adding invasive tracking or collecting sensitive report content.
+Turn 8D Reports into a measurable revenue-learning system for Template Setup,
+Team Launch, and Assisted First 8D / SCAR Delivery without changing auth,
+payment, export entitlements, Knowledge permissions, or database schema.
 
 ## Scope
 
-- Add `docs/PRODUCT_OPERATING_METRICS.md`.
-- Define the core funnel from Visitor -> Signup through Team upgrade / service request.
-- For each funnel metric, document event name/source, source page or component, why it matters, safe metadata, forbidden data, and target interpretation.
-- Reuse existing event names and database-derived metrics where possible.
-- Update governance checks so future changes preserve the metrics document and privacy boundaries.
-- Update task and development docs.
+- Upgrade homepage, Pricing, and demo report CTAs for service conversion.
+- Make the Template Setup / service lead funnel usable with required fields,
+  success and failure states, email notifications, and file-upload fallback.
+- Reuse the existing service request table for Template Setup, Team Launch, and
+  Assisted First 8D / SCAR Delivery leads.
+- Add privacy-safe revenue analytics events and safe referrer / UTM /
+  anonymous-session metadata.
+- Add admin-only revenue evidence metrics for the last 7 and 30 days.
+- Add Excel downloads to demo report sales assets using the existing quality
+  workbook generator.
+- Extend unauthenticated, production, governance, and authenticated smoke
+  coverage for the revenue evidence path.
+- Update the development log.
 
 ## Non-Goals
 
-- No runtime product feature changes.
-- No public marketing page changes.
-- No payment, pricing, checkout, subscription, export, auth, Resend, production configuration, or database schema changes.
+- No full QMS, APQP, PPAP, iOS, PWA, or external supplier request system.
+- No payment, checkout, subscription, pricing amount, auth, password reset, or
+  Resend infrastructure changes beyond non-blocking lead notification emails.
+- No report editor core-flow changes.
+- No PDF / Word / Excel export entitlement changes for real user reports.
 - No AI backend changes.
-- No Knowledge Base search, eligibility, permission, or report access logic changes.
-- No new analytics collection beyond documenting safe metrics.
-- No production data access or production test data.
+- No Knowledge Base search, eligibility, permission, report access, or share
+  token logic changes.
+- No database schema migration.
+- No production data writes during development.
 
 ## Acceptance Criteria
 
-- `docs/PRODUCT_OPERATING_METRICS.md` exists.
-- The document defines these 10 funnel steps:
-  1. Visitor -> Signup
-  2. Signup -> First report created
-  3. First report created -> D4/D5 filled
-  4. Report completed -> Knowledge asset created
-  5. Knowledge asset -> Knowledge search
-  6. Knowledge search -> Copy root cause/action/lesson
-  7. Editor reuse opened -> Copy
-  8. AI Quality Check run
-  9. Export / share
-  10. Team upgrade / service request
-- Each metric includes event name/source, source page or component, why it matters, safe metadata, forbidden data, and target interpretation.
-- The document explicitly prohibits collecting full queries, report content, customer/supplier/product/batch identifiers, root cause, corrective action, lessons learned, attachment content, AI prompts/raw output, share tokens, payment details, and email addresses.
-- The document distinguishes existing event coverage from database-derived or future coverage.
-- Governance tests cover the new metrics document and privacy rules.
-- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
+- Homepage keeps Start free and adds Upload your 8D template / Request template
+  setup with the required urgent 8D/SCAR copy.
+- Pricing keeps Free / Pro / Team / Single Export and makes these services
+  prominent: 8D Template Setup from $499, Team Launch from $999, Assisted First
+  8D / SCAR Delivery from $799.
+- Demo report pages include the company-format CTA and PDF / Word / Excel / ZIP
+  download links.
+- Template Setup form includes name, company, work email, role, current process,
+  use case, required export, timeline, message, and file upload.
+- Lead save does not fail just because file upload fails; users see a clear
+  re-upload warning.
+- Admin and user email failures are logged but do not block lead save.
+- Admin can view lead and file metadata without private bucket URLs.
+- Revenue analytics events are allowlisted and avoid sensitive report content.
+- Admin metrics show page views, demo downloads, template setup submissions,
+  contact submissions, signup count, export attempts, and pricing CTA clicks for
+  the last 7 and 30 days.
+- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
+  `npm run build`, `npm run test:governance`, production smoke, and authenticated
+  smoke on a temporary Neon branch.
 
 ## Risks
 
-- Product metrics can create pressure to over-track sensitive quality data; the document must keep privacy boundaries explicit.
-- Some funnel steps are best measured from database state, not client events.
-- Checkout completion and service-request reporting need separate privacy-safe operational reporting before broader dashboarding.
+- Service lead emails depend on existing email configuration; failure must stay
+  non-blocking and visible in logs.
+- File upload depends on R2 configuration; lead capture must remain useful when
+  storage is unavailable.
+- Event tracking can drift into sensitive quality data; metadata must stay
+  bounded to safe enums, counts, formats, paths, referrer, UTM, and anonymous
+  session id.
+- Admin metrics use JSONB/application-level event storage; larger volume may
+  later need dedicated reporting indexes or exports.

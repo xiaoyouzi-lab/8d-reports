@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Mail, MessageSquare, ShieldCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
+import { ContactLeadForm } from "@/components/marketing/ContactLeadForm"
 
 const supportEmail = "19857345237@163.com"
 
@@ -57,20 +58,23 @@ export default function ContactPage() {
       <Card className="mt-6">
         <CardContent className="pt-6">
           <h2 className="text-lg font-semibold text-foreground">
-            Support email
+            Send a message
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            You can reach us at{" "}
+            Use this form for product questions, Template Setup, Team Launch,
+            Assisted 8D / SCAR delivery, or support. You can also reach us at{" "}
             <a
               href={`mailto:${supportEmail}`}
               className="font-medium text-indigo-600 underline underline-offset-4 hover:text-indigo-700"
             >
               {supportEmail}
             </a>
-            . If your browser does not open an email app, use this address
-            directly from your mailbox.
+            .
           </p>
           <div className="mt-6">
+            <ContactLeadForm />
+          </div>
+          <div className="mt-6 border-t pt-4">
             <Link
               href="/"
               className="text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"

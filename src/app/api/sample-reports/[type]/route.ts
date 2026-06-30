@@ -3,6 +3,7 @@ import { jsPDF } from "jspdf";
 import JSZip from "jszip";
 import { getDemoReport } from "@/lib/demo-reports";
 import { generateWordDocument } from "@/lib/word-export";
+import { generateExcelWorkbook } from "@/lib/xlsx-export";
 
 async function createPdf(type: string, origin: string) {
   const sample = getDemoReport(type);
@@ -111,6 +112,31 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ type
     });
   }
 
+  if (format === "xlsx") {
+    const buffer = await generateExcelWorkbook({
+      reportData: sample.reportData,
+      reportTitle: sample.title,
+      reportId: sample.reportData.reportNumber,
+      status: "completed",
+      workflowStatus: "closed",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      updatedAt: new Date("2026-01-02T00:00:00Z"),
+      attachments: sample.evidenceFiles.map((file) => ({
+        filename: file.filename,
+        fileType: file.publicPath ? "image" : "document",
+        mimeType: file.mimeType || (file.filename.endsWith(".csv") ? "text/csv" : "text/plain"),
+        stepId: file.stepId,
+        fileSize: file.content ? Buffer.byteLength(file.content) : null,
+      })),
+    });
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "Content-Disposition": `attachment; filename="${baseFilename}.xlsx"`,
+      },
+    });
+  }
+
   if (format === "zip") {
     const zip = new JSZip();
     const pdf = await createPdf(type, req.nextUrl.origin);
@@ -127,8 +153,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ type
         mimeType: file.mimeType || (file.filename.endsWith(".csv") ? "text/csv" : "text/plain"),
       })),
     });
+    const excel = await generateExcelWorkbook({
+      reportData: sample.reportData,
+      reportTitle: sample.title,
+      reportId: sample.reportData.reportNumber,
+      status: "completed",
+      workflowStatus: "closed",
+      createdAt: new Date("2026-01-01T00:00:00Z"),
+      updatedAt: new Date("2026-01-02T00:00:00Z"),
+      attachments: sample.evidenceFiles.map((file) => ({
+        filename: file.filename,
+        fileType: file.publicPath ? "image" : "document",
+        mimeType: file.mimeType || (file.filename.endsWith(".csv") ? "text/csv" : "text/plain"),
+        stepId: file.stepId,
+        fileSize: file.content ? Buffer.byteLength(file.content) : null,
+      })),
+    });
     zip.file(`${baseFilename}.pdf`, pdf);
     zip.file(`${baseFilename}.docx`, word);
+    zip.file(`${baseFilename}.xlsx`, excel);
     const evidence = zip.folder("attachments");
     for (const file of sample.evidenceFiles) {
       if (file.publicPath) {

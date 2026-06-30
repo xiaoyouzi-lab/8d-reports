@@ -40,6 +40,7 @@ const checks: Record<string, SmokeCheckStatus> = {
   editorKnowledgeReuse: "skipped",
   knowledgeReadiness: "skipped",
   aiQualityCheck: "skipped",
+  revenueEvidence: "skipped",
   analyticsPayloadSafety: "skipped",
 };
 
@@ -95,6 +96,10 @@ const REDACTED_ARTIFACT_TERMS = [
   "coating",
   "adhesion",
   "zzzz-no-result",
+  "Revenue Smoke Manufacturing",
+  "revenue-smoke@example.test",
+  "Need customer-ready SCAR format for a line complaint this week.",
+  "revenue-smoke-template.pdf",
 ].filter(Boolean);
 
 function toUrl(path: string) {
@@ -115,6 +120,7 @@ function markCheckForStep(stepName: string, status: SmokeCheckStatus) {
   if (stepName.startsWith("editor knowledge reuse")) checks.editorKnowledgeReuse = status;
   if (stepName.startsWith("knowledge readiness")) checks.knowledgeReadiness = status;
   if (stepName.startsWith("ai quality check")) checks.aiQualityCheck = status;
+  if (stepName.startsWith("template setup")) checks.revenueEvidence = status;
   if (stepName === "analytics payload safety") checks.analyticsPayloadSafety = status;
 }
 
@@ -342,6 +348,14 @@ async function verifyUnauthenticatedSecurity() {
     await assertBodyExcludes(page, "Corrective Action");
     await assertBodyExcludes(page, "Lessons Learned");
 
+    await page.goto(toUrl("/admin/service-requests"), { waitUntil: "domcontentloaded" });
+    await page.waitForURL(/\/login/, { timeout: 10000 });
+    await assertBodyExcludes(page, "Service Requests");
+
+    await page.goto(toUrl("/admin/metrics"), { waitUntil: "domcontentloaded" });
+    await page.waitForURL(/\/login/, { timeout: 10000 });
+    await assertBodyExcludes(page, "Revenue evidence metrics");
+
     await context.close();
   } finally {
     await browser.close();
@@ -395,6 +409,46 @@ async function verifyDashboardAndNavigation(page: Page, events: CapturedEvent[])
   });
 
   await page.setViewportSize({ width: 1440, height: 900 });
+}
+
+async function verifyTemplateSetupLead(page: Page, events: CapturedEvent[]) {
+  await smokeStep("template setup lead capture", async () => {
+    await page.goto(toUrl("/custom-8d-template-setup"), { waitUntil: "domcontentloaded" });
+    await waitForBodyText(page, "Submit your template for setup");
+    await page.waitForLoadState("networkidle");
+    await page.waitForTimeout(500);
+
+    const nameInput = page.getByRole("textbox", { name: "Name", exact: true });
+    await runAndWaitForEvent(events, "template_setup_form_started", async () => {
+      await nameInput.click();
+    });
+    await nameInput.fill("Revenue Smoke");
+    await page.getByRole("textbox", { name: "Company name", exact: true }).fill("Revenue Smoke Manufacturing");
+    await page.getByRole("textbox", { name: "Work email", exact: true }).fill("revenue-smoke@example.test");
+    await page.getByRole("textbox", { name: "Role", exact: true }).fill("Quality Manager");
+    await page.getByLabel("Current process").selectOption("Word/Excel");
+    await page.getByLabel("Use case").selectOption("SCAR");
+    await page.getByLabel("Timeline").selectOption("This week");
+    await page.getByRole("checkbox", { name: "PDF", exact: true }).check();
+    await page.getByRole("checkbox", { name: "Word", exact: true }).check();
+    await page.getByRole("checkbox", { name: "Excel", exact: true }).check();
+    await page.getByRole("checkbox", { name: "ZIP", exact: true }).check();
+    await page.getByLabel("Message").fill("Need customer-ready SCAR format for a line complaint this week.");
+    await page.locator('input[name="files"]').setInputFiles({
+      name: "revenue-smoke-template.pdf",
+      mimeType: "application/pdf",
+      buffer: Buffer.from("%PDF-1.4\n% revenue smoke template\n"),
+    });
+
+    const event = await runAndWaitForEvent(events, "template_setup_form_submitted", async () => {
+      await page.getByRole("button", { name: "Submit setup request" }).click();
+      await waitForBodyText(page, "Request received.");
+      await waitForBodyText(page, "file upload could not be completed", { caseInsensitive: true });
+    });
+    assert.equal(event.metadata.requestType, "template_setup", "Template setup smoke should submit the template_setup request type");
+    assert.equal(event.metadata.hasFile, true, "Template setup smoke should include a file attempt");
+    assert.equal(event.metadata.fileUploadWarning, true, "Template setup smoke should surface upload warning metadata");
+  });
 }
 
 async function verifyKnowledge(page: Page, events: CapturedEvent[]) {
@@ -736,6 +790,16 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "resultCount",
     "source",
     "copiedField",
+    "anonymousSessionId",
+    "referrer",
+    "utm_source",
+    "utm_medium",
+    "utm_campaign",
+    "requestType",
+    "hasFile",
+    "fileCount",
+    "fileUploadWarning",
+    "reason",
   ]);
   const forbiddenKeys = new Set([
     "query",
@@ -767,6 +831,9 @@ function assertNoSensitiveAnalyticsMetadata(events: CapturedEvent[]) {
     "prompt",
     "rawAi",
     "aiOutput",
+    "contactEmail",
+    "companyName",
+    "message",
   ]);
   const forbiddenTerms = [
     "coating peel-off",
@@ -807,6 +874,7 @@ async function verifyAuthenticatedFlow() {
 
     await smokeStep("login", () => login(page));
     await verifyDashboardAndNavigation(page, capturedEvents);
+    await verifyTemplateSetupLead(page, capturedEvents);
     await verifyKnowledge(page, capturedEvents);
     await verifyEditorKnowledgeReuse(page, capturedEvents);
     await verifyKnowledgeReadiness(page, capturedEvents);
@@ -836,6 +904,8 @@ async function verifyAuthenticatedFlow() {
         "knowledge_reuse_lesson_copied",
         "knowledge_readiness_viewed",
         "knowledge_readiness_warning_shown",
+        "template_setup_form_started",
+        "template_setup_form_submitted",
       ]) {
         assert.ok(capturedEvents.some((event) => event.eventName === requiredEvent), `Missing analytics event: ${requiredEvent}`);
       }

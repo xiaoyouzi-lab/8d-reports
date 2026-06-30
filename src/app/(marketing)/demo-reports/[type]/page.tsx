@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Archive, ArrowLeft, CheckCircle2, Download, FileText, History, LockKeyhole } from "lucide-react";
+import { Archive, ArrowLeft, CheckCircle2, Download, FileSpreadsheet, FileText, History, LockKeyhole } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
+import { TrackedLink } from "@/components/marketing/MarketingActions";
 import { TeamWorkflowFeedbackForm } from "@/components/marketing/TeamWorkflowFeedbackForm";
 import { DEMO_REPORTS, getDemoReport } from "@/lib/demo-reports";
 import { cn } from "@/lib/utils";
@@ -73,9 +74,10 @@ export default async function DemoReportPage({ params }: { params: Promise<{ typ
               <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-6xl">{demo.title}</h1>
               <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-600">{demo.workflowSummary}</p>
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link href={`/api/sample-reports/${type}`} rel="nofollow" className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}><Download className="size-4" /> PDF</Link>
-                <Link href={`/api/sample-reports/${type}?format=docx`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Word</Link>
-                <Link href={`/api/sample-reports/${type}?format=zip`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Delivery ZIP</Link>
+                <TrackedLink href={`/api/sample-reports/${type}`} eventName="demo_report_downloaded" eventData={{ demoType: type, format: "pdf" }} rel="nofollow" className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}><Download className="size-4" /> PDF</TrackedLink>
+                <TrackedLink href={`/api/sample-reports/${type}?format=docx`} eventName="demo_report_downloaded" eventData={{ demoType: type, format: "docx" }} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Word</TrackedLink>
+                <TrackedLink href={`/api/sample-reports/${type}?format=xlsx`} eventName="demo_report_downloaded" eventData={{ demoType: type, format: "xlsx" }} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileSpreadsheet className="size-4" /> Excel</TrackedLink>
+                <TrackedLink href={`/api/sample-reports/${type}?format=zip`} eventName="demo_report_downloaded" eventData={{ demoType: type, format: "zip" }} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Delivery ZIP</TrackedLink>
               </div>
             </div>
             <dl className="grid gap-3 rounded-xl border border-slate-200 bg-white p-6 text-sm">
@@ -137,11 +139,28 @@ export default async function DemoReportPage({ params }: { params: Promise<{ typ
 
       <section className="border-t border-slate-200 bg-slate-950 py-16 text-white">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-semibold">Use this controlled workflow with your own team.</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-slate-300">Create, review, approve, lock, revise, and deliver customer-ready 8D reports without scattered document versions.</p>
+          <h2 className="text-3xl font-semibold">Want this in your company format?</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-slate-300">
+            Upload your current Word / Excel / PDF 8D template. Request a
+            customer-ready 8D workflow setup.
+          </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link href="/pricing" className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-950 hover:bg-slate-100")}>Review Team pricing</Link>
-            <Link href="/team-launch" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "border-slate-600 bg-transparent text-white hover:bg-slate-900 hover:text-white")}>Book Team Launch</Link>
+            <TrackedLink
+              href="/custom-8d-template-setup#request"
+              eventName="marketing_cta_clicked"
+              eventData={{ page: "demo_report", location: "company_format_cta", demoType: type, service: "template_setup" }}
+              className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-950 hover:bg-slate-100")}
+            >
+              Request this format
+            </TrackedLink>
+            <TrackedLink
+              href="/custom-8d-template-setup?service=assisted_8d#request"
+              eventName="marketing_cta_clicked"
+              eventData={{ page: "demo_report", location: "assisted_delivery_cta", demoType: type, service: "assisted_8d" }}
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "border-slate-600 bg-transparent text-white hover:bg-slate-900 hover:text-white")}
+            >
+              Request assisted delivery
+            </TrackedLink>
           </div>
         </div>
       </section>

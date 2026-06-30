@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { Suspense } from "react"
-import { FileDown, ShieldCheck, Wrench } from "lucide-react"
+import { FileDown, FileText, ShieldCheck, Wrench } from "lucide-react"
 import { AutoCheckout } from "@/components/AutoCheckout"
 import { PrimaryCTA, TrackedCheckoutButton } from "@/components/marketing/MarketingActions"
 import {
@@ -112,6 +112,36 @@ const billingFaqs = [
     question: "Does Team include enterprise procurement features?",
     answer:
       "Team is a lightweight shared 8D workspace. Review Security or contact us before broader enterprise rollout requirements.",
+  },
+]
+
+const professionalServices = [
+  {
+    icon: Wrench,
+    title: "8D Template Setup",
+    price: "From $499",
+    text: "Turn your current Word, Excel, PDF, or customer-specific 8D template into a reusable online workflow.",
+    href: "/custom-8d-template-setup#request",
+    cta: "Request setup",
+    service: "template_setup",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Team Launch",
+    price: "From $999",
+    text: "Configure the workspace, roles, first report, and team training for a small quality team.",
+    href: "/custom-8d-template-setup?service=team_launch#request",
+    cta: "Upload template",
+    service: "team_launch",
+  },
+  {
+    icon: FileText,
+    title: "Assisted First 8D / SCAR Delivery",
+    price: "From $799",
+    text: "For teams that need help packaging the first customer-ready 8D or SCAR before a broader rollout.",
+    href: "/custom-8d-template-setup?service=assisted_8d#request",
+    cta: "Contact us",
+    service: "assisted_8d",
   },
 ]
 
@@ -257,29 +287,13 @@ export default function PricingPage() {
       <Section>
         <SectionHeader
           title="Professional Services"
-          description="Optional help for teams that need their template and workflow configured before rollout."
+          description="Optional inquiry-only services for teams that need customer-ready 8D/SCAR delivery before a full QMS rollout."
         />
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          {[
-            {
-              icon: Wrench,
-              title: "Template Setup",
-              price: "From $499",
-              text: "Convert your customer-specific 8D format into a practical setup path.",
-              href: "/custom-8d-template-setup",
-            },
-            {
-              icon: ShieldCheck,
-              title: "Team Launch",
-              price: "From $999",
-              text: "Configure the workspace, roles, first report, and team training.",
-              href: "/team-launch",
-            },
-          ].map((service) => (
-            <Link
+        <div className="mt-8 grid gap-4 lg:grid-cols-3">
+          {professionalServices.map((service) => (
+            <article
               key={service.title}
-              href={service.href}
-              className="rounded-lg border border-slate-200 p-5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
+              className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
             >
               <service.icon className="h-5 w-5 text-indigo-600" />
               <h3 className="mt-4 text-base font-semibold text-slate-950">
@@ -289,7 +303,20 @@ export default function PricingPage() {
                 {service.price}
               </p>
               <p className="mt-2 text-sm leading-6 text-slate-600">{service.text}</p>
-            </Link>
+              <div className="mt-auto pt-5">
+                <PrimaryCTA
+                  href={service.href}
+                  page="pricing"
+                  location="professional_services"
+                  className="w-full"
+                  variant="secondary"
+                  eventName="pricing_service_cta_clicked"
+                  eventData={{ service: service.service }}
+                >
+                  {service.cta}
+                </PrimaryCTA>
+              </div>
+            </article>
           ))}
         </div>
         <p className="mt-6 text-sm leading-6 text-slate-600">

@@ -2,6 +2,70 @@
 
 ## Latest Task
 
+Revenue Evidence Sprint v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `scripts/production-smoke.test.ts`
+- `scripts/smoke/authenticated-smoke.ts`
+- `scripts/team-governance.test.ts`
+- `src/app/(app)/admin/metrics/page.tsx`
+- `src/app/(auth)/signup/signup-form.tsx`
+- `src/app/(marketing)/custom-8d-template-setup/page.tsx`
+- `src/app/(marketing)/demo-reports/[type]/page.tsx`
+- `src/app/(marketing)/demo-reports/page.tsx`
+- `src/app/(marketing)/page.tsx`
+- `src/app/(marketing)/pricing/page.tsx`
+- `src/app/api/custom-template-requests/route.ts`
+- `src/app/api/events/route.ts`
+- `src/app/api/sample-reports/[type]/route.ts`
+- `src/app/contact/page.tsx`
+- `src/components/admin/ServiceRequestsAdmin.tsx`
+- `src/components/marketing/ContactLeadForm.tsx`
+- `src/components/marketing/CustomTemplateRequestForm.tsx`
+- `src/components/report/ExportMenu.tsx`
+- `src/lib/analytics-taxonomy.ts`
+- `src/lib/analytics.ts`
+- `src/lib/service-requests.ts`
+
+## Implementation Summary
+
+- Upgraded homepage service conversion copy while keeping the primary Start free CTA.
+- Made Pricing professional services more prominent with Template Setup, Team Launch, and Assisted First 8D / SCAR Delivery inquiry CTAs.
+- Added company-format CTAs and Excel downloads to demo report pages.
+- Added `format=xlsx` support to demo report downloads and included Excel in demo delivery ZIPs.
+- Reworked Template Setup / service lead capture to save leads before non-critical notifications, tolerate file upload failures, and return a user-visible upload warning.
+- Added admin and user lead emails with logged, non-blocking failure handling.
+- Removed public bucket URL exposure from service request file metadata displays and public submit responses.
+- Added safe revenue analytics events, anonymous session id, referrer, and UTM metadata.
+- Added a contact lead form using the existing feedback endpoint and `contact_form_submitted` analytics.
+- Added an admin-only revenue evidence metrics page for 7/30 day conversion counters.
+- Extended production, governance, and authenticated smoke checks for demo downloads, Template Setup lead capture, analytics safety, and admin boundaries.
+- No database schema, auth, payment, subscription, real report export entitlement, AI backend, Knowledge Base permission/search, or production configuration changes were made.
+
+## Tests / Verification
+
+- Pending in this branch: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run test:governance`, production smoke, and authenticated smoke.
+
+## Risks
+
+- Service notification emails depend on existing email configuration; failures are intentionally logged and non-blocking.
+- R2 file upload may be unavailable in smoke or local environments; lead capture must still succeed with a re-upload warning.
+- Admin metrics rely on application events and service lead rows; higher traffic may later require dedicated reporting indexes or exports.
+- Event metadata now includes referrer, UTM, and anonymous session id; future events must still avoid raw report content, customer/product names, attachment content, full search queries, and payment details.
+
+## Unfinished / Needs Human Review
+
+- PR creation, remote checks, Vercel Preview, and final smoke evidence are pending.
+
+## Suggested Next Task
+
+After deployment, review the first week of revenue evidence metrics before adding more product surface area.
+
+## Previous Task
+
 Product Operating Metrics v1.
 
 ## Changed Files

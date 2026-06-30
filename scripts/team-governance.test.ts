@@ -29,6 +29,7 @@ import {
   isValidServiceContactEmail,
   MAX_SERVICE_REQUEST_FILES,
   normalizeServiceQuoteAmount,
+  SERVICE_REQUEST_TYPES,
 } from "../src/lib/service-requests";
 
 const root = process.cwd();
@@ -1000,5 +1001,112 @@ const authConfig = read("src/lib/auth.ts");
 assert.match(authConfig, /ENABLE_SOCIAL_LOGIN !== "true"/, "Social auth providers must be disabled unless explicitly enabled");
 assert.match(authConfig, /socialProviders: getEnabledSocialProviders\(\)/, "Better Auth should use the gated social provider config");
 assert.doesNotMatch(authConfig, /socialProviders:\s*\{\s*google:/, "Google auth must not be configured unconditionally");
+
+assert.ok(SERVICE_REQUEST_TYPES.includes("assisted_8d"), "Service requests should include Assisted First 8D / SCAR Delivery as inquiry-only");
+assert.match(pricingPage, /8D Template Setup[\s\S]*From \$499/, "Pricing should show Template Setup from $499");
+assert.match(pricingPage, /Team Launch[\s\S]*From \$999/, "Pricing should show Team Launch from $999");
+assert.match(pricingPage, /Assisted First 8D \/ SCAR Delivery[\s\S]*From \$799/, "Pricing should show Assisted First 8D / SCAR Delivery from $799");
+assert.match(pricingPage, /pricing_service_cta_clicked/, "Pricing service CTA clicks should be tracked");
+assert.match(homepage, /Need to submit a customer-ready 8D or SCAR this week\?/, "Homepage should speak to urgent customer-ready 8D/SCAR delivery");
+assert.match(homepage, /Turn your Word \/ Excel 8D template into a reusable online workflow\./, "Homepage should promote template setup value");
+assert.match(homepage, /For teams that need customer-ready 8D\/SCAR delivery before a full\s*QMS rollout\./, "Homepage should position services before full QMS rollout");
+
+for (const revenueEvent of [
+  "pricing_service_cta_clicked",
+  "demo_report_downloaded",
+  "template_setup_form_started",
+  "template_setup_form_submitted",
+  "template_setup_form_failed",
+  "contact_form_submitted",
+  "signup_started",
+  "signup_completed",
+  "export_attempted",
+  "single_export_clicked",
+]) {
+  assert.match(eventsRoute, new RegExp(revenueEvent), `Events API should allow revenue evidence event: ${revenueEvent}`);
+}
+
+const analyticsClient = read("src/lib/analytics.ts");
+assert.match(analyticsClient, /anonymousSessionId/, "Analytics should include anonymous session id for unauthenticated conversion evidence");
+assert.match(analyticsClient, /referrer/, "Analytics should include referrer metadata");
+assert.match(analyticsClient, /utm_source[\s\S]*utm_medium[\s\S]*utm_campaign/, "Analytics should include safe UTM metadata");
+assert.doesNotMatch(analyticsClient, /window\.location\.search[\s\S]*metadata:\s*window\.location\.search/, "Analytics should not store the full URL query string");
+
+assert.match(templateRequestRoute, /sendEmail/, "Template Setup API should send admin and user email notifications");
+assert.match(templateRequestRoute, /Service request admin email failed/, "Admin email failures should be logged without blocking lead save");
+assert.match(templateRequestRoute, /Service request auto-reply email failed/, "User auto-reply failures should be logged without blocking lead save");
+assert.match(templateRequestRoute, /storage_unavailable/, "Template Setup API should preserve leads when storage is unavailable");
+assert.match(templateRequestRoute, /fileUploadWarning/, "Template Setup API should return a file upload warning when files fail");
+assert.match(templateRequestRoute, /\.insert\(customTemplateRequests\)/, "Template Setup API should save the lead in the existing service request table");
+assert.doesNotMatch(templateRequestRoute, /getPublicUrl|url:\s*getPublicUrl|Storage service not configured/, "Template Setup API should not leak bucket URLs or fail the lead when storage is unavailable");
+
+const customTemplateForm = read("src/components/marketing/CustomTemplateRequestForm.tsx");
+for (const requiredLabel of [
+  "Name",
+  "Company name",
+  "Work email",
+  "Role",
+  "Current process",
+  "Use case",
+  "Required export",
+  "Timeline",
+  "Message",
+  "Template files",
+]) {
+  assert.match(customTemplateForm, new RegExp(requiredLabel.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Template Setup form should include field: ${requiredLabel}`);
+}
+assert.match(customTemplateForm, /template_setup_form_started/, "Template Setup form should track started events");
+assert.match(customTemplateForm, /template_setup_form_submitted/, "Template Setup form should track submitted events");
+assert.match(customTemplateForm, /template_setup_form_failed/, "Template Setup form should track failed events");
+assert.match(customTemplateForm, /fileUploadWarning/, "Template Setup form should show file upload warnings without losing the lead");
+
+const serviceRequestsAdmin = read("src/components/admin/ServiceRequestsAdmin.tsx");
+assert.match(serviceRequestsAdmin, /fileSize[\s\S]*mimeType[\s\S]*status/, "Service request admin should show file metadata");
+assert.doesNotMatch(serviceRequestsAdmin, /href=\{file\.url\}|url\?: string/, "Service request admin should not expose private bucket URLs");
+
+const adminMetricsPage = read("src/app/(app)/admin/metrics/page.tsx");
+assert.match(adminMetricsPage, /isServiceAdmin/, "Revenue metrics page should be admin-only");
+assert.match(adminMetricsPage, /analyticsEvents/, "Revenue metrics page should read analytics events");
+assert.match(adminMetricsPage, /customTemplateRequests/, "Revenue metrics page should count saved service leads");
+for (const metricLabel of [
+  "Page views",
+  "Demo downloads",
+  "Template setup submissions",
+  "Contact submissions",
+  "Signup count",
+  "Export attempts",
+  "Pricing CTA clicks",
+]) {
+  assert.match(adminMetricsPage, new RegExp(metricLabel), `Revenue metrics page should show metric: ${metricLabel}`);
+}
+
+const sampleReportsRoute = read("src/app/api/sample-reports/[type]/route.ts");
+assert.match(sampleReportsRoute, /format === "xlsx"/, "Demo sample API should support Excel downloads");
+assert.match(sampleReportsRoute, /generateExcelWorkbook/, "Demo sample Excel should use the quality report workbook generator");
+assert.match(sampleReportsRoute, /\.xlsx/, "Demo ZIP should include an Excel workbook");
+
+const demoReportsPage = read("src/app/(marketing)/demo-reports/page.tsx");
+const demoReportPage = read("src/app/(marketing)/demo-reports/[type]/page.tsx");
+assert.match(demoReportsPage, /Download Excel/, "Demo reports index should expose Excel downloads");
+assert.match(demoReportPage, /Excel/, "Demo detail should expose Excel downloads");
+assert.match(demoReportsPage, /Want this in your company format\?/, "Demo reports index should include company-format CTA");
+assert.match(demoReportPage, /Want this in your company format\?/, "Demo detail should include company-format CTA");
+assert.match(demoReportPage, /Upload your current Word \/ Excel \/ PDF 8D template/, "Demo detail should ask users to upload their template");
+
+const contactForm = read("src/components/marketing/ContactLeadForm.tsx");
+assert.match(contactForm, /contact_form_submitted/, "Contact form should track submitted events");
+assert.match(contactForm, /\/api\/feedback/, "Contact form should reuse existing feedback storage without schema changes");
+
+const productionSmoke = read("scripts/production-smoke.test.ts");
+assert.match(productionSmoke, /expectXlsx/, "Production smoke should verify demo Excel downloads");
+assert.match(productionSmoke, /Want this in your company format\?/, "Production smoke should verify demo service CTA copy");
+
+assert.match(authenticatedBrowserSmoke, /template setup lead capture/, "Authenticated smoke should cover Template Setup lead capture");
+assert.match(authenticatedBrowserSmoke, /template_setup_form_started/, "Authenticated smoke should verify Template Setup started analytics");
+assert.match(authenticatedBrowserSmoke, /template_setup_form_submitted/, "Authenticated smoke should verify Template Setup submitted analytics");
+assert.match(authenticatedBrowserSmoke, /\/admin\/metrics/, "Authenticated smoke should verify admin metrics unauthenticated boundary");
+assert.match(authenticatedBrowserSmoke, /anonymousSessionId/, "Authenticated smoke analytics safety should allow anonymous session id metadata");
+
+assert.doesNotMatch(schemaFile, /revenue_metrics|lead_events|conversion_events/i, "Revenue Evidence Sprint v1 must not add database schema");
 
 console.log("Team governance verification passed.");

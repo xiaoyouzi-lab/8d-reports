@@ -11,11 +11,11 @@ export const funnelEventNames = [
 export type FunnelEventName = (typeof funnelEventNames)[number];
 
 export const observedEventAliases: Record<FunnelEventName, readonly string[]> = {
-  sign_up: ["signup_success"],
+  sign_up: ["signup_success", "signup_completed"],
   create_report: ["report_created"],
-  export_pdf: ["export_clicked", "export_succeeded"],
-  export_word: ["export_clicked", "export_succeeded"],
-  export_excel: ["export_clicked", "export_succeeded"],
+  export_pdf: ["export_attempted", "export_clicked", "export_succeeded"],
+  export_word: ["export_attempted", "export_clicked", "export_succeeded"],
+  export_excel: ["export_attempted", "export_clicked", "export_succeeded"],
   checkout_started: [],
   checkout_completed: [],
 };
@@ -30,10 +30,10 @@ export function getGa4EventName(
   internalEventName: string,
   metadata: Record<string, unknown>,
 ) {
-  if (internalEventName === "signup_success") return "sign_up";
+  if (internalEventName === "signup_success" || internalEventName === "signup_completed") return "sign_up";
   if (internalEventName === "report_created") return "create_report";
 
-  if (internalEventName === "export_clicked") {
+  if (internalEventName === "export_clicked" || internalEventName === "export_attempted") {
     const format = typeof metadata.format === "string" ? metadata.format : "";
     return exportEventByFormat[format] || internalEventName;
   }

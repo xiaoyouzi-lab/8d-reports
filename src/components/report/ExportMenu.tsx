@@ -114,6 +114,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
   const startSingleExportCheckout = async () => {
     setLoading("single_export")
     try {
+      trackEvent("single_export_clicked", { source: "export_menu" }, reportId)
       trackEvent("checkout_started", { planType: "single_report_export", source: "export_menu" }, reportId)
       const res = await fetch("/api/checkout", {
         method: "POST",
@@ -145,6 +146,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     warnIfReportNeedsWork()
     setLoading("pdf")
     try {
+      trackEvent("export_attempted", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
       trackEvent("export_clicked", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
       const allAttachments = await fetchAttachments()
       const pdf = await exportReportToPdf({
@@ -204,6 +206,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     }
     setLoading("docx")
     try {
+      trackEvent("export_attempted", { format: "docx", plan: "pro" }, reportId)
       trackEvent("export_clicked", { format: "docx", plan: "pro" }, reportId)
       const res = await fetch(`/api/reports/${reportId}/export/docx`, {
         method: "POST",
@@ -254,6 +257,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     }
     setLoading("xlsx")
     try {
+      trackEvent("export_attempted", { format: "xlsx", plan: "pro" }, reportId)
       trackEvent("export_clicked", { format: "xlsx", plan: "pro" }, reportId)
       const res = await fetch(`/api/reports/${reportId}/export/xlsx`, {
         method: "POST",

@@ -9,9 +9,12 @@ import { serviceRequestStatusLabel, serviceRequestTypeLabel, type ServiceRequest
 
 interface UploadedFile {
   filename?: string;
-  url?: string;
   fileSize?: number;
   mimeType?: string;
+  storagePath?: string;
+  status?: "uploaded" | "failed";
+  failureReason?: string;
+  uploadedAt?: string;
 }
 
 interface ServiceRequestRow {
@@ -37,6 +40,12 @@ interface ServiceRequestsAdminProps {
 
 function uploadedFiles(value: ServiceRequestRow["uploadedFiles"]): UploadedFile[] {
   return Array.isArray(value) ? value.filter((item): item is UploadedFile => typeof item === "object" && item !== null) : [];
+}
+
+function formatFileSize(size?: number) {
+  if (!size) return "";
+  if (size < 1024 * 1024) return `${Math.max(1, Math.round(size / 1024))} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 export function ServiceRequestsAdmin({ requests, statuses }: ServiceRequestsAdminProps) {
@@ -95,6 +104,7 @@ export function ServiceRequestsAdmin({ requests, statuses }: ServiceRequestsAdmi
 
         {visibleRows.map((request) => {
           const files = uploadedFiles(request.uploadedFiles);
+          const failedFiles = files.filter((file) => file.status === "failed").length;
           return (
             <article key={request.id} className="rounded-xl border bg-white p-5 shadow-sm">
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -130,18 +140,22 @@ export function ServiceRequestsAdmin({ requests, statuses }: ServiceRequestsAdmi
 
               <div className="mt-4 rounded-lg border p-3">
                 <div className="text-sm font-medium text-slate-950">Uploaded files</div>
+                {failedFiles > 0 && (
+                  <p className="mt-1 text-xs text-amber-700">
+                    {failedFiles} file upload failed. Follow up with the lead for a replacement file.
+                  </p>
+                )}
                 <ul className="mt-2 space-y-1 text-sm">
                   {files.length === 0 && <li className="text-slate-500">No files recorded.</li>}
                   {files.map((file, index) => (
-                    <li key={`${file.filename}-${index}`}>
-                      {file.url ? (
-                        <a className="text-indigo-600 underline underline-offset-4" href={file.url} target="_blank" rel="noreferrer">
-                          {file.filename || `File ${index + 1}`}
-                        </a>
-                      ) : (
-                        <span>{file.filename || `File ${index + 1}`}</span>
-                      )}
-                      <span className="ml-2 text-xs text-slate-500">{file.mimeType || ""}</span>
+                    <li key={`${file.filename}-${index}`} className="flex flex-wrap gap-x-2 gap-y-1">
+                      <span className="font-medium text-slate-700">{file.filename || `File ${index + 1}`}</span>
+                      <span className="text-xs text-slate-500">{file.mimeType || "unknown type"}</span>
+                      <span className="text-xs text-slate-500">{formatFileSize(file.fileSize)}</span>
+                      <span className={file.status === "failed" ? "text-xs text-amber-700" : "text-xs text-emerald-700"}>
+                        {file.status || "uploaded"}
+                      </span>
+                      {file.failureReason && <span className="text-xs text-slate-500">{file.failureReason}</span>}
                     </li>
                   ))}
                 </ul>
