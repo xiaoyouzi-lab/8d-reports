@@ -77,6 +77,12 @@ AI Quality Check Knowledge Context v1.
 
 ## Implementation Summary
 
+- Read-only audit complete before implementation.
+- Best injection point: `src/app/api/ai/report-review/route.ts` after report access is resolved and before `callDeepSeekJson`, because that route already owns AI Quality Check permissions, locked-report checks, report data assembly, and unavailable fallback behavior.
+- Knowledge Context should reuse `src/lib/report-knowledge.ts` for eligibility, trust labels, field mapping, and search behavior, and reuse `getAccessibleUserIds` for Team workspace scope. No copied permission logic is needed.
+- No new Knowledge API is needed. AI Quality Check can use a private server helper and keep `/api/knowledge/search` unchanged and POST-only.
+- Safe verification without a real AI key should set the smoke owner as an AI beta user, build Knowledge Context server-side, let the missing-key path return the existing safe unavailable message, and verify the UI context status plus analytics payload safety without calling an external AI provider.
+- No database schema migration is needed.
 - Added `buildKnowledgeContextForQualityCheck` as a private server helper that reads only accessible reports, excludes the current report, reuses Knowledge Base search/eligibility mapping, and returns at most 3 compact context items.
 - Injected bounded Knowledge Context into AI Quality Check input and updated the prompt with reference-only instructions plus a `Knowledge-based observations` output section.
 - Updated the AI Quality Check UI to show `Knowledge context used: N similar reports` or `No reusable knowledge context found yet.`
