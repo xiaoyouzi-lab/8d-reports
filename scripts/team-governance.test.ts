@@ -24,6 +24,7 @@ import {
 } from "../src/lib/report-knowledge";
 import { DEFAULT_REPORT_DATA, getKnowledgeReadinessSummary } from "../src/lib/report-steps";
 import { aiUnavailableMessage, type AiTaskType } from "../src/lib/ai/deepseek";
+import { revenueGeoResources } from "../src/content/revenue-geo-resources";
 import {
   isSupportedServiceRequestFile,
   isValidServiceContactEmail,
@@ -904,6 +905,82 @@ for (const safeMetricField of [
 assert.match(productOperatingMetrics, /Knowledge asset creation should be a derived metric/, "Knowledge asset creation should be derived instead of tracked from raw report content");
 assert.match(productOperatingMetrics, /D4\/D5 field completion should be computed from database state/, "D4/D5 completion should be computed without raw text analytics");
 assert.doesNotMatch(productOperatingMetrics, /full QMS|\bSSO\b|automatic AI approval/i, "Product metrics should not introduce unsupported product claims");
+
+const requiredRevenueGeoSlugs = [
+  "how-to-write-8d-report-customer-complaint",
+  "supplier-corrective-action-request-template",
+  "8d-vs-scar",
+  "excel-8d-template-vs-8d-software",
+  "custom-8d-template-setup-guide",
+  "ai-8d-report-checker",
+  "8d-root-cause-d4-guide",
+  "8d-corrective-action-d5-guide",
+  "8d-validation-d6-guide",
+  "8d-lessons-learned-d8-guide",
+];
+assert.equal(revenueGeoResources.length, 10, "Revenue GEO content batch should stay capped at 10 pages");
+assert.deepEqual(
+  revenueGeoResources.map((resource) => resource.slug).sort(),
+  [...requiredRevenueGeoSlugs].sort(),
+  "Revenue GEO content batch should include the approved first-batch resource slugs",
+);
+for (const resource of revenueGeoResources) {
+  assert.ok(resource.metaTitle.length > 20, `${resource.slug} should have a unique meta title`);
+  assert.ok(resource.metaDescription.length > 80, `${resource.slug} should have a useful meta description`);
+  assert.ok(resource.answer.length > 120, `${resource.slug} should have answer-first copy`);
+  assert.ok(resource.checklist.length >= 5, `${resource.slug} should include a practical checklist`);
+  assert.ok(resource.mistakes.length >= 4, `${resource.slug} should include common mistakes`);
+  assert.ok(resource.table.rows.length >= 5, `${resource.slug} should include an example/comparison table`);
+  assert.ok(resource.sections.some((section) => /Template Setup|Assisted First 8D/.test(section.body)), `${resource.slug} should explain when to use service CTAs`);
+  assert.ok(resource.relatedLinks.length >= 3, `${resource.slug} should include internal links`);
+  assert.ok(resource.faq.length >= 2, `${resource.slug} should include visible FAQ content`);
+}
+const revenueGeoContent = read("src/content/revenue-geo-resources.ts");
+for (const forbiddenRevenueGeoClaim of [
+  "guaranteed customer acceptance",
+  "guaranteed acceptance",
+  "certified approval",
+  "best in the world",
+]) {
+  assert.doesNotMatch(revenueGeoContent, new RegExp(forbiddenRevenueGeoClaim.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue GEO content should not claim: ${forbiddenRevenueGeoClaim}`);
+}
+assert.match(revenueGeoContent, /not a full QMS/i, "Revenue GEO content should preserve the not-a-full-QMS boundary");
+for (const safeRevenueGeoEvent of [
+  "marketing_cta_clicked",
+  "pricing_service_cta_clicked",
+  "demo_report_downloaded",
+  "knowledge_search_used",
+]) {
+  assert.match(revenueGeoContent, new RegExp(safeRevenueGeoEvent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue GEO resources should use safe event: ${safeRevenueGeoEvent}`);
+}
+const revenueGeoRoute = read("src/app/(marketing)/resources/[slug]/page.tsx");
+assert.match(revenueGeoRoute, /dynamicParams = false/, "Revenue GEO resource route should statically limit generated slugs");
+assert.match(revenueGeoRoute, /generateStaticParams/, "Revenue GEO resource route should generate static params");
+assert.match(revenueGeoRoute, /generateMetadata/, "Revenue GEO resource route should generate unique metadata");
+assert.match(revenueGeoRoute, /alternates: \{ canonical: url \}/, "Revenue GEO resource route should set canonical URLs");
+assert.match(revenueGeoRoute, /FAQPage/, "Revenue GEO resource route should include FAQPage JSON-LD");
+assert.match(revenueGeoRoute, /resource\.faq\.map/, "Revenue GEO FAQ schema should be generated from visible FAQ content");
+assert.match(revenueGeoRoute, /Article/, "Revenue GEO resource route should include Article JSON-LD");
+assert.match(revenueGeoRoute, /Practical checklist/, "Revenue GEO resource route should render checklist content");
+assert.match(revenueGeoRoute, /Common mistakes/, "Revenue GEO resource route should render common mistakes");
+assert.match(revenueGeoRoute, /resource\.table\.rows/, "Revenue GEO resource route should render the example/comparison table");
+assert.match(revenueGeoRoute, /PrimaryCTA/, "Revenue GEO resource route should include existing tracked CTA components");
+assert.match(revenueGeoRoute, /notFound\(\)/, "Revenue GEO resource route should 404 unknown slugs");
+
+const resourcesPage = read("src/app/(marketing)/resources/page.tsx");
+assert.match(resourcesPage, /revenueGeoResources/, "Resources index should include revenue GEO resources");
+assert.match(resourcesPage, /categoryKey: "revenue-geo"/, "Resources index should categorize revenue GEO resources");
+const resourcesExplorer = read("src/components/marketing/ResourcesExplorer.tsx");
+assert.match(resourcesExplorer, /Revenue Guides/, "Resources explorer should expose a Revenue Guides filter");
+const sitemapRoute = read("src/app/sitemap.ts");
+assert.match(sitemapRoute, /revenueGeoResources/, "Sitemap should include revenue GEO resource pages");
+assert.match(sitemapRoute, /\/resources\/\$\{page\.slug\}/, "Sitemap should generate canonical resource URLs");
+const seoCheck = read("scripts/check-seo-urls.ts");
+assert.match(seoCheck, /revenueGeoResources/, "SEO URL check should know about revenue GEO resources");
+assert.equal(packageJson.scripts?.["check:seo"], "tsx scripts/check-seo-urls.ts", "Package scripts should expose SEO URL checks");
+const revenueGeoProductionSmoke = read("scripts/production-smoke.test.ts");
+assert.match(revenueGeoProductionSmoke, /revenueResourcePages/, "Production smoke should cover revenue GEO resource pages");
+assert.match(revenueGeoProductionSmoke, /Practical checklist[\s\S]*Common mistakes[\s\S]*FAQ/, "Production smoke should verify resource page quality markers");
 
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");

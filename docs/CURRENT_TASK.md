@@ -2,82 +2,71 @@
 
 ## Task Name
 
-Revenue Evidence Sprint v1.
+Revenue GEO Content Batch 1.
 
 ## Context
 
-Knowledge Base, Knowledge Reuse, AI Quality Check with Knowledge Context, and
-Knowledge Capture now provide enough product capability for the current stage.
-The next priority is not another feature expansion. The priority is to collect
-commercial conversion evidence: whether visitors click, download demos, upload
-templates, submit service requests, sign up, and attempt exports.
+Revenue Evidence Sprint v1 is deployed, and the operating/query/content planning
+work defines the first high-intent content topics. The next step is a small,
+reviewable runtime page batch that connects revenue-near searches to practical
+8D guidance, demo assets, Template Setup, Assisted First 8D / SCAR, Signup, and
+Knowledge reuse.
 
 ## Goal
 
-Turn 8D Reports into a measurable revenue-learning system for Template Setup,
-Team Launch, and Assisted First 8D / SCAR Delivery without changing auth,
-payment, export entitlements, Knowledge permissions, or database schema.
+Publish the first batch of high-intent `/resources/*` pages without creating a
+thin SEO batch, changing product entitlements, or touching auth, payment, export,
+database schema, AI backend, or Knowledge Base permissions/search logic.
 
 ## Scope
 
-- Upgrade homepage, Pricing, and demo report CTAs for service conversion.
-- Make the Template Setup / service lead funnel usable with required fields,
-  success and failure states, email notifications, and file-upload fallback.
-- Reuse the existing service request table for Template Setup, Team Launch, and
-  Assisted First 8D / SCAR Delivery leads.
-- Add privacy-safe revenue analytics events and safe referrer / UTM /
-  anonymous-session metadata.
-- Add admin-only revenue evidence metrics for the last 7 and 30 days.
-- Add Excel downloads to demo report sales assets using the existing quality
-  workbook generator.
-- Extend unauthenticated, production, governance, and authenticated smoke
-  coverage for the revenue evidence path.
-- Update the development log.
+- Add 10 runtime pages under `/resources/[slug]` from a shared content source:
+  - `/resources/how-to-write-8d-report-customer-complaint`
+  - `/resources/supplier-corrective-action-request-template`
+  - `/resources/8d-vs-scar`
+  - `/resources/excel-8d-template-vs-8d-software`
+  - `/resources/custom-8d-template-setup-guide`
+  - `/resources/ai-8d-report-checker`
+  - `/resources/8d-root-cause-d4-guide`
+  - `/resources/8d-corrective-action-d5-guide`
+  - `/resources/8d-validation-d6-guide`
+  - `/resources/8d-lessons-learned-d8-guide`
+- Give every page unique metadata, canonical URL, answer-first introduction,
+  structured sections, practical checklist, common mistakes, comparison/example
+  table, related internal links, CTAs, and visible FAQ with FAQPage JSON-LD.
+- Add the pages to `/resources`, sitemap generation, SEO URL checks, and
+  governance tests.
+- Update `docs/DEV_LOG.md`.
 
 ## Non-Goals
 
-- No full QMS, APQP, PPAP, iOS, PWA, or external supplier request system.
-- No payment, checkout, subscription, pricing amount, auth, password reset, or
-  Resend infrastructure changes beyond non-blocking lead notification emails.
-- No report editor core-flow changes.
-- No PDF / Word / Excel export entitlement changes for real user reports.
-- No AI backend changes.
-- No Knowledge Base search, eligibility, permission, report access, or share
-  token logic changes.
-- No database schema migration.
-- No production data writes during development.
+- No broad public marketing redesign.
+- No more than this first 10-page batch.
+- No fake statistics, fake customer stories, fake logos, guaranteed customer
+  acceptance, certification claims, or unsupported full-QMS claims.
+- No payment, checkout, subscription, auth, password reset, Resend, real report
+  export entitlement, ZIP behavior, AI backend, Knowledge Base search,
+  Knowledge permissions, production configuration, or database schema changes.
+- No production data writes or production test leads.
 
 ## Acceptance Criteria
 
-- Homepage keeps Start free and adds Upload your 8D template / Request template
-  setup with the required urgent 8D/SCAR copy.
-- Pricing keeps Free / Pro / Team / Single Export and makes these services
-  prominent: 8D Template Setup from $499, Team Launch from $999, Assisted First
-  8D / SCAR Delivery from $799.
-- Demo report pages include the company-format CTA and PDF / Word / Excel / ZIP
-  download links.
-- Template Setup form includes name, company, work email, role, current process,
-  use case, required export, timeline, message, and file upload.
-- Lead save does not fail just because file upload fails; users see a clear
-  re-upload warning.
-- Admin and user email failures are logged but do not block lead save.
-- Admin can view lead and file metadata without private bucket URLs.
-- Revenue analytics events are allowlisted and avoid sensitive report content.
-- Admin metrics show page views, demo downloads, template setup submissions,
-  contact submissions, signup count, export attempts, and pricing CTA clicks for
-  the last 7 and 30 days.
+- All 10 `/resources/*` pages render and are included in sitemap.
+- `/resources` exposes the new pages and a Revenue Guides filter.
+- Each page includes answer-first copy, practical checklist, common mistakes,
+  table, relevant CTA, internal links, and visible FAQ.
+- FAQPage JSON-LD only reflects visible FAQ content.
+- CTAs use existing safe analytics events and bounded metadata.
+- `npm run check:seo` passes.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, `npm run test:governance`, production smoke, and authenticated
-  smoke on a temporary Neon branch.
+  `npm run build`, `npm run test:governance`, and local public smoke for the new
+  pages.
 
 ## Risks
 
-- Service lead emails depend on existing email configuration; failure must stay
-  non-blocking and visible in logs.
-- File upload depends on R2 configuration; lead capture must remain useful when
-  storage is unavailable.
-- Event tracking can drift into sensitive quality data; metadata must stay
-  bounded to safe enums, counts, formats, paths, referrer, UTM, and anonymous
-  session id.
-- Admin metrics use JSONB/application-level event storage; larger volume may
-  later need dedicated reporting indexes or exports.
+- Adding too many pages at once can become thin content. This batch is capped at
+  10 pages and uses a shared renderer for consistency.
+- Public page CTAs must not imply guaranteed customer acceptance or certified
+  approval.
+- Analytics must stay limited to safe enum-like metadata and must not capture
+  customer/product/report/root-cause/corrective-action details.

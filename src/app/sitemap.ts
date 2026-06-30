@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next"
+import { revenueGeoResources } from "@/content/revenue-geo-resources"
 import { seoPages as legacySeoPages } from "@/lib/seo-pages"
 import { seoPages as programmaticSeoPages } from "@/content/seo-pages"
 import { INDEXABLE_STATIC_PATHS, SITE_URL } from "@/lib/seo-index-hygiene"
@@ -30,9 +31,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .map((page) => entry(`/${page.slug}`, "weekly", 0.82))
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
+  const revenueResourceEntries = revenueGeoResources
+    .map((page) => entry(`/resources/${page.slug}`, "weekly", 0.82))
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
   return [
     ...staticEntries,
     ...legacyEntries,
     ...programmaticEntries,
+    ...revenueResourceEntries,
   ]
 }

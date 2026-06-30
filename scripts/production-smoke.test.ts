@@ -3,6 +3,18 @@ import JSZip from "jszip";
 
 const baseUrl = (process.env.PRODUCTION_BASE_URL || "https://www.8d-reports.com").replace(/\/$/, "");
 const demoTypes = ["automotive", "molding", "electronics"] as const;
+const revenueResourcePages = [
+  ["/resources/how-to-write-8d-report-customer-complaint", "How to write an 8D report for a customer complaint"],
+  ["/resources/supplier-corrective-action-request-template", "Supplier corrective action request template"],
+  ["/resources/8d-vs-scar", "8D vs SCAR"],
+  ["/resources/excel-8d-template-vs-8d-software", "Excel 8D template vs online 8D software"],
+  ["/resources/custom-8d-template-setup-guide", "Custom 8D template setup guide"],
+  ["/resources/ai-8d-report-checker", "AI 8D report checker"],
+  ["/resources/8d-root-cause-d4-guide", "D4 root cause guide"],
+  ["/resources/8d-corrective-action-d5-guide", "D5 corrective action guide"],
+  ["/resources/8d-validation-d6-guide", "D6 validation guide"],
+  ["/resources/8d-lessons-learned-d8-guide", "D8 lessons learned guide"],
+] as const;
 
 async function fetchOk(path: string) {
   const response = await fetch(`${baseUrl}${path}`, {
@@ -70,6 +82,9 @@ async function main() {
   await expectHtml("/team-launch", ["Launch your online 8D workflow in 7 days", "From $999"]);
   await expectHtml("/custom-8d-template-setup", ["reusable online workflow", "Current process", "Required export"]);
   await expectHtml("/demo-reports", ["Team workflow demos", "Download Excel", "Want this in your company format?"]);
+  for (const [path, heading] of revenueResourcePages) {
+    await expectHtml(path, [heading, "Practical checklist", "Common mistakes", "FAQ"]);
+  }
   await expectHtml("/security", ["Security", "not used to train"]);
 
   for (const type of demoTypes) {

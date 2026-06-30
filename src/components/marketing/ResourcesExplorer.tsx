@@ -21,6 +21,7 @@ const filters = [
   { label: "Root Cause Tools", key: "root-cause" },
   { label: "Corrective Actions", key: "corrective-action" },
   { label: "Preventive Actions", key: "preventive-action" },
+  { label: "Revenue Guides", key: "revenue-geo" },
 ]
 
 function matchesFilter(resource: ResourceCardData, filter: string) {
