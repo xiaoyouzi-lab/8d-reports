@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { authClient } from "@/lib/auth-client"
@@ -47,6 +47,13 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
   const [otp, setOtp] = useState("")
   const [otpDebug, setOtpDebug] = useState<SignupOtpDebug | null>(null)
 
+  useEffect(() => {
+    trackEvent("signup_started", {
+      source: searchParams.get("source") || "direct",
+      intent: searchParams.get("intent") || "account",
+    })
+  }, [searchParams])
+
   async function requestVerificationCode() {
     const response = await fetch("/api/auth-email/signup-verification", {
       method: "POST",
@@ -88,6 +95,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
       }
       await requestVerificationCode()
       trackEvent("signup_success", { method: "email" })
+      trackEvent("signup_completed", { method: "email" })
       setStep("otp")
       setLoading(false)
     } catch (error) {

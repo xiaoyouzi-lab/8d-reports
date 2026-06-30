@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
-import Link from "next/link"
-import { Archive, ArrowRight, Download, FileText, LockKeyhole } from "lucide-react"
+import { Archive, ArrowRight, Download, FileSpreadsheet, FileText, LockKeyhole } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
+import { TrackedLink } from "@/components/marketing/MarketingActions"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
@@ -53,10 +53,11 @@ export default function DemoReportsPage() {
               <p className="mt-3 text-sm leading-6 text-slate-600">{demo.scenario}</p>
               <p className="mt-4 rounded-lg bg-slate-50 p-3 text-xs leading-5 text-slate-600">{demo.highlights}</p>
               <div className="mt-auto flex flex-col gap-2 pt-6">
-                <Link href={demo.example} className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>Review complete example <ArrowRight className="size-4" /></Link>
-                <Link href={`/api/sample-reports/${demo.downloadType}`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Download className="size-4" /> Download PDF</Link>
-                <Link href={`/api/sample-reports/${demo.downloadType}?format=docx`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Download Word</Link>
-                <Link href={`/api/sample-reports/${demo.downloadType}?format=zip`} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Download delivery ZIP</Link>
+                <TrackedLink href={demo.example} eventName="marketing_cta_clicked" eventData={{ page: "demo_reports", location: "demo_card", demoType: demo.downloadType }} className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>Review complete example <ArrowRight className="size-4" /></TrackedLink>
+                <TrackedLink href={`/api/sample-reports/${demo.downloadType}`} eventName="demo_report_downloaded" eventData={{ demoType: demo.downloadType, format: "pdf" }} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Download className="size-4" /> Download PDF</TrackedLink>
+                <TrackedLink href={`/api/sample-reports/${demo.downloadType}?format=docx`} eventName="demo_report_downloaded" eventData={{ demoType: demo.downloadType, format: "docx" }} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileText className="size-4" /> Download Word</TrackedLink>
+                <TrackedLink href={`/api/sample-reports/${demo.downloadType}?format=xlsx`} eventName="demo_report_downloaded" eventData={{ demoType: demo.downloadType, format: "xlsx" }} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><FileSpreadsheet className="size-4" /> Download Excel</TrackedLink>
+                <TrackedLink href={`/api/sample-reports/${demo.downloadType}?format=zip`} eventName="demo_report_downloaded" eventData={{ demoType: demo.downloadType, format: "zip" }} rel="nofollow" className={cn(buttonVariants({ variant: "outline", size: "lg" }))}><Archive className="size-4" /> Download delivery ZIP</TrackedLink>
               </div>
             </article>
           ))}
@@ -64,9 +65,19 @@ export default function DemoReportsPage() {
       </section>
       <section className="border-t border-slate-200 bg-slate-950 py-16 text-white">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-semibold">Launch the same controlled workflow for your team.</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-slate-300">Bring your existing Word, Excel, or customer-specific 8D template. We configure the workflow and help deliver the first report.</p>
-          <Link href="/team-launch" className={cn(buttonVariants({ size: "lg" }), "mt-7 bg-white text-slate-950 hover:bg-slate-100")}>View Team Launch</Link>
+          <h2 className="text-3xl font-semibold">Want this in your company format?</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-slate-300">
+            Upload your current Word / Excel / PDF 8D template. Request a
+            customer-ready 8D workflow setup.
+          </p>
+          <TrackedLink
+            href="/custom-8d-template-setup#request"
+            eventName="marketing_cta_clicked"
+            eventData={{ page: "demo_reports", location: "company_format_cta", service: "template_setup" }}
+            className={cn(buttonVariants({ size: "lg" }), "mt-7 bg-white text-slate-950 hover:bg-slate-100")}
+          >
+            Request this format
+          </TrackedLink>
         </div>
       </section>
     </div>

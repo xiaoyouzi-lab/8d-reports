@@ -193,17 +193,26 @@ export default function LandingPage() {
       <JsonLd data={productJsonLd} />
       <PageHero
         title="Finish customer-ready 8D reports without rebuilding them in Excel."
-        description="Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, or Excel with attachments when present."
+        description="Need to submit a customer-ready 8D or SCAR this week? Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, or Excel with attachments when present."
         actions={
           <>
             <PrimaryCTA href="/signup" page="home" location="hero">
               Start free with 3 reports
             </PrimaryCTA>
             <PrimaryCTA
-              href="/sample-report"
+              href="/custom-8d-template-setup#request"
               page="home"
               location="hero"
               variant="secondary"
+              eventData={{ service: "template_setup" }}
+            >
+              Upload your 8D template
+            </PrimaryCTA>
+            <PrimaryCTA
+              href="/sample-report"
+              page="home"
+              location="hero"
+              variant="ghost"
             >
               View complete example
             </PrimaryCTA>
@@ -211,6 +220,15 @@ export default function LandingPage() {
         }
       >
         <HeroProductPreview />
+        <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+          <p className="text-sm font-semibold text-indigo-950">
+            Turn your Word / Excel 8D template into a reusable online workflow.
+          </p>
+          <p className="mt-1 text-sm leading-6 text-indigo-900">
+            For teams that need customer-ready 8D/SCAR delivery before a full
+            QMS rollout.
+          </p>
+        </div>
         <div className="mt-5 grid gap-2 sm:grid-cols-2">
           {facts.map((fact) => (
             <div key={fact} className="flex items-center gap-2 text-sm font-medium text-slate-700">
@@ -373,6 +391,16 @@ export default function LandingPage() {
                 className="bg-white text-slate-950 hover:bg-slate-100"
               >
                 Start free with 3 reports
+              </PrimaryCTA>
+              <PrimaryCTA
+                href="/custom-8d-template-setup#request"
+                page="home"
+                location="final_cta"
+                variant="ghost"
+                className="ml-0 mt-3 text-white hover:bg-white/10 hover:text-white sm:ml-3 sm:mt-0"
+                eventData={{ service: "template_setup" }}
+              >
+                Request template setup
               </PrimaryCTA>
             </div>
           </div>

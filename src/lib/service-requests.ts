@@ -1,4 +1,4 @@
-export const SERVICE_REQUEST_TYPES = ["template_setup", "team_launch"] as const;
+export const SERVICE_REQUEST_TYPES = ["template_setup", "team_launch", "assisted_8d"] as const;
 
 export const SERVICE_REQUEST_ALLOWED_EXTENSIONS = [
   ".doc",
@@ -84,7 +84,9 @@ export function normalizeServiceQuoteAmount(value: unknown) {
 }
 
 export function serviceRequestTypeLabel(type?: string | null) {
-  return type === "team_launch" ? "Team Launch" : "Template Setup";
+  if (type === "team_launch") return "Team Launch";
+  if (type === "assisted_8d") return "Assisted First 8D / SCAR Delivery";
+  return "Template Setup";
 }
 
 export function serviceRequestStatusLabel(status?: string | null) {

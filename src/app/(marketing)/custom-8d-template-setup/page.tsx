@@ -73,7 +73,8 @@ const process = [
 
 export default async function Custom8DTemplateSetupPage({ searchParams }: { searchParams: Promise<{ service?: string }> }) {
   const { service } = await searchParams;
-  const requestType = service === "team_launch" ? "team_launch" : "template_setup";
+  const requestType = service === "team_launch" ? "team_launch" : service === "assisted_8d" ? "assisted_8d" : "template_setup";
+  const isAssisted = requestType === "assisted_8d";
 
   return (
     <div className="font-sans">
@@ -84,13 +85,14 @@ export default async function Custom8DTemplateSetupPage({ searchParams }: { sear
               Custom 8D template setup
             </p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Turn your existing 8D template into a reusable online workflow.
+              {isAssisted
+                ? "Get help delivering your first customer-ready 8D or SCAR."
+                : "Turn your existing 8D template into a reusable online workflow."}
             </h1>
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-              We convert your company&apos;s Word, Excel, or customer-specific 8D
-              template into a reusable online workflow so reports can be filled
-              out on the factory floor, shared for review, and exported in a
-              consistent format.
+              {isAssisted
+                ? "Share the format, customer requirement, and timeline for the first report you need to deliver. This is inquiry-only and does not require checkout."
+                : "We convert your company's Word, Excel, or customer-specific 8D template into a reusable online workflow so reports can be filled out on the factory floor, shared for review, and exported in a consistent format."}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -122,7 +124,9 @@ export default async function Custom8DTemplateSetupPage({ searchParams }: { sear
               </div>
               <div>
                 <p className="text-sm text-slate-500">Starting at</p>
-                <p className="font-mono text-3xl font-semibold text-slate-950">From $499</p>
+                <p className="font-mono text-3xl font-semibold text-slate-950">
+                  {requestType === "team_launch" ? "From $999" : isAssisted ? "From $799" : "From $499"}
+                </p>
               </div>
             </div>
             <div className="mt-6 rounded-lg bg-slate-50 p-4">
