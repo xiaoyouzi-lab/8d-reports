@@ -429,10 +429,10 @@ async function verifyTemplateSetupLead(page: Page, events: CapturedEvent[]) {
     await page.getByLabel("Current process").selectOption("Word/Excel");
     await page.getByLabel("Use case").selectOption("SCAR");
     await page.getByLabel("Timeline").selectOption("This week");
-    await page.getByLabel("PDF").check();
-    await page.getByLabel("Word").check();
-    await page.getByLabel("Excel").check();
-    await page.getByLabel("ZIP").check();
+    await page.getByRole("checkbox", { name: "PDF", exact: true }).check();
+    await page.getByRole("checkbox", { name: "Word", exact: true }).check();
+    await page.getByRole("checkbox", { name: "Excel", exact: true }).check();
+    await page.getByRole("checkbox", { name: "ZIP", exact: true }).check();
     await page.getByLabel("Message").fill("Need customer-ready SCAR format for a line complaint this week.");
     await page.locator('input[name="files"]').setInputFiles({
       name: "revenue-smoke-template.pdf",
