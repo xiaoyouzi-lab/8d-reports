@@ -813,6 +813,97 @@ assert.match(marketingWorkflow, /knowledge_result_opened/, "Marketing workflow s
 assert.match(marketingWorkflow, /knowledge_root_cause_copied/, "Marketing workflow should track root cause reuse");
 assert.match(marketingWorkflow, /repeat knowledge users/i, "Marketing workflow should track repeat Knowledge Base users");
 
+const productOperatingMetrics = read("docs/PRODUCT_OPERATING_METRICS.md");
+assert.match(productOperatingMetrics, /Product Operating Metrics/, "Product operating metrics doc should exist");
+assert.match(productOperatingMetrics, /does not add runtime tracking/, "Product metrics should not add runtime tracking");
+assert.match(productOperatingMetrics, /database-derived metrics/i, "Product metrics should prefer database-derived metrics where event tracking would be sensitive");
+assert.match(productOperatingMetrics, /Core Funnel/, "Product metrics should define the core funnel");
+for (const funnelStep of [
+  "Visitor -> Signup",
+  "Signup -> First report created",
+  "First report created -> D4/D5 filled",
+  "Report completed -> Knowledge asset created",
+  "Knowledge asset -> Knowledge search",
+  "Knowledge search -> Copy root cause/action/lesson",
+  "Editor reuse opened -> Copy",
+  "AI Quality Check run",
+  "Export / share",
+  "Team upgrade / service request",
+]) {
+  assert.match(productOperatingMetrics, new RegExp(funnelStep.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Product metrics should cover funnel step: ${funnelStep}`);
+}
+for (const requiredColumn of [
+  "Event name / source",
+  "Source page or component",
+  "Why it matters",
+  "Safe metadata",
+  "Do not collect",
+  "Target interpretation",
+]) {
+  assert.match(productOperatingMetrics, new RegExp(requiredColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Product metrics should include column: ${requiredColumn}`);
+}
+for (const requiredEvent of [
+  "signup_success",
+  "report_created",
+  "report_saved",
+  "knowledge_search_used",
+  "knowledge_root_cause_copied",
+  "knowledge_corrective_action_copied",
+  "knowledge_lesson_copied",
+  "knowledge_reuse_panel_opened",
+  "knowledge_reuse_root_cause_copied",
+  "knowledge_reuse_corrective_action_copied",
+  "knowledge_reuse_lesson_copied",
+  "ai_report_review_clicked",
+  "export_clicked",
+  "share_link_created",
+  "upgrade_clicked",
+  "checkout_started",
+  "checkout_completed",
+]) {
+  assert.match(productOperatingMetrics, new RegExp(requiredEvent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Product metrics should document event: ${requiredEvent}`);
+}
+for (const forbiddenMetricValue of [
+  "full search query",
+  "problem description",
+  "root cause text",
+  "corrective action text",
+  "lessons learned text",
+  "customer name",
+  "supplier name",
+  "product name",
+  "batch or lot number",
+  "attachment content",
+  "share token",
+  "email address",
+  "payment details",
+  "AI prompt",
+  "AI raw response",
+]) {
+  assert.match(productOperatingMetrics, new RegExp(forbiddenMetricValue.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Product metrics should forbid collecting: ${forbiddenMetricValue}`);
+}
+for (const safeMetricField of [
+  "source",
+  "plan",
+  "reportType",
+  "stepId",
+  "filledFieldCount",
+  "queryLength",
+  "resultCount",
+  "copiedField",
+  "hasContext",
+  "contextCount",
+  "format",
+  "permissionLevel",
+  "billingInterval",
+  "requestType",
+]) {
+  assert.match(productOperatingMetrics, new RegExp(`\`${safeMetricField}\``), `Product metrics should include safe metadata field: ${safeMetricField}`);
+}
+assert.match(productOperatingMetrics, /Knowledge asset creation should be a derived metric/, "Knowledge asset creation should be derived instead of tracked from raw report content");
+assert.match(productOperatingMetrics, /D4\/D5 field completion should be computed from database state/, "D4/D5 completion should be computed without raw text analytics");
+assert.doesNotMatch(productOperatingMetrics, /full QMS|\bSSO\b|automatic AI approval/i, "Product metrics should not introduce unsupported product claims");
+
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");
 assert.match(pricingPage, /From \$999/, "Team Launch price should be From $999");

@@ -2,57 +2,64 @@
 
 ## Task Name
 
-External 8D Request / Supplier Response Loop Spec.
+Product Operating Metrics v1.
 
 ## Context
 
-8D Reports has report editing, Team workflow, share links, Activity Log, Knowledge Base, editor knowledge reuse, AI review, and authenticated smoke infrastructure. The next product direction is controlled external supplier collaboration, but runtime implementation would require new access boundaries, schema, token handling, email flow, and smoke coverage.
+Recent product work moved 8D Reports from a single report editor toward a reusable quality response workspace:
+
+- Quality Knowledge Base turns completed reports into searchable knowledge assets.
+- Authenticated app discoverability makes Dashboard, Knowledge Base, and New Report visible in the logged-in workspace.
+- Authenticated smoke infrastructure safely verifies logged-in behavior on temporary Neon branches.
+- Knowledge Reuse brings copy-only historical knowledge into the report editor.
+
+The next step is to define the operating metrics that show whether users actually move through the product loop from visit, to report creation, to completed knowledge, to reuse, AI review, export/share, and paid value.
 
 ## Goal
 
-Create a docs-only MVP specification for External 8D Request / Supplier Response Loop so a future PR can implement it safely without overloading existing report share links or exposing customer workspace data.
+Create a privacy-safe product operating metrics definition that can guide weekly product reviews without adding invasive tracking or collecting sensitive report content.
 
 ## Scope
 
-- Audit existing share links, report access, Team roles, workflow status, Activity Log, Resend/email capability, and guest token risks.
-- Add `docs/EXTERNAL_8D_REQUEST_WORKFLOW_SPEC.md`.
-- Document actors, MVP flow, permission matrix, token security model, login vs guest decision, ownership, audit log, email notifications, data exposure rules, abuse/spam risks, future schema needs, smoke strategy, and implementation phases.
-- Add governance checks proving the spec exists and covers the required safety topics.
+- Add `docs/PRODUCT_OPERATING_METRICS.md`.
+- Define the core funnel from Visitor -> Signup through Team upgrade / service request.
+- For each funnel metric, document event name/source, source page or component, why it matters, safe metadata, forbidden data, and target interpretation.
+- Reuse existing event names and database-derived metrics where possible.
+- Update governance checks so future changes preserve the metrics document and privacy boundaries.
+- Update task and development docs.
 
 ## Non-Goals
 
-- No runtime external request feature.
-- No supplier portal accounts.
-- No public supplier dashboard.
-- No database schema changes.
-- No auth, payment, checkout, pricing, export, Resend configuration, AI, Knowledge Base permission/eligibility, or production configuration changes.
-- No production data writes.
+- No runtime product feature changes.
+- No public marketing page changes.
+- No payment, pricing, checkout, subscription, export, auth, Resend, production configuration, or database schema changes.
+- No AI backend changes.
+- No Knowledge Base search, eligibility, permission, or report access logic changes.
+- No new analytics collection beyond documenting safe metrics.
+- No production data access or production test data.
 
 ## Acceptance Criteria
 
-- Spec includes:
-  - Product goal
-  - Actors
-  - MVP flow
-  - Permission matrix
-  - Token security model
-  - Login vs guest decision
-  - Ownership model
-  - Audit log requirements
-  - Email notifications
-  - Data exposure rules
-  - Abuse / spam risk
-  - Non-goals
-  - Required schema changes for future PR
-  - Smoke strategy
-  - Recommended implementation phases
-- Governance checks cover the spec and required sections.
-- No runtime code changes except governance tests.
-- Required checks pass for a docs-only PR: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
+- `docs/PRODUCT_OPERATING_METRICS.md` exists.
+- The document defines these 10 funnel steps:
+  1. Visitor -> Signup
+  2. Signup -> First report created
+  3. First report created -> D4/D5 filled
+  4. Report completed -> Knowledge asset created
+  5. Knowledge asset -> Knowledge search
+  6. Knowledge search -> Copy root cause/action/lesson
+  7. Editor reuse opened -> Copy
+  8. AI Quality Check run
+  9. Export / share
+  10. Team upgrade / service request
+- Each metric includes event name/source, source page or component, why it matters, safe metadata, forbidden data, and target interpretation.
+- The document explicitly prohibits collecting full queries, report content, customer/supplier/product/batch identifiers, root cause, corrective action, lessons learned, attachment content, AI prompts/raw output, share tokens, payment details, and email addresses.
+- The document distinguishes existing event coverage from database-derived or future coverage.
+- Governance tests cover the new metrics document and privacy rules.
+- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Existing editable share links are report-level and too broad for supplier requests.
-- Future runtime work needs schema changes and careful token design.
-- Email invites could create spam/abuse risk without rate limits.
-- Supplier guest access must remain narrower than authenticated Team access.
+- Product metrics can create pressure to over-track sensitive quality data; the document must keep privacy boundaries explicit.
+- Some funnel steps are best measured from database state, not client events.
+- Checkout completion and service-request reporting need separate privacy-safe operational reporting before broader dashboarding.
