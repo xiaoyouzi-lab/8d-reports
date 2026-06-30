@@ -417,11 +417,11 @@ async function verifyTemplateSetupLead(page: Page, events: CapturedEvent[]) {
     await waitForBodyText(page, "Submit your template for setup");
 
     await runAndWaitForEvent(events, "template_setup_form_started", async () => {
-      await page.getByLabel("Name").fill("Revenue Smoke");
+      await page.getByRole("textbox", { name: "Name", exact: true }).fill("Revenue Smoke");
     });
-    await page.getByLabel("Company name").fill("Revenue Smoke Manufacturing");
-    await page.getByLabel("Work email").fill("revenue-smoke@example.test");
-    await page.getByLabel("Role").fill("Quality Manager");
+    await page.getByRole("textbox", { name: "Company name", exact: true }).fill("Revenue Smoke Manufacturing");
+    await page.getByRole("textbox", { name: "Work email", exact: true }).fill("revenue-smoke@example.test");
+    await page.getByRole("textbox", { name: "Role", exact: true }).fill("Quality Manager");
     await page.getByLabel("Current process").selectOption("Word/Excel");
     await page.getByLabel("Use case").selectOption("SCAR");
     await page.getByLabel("Timeline").selectOption("This week");
