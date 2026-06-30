@@ -2,82 +2,87 @@
 
 ## Task Name
 
-Revenue Evidence Sprint v1.
+GEO / SEO Revenue Query Map v1.
 
 ## Context
 
-Knowledge Base, Knowledge Reuse, AI Quality Check with Knowledge Context, and
-Knowledge Capture now provide enough product capability for the current stage.
-The next priority is not another feature expansion. The priority is to collect
-commercial conversion evidence: whether visitors click, download demos, upload
-templates, submit service requests, sign up, and attempt exports.
+Revenue Evidence Sprint v1 is deployed, and the next commercial priority is to
+turn observed service and demo intent into a disciplined GEO/SEO query map
+before adding more runtime surfaces or public pages.
+
+This task is planning and governance only. It should define which high-intent
+queries matter for 8D Reports, how each query maps to a page type, CTA, priority,
+internal link, and privacy-safe measurement event, and which assumptions must
+remain hypotheses until enriched by GSC, GA4, or first-party analytics.
 
 ## Goal
 
-Turn 8D Reports into a measurable revenue-learning system for Template Setup,
-Team Launch, and Assisted First 8D / SCAR Delivery without changing auth,
-payment, export entitlements, Knowledge permissions, or database schema.
+Create a revenue-centered GEO/SEO query map for 8D Reports that helps prioritize
+content, demo, Template Setup, Team Launch, Assisted First 8D / SCAR Delivery,
+Signup, and Knowledge/AI reuse opportunities without inventing search volume or
+publishing thin SEO pages.
 
 ## Scope
 
-- Upgrade homepage, Pricing, and demo report CTAs for service conversion.
-- Make the Template Setup / service lead funnel usable with required fields,
-  success and failure states, email notifications, and file-upload fallback.
-- Reuse the existing service request table for Template Setup, Team Launch, and
-  Assisted First 8D / SCAR Delivery leads.
-- Add privacy-safe revenue analytics events and safe referrer / UTM /
-  anonymous-session metadata.
-- Add admin-only revenue evidence metrics for the last 7 and 30 days.
-- Add Excel downloads to demo report sales assets using the existing quality
-  workbook generator.
-- Extend unauthenticated, production, governance, and authenticated smoke
-  coverage for the revenue evidence path.
-- Update the development log.
+- Add `docs/GEO_REVENUE_QUERY_MAP.md` with 150+ high-intent queries.
+- Cover these categories:
+  - Core 8D report intent
+  - SCAR / supplier corrective action
+  - Customer complaint response
+  - Industry examples
+  - Role-based intent
+  - Excel replacement intent
+  - AI / Knowledge reuse intent
+  - Service / paid intent
+- For every query, document:
+  - intent type
+  - target page type
+  - CTA
+  - priority P0/P1/P2
+  - why it matters
+  - content angle
+  - internal link target
+  - safe metadata / tracking event
+- Mark the map as hypothesis-based unless later enriched by real GSC, GA4, or
+  first-party evidence.
+- Add governance coverage so the query map cannot regress below the required
+  scope.
+- Update `docs/DEV_LOG.md`.
 
 ## Non-Goals
 
-- No full QMS, APQP, PPAP, iOS, PWA, or external supplier request system.
-- No payment, checkout, subscription, pricing amount, auth, password reset, or
-  Resend infrastructure changes beyond non-blocking lead notification emails.
-- No report editor core-flow changes.
-- No PDF / Word / Excel export entitlement changes for real user reports.
-- No AI backend changes.
-- No Knowledge Base search, eligibility, permission, report access, or share
-  token logic changes.
-- No database schema migration.
-- No production data writes during development.
+- No runtime pages or public marketing page changes.
+- No fake search volume, ranking, AI citation, revenue, or customer-demand
+  claims.
+- No low-quality AI article batches or thin SEO pages.
+- No payment, checkout, subscription, auth, password reset, Resend, export,
+  Knowledge Base search, Knowledge permissions, AI backend, production
+  configuration, or database schema changes.
+- No production data writes.
 
 ## Acceptance Criteria
 
-- Homepage keeps Start free and adds Upload your 8D template / Request template
-  setup with the required urgent 8D/SCAR copy.
-- Pricing keeps Free / Pro / Team / Single Export and makes these services
-  prominent: 8D Template Setup from $499, Team Launch from $999, Assisted First
-  8D / SCAR Delivery from $799.
-- Demo report pages include the company-format CTA and PDF / Word / Excel / ZIP
-  download links.
-- Template Setup form includes name, company, work email, role, current process,
-  use case, required export, timeline, message, and file upload.
-- Lead save does not fail just because file upload fails; users see a clear
-  re-upload warning.
-- Admin and user email failures are logged but do not block lead save.
-- Admin can view lead and file metadata without private bucket URLs.
-- Revenue analytics events are allowlisted and avoid sensitive report content.
-- Admin metrics show page views, demo downloads, template setup submissions,
-  contact submissions, signup count, export attempts, and pricing CTA clicks for
-  the last 7 and 30 days.
+- `docs/GEO_REVENUE_QUERY_MAP.md` exists.
+- The map includes at least 150 queries across all eight required categories.
+- Every query row includes intent, target page type, CTA, priority, why it
+  matters, content angle, internal link target, and safe metadata / tracking
+  event.
+- The document clearly says search volume and demand are hypotheses unless
+  enriched by real evidence.
+- The document forbids collecting full queries, customer/product names, report
+  text, root cause, corrective action, lessons learned, batch identifiers, AI
+  prompts, and uploaded file content as analytics metadata.
+- Governance tests assert category coverage, row count, required fields,
+  representative revenue queries, safe CTAs, and safe tracking events.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, `npm run test:governance`, production smoke, and authenticated
-  smoke on a temporary Neon branch.
+  `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Service lead emails depend on existing email configuration; failure must stay
-  non-blocking and visible in logs.
-- File upload depends on R2 configuration; lead capture must remain useful when
-  storage is unavailable.
-- Event tracking can drift into sensitive quality data; metadata must stay
-  bounded to safe enums, counts, formats, paths, referrer, UTM, and anonymous
-  session id.
-- Admin metrics use JSONB/application-level event storage; larger volume may
-  later need dedicated reporting indexes or exports.
+- Query maps can drift into speculative SEO if treated as evidence. Keep volume,
+  ranking, and revenue claims out until GSC/GA4 or first-party analytics
+  supports them.
+- Publishing too many thin pages would weaken the brand and waste effort.
+  Prioritize P0 pages that connect directly to revenue evidence.
+- Analytics metadata must remain bounded to safe enums and counts, not raw
+  quality-report content.

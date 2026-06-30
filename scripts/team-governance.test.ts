@@ -905,6 +905,82 @@ assert.match(productOperatingMetrics, /Knowledge asset creation should be a deri
 assert.match(productOperatingMetrics, /D4\/D5 field completion should be computed from database state/, "D4/D5 completion should be computed without raw text analytics");
 assert.doesNotMatch(productOperatingMetrics, /full QMS|\bSSO\b|automatic AI approval/i, "Product metrics should not introduce unsupported product claims");
 
+const geoRevenueQueryMap = read("docs/GEO_REVENUE_QUERY_MAP.md");
+assert.match(geoRevenueQueryMap, /GEO Revenue Query Map/, "GEO revenue query map should exist");
+assert.match(geoRevenueQueryMap, /does not invent search volume/, "GEO revenue query map should not invent search volume");
+assert.match(geoRevenueQueryMap, /hypothesis/i, "GEO revenue query map should mark unevidenced query assumptions as hypotheses");
+assert.match(geoRevenueQueryMap, /Do not use it to publish[\s\S]*low-quality SEO pages/i, "GEO revenue query map should prohibit thin SEO content");
+for (const geoCategory of [
+  "Core 8D Report Intent",
+  "SCAR / Supplier Corrective Action",
+  "Customer Complaint Response",
+  "Industry Examples",
+  "Role-Based Intent",
+  "Excel Replacement Intent",
+  "AI / Knowledge Reuse Intent",
+  "Service / Paid Intent",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(geoCategory.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should cover category: ${geoCategory}`);
+}
+const geoQueryRows = geoRevenueQueryMap.match(/^\| [A-H]\d{2} \|/gm) || [];
+assert.ok(geoQueryRows.length >= 150, `GEO revenue query map should include at least 150 query rows, found ${geoQueryRows.length}`);
+for (const categoryPrefix of ["A", "B", "C", "D", "E", "F", "G", "H"]) {
+  const categoryRows = geoQueryRows.filter((row) => row.startsWith(`| ${categoryPrefix}`));
+  assert.ok(categoryRows.length >= 15, `GEO revenue query map should include broad ${categoryPrefix} category coverage, found ${categoryRows.length}`);
+}
+for (const requiredGeoColumn of [
+  "Query",
+  "Intent",
+  "Target page type",
+  "CTA",
+  "Priority",
+  "Why it matters",
+  "Content angle",
+  "Internal link target",
+  "Safe metadata / tracking event",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(requiredGeoColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should include column: ${requiredGeoColumn}`);
+}
+for (const representativeGeoQuery of [
+  "how to write an 8D report for customer complaint",
+  "supplier corrective action request template",
+  "how to respond to customer complaint with 8D",
+  "automotive 8D report example",
+  "SQE 8D report workflow",
+  "Excel 8D template vs 8D software",
+  "AI 8D report checker",
+  "custom 8D report template setup",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(representativeGeoQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO revenue query map should include representative query: ${representativeGeoQuery}`);
+}
+for (const geoCta of ["Template Setup", "Team Launch", "Assisted First 8D", "Signup", "Demo Download"]) {
+  assert.match(geoRevenueQueryMap, new RegExp(geoCta.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should include CTA: ${geoCta}`);
+}
+for (const safeGeoEvent of [
+  "seo_page_view",
+  "marketing_cta_clicked",
+  "pricing_service_cta_clicked",
+  "demo_report_downloaded",
+  "knowledge_search_used",
+  "ai_report_review_clicked",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(safeGeoEvent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should include safe event: ${safeGeoEvent}`);
+}
+for (const forbiddenGeoAnalyticsData of [
+  "full queries",
+  "customer names",
+  "product names",
+  "report text",
+  "root cause text",
+  "corrective action text",
+  "lessons learned",
+  "batch numbers",
+  "AI prompts",
+  "uploaded file content",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(forbiddenGeoAnalyticsData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO revenue query map should forbid analytics collection of: ${forbiddenGeoAnalyticsData}`);
+}
+
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");
 assert.match(pricingPage, /From \$999/, "Team Launch price should be From $999");
