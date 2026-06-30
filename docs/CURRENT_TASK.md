@@ -2,58 +2,57 @@
 
 ## Task Name
 
-Knowledge Reuse in Editor v1.
+External 8D Request / Supplier Response Loop Spec.
 
 ## Context
 
-Quality Knowledge Base v1 made completed, approved, submitted, and closed reports searchable as quality knowledge assets. Authenticated app discoverability made Knowledge Base visible in the logged-in app. Authenticated smoke infrastructure now gives PRs a safe temporary Neon branch workflow for logged-in verification.
-
-The next product step is to bring Knowledge Base into the report editor workflow, where users are filling D4 root cause, D5 corrective action, D7 prevention, and D8 lessons learned sections.
+8D Reports has report editing, Team workflow, share links, Activity Log, Knowledge Base, editor knowledge reuse, AI review, and authenticated smoke infrastructure. The next product direction is controlled external supplier collaboration, but runtime implementation would require new access boundaries, schema, token handling, email flow, and smoke coverage.
 
 ## Goal
 
-Add a copy-only Knowledge Reuse panel to the report editor so authenticated users can search existing Knowledge Base assets while editing a report and manually copy root cause, corrective action, and lessons learned text as reference.
+Create a docs-only MVP specification for External 8D Request / Supplier Response Loop so a future PR can implement it safely without overloading existing report share links or exposing customer workspace data.
 
 ## Scope
 
-- Add a `Reuse Knowledge` entry in the report editor top tool area.
-- Add contextual hints for D4, D5, D7, and D8.
-- Add `src/components/knowledge/KnowledgeReusePanel.tsx`.
-- Reuse `POST /api/knowledge/search` and `src/lib/report-knowledge.ts`.
-- Add safe editor reuse analytics events.
-- Update authenticated smoke coverage for the editor reuse flow.
-- Update governance tests and docs.
+- Audit existing share links, report access, Team roles, workflow status, Activity Log, Resend/email capability, and guest token risks.
+- Add `docs/EXTERNAL_8D_REQUEST_WORKFLOW_SPEC.md`.
+- Document actors, MVP flow, permission matrix, token security model, login vs guest decision, ownership, audit log, email notifications, data exposure rules, abuse/spam risks, future schema needs, smoke strategy, and implementation phases.
+- Add governance checks proving the spec exists and covers the required safety topics.
 
 ## Non-Goals
 
-- No automatic report field writes.
-- No report save from Knowledge Reuse.
-- No AI generation or rewrite.
-- No Knowledge Base eligibility, permission, or share-token changes.
-- No public marketing changes.
-- No payment, pricing, checkout, subscription, export, auth, Resend, production configuration, or database schema changes.
-- No vector database, semantic search, attachment parsing, new tables, production test data, External 8D Request, Supplier Response Loop, iOS, or PWA work.
+- No runtime external request feature.
+- No supplier portal accounts.
+- No public supplier dashboard.
+- No database schema changes.
+- No auth, payment, checkout, pricing, export, Resend configuration, AI, Knowledge Base permission/eligibility, or production configuration changes.
+- No production data writes.
 
 ## Acceptance Criteria
 
-- Report editor top tool area shows `Reuse Knowledge`.
-- D4 hint says: `Search past root causes before finalizing this section.`
-- D5 hint says: `Reuse proven corrective actions from completed reports.`
-- D7 hint says: `Check prevention and system-change ideas from similar issues.`
-- D8 hint says: `Check lessons learned from similar completed reports.`
-- The panel searches through `POST /api/knowledge/search`.
-- No new Knowledge API is added.
-- The panel does not call `handleFieldChange`, save reports, or update report fields.
-- Copy root cause, corrective action, and lessons learned succeeds with `Copied`.
-- Copy failure shows `Could not copy. Select and copy manually.`
-- Open report opens in a new tab and preserves the current editor tab.
-- Reuse analytics use only safe metadata and do not include raw query or report content.
-- Authenticated smoke verifies the editor reuse flow.
-- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
-- Authenticated smoke workflow is triggered for the PR branch and inspected for status, artifact summary, and Neon cleanup.
+- Spec includes:
+  - Product goal
+  - Actors
+  - MVP flow
+  - Permission matrix
+  - Token security model
+  - Login vs guest decision
+  - Ownership model
+  - Audit log requirements
+  - Email notifications
+  - Data exposure rules
+  - Abuse / spam risk
+  - Non-goals
+  - Required schema changes for future PR
+  - Smoke strategy
+  - Recommended implementation phases
+- Governance checks cover the spec and required sections.
+- No runtime code changes except governance tests.
+- Required checks pass for a docs-only PR: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- The report editor toolbar is already crowded, so mobile layout must stay compact.
-- Search remains v1 keyword/JSONB-backed application search through the existing Knowledge API.
-- Future AI context should wait until the copy-only reuse behavior is validated.
+- Existing editable share links are report-level and too broad for supplier requests.
+- Future runtime work needs schema changes and careful token design.
+- Email invites could create spam/abuse risk without rate limits.
+- Supplier guest access must remain narrower than authenticated Team access.
