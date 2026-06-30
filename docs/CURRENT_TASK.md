@@ -2,58 +2,64 @@
 
 ## Task Name
 
-Knowledge Reuse in Editor v1.
+Product Operating Metrics v1.
 
 ## Context
 
-Quality Knowledge Base v1 made completed, approved, submitted, and closed reports searchable as quality knowledge assets. Authenticated app discoverability made Knowledge Base visible in the logged-in app. Authenticated smoke infrastructure now gives PRs a safe temporary Neon branch workflow for logged-in verification.
+Recent product work moved 8D Reports from a single report editor toward a reusable quality response workspace:
 
-The next product step is to bring Knowledge Base into the report editor workflow, where users are filling D4 root cause, D5 corrective action, D7 prevention, and D8 lessons learned sections.
+- Quality Knowledge Base turns completed reports into searchable knowledge assets.
+- Authenticated app discoverability makes Dashboard, Knowledge Base, and New Report visible in the logged-in workspace.
+- Authenticated smoke infrastructure safely verifies logged-in behavior on temporary Neon branches.
+- Knowledge Reuse brings copy-only historical knowledge into the report editor.
+
+The next step is to define the operating metrics that show whether users actually move through the product loop from visit, to report creation, to completed knowledge, to reuse, AI review, export/share, and paid value.
 
 ## Goal
 
-Add a copy-only Knowledge Reuse panel to the report editor so authenticated users can search existing Knowledge Base assets while editing a report and manually copy root cause, corrective action, and lessons learned text as reference.
+Create a privacy-safe product operating metrics definition that can guide weekly product reviews without adding invasive tracking or collecting sensitive report content.
 
 ## Scope
 
-- Add a `Reuse Knowledge` entry in the report editor top tool area.
-- Add contextual hints for D4, D5, D7, and D8.
-- Add `src/components/knowledge/KnowledgeReusePanel.tsx`.
-- Reuse `POST /api/knowledge/search` and `src/lib/report-knowledge.ts`.
-- Add safe editor reuse analytics events.
-- Update authenticated smoke coverage for the editor reuse flow.
-- Update governance tests and docs.
+- Add `docs/PRODUCT_OPERATING_METRICS.md`.
+- Define the core funnel from Visitor -> Signup through Team upgrade / service request.
+- For each funnel metric, document event name/source, source page or component, why it matters, safe metadata, forbidden data, and target interpretation.
+- Reuse existing event names and database-derived metrics where possible.
+- Update governance checks so future changes preserve the metrics document and privacy boundaries.
+- Update task and development docs.
 
 ## Non-Goals
 
-- No automatic report field writes.
-- No report save from Knowledge Reuse.
-- No AI generation or rewrite.
-- No Knowledge Base eligibility, permission, or share-token changes.
-- No public marketing changes.
+- No runtime product feature changes.
+- No public marketing page changes.
 - No payment, pricing, checkout, subscription, export, auth, Resend, production configuration, or database schema changes.
-- No vector database, semantic search, attachment parsing, new tables, production test data, External 8D Request, Supplier Response Loop, iOS, or PWA work.
+- No AI backend changes.
+- No Knowledge Base search, eligibility, permission, or report access logic changes.
+- No new analytics collection beyond documenting safe metrics.
+- No production data access or production test data.
 
 ## Acceptance Criteria
 
-- Report editor top tool area shows `Reuse Knowledge`.
-- D4 hint says: `Search past root causes before finalizing this section.`
-- D5 hint says: `Reuse proven corrective actions from completed reports.`
-- D7 hint says: `Check prevention and system-change ideas from similar issues.`
-- D8 hint says: `Check lessons learned from similar completed reports.`
-- The panel searches through `POST /api/knowledge/search`.
-- No new Knowledge API is added.
-- The panel does not call `handleFieldChange`, save reports, or update report fields.
-- Copy root cause, corrective action, and lessons learned succeeds with `Copied`.
-- Copy failure shows `Could not copy. Select and copy manually.`
-- Open report opens in a new tab and preserves the current editor tab.
-- Reuse analytics use only safe metadata and do not include raw query or report content.
-- Authenticated smoke verifies the editor reuse flow.
+- `docs/PRODUCT_OPERATING_METRICS.md` exists.
+- The document defines these 10 funnel steps:
+  1. Visitor -> Signup
+  2. Signup -> First report created
+  3. First report created -> D4/D5 filled
+  4. Report completed -> Knowledge asset created
+  5. Knowledge asset -> Knowledge search
+  6. Knowledge search -> Copy root cause/action/lesson
+  7. Editor reuse opened -> Copy
+  8. AI Quality Check run
+  9. Export / share
+  10. Team upgrade / service request
+- Each metric includes event name/source, source page or component, why it matters, safe metadata, forbidden data, and target interpretation.
+- The document explicitly prohibits collecting full queries, report content, customer/supplier/product/batch identifiers, root cause, corrective action, lessons learned, attachment content, AI prompts/raw output, share tokens, payment details, and email addresses.
+- The document distinguishes existing event coverage from database-derived or future coverage.
+- Governance tests cover the new metrics document and privacy rules.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`, `npm run build`, and `npm run test:governance`.
-- Authenticated smoke workflow is triggered for the PR branch and inspected for status, artifact summary, and Neon cleanup.
 
 ## Risks
 
-- The report editor toolbar is already crowded, so mobile layout must stay compact.
-- Search remains v1 keyword/JSONB-backed application search through the existing Knowledge API.
-- Future AI context should wait until the copy-only reuse behavior is validated.
+- Product metrics can create pressure to over-track sensitive quality data; the document must keep privacy boundaries explicit.
+- Some funnel steps are best measured from database state, not client events.
+- Checkout completion and service-request reporting need separate privacy-safe operational reporting before broader dashboarding.
