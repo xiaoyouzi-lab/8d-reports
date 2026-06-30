@@ -21,8 +21,9 @@ import { ExportMenu } from "@/components/report/ExportMenu"
 import { ShareDialog } from "@/components/report/ShareDialog"
 import { AiReportTools } from "@/components/report/AiReportTools"
 import { ReportWorkflowPanel } from "@/components/report/ReportWorkflowPanel"
+import { KnowledgeReadinessPanel } from "@/components/report/KnowledgeReadinessPanel"
 import { KnowledgeReusePanel, type KnowledgeReuseLocation } from "@/components/knowledge/KnowledgeReusePanel"
-import { STEPS, DEFAULT_REPORT_DATA, getCompletedStepIds, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
+import { STEPS, DEFAULT_REPORT_DATA, getCompletedStepIds, getKnowledgeReadinessSummary, getReportCompletionIssues, type ReportData } from "@/lib/report-steps"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
@@ -162,6 +163,7 @@ export default function ReportEditorPage({
   }, [reportId])
 
   const completedSteps = useMemo(() => new Set(getCompletedStepIds(reportData)), [reportData])
+  const knowledgeReadiness = useMemo(() => getKnowledgeReadinessSummary(reportData), [reportData])
 
   const status = completedSteps.size === STEPS.length
     ? "completed"
@@ -383,6 +385,7 @@ export default function ReportEditorPage({
               <AiReportTools
                 reportId={reportId}
                 reportData={reportData}
+                plan={plan}
                 onApplyDraft={(fields) => {
                   if (!reportPermissions.canEdit) {
                     toast.error(readOnlyReason)
@@ -407,6 +410,8 @@ export default function ReportEditorPage({
               revision={revision}
               locked={reportPermissions.locked}
               canManageWorkflow={reportPermissions.canManageWorkflow}
+              knowledgeReadiness={knowledgeReadiness}
+              plan={plan}
               onUpdated={(report) => {
                 setWorkflowStatus(report.workflowStatus)
                 setRevision(report.revision)
@@ -505,6 +510,9 @@ export default function ReportEditorPage({
                   {readOnlyReason}
                 </div>
               )}
+              <div className="mb-3">
+                <KnowledgeReadinessPanel reportData={reportData} reportId={reportId} plan={plan} />
+              </div>
               <Card className={cn(!reportPermissions.canEdit && "bg-slate-50/60")}>
                 <CardContent className="p-5 lg:p-6">
                   <StepForm

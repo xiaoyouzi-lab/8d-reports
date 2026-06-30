@@ -22,6 +22,7 @@ import {
   normalizeKnowledgeReportTypeFilter,
   searchKnowledgeEntries,
 } from "../src/lib/report-knowledge";
+import { DEFAULT_REPORT_DATA, getKnowledgeReadinessSummary } from "../src/lib/report-steps";
 import { aiUnavailableMessage, type AiTaskType } from "../src/lib/ai/deepseek";
 import {
   isSupportedServiceRequestFile,
@@ -165,6 +166,60 @@ assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", fil
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "internal_8d", priority: "high" }).length, 0, "Knowledge search should reject non-matching report type filters");
 assert.equal(searchKnowledgeEntries([knowledgeFixture], { query: "humidity", filter: "all", reportType: "customer_8d", priority: "low" }).length, 0, "Knowledge search should reject non-matching priority filters");
 
+const emptyReadiness = getKnowledgeReadinessSummary(DEFAULT_REPORT_DATA);
+assert.deepEqual(
+  emptyReadiness.items.map((item) => item.label),
+  [
+    "Root cause captured?",
+    "Corrective action captured?",
+    "Validation captured?",
+    "Prevention/system change captured?",
+    "Lessons learned captured?",
+  ],
+  "Knowledge readiness should track the five reusable-knowledge field groups",
+);
+assert.equal(emptyReadiness.items.every((item) => item.status === "Missing"), true, "Empty reports should show missing knowledge readiness");
+assert.equal(emptyReadiness.missingCount, 5, "Empty reports should count all five knowledge groups as missing or weak");
+assert.deepEqual(
+  {
+    hasRootCause: emptyReadiness.hasRootCause,
+    hasCorrectiveAction: emptyReadiness.hasCorrectiveAction,
+    hasValidation: emptyReadiness.hasValidation,
+    hasPrevention: emptyReadiness.hasPrevention,
+    hasLessonsLearned: emptyReadiness.hasLessonsLearned,
+  },
+  {
+    hasRootCause: false,
+    hasCorrectiveAction: false,
+    hasValidation: false,
+    hasPrevention: false,
+    hasLessonsLearned: false,
+  },
+  "Empty readiness analytics flags should be booleans only, not content",
+);
+const partialReadiness = getKnowledgeReadinessSummary({
+  ...DEFAULT_REPORT_DATA,
+  selectedCorrectiveAction: "Use a verified corrective action from a prior report.",
+});
+assert.equal(
+  partialReadiness.items.find((item) => item.key === "correctiveAction")?.status,
+  "Needs detail",
+  "Single-signal corrective action readiness should ask for more detail",
+);
+const readyReadiness = getKnowledgeReadinessSummary({
+  ...DEFAULT_REPORT_DATA,
+  confirmedRootCause: "Confirmed fixture cleaning miss.",
+  rootCauseOccurrence: "Fixture cleaning was skipped.",
+  selectedCorrectiveAction: "Add cleaning sign-off.",
+  implementationPlan: "Update startup checklist.",
+  validationMethod: "Layered audit.",
+  validationResults: "Three audits passed.",
+  systemChanges: "Control plan updated.",
+  lessonsLearned: "Line-change controls need fixture verification.",
+});
+assert.equal(readyReadiness.items.every((item) => item.status === "Ready"), true, "Complete knowledge fields should be ready for future reuse");
+assert.equal(readyReadiness.missingCount, 0, "Ready knowledge fields should not count as missing");
+
 const reportRoute = read("src/app/api/reports/[id]/route.ts");
 assert.match(reportRoute, /access\.canEdit/, "Report save must use shared role and lock access gate");
 assert.match(reportRoute, /report_field_updated/, "Report field updates must write Activity Log entries");
@@ -215,6 +270,9 @@ assert.match(reportEditorPage, /Reuse Knowledge/, "Report editor should expose a
 assert.match(reportEditorPage, /knowledge_reuse_panel_opened/, "Report editor should track safe Knowledge Reuse panel opens");
 assert.match(reportEditorPage, /source: "editor", location, plan/, "Report editor reuse analytics should use editor source, enum location, and plan only");
 assert.match(reportEditorPage, /onOpenKnowledgeReuse=\{openKnowledgeReuse\}/, "Report editor should pass a panel opener into step forms for contextual hints");
+assert.match(reportEditorPage, /getKnowledgeReadinessSummary/, "Report editor should calculate Knowledge readiness from current report data");
+assert.match(reportEditorPage, /<KnowledgeReadinessPanel reportData=\{reportData\} reportId=\{reportId\} plan=\{plan\} \/>/, "Report editor should show the Knowledge readiness panel");
+assert.match(reportEditorPage, /knowledgeReadiness=\{knowledgeReadiness\}/, "Report editor should pass readiness summary into workflow controls");
 assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*try \{\s*await saveToServer/, "Report editor should not silently save when a Viewer only changes steps");
 assert.doesNotMatch(reportEditorPage, /pointer-events-none opacity-75/, "Read-only reports should still allow attachment preview and navigation");
 
@@ -250,6 +308,15 @@ assert.match(workflowPanel, /href="\/knowledge"/, "Workflow panel should expose 
 assert.match(workflowPanel, /Completed and closed reports become reusable knowledge/, "Workflow panel should explain why completed reports feed the Knowledge Base");
 assert.match(workflowPanel, /app_navigation_clicked/, "Workflow panel Knowledge Base link should use safe app navigation analytics");
 assert.match(workflowPanel, /location: "workflow_panel"/, "Workflow panel analytics should use enum-like location metadata");
+assert.match(workflowPanel, /knowledgeReadiness: KnowledgeReadinessSummary/, "Workflow panel should receive a precomputed Knowledge readiness summary");
+assert.match(workflowPanel, /<KnowledgeReadinessPanel[\s\S]*summary=\{knowledgeReadiness\}/, "Workflow dialog should show the same Knowledge readiness summary");
+assert.match(workflowPanel, /knowledge_readiness_warning_shown/, "Workflow panel should track weak-readiness warnings");
+assert.match(
+  workflowPanel,
+  /This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker\./,
+  "Workflow panel should use the required non-blocking weak-readiness warning copy",
+);
+assert.match(workflowPanel, /toast\.warning[\s\S]*void updateWorkflow\(\{ workflowStatus: nextStatus \}\)/, "Readiness warning should not block the workflow request");
 
 const reportsRoute = read("src/app/api/reports/route.ts");
 assert.match(reportsRoute, /workflowStatus: reports\.workflowStatus/, "Dashboard report API must expose workflow status");
@@ -321,7 +388,9 @@ assert.match(authenticatedSmokeWorkflow, /if: always\(\)[\s\S]*Delete temporary 
 assert.match(authenticatedSmokeWorkflow, /SMOKE_RESULT_PATH: output\/authenticated-smoke-result\.json/, "Authenticated smoke workflow should save a bounded smoke artifact");
 assert.match(authenticatedSmokeWorkflow, /AUTH_SECRET="\$\(openssl rand -hex 32\)"/, "Authenticated smoke workflow should generate the Better Auth runtime secret into a variable");
 assert.match(authenticatedSmokeWorkflow, /echo "::add-mask::\$AUTH_SECRET"[\s\S]*printf 'BETTER_AUTH_SECRET=%s\\n' "\$AUTH_SECRET" >> "\$GITHUB_ENV"/, "Authenticated smoke workflow should mask the generated Better Auth secret before writing it to GitHub env");
+assert.match(authenticatedSmokeWorkflow, /AI_BETA_EMAILS=smoke-owner@example\.test/, "Authenticated smoke workflow should beta-gate the smoke owner for AI Quality Check without using a real AI key");
 assert.doesNotMatch(authenticatedSmokeWorkflow, /BETTER_AUTH_SECRET=\$\(openssl rand -hex 32\)/, "Authenticated smoke workflow must not write an unmasked generated Better Auth secret directly to GitHub env");
+assert.doesNotMatch(authenticatedSmokeWorkflow, /DEEPSEEK_API_KEY/, "Authenticated smoke workflow must not require a real AI provider key");
 
 const smokeSafety = read("scripts/smoke/smoke-safety.ts");
 assert.match(smokeSafety, /SMOKE_DB !== "true"/, "Smoke scripts must fail closed unless SMOKE_DB=true");
@@ -367,6 +436,8 @@ assert.match(seedAuthSmoke, /Add mandatory fixture cleaning sign-off before prod
 assert.match(seedAuthSmoke, /Line-change controls must include fixture cleaning verification\./, "Authenticated seed should use the required lessons-learned fixture");
 assert.match(seedAuthSmoke, /workflowStatus: "closed"/, "Authenticated seed should include closed report");
 assert.match(seedAuthSmoke, /status: "draft"/, "Authenticated seed should include draft exclusion fixture");
+assert.match(seedAuthSmoke, /SMOKE_DRAFT_REPORT_ID/, "Authenticated seed should export a draft report id for readiness smoke");
+assert.match(seedAuthSmoke, /rootCauseOccurrence: ""[\s\S]*confirmedRootCause: ""[\s\S]*selectedCorrectiveAction: ""[\s\S]*validationResults: ""[\s\S]*systemChanges: ""[\s\S]*lessonsLearned: ""/, "Authenticated seed should keep the draft fixture weak for Knowledge readiness smoke");
 assert.match(seedAuthSmoke, /status: "in_progress"/, "Authenticated seed should include in-progress exclusion fixture");
 assert.match(seedAuthSmoke, /workflowStatus: "internal_review"/, "Authenticated seed should include internal-review exclusion fixture");
 assert.match(seedAuthSmoke, /Outsider Visible Risk/, "Authenticated seed should include outsider report fixture");
@@ -413,6 +484,7 @@ assert.match(authenticatedBrowserSmoke, /knowledge_corrective_action_copied/, "A
 assert.match(authenticatedBrowserSmoke, /knowledge_lesson_copied/, "Authenticated smoke should verify lesson copy analytics");
 assert.match(authenticatedBrowserSmoke, /verifyEditorKnowledgeReuse/, "Authenticated smoke should cover editor Knowledge Reuse");
 assert.match(authenticatedBrowserSmoke, /SMOKE_COMPLETED_REPORT_ID/, "Authenticated smoke should open a seeded completed report in the editor");
+assert.match(authenticatedBrowserSmoke, /SMOKE_DRAFT_REPORT_ID/, "Authenticated smoke should open a seeded draft report for Knowledge readiness");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse entry"/, "Authenticated smoke should verify the editor Knowledge Reuse entry");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse panel"/, "Authenticated smoke should verify the editor Knowledge Reuse panel opens");
 assert.match(authenticatedBrowserSmoke, /smokeStep\("editor knowledge reuse search coating"/, "Authenticated smoke should search coating inside editor reuse");
@@ -424,8 +496,26 @@ assert.match(authenticatedBrowserSmoke, /knowledge_reuse_corrective_action_copie
 assert.match(authenticatedBrowserSmoke, /knowledge_reuse_lesson_copied/, "Authenticated smoke should verify editor reuse lessons learned copy analytics");
 assert.match(authenticatedBrowserSmoke, /waitForEvent\("page"\)/, "Authenticated smoke should verify editor reuse opens reports in a new tab");
 assert.match(authenticatedBrowserSmoke, /Editor reuse Open report should preserve the current editor tab/, "Authenticated smoke should protect current editor context");
+assert.match(authenticatedBrowserSmoke, /verifyAiQualityCheck/, "Authenticated smoke should cover AI Quality Check Knowledge Context fallback");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("ai quality check knowledge context unavailable fallback"/, "Authenticated smoke should name the AI Quality Check context fallback step");
+assert.match(authenticatedBrowserSmoke, /AI Quality Check is temporarily unavailable/, "Authenticated smoke should verify safe no-real-key AI fallback");
+assert.match(authenticatedBrowserSmoke, /Knowledge context used: \\d\+ similar reports|No reusable knowledge context found yet/, "Authenticated smoke should verify AI Quality Check context count or empty state");
+assert.match(authenticatedBrowserSmoke, /ai_quality_check_knowledge_context_used/, "Authenticated smoke should accept AI Quality Check used-context analytics");
+assert.match(authenticatedBrowserSmoke, /ai_quality_check_knowledge_context_empty/, "Authenticated smoke should accept AI Quality Check empty-context analytics");
+assert.match(authenticatedBrowserSmoke, /contextCount/, "Authenticated smoke should permit safe contextCount analytics metadata");
+assert.match(authenticatedBrowserSmoke, /hasContext/, "Authenticated smoke should permit safe hasContext analytics metadata");
 assert.match(authenticatedBrowserSmoke, /dashboard_feature_entry_clicked/, "Authenticated smoke should verify Dashboard entry analytics");
 assert.match(authenticatedBrowserSmoke, /app_navigation_clicked/, "Authenticated smoke should verify app navigation analytics");
+assert.match(authenticatedBrowserSmoke, /verifyKnowledgeReadiness/, "Authenticated smoke should cover Knowledge readiness");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("knowledge readiness panel"/, "Authenticated smoke should verify the Knowledge readiness panel");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("knowledge readiness workflow warning"/, "Authenticated smoke should verify weak-readiness workflow warnings");
+assert.match(authenticatedBrowserSmoke, /knowledge_readiness_viewed/, "Authenticated smoke should verify Knowledge readiness view analytics");
+assert.match(authenticatedBrowserSmoke, /knowledge_readiness_warning_shown/, "Authenticated smoke should verify Knowledge readiness warning analytics");
+assert.match(authenticatedBrowserSmoke, /hasRootCause/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasCorrectiveAction/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasValidation/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasPrevention/, "Authenticated smoke should allow only safe readiness boolean metadata");
+assert.match(authenticatedBrowserSmoke, /hasLessonsLearned/, "Authenticated smoke should allow only safe readiness boolean metadata");
 assert.match(authenticatedBrowserSmoke, /Could not copy\. Select and copy manually\./, "Authenticated smoke should verify copy failure state");
 assert.doesNotMatch(authenticatedBrowserSmoke, /writeText: \(\) => Promise\.reject/, "Clipboard failure stub should avoid transpiled browser-context helper references");
 assert.match(authenticatedBrowserSmoke, /assertNoHorizontalOverflow/, "Authenticated smoke should verify mobile and desktop overflow safety");
@@ -463,6 +553,12 @@ assert.match(authenticatedSmokeDocs, /Runtime-generated secrets must be masked/,
 assert.match(authenticatedSmokeDocs, /Failure Diagnostics/, "Authenticated smoke docs should document failure diagnostics");
 assert.match(authenticatedSmokeDocs, /failedStep/, "Authenticated smoke docs should document failed-step artifacts");
 assert.match(authenticatedSmokeDocs, /must not include passwords, tokens, cookies, full database URLs, report text/, "Authenticated smoke docs should document artifact redaction boundaries");
+assert.match(authenticatedSmokeDocs, /report Knowledge readiness/, "Authenticated smoke docs should document Knowledge readiness coverage");
+assert.match(authenticatedSmokeDocs, /Draft report with weak Knowledge readiness fields/, "Authenticated smoke docs should document the readiness fixture");
+assert.match(authenticatedSmokeDocs, /Weak readiness workflow transitions/, "Authenticated smoke docs should document warning analytics coverage");
+assert.match(authenticatedSmokeDocs, /AI Quality Check Knowledge Context fallback/, "Authenticated smoke docs should document AI Quality Check Knowledge Context coverage");
+assert.match(authenticatedSmokeDocs, /must not require or print a real AI provider key/, "Authenticated smoke docs should avoid real AI provider requirements");
+assert.match(authenticatedSmokeDocs, /Knowledge context used: N similar reports/, "Authenticated smoke docs should document the AI context count state");
 
 assert.equal(MAX_SERVICE_REQUEST_FILES, 5, "Service requests should keep a clear 5-file limit");
 assert.equal(isValidServiceContactEmail("quality@example.com"), true, "Service request email validation should accept normal business emails");
@@ -578,9 +674,44 @@ assert.doesNotMatch(knowledgeReusePanel, /trackEvent\([\s\S]{0,280}(query:|probl
 assert.doesNotMatch(knowledgeReusePanel, /AiReportTools|ai\/|ExportMenu|Checkout|pricing|drizzle|db\/schema|CREATE TABLE|ALTER TABLE/, "Knowledge Reuse panel must not couple to AI, export, payment, or database schema code");
 assert.doesNotMatch(knowledgeReusePanel, /reportShares|accessToken|share token/i, "Knowledge Reuse panel must not rely on public share tokens");
 
+const knowledgeReadinessPanel = read("src/components/report/KnowledgeReadinessPanel.tsx");
+const reportStepsSource = read("src/lib/report-steps.ts");
+assert.match(knowledgeReadinessPanel, /export function KnowledgeReadinessPanel/, "Knowledge readiness should exist as a reusable report component");
+assert.match(knowledgeReadinessPanel, /Knowledge readiness/, "Knowledge readiness panel should use the required title");
+assert.match(knowledgeReadinessPanel, /item\.label/, "Knowledge readiness panel should render readiness labels from the summary");
+assert.match(reportStepsSource, /Root cause captured\?/, "Knowledge readiness summary should provide root-cause readiness");
+assert.match(reportStepsSource, /Corrective action captured\?/, "Knowledge readiness summary should provide corrective-action readiness");
+assert.match(reportStepsSource, /Validation captured\?/, "Knowledge readiness summary should provide validation readiness");
+assert.match(reportStepsSource, /Prevention\/system change captured\?/, "Knowledge readiness summary should provide prevention/system-change readiness");
+assert.match(reportStepsSource, /Lessons learned captured\?/, "Knowledge readiness summary should provide lessons-learned readiness");
+assert.match(knowledgeReadinessPanel, /Ready/, "Knowledge readiness panel should expose the Ready status");
+assert.match(knowledgeReadinessPanel, /Needs detail/, "Knowledge readiness panel should expose the Needs detail status");
+assert.match(knowledgeReadinessPanel, /Missing/, "Knowledge readiness panel should expose the Missing status");
+assert.match(knowledgeReadinessPanel, /knowledge_readiness_viewed/, "Knowledge readiness panel should track safe view analytics");
+assert.match(knowledgeReadinessPanel, /knowledgeReadinessAnalytics/, "Knowledge readiness panel should centralize safe analytics metadata");
+for (const safeReadinessKey of [
+  "missingCount",
+  "hasRootCause",
+  "hasCorrectiveAction",
+  "hasValidation",
+  "hasPrevention",
+  "hasLessonsLearned",
+  "plan",
+]) {
+  assert.match(knowledgeReadinessPanel, new RegExp(safeReadinessKey), `Knowledge readiness analytics should include safe key ${safeReadinessKey}`);
+}
+assert.doesNotMatch(
+  knowledgeReadinessPanel,
+  /trackEvent\([\s\S]{0,260}(query:|problem:|rootCause:|correctiveAction:|lessonsLearned:|customer:|supplier:|product:|batch:|validationResults:|systemChanges:|processUpdates:)/,
+  "Knowledge readiness analytics metadata must not include raw query or report content fields",
+);
+assert.doesNotMatch(knowledgeReadinessPanel, /handleFieldChange|saveToServer|method: "PUT"|\/api\/reports\//, "Knowledge readiness panel must not save or mutate reports");
+
 const eventsRoute = read("src/app/api/events/route.ts");
 assert.match(eventsRoute, /app_navigation_clicked/, "Analytics allowlist should include app navigation clicks");
 assert.match(eventsRoute, /dashboard_feature_entry_clicked/, "Analytics allowlist should include dashboard feature-entry clicks");
+assert.match(eventsRoute, /ai_quality_check_knowledge_context_used/, "Analytics allowlist should include AI Quality Check used-context event");
+assert.match(eventsRoute, /ai_quality_check_knowledge_context_empty/, "Analytics allowlist should include AI Quality Check empty-context event");
 assert.match(eventsRoute, /knowledge_search_used/, "Analytics allowlist should include Knowledge search");
 assert.match(eventsRoute, /knowledge_result_opened/, "Analytics allowlist should include Knowledge result opens");
 assert.match(eventsRoute, /knowledge_root_cause_copied/, "Analytics allowlist should include root cause copy");
@@ -592,6 +723,8 @@ assert.match(eventsRoute, /knowledge_reuse_result_opened/, "Analytics allowlist 
 assert.match(eventsRoute, /knowledge_reuse_root_cause_copied/, "Analytics allowlist should include editor Knowledge Reuse root cause copies");
 assert.match(eventsRoute, /knowledge_reuse_corrective_action_copied/, "Analytics allowlist should include editor Knowledge Reuse corrective action copies");
 assert.match(eventsRoute, /knowledge_reuse_lesson_copied/, "Analytics allowlist should include editor Knowledge Reuse lessons learned copies");
+assert.match(eventsRoute, /knowledge_readiness_viewed/, "Analytics allowlist should include Knowledge readiness views");
+assert.match(eventsRoute, /knowledge_readiness_warning_shown/, "Analytics allowlist should include Knowledge readiness warnings");
 assert.doesNotMatch(eventsRoute, /knowledge_[a-z]+_clicked/, "Analytics allowlist should not include deprecated generic Knowledge clicked events");
 
 const knowledgeSpec = read("docs/QUALITY_KNOWLEDGE_BASE_SPEC.md");
@@ -624,6 +757,18 @@ assert.match(externalRequestSpec, /external_8d_requests[\s\S]*external_8d_reques
 assert.match(externalRequestSpec, /Smoke Strategy/, "External request spec should include smoke strategy");
 assert.match(externalRequestSpec, /revoked\/expired tokens fail safely/, "External request smoke strategy should cover revoked and expired tokens");
 assert.doesNotMatch(externalRequestSpec, /supports full QMS|includes SSO|provides SSO/i, "External request spec should not overclaim unsupported product scope");
+
+const reportCompletionKnowledgeSpec = read("docs/REPORT_COMPLETION_KNOWLEDGE_CAPTURE_SPEC.md");
+assert.match(reportCompletionKnowledgeSpec, /Completed 8D reports become valuable/, "Report completion knowledge spec should explain the business value");
+assert.match(reportCompletionKnowledgeSpec, /guidance only/, "Report completion knowledge spec should keep readiness non-blocking");
+assert.match(reportCompletionKnowledgeSpec, /No workflow eligibility changes/, "Report completion knowledge spec should prohibit workflow eligibility changes");
+assert.match(reportCompletionKnowledgeSpec, /No database schema changes/, "Report completion knowledge spec should prohibit schema changes");
+assert.match(reportCompletionKnowledgeSpec, /Root cause[\s\S]*Corrective action[\s\S]*Validation[\s\S]*Prevention[\s\S]*Lessons learned/, "Report completion knowledge spec should document the five readiness groups");
+assert.match(reportCompletionKnowledgeSpec, /knowledge_readiness_viewed/, "Report completion knowledge spec should document readiness view analytics");
+assert.match(reportCompletionKnowledgeSpec, /knowledge_readiness_warning_shown/, "Report completion knowledge spec should document readiness warning analytics");
+assert.match(reportCompletionKnowledgeSpec, /missingCount[\s\S]*hasRootCause[\s\S]*hasCorrectiveAction[\s\S]*hasValidation[\s\S]*hasPrevention[\s\S]*hasLessonsLearned[\s\S]*plan/, "Report completion knowledge analytics should remain safe and bounded");
+const dbSchema = read("src/lib/db/schema.ts");
+assert.doesNotMatch(dbSchema, /knowledgeReadiness|readinessStatus|knowledge_readiness/, "Report completion knowledge capture v1 must not add database schema fields or tables");
 
 const discoverabilityAudit = read("docs/AUTHENTICATED_APP_DISCOVERABILITY_AUDIT.md");
 assert.match(discoverabilityAudit, /Stage Full Score Standard/, "Discoverability audit should define full-score criteria");
@@ -711,8 +856,49 @@ assert.match(reportReviewRoute, /isAiBetaUser/, "AI Quality Check must remain be
 assert.match(reportReviewRoute, /getReportAccess\(reportId, user\.id\)/, "AI Quality Check must use shared role and lock access gate");
 assert.match(reportReviewRoute, /access\.locked/, "AI Quality Check must reject locked reports before review");
 assert.match(reportReviewRoute, /access\.canEdit/, "AI Quality Check must require edit permission before review");
-assert.match(reportReviewRoute, /summarizeReportForAi\(reportData, report\.title\)/, "AI Quality Check input must be built from the saved report");
+assert.match(reportReviewRoute, /buildKnowledgeContextForQualityCheck\(report, user\)/, "AI Quality Check should build Knowledge Context after report access is resolved");
+assert.match(reportReviewRoute, /summarizeReportForAi\(reportData, report\.title, knowledgeContext\)/, "AI Quality Check input must be built from the saved report and bounded Knowledge Context");
+assert.match(reportReviewRoute, /knowledgeContext: knowledge/, "AI Quality Check should return only a safe Knowledge Context summary to the browser");
 assert.doesNotMatch(reportReviewRoute, /getAccessibleReport|getAccessibleUserIds|reports\/search|reportActivities/, "AI Quality Check must not bypass shared report access or read unrelated data");
+
+const aiKnowledgeContext = read("src/lib/ai/knowledge-context.ts");
+assert.match(aiKnowledgeContext, /export async function buildKnowledgeContextForQualityCheck/, "AI Knowledge Context helper should exist");
+assert.match(aiKnowledgeContext, /getAccessibleUserIds\(user\.id\)/, "AI Knowledge Context helper must reuse Team workspace access scope");
+assert.match(aiKnowledgeContext, /searchKnowledgeEntries/, "AI Knowledge Context helper must reuse Knowledge Base eligibility and search behavior");
+assert.match(aiKnowledgeContext, /QUALITY_CHECK_KNOWLEDGE_CONTEXT_LIMIT = 3/, "AI Knowledge Context helper should limit context to at most 3 reports");
+assert.match(aiKnowledgeContext, /ne\(reports\.id, report\.id\)/, "AI Knowledge Context helper should exclude the current report from candidate rows");
+assert.match(aiKnowledgeContext, /problemDescription[\s\S]*productName[\s\S]*customerName[\s\S]*confirmedRootCause[\s\S]*selectedCorrectiveAction/, "AI Knowledge Context helper should build seeds from the required current-report fields");
+assert.doesNotMatch(aiKnowledgeContext, /reportShares|accessToken|share token/i, "AI Knowledge Context helper must not rely on public share tokens");
+assert.doesNotMatch(aiKnowledgeContext, /\.insert\(|\.update\(|\.delete\(|CREATE TABLE|ALTER TABLE|drizzle-kit|migration/i, "AI Knowledge Context helper must remain read-only and avoid schema changes");
+
+const aiPrompt = read("src/lib/ai/deepseek.ts");
+assert.match(aiPrompt, /The following historical completed reports are provided only as reference context\./, "AI prompt should include reference-only context instruction");
+assert.match(aiPrompt, /Do not treat them as proof that the current report is correct\./, "AI prompt should not let history prove current correctness");
+assert.match(aiPrompt, /Do not copy them blindly\./, "AI prompt should forbid blind historical copying");
+assert.match(aiPrompt, /Use them to identify missing checks, weak evidence, repeated failure patterns, and prevention opportunities\./, "AI prompt should focus historical context on review risks");
+assert.match(aiPrompt, /You do not approve, certify, or submit the report/, "AI prompt should forbid approval behavior");
+assert.match(aiPrompt, /knowledgeBasedObservations/, "AI prompt schema should include Knowledge-based observations");
+
+const aiPayload = read("src/lib/ai/report-payload.ts");
+assert.match(aiPayload, /knowledgeContext: QualityCheckKnowledgeContextItem\[\] = \[\]/, "AI report payload should accept optional Knowledge Context");
+assert.match(aiPayload, /knowledgeContextStatus/, "AI report payload should tell the model when no context exists");
+
+const aiReportTools = read("src/components/report/AiReportTools.tsx");
+assert.match(aiReportTools, /Knowledge context used: \$\{context\.contextCount\} similar reports/, "AI UI should show Knowledge Context count");
+assert.match(aiReportTools, /No reusable knowledge context found yet\./, "AI UI should show Knowledge Context empty state");
+assert.match(aiReportTools, /Knowledge-based observations/, "AI UI should render Knowledge-based observations");
+assert.match(aiReportTools, /ai_quality_check_knowledge_context_used/, "AI UI should track used-context analytics");
+assert.match(aiReportTools, /ai_quality_check_knowledge_context_empty/, "AI UI should track empty-context analytics");
+assert.match(aiReportTools, /source: "ai_quality_check"[\s\S]*contextCount[\s\S]*hasContext[\s\S]*plan/, "AI UI analytics metadata should stay safe and bounded");
+assert.doesNotMatch(aiReportTools, /trackEvent\([\s\S]{0,320}(query:|problem:|rootCause:|correctiveAction:|lessonsLearned:|customer:|supplier:|product:|batch:|prompt:|rawAi:)/, "AI Knowledge Context analytics metadata must not include raw queries, report content, prompts, or raw AI output");
+
+const aiKnowledgeSpec = read("docs/AI_QUALITY_CHECK_KNOWLEDGE_CONTEXT_SPEC.md");
+assert.match(aiKnowledgeSpec, /reference-only/i, "AI Knowledge Context spec should define reference-only behavior");
+assert.match(aiKnowledgeSpec, /V1 does not add:[\s\S]*Database schema changes or migrations/, "AI Knowledge Context spec should reject schema changes");
+assert.match(aiKnowledgeSpec, /Allowed metadata only:[\s\S]*contextCount[\s\S]*hasContext[\s\S]*plan/, "AI Knowledge Context spec should document safe analytics metadata");
+
+const schemaFile = read("src/lib/db/schema.ts");
+assert.doesNotMatch(schemaFile, /knowledge_context|ai_knowledge|context_reports/i, "AI Knowledge Context v1 must not add database schema");
 
 const loginForm = read("src/app/(auth)/login/login-form.tsx");
 const signupForm = read("src/app/(auth)/signup/signup-form.tsx");
