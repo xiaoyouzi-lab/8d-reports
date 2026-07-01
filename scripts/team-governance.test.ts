@@ -814,68 +814,59 @@ assert.match(marketingWorkflow, /knowledge_result_opened/, "Marketing workflow s
 assert.match(marketingWorkflow, /knowledge_root_cause_copied/, "Marketing workflow should track root cause reuse");
 assert.match(marketingWorkflow, /repeat knowledge users/i, "Marketing workflow should track repeat Knowledge Base users");
 
-const revenueLeadFollowupTemplates = read("docs/REVENUE_LEAD_FOLLOWUP_TEMPLATES.md");
-assert.match(revenueLeadFollowupTemplates, /Revenue Lead Follow-Up Templates/, "Revenue lead follow-up templates doc should exist");
-assert.ok((revenueLeadFollowupTemplates.match(/^## \d+\. /gm) || []).length >= 9, "Revenue lead follow-up templates should include at least 9 numbered templates");
-for (const requiredTemplate of [
-  "Template Setup Lead - File Received",
-  "Template Setup Lead - File Upload Failed / Ask Reply With File",
-  "Template Setup Lead - Quote / Scope Proposal",
-  "Team Launch Lead - Discovery Questions",
-  "Assisted First 8D Lead - Request Required Evidence",
-  "No-Response Follow-Up 1",
-  "No-Response Follow-Up 2",
-  "Paid Service Handoff / Invoice Note",
-  "After Delivery Feedback Request",
-]) {
-  assert.match(revenueLeadFollowupTemplates, new RegExp(requiredTemplate.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue follow-up templates should include: ${requiredTemplate}`);
+const offsiteGeoDistributionPack = read("docs/OFFSITE_GEO_DISTRIBUTION_PACK.md");
+assert.match(offsiteGeoDistributionPack, /Offsite GEO Distribution Pack/, "Offsite GEO distribution pack should exist");
+for (const platformSection of ["LinkedIn", "Medium", "Quora", "Reddit"]) {
+  assert.match(offsiteGeoDistributionPack, new RegExp(`## ${platformSection}`), `Offsite pack should include ${platformSection}`);
 }
-for (const requiredLeadInput of [
-  "industry or product family",
-  "required output format",
-  "team size",
-  "complaint / supplier corrective action volume",
-  "problem summary",
-  "customer due date",
-  "current containment action",
-  "customer-required format",
-]) {
-  assert.match(revenueLeadFollowupTemplates, new RegExp(requiredLeadInput.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up templates should ask for input: ${requiredLeadInput}`);
+function sectionBetween(source: string, start: string, end: string) {
+  return source.split(start)[1]?.split(end)[0] || "";
 }
-for (const requiredDeliverable of [
-  "mapped 8D workflow",
-  "export-format recommendation",
-  "Team Launch deliverable",
-  "structured first-response package",
-  "Planned deliverables",
-]) {
-  assert.match(revenueLeadFollowupTemplates, new RegExp(requiredDeliverable.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up templates should explain deliverable: ${requiredDeliverable}`);
+const linkedInSection = sectionBetween(offsiteGeoDistributionPack, "## LinkedIn", "## Medium");
+const mediumSection = sectionBetween(offsiteGeoDistributionPack, "## Medium", "## Quora");
+const quoraSection = sectionBetween(offsiteGeoDistributionPack, "## Quora", "## Reddit");
+const redditSection = sectionBetween(offsiteGeoDistributionPack, "## Reddit", "## Rules");
+assert.ok((linkedInSection.match(/^\| \d+ \|/gm) || []).length >= 10, "Offsite pack should include at least 10 LinkedIn posts");
+assert.ok((mediumSection.match(/^\| \d+ \|/gm) || []).length >= 5, "Offsite pack should include at least 5 Medium outlines");
+assert.ok((quoraSection.match(/^\| \d+ \|/gm) || []).length >= 20, "Offsite pack should include at least 20 Quora answer drafts");
+assert.ok((redditSection.match(/^\| \d+ \|/gm) || []).length >= 10, "Offsite pack should include at least 10 Reddit-safe discussion prompts");
+for (const linkedInColumn of ["Target role", "Hook", "Short story/problem", "Practical takeaway", "Soft CTA", "Link suggestion"]) {
+  assert.match(linkedInSection, new RegExp(linkedInColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `LinkedIn pack should include column: ${linkedInColumn}`);
 }
-for (const noOverpromisePhrase of [
-  "Do not promise guaranteed customer acceptance",
-  "does not guarantee customer acceptance",
-  "I will not invent missing evidence",
-  "Keep quotes and paid scope human-reviewed",
+for (const requiredOffsiteRule of [
+  "Do not auto-post",
+  "Do not spam",
+  "Do not fabricate personal experience",
+  "No sales pitch",
+  "one natural link",
+  "disclose product context honestly",
+  "No automated posting",
+  "No bulk spam",
+  "No fake user stories",
+  "No fake statistics",
+  "No fake customer logos",
+  "No \"best in the world\" claims",
+  "No guaranteed customer acceptance claims",
+  "No hidden product affiliation",
+  "No repeated copy-paste answers",
+  "No over-linking",
+  "Track manually",
 ]) {
-  assert.match(revenueLeadFollowupTemplates, new RegExp(noOverpromisePhrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up templates should include no-overpromise phrase: ${noOverpromisePhrase}`);
+  assert.match(offsiteGeoDistributionPack, new RegExp(requiredOffsiteRule.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Offsite pack should include rule: ${requiredOffsiteRule}`);
 }
-for (const forbiddenLeadTrackingData of [
-  "full message bodies",
+for (const forbiddenOffsiteTrackingData of [
   "customer names",
-  "supplier names",
   "product names",
-  "batch numbers",
+  "problem descriptions",
   "root cause text",
   "corrective action text",
   "lessons learned",
-  "attachment content",
-  "credentials",
-  "payment details",
+  "uploaded file content",
+  "AI prompts",
+  "raw AI output",
 ]) {
-  assert.match(revenueLeadFollowupTemplates, new RegExp(forbiddenLeadTrackingData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue follow-up tracking should forbid: ${forbiddenLeadTrackingData}`);
+  assert.match(offsiteGeoDistributionPack, new RegExp(forbiddenOffsiteTrackingData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Offsite pack should forbid private tracking data: ${forbiddenOffsiteTrackingData}`);
 }
-assert.match(revenueLeadFollowupTemplates, /manual email or chat use only/i, "Revenue follow-up templates should stay manual");
-assert.match(revenueLeadFollowupTemplates, /Do not connect them to live email sending/i, "Revenue follow-up templates should not add live email sending");
 
 const productOperatingMetrics = read("docs/PRODUCT_OPERATING_METRICS.md");
 assert.match(productOperatingMetrics, /Product Operating Metrics/, "Product operating metrics doc should exist");
@@ -967,6 +958,273 @@ for (const safeMetricField of [
 assert.match(productOperatingMetrics, /Knowledge asset creation should be a derived metric/, "Knowledge asset creation should be derived instead of tracked from raw report content");
 assert.match(productOperatingMetrics, /D4\/D5 field completion should be computed from database state/, "D4/D5 completion should be computed without raw text analytics");
 assert.doesNotMatch(productOperatingMetrics, /full QMS|\bSSO\b|automatic AI approval/i, "Product metrics should not introduce unsupported product claims");
+
+const geoContentProductionPlan = read("docs/GEO_CONTENT_PRODUCTION_PLAN.md");
+assert.match(geoContentProductionPlan, /GEO Content Production Plan/, "GEO content production plan should exist");
+assert.match(geoContentProductionPlan, /30-Day Content Calendar/, "GEO content production plan should include a 30-day calendar");
+const geoContentRows = geoContentProductionPlan.match(/^\| \d+ \| Week [1-4]:/gm) || [];
+assert.ok(geoContentRows.length >= 30, `GEO content production plan should include at least 30 article rows, found ${geoContentRows.length}`);
+for (const requiredWeek of [
+  "Week 1: Revenue pages / high-intent service content",
+  "Week 2: Core 8D instructional content",
+  "Week 3: Industry examples",
+  "Week 4: Comparison / AI / Knowledge Base",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(requiredWeek.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include ${requiredWeek}`);
+}
+for (const requiredContentColumn of [
+  "Target query",
+  "Title",
+  "Search intent",
+  "Answer-first outline",
+  "Proof elements",
+  "Internal links",
+  "CTA",
+  "Offsite repurposing target",
+  "Measurement event",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(requiredContentColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include column: ${requiredContentColumn}`);
+}
+for (const requiredTopic of [
+  "custom 8D template setup",
+  "assisted first 8D report",
+  "team 8D launch",
+  "Excel 8D template vs online 8D software",
+  "supplier corrective action request template",
+  "D4 root cause",
+  "D5 corrective action",
+  "D6 validation",
+  "D7 prevention and D8 lessons learned",
+  "automotive 8D report example",
+  "electronics 8D report example",
+  "semiconductor 8D report example",
+  "medical device corrective action report example",
+  "injection molding defect 8D example",
+  "AI 8D report checker",
+  "8D knowledge base software",
+  "reuse past root causes in 8D reports",
+  "8D vs SCAR",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(requiredTopic.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO content plan should include topic: ${requiredTopic}`);
+}
+for (const writingRule of [
+  "first 80 words",
+  "practical checklist",
+  "manufacturing",
+  "SQE",
+  "example table",
+  "Common mistakes",
+  "When to use Template Setup / Assisted First 8D",
+  "demo/sample",
+  "fake statistics",
+  "generic AI fluff",
+  "keyword stuffing",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(writingRule.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO writing rules should cover: ${writingRule}`);
+}
+for (const platformSection of [
+  "LinkedIn Post Version",
+  "Medium Article Version",
+  "Quora Answer Version",
+  "Reddit-Safe Discussion Version",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(platformSection.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include platform section: ${platformSection}`);
+}
+for (const antiSpamRule of [
+  "Do not auto-post",
+  "Do not spam",
+  "Do not fabricate personal experience",
+  "Do not over-link",
+  "No sales pitch",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(antiSpamRule.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO repurposing rules should include: ${antiSpamRule}`);
+}
+for (const safeContentEvent of [
+  "seo_page_view",
+  "marketing_cta_clicked",
+  "pricing_service_cta_clicked",
+  "demo_report_downloaded",
+  "knowledge_search_used",
+  "ai_report_review_clicked",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(safeContentEvent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO content plan should include safe event: ${safeContentEvent}`);
+}
+for (const forbiddenContentAnalyticsData of [
+  "full user queries",
+  "customer names",
+  "supplier names",
+  "product names",
+  "report text",
+  "root cause text",
+  "corrective action text",
+  "lessons learned",
+  "batch or lot numbers",
+  "uploaded file content",
+  "AI prompts",
+  "raw AI output",
+]) {
+  assert.match(geoContentProductionPlan, new RegExp(forbiddenContentAnalyticsData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO content plan should forbid analytics collection of: ${forbiddenContentAnalyticsData}`);
+}
+assert.match(geoContentProductionPlan, /guaranteed acceptance claims/i, "GEO content plan should explicitly prohibit guaranteed acceptance claims");
+assert.match(geoContentProductionPlan, /certification claims/i, "GEO content plan should explicitly prohibit unsupported certification claims");
+
+const geoRevenueQueryMap = read("docs/GEO_REVENUE_QUERY_MAP.md");
+assert.match(geoRevenueQueryMap, /GEO Revenue Query Map/, "GEO revenue query map should exist");
+assert.match(geoRevenueQueryMap, /does not invent search volume/, "GEO revenue query map should not invent search volume");
+assert.match(geoRevenueQueryMap, /hypothesis/i, "GEO revenue query map should mark unevidenced query assumptions as hypotheses");
+assert.match(geoRevenueQueryMap, /Do not use it to publish[\s\S]*low-quality SEO pages/i, "GEO revenue query map should prohibit thin SEO content");
+for (const geoCategory of [
+  "Core 8D Report Intent",
+  "SCAR / Supplier Corrective Action",
+  "Customer Complaint Response",
+  "Industry Examples",
+  "Role-Based Intent",
+  "Excel Replacement Intent",
+  "AI / Knowledge Reuse Intent",
+  "Service / Paid Intent",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(geoCategory.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should cover category: ${geoCategory}`);
+}
+const geoQueryRows = geoRevenueQueryMap.match(/^\| [A-H]\d{2} \|/gm) || [];
+assert.ok(geoQueryRows.length >= 150, `GEO revenue query map should include at least 150 query rows, found ${geoQueryRows.length}`);
+for (const categoryPrefix of ["A", "B", "C", "D", "E", "F", "G", "H"]) {
+  const categoryRows = geoQueryRows.filter((row) => row.startsWith(`| ${categoryPrefix}`));
+  assert.ok(categoryRows.length >= 15, `GEO revenue query map should include broad ${categoryPrefix} category coverage, found ${categoryRows.length}`);
+}
+for (const requiredGeoColumn of [
+  "Query",
+  "Intent",
+  "Target page type",
+  "CTA",
+  "Priority",
+  "Why it matters",
+  "Content angle",
+  "Internal link target",
+  "Safe metadata / tracking event",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(requiredGeoColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should include column: ${requiredGeoColumn}`);
+}
+for (const representativeGeoQuery of [
+  "how to write an 8D report for customer complaint",
+  "supplier corrective action request template",
+  "how to respond to customer complaint with 8D",
+  "automotive 8D report example",
+  "SQE 8D report workflow",
+  "Excel 8D template vs 8D software",
+  "AI 8D report checker",
+  "custom 8D report template setup",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(representativeGeoQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO revenue query map should include representative query: ${representativeGeoQuery}`);
+}
+for (const geoCta of ["Template Setup", "Team Launch", "Assisted First 8D", "Signup", "Demo Download"]) {
+  assert.match(geoRevenueQueryMap, new RegExp(geoCta.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should include CTA: ${geoCta}`);
+}
+for (const safeGeoEvent of [
+  "seo_page_view",
+  "marketing_cta_clicked",
+  "pricing_service_cta_clicked",
+  "demo_report_downloaded",
+  "knowledge_search_used",
+  "ai_report_review_clicked",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(safeGeoEvent.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `GEO revenue query map should include safe event: ${safeGeoEvent}`);
+}
+for (const forbiddenGeoAnalyticsData of [
+  "full queries",
+  "customer names",
+  "product names",
+  "report text",
+  "root cause text",
+  "corrective action text",
+  "lessons learned",
+  "batch numbers",
+  "AI prompts",
+  "uploaded file content",
+]) {
+  assert.match(geoRevenueQueryMap, new RegExp(forbiddenGeoAnalyticsData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `GEO revenue query map should forbid analytics collection of: ${forbiddenGeoAnalyticsData}`);
+}
+
+const revenueEvidenceOperatingSystem = read("docs/REVENUE_EVIDENCE_OPERATING_SYSTEM.md");
+assert.match(revenueEvidenceOperatingSystem, /Revenue Evidence Operating System/, "Revenue evidence operating system doc should exist");
+assert.match(revenueEvidenceOperatingSystem, /does not add runtime tracking/, "Revenue operating system should stay docs-only");
+for (const dailySignal of [
+  "Visits",
+  "Demo report downloads",
+  "Template Setup CTA clicks",
+  "Template Setup lead submits",
+  "Team Launch CTA clicks",
+  "Assisted First 8D / SCAR CTA clicks",
+  "Contact form submits",
+  "Signup",
+  "First report created",
+  "Export attempted",
+  "Knowledge search",
+  "Editor reuse opened",
+  "AI Quality Check intent",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(dailySignal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue operating system should include daily signal: ${dailySignal}`);
+}
+for (const weeklyPattern of [
+  "Demo downloads but no leads",
+  "CTA clicks but no lead submits",
+  "Leads but no replies",
+  "Signup but no report created",
+  "Report created but no export",
+  "Knowledge reuse but no AI check",
+  "AI check but no export/share",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(weeklyPattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue operating system should include weekly decision rule: ${weeklyPattern}`);
+}
+for (const leadType of [
+  "Template Setup",
+  "Team Launch",
+  "Assisted First 8D / SCAR",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(`### ${leadType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`), `Revenue operating system should include lead follow-up playbook for ${leadType}`);
+}
+for (const targetWindow of ["Week 1", "Month 1", "Month 3"]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(`### ${targetWindow}`), `Revenue operating system should define targets for ${targetWindow}`);
+}
+for (const requiredTarget of [
+  "10+ demo downloads",
+  "3+ service CTA clicks",
+  "1+ lead",
+  "50+ demo downloads",
+  "10+ service CTA clicks",
+  "3+ leads",
+  "1 paid assisted/service conversation",
+  "2-3 paid service deals",
+  "First Team Launch",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(requiredTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue operating system should include target: ${requiredTarget}`);
+}
+for (const notToDo of [
+  "blindly adding features",
+  "low-quality AI article batches",
+  "fake traffic",
+  "fabricate customer stories",
+  "guaranteed customer acceptance",
+  "unlimited free consulting",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(notToDo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue operating system should forbid: ${notToDo}`);
+}
+for (const forbiddenAnalyticsData of [
+  "full report text",
+  "customer names",
+  "supplier names",
+  "product names",
+  "batch numbers",
+  "attachment content",
+  "full queries",
+  "payment details",
+  "share tokens",
+  "passwords",
+  "secrets",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(forbiddenAnalyticsData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue operating system should forbid sensitive analytics data: ${forbiddenAnalyticsData}`);
+}
+assert.match(revenueEvidenceOperatingSystem, /Use production data only as observed customer behavior; do not create test\s*leads, test users, or test reports in production\./, "Revenue operating system should forbid production test data creation");
+assert.doesNotMatch(revenueEvidenceOperatingSystem, /guaranteed approval|certified QMS|best in the world/i, "Revenue operating system should avoid unsupported commercial claims");
 
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");
