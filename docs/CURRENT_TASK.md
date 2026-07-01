@@ -2,56 +2,42 @@
 
 ## Task Name
 
-GEO Content Production Plan v1.
+Offsite GEO Distribution Pack v1.
 
 ## Context
 
-Revenue Evidence Sprint v1 is deployed. The product now needs an executable
-30-day content plan that turns revenue-near GEO/SEO intent into a small,
-disciplined production calendar instead of scattered article ideas or low-value
-SEO batches.
-
-This task is docs and governance only. It does not publish runtime pages.
+Revenue Evidence Sprint v1 is deployed, and the onsite GEO/content planning work
+now needs a safe offsite distribution pack. The goal is not automated posting or
+spam. The goal is to prepare high-quality, platform-native drafts that can be
+manually reviewed and used to learn whether SQEs, quality managers, supplier
+quality engineers, and manufacturing quality teams respond to the topics.
 
 ## Goal
 
-Create a 30-day GEO content production plan that prioritizes Template Setup,
-Team Launch, Assisted First 8D / SCAR Delivery, demo downloads, signup, Knowledge
-Base reuse, and conservative AI Quality Check interest while avoiding fake
-statistics, spam, keyword stuffing, and unsupported claims.
+Create a docs-only offsite GEO distribution pack for LinkedIn, Medium, Quora,
+and Reddit-safe discussion that supports revenue evidence without fake stories,
+fake statistics, over-linking, or hidden product affiliation.
 
 ## Scope
 
-- Add `docs/GEO_CONTENT_PRODUCTION_PLAN.md`.
-- Define a 30-day content calendar with at least 30 content items.
-- Cover:
-  - Week 1: revenue pages / high-intent service content
-  - Week 2: core 8D instructional content
-  - Week 3: industry examples
-  - Week 4: comparison / AI / Knowledge Base
-- For every article, document:
-  - target query
-  - title
-  - search intent
-  - answer-first outline
-  - proof elements
-  - internal links
-  - CTA
-  - offsite repurposing target
-  - measurement event
-- Define GEO writing rules and platform repurposing rules for LinkedIn, Medium,
-  Quora, and Reddit-safe discussion.
-- Add governance coverage for the content count, week coverage, required fields,
-  writing rules, repurposing sections, anti-spam boundaries, and safe analytics.
+- Add `docs/OFFSITE_GEO_DISTRIBUTION_PACK.md`.
+- Include:
+  - 10 LinkedIn posts for SQE / quality manager / supplier quality roles
+  - 5 Medium article drafts/outlines
+  - 20 Quora answer drafts
+  - 10 Reddit-safe discussion prompts
+  - anti-spam and manual tracking rules
 - Update `docs/DEV_LOG.md`.
+- Add governance checks that the document contains all required platform
+  sections and anti-spam rules.
 
 ## Non-Goals
 
 - No runtime pages.
-- No public marketing page changes.
-- No auto-posting or automated offsite distribution.
-- No fake search volume, fake statistics, fake customer stories, fake logos,
-  guaranteed acceptance claims, or unsupported product claims.
+- No auto-posting.
+- No social media API integration.
+- No fake user stories, fake statistics, fake customer logos, "best in the
+  world" claims, guaranteed customer acceptance claims, or hidden affiliation.
 - No payment, checkout, subscription, auth, password reset, Resend, export,
   Knowledge Base search, Knowledge permissions, AI backend, production
   configuration, or database schema changes.
@@ -59,28 +45,24 @@ statistics, spam, keyword stuffing, and unsupported claims.
 
 ## Acceptance Criteria
 
-- `docs/GEO_CONTENT_PRODUCTION_PLAN.md` exists.
-- The plan includes at least 30 content items across the required four-week
-  calendar.
-- Each content item includes target query, title, search intent, answer-first
-  outline, proof elements, internal links, CTA, offsite repurposing target, and
-  measurement event.
-- The writing rules require answering in the first 80 words, practical
-  checklists, manufacturing/SQE vocabulary, example tables, common mistakes,
-  Template Setup / Assisted First 8D guidance, demo/sample links, and avoidance
-  of fake statistics, AI fluff, and keyword stuffing.
-- Platform repurposing rules cover LinkedIn, Medium, Quora, and Reddit-safe
-  discussion without auto-posting, spam, fabricated personal experience, or
-  over-linking.
-- Governance tests assert the required content calendar and safety boundaries.
+- Offsite distribution pack exists and covers LinkedIn, Medium, Quora, and
+  Reddit-safe discussion.
+- LinkedIn section includes 10 post drafts with role, hook, problem, takeaway,
+  soft CTA, and link suggestion.
+- Medium section includes 5 article drafts/outlines that are not duplicate
+  onsite copy.
+- Quora section includes 20 direct answer drafts, one-link guidance, and honest
+  product-context disclosure guidance.
+- Reddit section includes 10 discussion prompts, no-sales-pitch guidance, and
+  subreddit targets as suggestions only.
+- Rules prohibit automated posting, spam, fake stories, fake statistics, fake
+  logos, over-linking, hidden affiliation, and private quality data.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
   `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- A content plan can become busywork if topics are produced without evidence.
-  Prioritize Week 1 revenue-near topics first.
-- Offsite content can damage trust if it looks automated or spammy. Keep it
-  manual, platform-native, and light on links.
-- Analytics metadata must stay bounded to safe enums and counts, not raw query,
-  customer, product, report, attachment, or AI prompt content.
+- Offsite distribution can damage trust if it is copied mechanically or posted
+  too often. Use manual review and platform-native edits.
+- Links should be used sparingly and only when they genuinely help the answer.
+- Manual tracking must avoid storing private quality-report or respondent data.

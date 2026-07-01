@@ -814,6 +814,60 @@ assert.match(marketingWorkflow, /knowledge_result_opened/, "Marketing workflow s
 assert.match(marketingWorkflow, /knowledge_root_cause_copied/, "Marketing workflow should track root cause reuse");
 assert.match(marketingWorkflow, /repeat knowledge users/i, "Marketing workflow should track repeat Knowledge Base users");
 
+const offsiteGeoDistributionPack = read("docs/OFFSITE_GEO_DISTRIBUTION_PACK.md");
+assert.match(offsiteGeoDistributionPack, /Offsite GEO Distribution Pack/, "Offsite GEO distribution pack should exist");
+for (const platformSection of ["LinkedIn", "Medium", "Quora", "Reddit"]) {
+  assert.match(offsiteGeoDistributionPack, new RegExp(`## ${platformSection}`), `Offsite pack should include ${platformSection}`);
+}
+function sectionBetween(source: string, start: string, end: string) {
+  return source.split(start)[1]?.split(end)[0] || "";
+}
+const linkedInSection = sectionBetween(offsiteGeoDistributionPack, "## LinkedIn", "## Medium");
+const mediumSection = sectionBetween(offsiteGeoDistributionPack, "## Medium", "## Quora");
+const quoraSection = sectionBetween(offsiteGeoDistributionPack, "## Quora", "## Reddit");
+const redditSection = sectionBetween(offsiteGeoDistributionPack, "## Reddit", "## Rules");
+assert.ok((linkedInSection.match(/^\| \d+ \|/gm) || []).length >= 10, "Offsite pack should include at least 10 LinkedIn posts");
+assert.ok((mediumSection.match(/^\| \d+ \|/gm) || []).length >= 5, "Offsite pack should include at least 5 Medium outlines");
+assert.ok((quoraSection.match(/^\| \d+ \|/gm) || []).length >= 20, "Offsite pack should include at least 20 Quora answer drafts");
+assert.ok((redditSection.match(/^\| \d+ \|/gm) || []).length >= 10, "Offsite pack should include at least 10 Reddit-safe discussion prompts");
+for (const linkedInColumn of ["Target role", "Hook", "Short story/problem", "Practical takeaway", "Soft CTA", "Link suggestion"]) {
+  assert.match(linkedInSection, new RegExp(linkedInColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `LinkedIn pack should include column: ${linkedInColumn}`);
+}
+for (const requiredOffsiteRule of [
+  "Do not auto-post",
+  "Do not spam",
+  "Do not fabricate personal experience",
+  "No sales pitch",
+  "one natural link",
+  "disclose product context honestly",
+  "No automated posting",
+  "No bulk spam",
+  "No fake user stories",
+  "No fake statistics",
+  "No fake customer logos",
+  "No \"best in the world\" claims",
+  "No guaranteed customer acceptance claims",
+  "No hidden product affiliation",
+  "No repeated copy-paste answers",
+  "No over-linking",
+  "Track manually",
+]) {
+  assert.match(offsiteGeoDistributionPack, new RegExp(requiredOffsiteRule.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Offsite pack should include rule: ${requiredOffsiteRule}`);
+}
+for (const forbiddenOffsiteTrackingData of [
+  "customer names",
+  "product names",
+  "problem descriptions",
+  "root cause text",
+  "corrective action text",
+  "lessons learned",
+  "uploaded file content",
+  "AI prompts",
+  "raw AI output",
+]) {
+  assert.match(offsiteGeoDistributionPack, new RegExp(forbiddenOffsiteTrackingData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Offsite pack should forbid private tracking data: ${forbiddenOffsiteTrackingData}`);
+}
+
 const productOperatingMetrics = read("docs/PRODUCT_OPERATING_METRICS.md");
 assert.match(productOperatingMetrics, /Product Operating Metrics/, "Product operating metrics doc should exist");
 assert.match(productOperatingMetrics, /does not add runtime tracking/, "Product metrics should not add runtime tracking");

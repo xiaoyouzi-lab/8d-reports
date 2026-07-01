@@ -2,6 +2,66 @@
 
 ## Latest Task
 
+Offsite GEO Distribution Pack v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/OFFSITE_GEO_DISTRIBUTION_PACK.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added an offsite GEO distribution pack for manually reviewed LinkedIn,
+  Medium, Quora, and Reddit-safe distribution.
+- Included 10 LinkedIn post drafts for SQE, quality manager, supplier quality,
+  manufacturing quality, and customer quality roles with hook, problem,
+  takeaway, soft CTA, and link suggestion.
+- Included 5 Medium editorial outlines, 20 direct Quora answer drafts with
+  honest product-context disclosure guidance, and 10 Reddit-safe practitioner
+  discussion prompts.
+- Documented manual tracking fields and privacy boundaries for offsite
+  distribution evidence.
+- Added anti-spam rules: no automated posting, bulk spam, fake stories, fake
+  statistics, fake customer logos, "best in the world" claims, hidden product
+  affiliation, repeated copy-paste answers, over-linking, or private quality
+  data.
+- No runtime pages, social posting integration, payment, checkout, subscription,
+  auth, password reset, Resend, export, AI backend, Knowledge Base search,
+  production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed after clearing stale local `.next` generated types
+  from a previous runtime branch.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only
+  distribution pack with no runtime app changes.
+
+## Risks
+
+- Offsite content should be manually adapted to each platform and not used as a
+  bulk posting script.
+- Quora and Reddit links should be sparse and only included when genuinely
+  useful.
+- Manual tracking must avoid collecting private respondent or quality-report
+  details.
+
+## Unfinished / Needs Human Review
+
+- PR creation, remote checks, and final review are pending.
+
+## Suggested Next Task
+
+After this PR, add revenue lead follow-up templates so service inquiries can be
+handled consistently without overpromising.
+
+## Previous Task
+
 GEO Content Production Plan v1.
 
 ## Changed Files
