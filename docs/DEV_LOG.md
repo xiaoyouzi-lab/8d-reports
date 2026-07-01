@@ -62,6 +62,187 @@ handled consistently without overpromising.
 
 ## Previous Task
 
+GEO Content Production Plan v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/GEO_CONTENT_PRODUCTION_PLAN.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added a 32-item, 30-day GEO content production calendar across revenue/service
+  pages, core 8D instructional content, industry examples, and comparison / AI /
+  Knowledge Base topics.
+- Mapped every planned article to target query, title, search intent,
+  answer-first outline, proof elements, internal links, CTA, offsite repurposing
+  target, and measurement event.
+- Defined GEO writing rules requiring answer-first copy, practical checklists,
+  manufacturing/SQE vocabulary, example tables, common mistakes, service-use
+  guidance, relevant demo/sample links, and conservative AI positioning.
+- Defined platform-native repurposing rules for LinkedIn, Medium, Quora, and
+  Reddit-safe discussion while prohibiting auto-posting, spam, fabricated
+  experience, fake statistics, and over-linking.
+- Added governance coverage for the plan count, week coverage, required fields,
+  writing rules, repurposing sections, anti-spam rules, and privacy-safe
+  analytics boundaries.
+- No runtime pages, public marketing copy, payment, checkout, subscription,
+  auth, password reset, Resend, export, AI backend, Knowledge Base search,
+  production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only
+  content plan with no runtime app changes.
+
+## Risks
+
+- The plan should not be treated as a mandate to publish all topics at once.
+  Week 1 revenue-near content should be prioritized and measured before broader
+  supporting content.
+- Offsite repurposing must stay manual and platform-native to avoid spam or
+  low-trust distribution.
+- Measurement events must keep metadata bounded to safe enums, page ids, CTA,
+  service, format, source, priority, and plan.
+
+## Unfinished / Needs Human Review
+
+- PR creation, remote checks, and final review are pending.
+
+## Suggested Next Task
+
+After this PR, create a small batch of the highest-intent runtime pages only if
+there is enough time and the PR can stay reviewable.
+
+## Previous Task
+
+GEO / SEO Revenue Query Map v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/GEO_REVENUE_QUERY_MAP.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added a 160-query revenue-centered GEO/SEO query map across core 8D report,
+  SCAR / supplier corrective action, customer complaint response, industry
+  examples, role-based, Excel replacement, AI / Knowledge reuse, and service /
+  paid intent categories.
+- Mapped every query to intent type, target page type, CTA, priority,
+  commercial reason, content angle, internal link target, and safe metadata /
+  tracking event.
+- Kept all volume, ranking, AI citation, customer-demand, and revenue
+  assumptions explicitly hypothesis-based until real GSC, GA4, or first-party
+  analytics evidence is added.
+- Documented sensitive analytics exclusions for full queries, customer names,
+  product names, report text, root cause, corrective action, lessons learned,
+  batch numbers, AI prompts, and uploaded file content.
+- Added governance coverage for the query map row count, required categories,
+  required fields, representative revenue queries, CTA coverage, safe tracking
+  events, and privacy boundaries.
+- No runtime pages, public marketing copy, payment, checkout, subscription,
+  auth, password reset, Resend, export, AI backend, Knowledge Base search,
+  production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only
+  query map with no runtime app changes.
+
+## Risks
+
+- The query map is an operating hypothesis, not search-volume proof. It should
+  be enriched later with GSC/GA4 or first-party evidence before making ranking
+  or demand claims.
+- Publishing too many thin pages would weaken the acquisition strategy. P0
+  revenue-near topics should be prioritized before broader supporting content.
+- Future tracking must keep metadata bounded to safe enums, counts, page ids,
+  categories, CTA names, and formats.
+
+## Unfinished / Needs Human Review
+
+- PR creation, remote checks, and final review are pending.
+
+## Suggested Next Task
+
+After this PR, use the query map to pick a small number of P0 content or service
+pages backed by real revenue evidence rather than publishing a broad batch.
+
+## Previous Task
+
+Revenue Evidence Operating System v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/REVENUE_EVIDENCE_OPERATING_SYSTEM.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added a docs-only operating system for reviewing revenue evidence after
+  Revenue Evidence Sprint v1 reached production.
+- Defined the daily checklist for visits, demo downloads, service CTA clicks,
+  service lead submits, contact submissions, signup, first report creation,
+  export attempts, Knowledge search, editor reuse, and AI Quality Check intent.
+- Added weekly decision rules for common funnel patterns such as downloads with
+  no leads, CTA clicks with no form submits, signup without first report
+  creation, report creation without export, and AI check without export/share.
+- Added manual follow-up playbooks for Template Setup, Team Launch, and Assisted
+  First 8D / SCAR Delivery leads.
+- Defined Week 1, Month 1, and Month 3 early revenue targets.
+- Added explicit what-not-to-do guardrails against blind feature expansion,
+  low-quality AI article batches, fake traffic, fabricated proof, guaranteed
+  customer acceptance, and unlimited free consulting.
+- No runtime app behavior, public marketing pages, payment, checkout,
+  subscription, auth, export entitlement, AI backend, Knowledge Base permission
+  or search logic, production configuration, or database schema was changed.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only
+  operating-system PR with no login runtime changes.
+- Production smoke is not required because this PR does not change public
+  runtime pages.
+
+## Risks
+
+- The operating system only creates value if reviewed daily and weekly.
+- Early revenue targets are directional operating targets, not forecasts.
+- Lead follow-up remains manual until real lead patterns justify automation.
+
+## Unfinished / Needs Human Review
+
+- PR creation and remote checks are pending.
+
+## Suggested Next Task
+
+After this PR, create the GEO / SEO Revenue Query Map so content work is driven
+by high-intent revenue queries rather than guesses.
+
+## Previous Task
+
 Revenue Evidence Sprint v1.
 
 ## Changed Files
