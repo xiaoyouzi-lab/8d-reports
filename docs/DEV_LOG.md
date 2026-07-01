@@ -64,6 +64,64 @@ pages backed by real revenue evidence rather than publishing a broad batch.
 
 ## Previous Task
 
+Revenue Evidence Operating System v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/REVENUE_EVIDENCE_OPERATING_SYSTEM.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added a docs-only operating system for reviewing revenue evidence after
+  Revenue Evidence Sprint v1 reached production.
+- Defined the daily checklist for visits, demo downloads, service CTA clicks,
+  service lead submits, contact submissions, signup, first report creation,
+  export attempts, Knowledge search, editor reuse, and AI Quality Check intent.
+- Added weekly decision rules for common funnel patterns such as downloads with
+  no leads, CTA clicks with no form submits, signup without first report
+  creation, report creation without export, and AI check without export/share.
+- Added manual follow-up playbooks for Template Setup, Team Launch, and Assisted
+  First 8D / SCAR Delivery leads.
+- Defined Week 1, Month 1, and Month 3 early revenue targets.
+- Added explicit what-not-to-do guardrails against blind feature expansion,
+  low-quality AI article batches, fake traffic, fabricated proof, guaranteed
+  customer acceptance, and unlimited free consulting.
+- No runtime app behavior, public marketing pages, payment, checkout,
+  subscription, auth, export entitlement, AI backend, Knowledge Base permission
+  or search logic, production configuration, or database schema was changed.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only
+  operating-system PR with no login runtime changes.
+- Production smoke is not required because this PR does not change public
+  runtime pages.
+
+## Risks
+
+- The operating system only creates value if reviewed daily and weekly.
+- Early revenue targets are directional operating targets, not forecasts.
+- Lead follow-up remains manual until real lead patterns justify automation.
+
+## Unfinished / Needs Human Review
+
+- PR creation and remote checks are pending.
+
+## Suggested Next Task
+
+After this PR, create the GEO / SEO Revenue Query Map so content work is driven
+by high-intent revenue queries rather than guesses.
+
+## Previous Task
+
 Revenue Evidence Sprint v1.
 
 ## Changed Files
