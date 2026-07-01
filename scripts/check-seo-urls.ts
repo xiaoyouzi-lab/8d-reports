@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import sitemap from "../src/app/sitemap";
 import robots from "../src/app/robots";
+import { revenueGeoResources } from "../src/content/revenue-geo-resources";
 import { seoPages as legacySeoPages } from "../src/lib/seo-pages";
 import { seoPages as programmaticSeoPages } from "../src/content/seo-pages";
 import { INDEXABLE_STATIC_PATHS, LEGACY_SEO_REDIRECTS, SITE_URL } from "../src/lib/seo-index-hygiene";
@@ -103,6 +104,7 @@ const contentPaths = new Set([
   ...INDEXABLE_STATIC_PATHS,
   ...legacySeoPages.map((page) => `/${page.slug}`),
   ...programmaticSeoPages.map((page) => `/${page.slug}`),
+  ...revenueGeoResources.map((page) => `/resources/${page.slug}`),
   ...demoReportPaths,
 ]);
 

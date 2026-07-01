@@ -7,6 +7,7 @@ import {
   breadcrumbJsonLd,
 } from "@/components/marketing/MarketingPrimitives"
 import { ResourcesExplorer, type ResourceCardData } from "@/components/marketing/ResourcesExplorer"
+import { revenueGeoResources } from "@/content/revenue-geo-resources"
 import { seoPages } from "@/content/seo-pages"
 import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
@@ -103,7 +104,15 @@ const generatedResources: ResourceCardData[] = seoPages.map((page) => ({
   categoryKey: page.type,
 }))
 
-const resources = [...manualResources, ...generatedResources].filter(
+const revenueResources: ResourceCardData[] = revenueGeoResources.map((resource) => ({
+  href: `/resources/${resource.slug}`,
+  title: resource.title,
+  description: resource.metaDescription,
+  category: resource.category,
+  categoryKey: "revenue-geo",
+}))
+
+const resources = [...manualResources, ...revenueResources, ...generatedResources].filter(
   (resource, index, all) => all.findIndex((item) => item.href === resource.href) === index,
 )
 

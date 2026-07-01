@@ -2,6 +2,75 @@
 
 ## Latest Task
 
+Revenue GEO Content Batch 1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `scripts/check-seo-urls.ts`
+- `scripts/team-governance.test.ts`
+- `src/app/(marketing)/resources/[slug]/page.tsx`
+- `src/app/(marketing)/resources/page.tsx`
+- `src/app/sitemap.ts`
+- `src/components/marketing/ResourcesExplorer.tsx`
+- `src/content/revenue-geo-resources.ts`
+
+## Implementation Summary
+
+- Added a shared revenue GEO resource content source and a static
+  `/resources/[slug]` renderer for 10 high-intent pages covering customer
+  complaint 8D writing, SCAR templates, 8D vs SCAR, Excel vs software, custom
+  template setup, AI 8D checking, D4 root cause, D5 corrective action, D6
+  validation, and D8 lessons learned.
+- Each page includes unique metadata/canonical, answer-first copy, proof
+  elements, practical checklist, common mistakes, comparison/example table,
+  related internal links, service/product CTA, and visible FAQ with matching
+  FAQPage JSON-LD.
+- Added the new resource pages to `/resources`, a Revenue Guides filter, sitemap
+  generation, and SEO URL validation.
+- Added governance coverage for page count, required slugs, content quality
+  sections, FAQ/schema behavior, sitemap/SEO check integration, safe analytics
+  event usage, and forbidden scope boundaries.
+- No payment, checkout, subscription, auth, password reset, Resend, real report
+  export entitlement, ZIP behavior, AI backend, Knowledge Base search,
+  production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- `npm run check:seo` passed with 92 sitemap URLs and 11 redirects checked.
+- Local public smoke passed via `PRODUCTION_BASE_URL=http://127.0.0.1:3031 npm run test:production-smoke`.
+- Playwright browser smoke passed for `/resources` plus all 10 new
+  `/resources/*` pages at 390px and 1280px viewports: 22 route checks, 200 OK,
+  no horizontal overflow, required content markers present, and no console
+  warning/error messages.
+- Authenticated smoke is not required because this PR only adds public marketing
+  resource pages and does not change logged-in app behavior.
+
+## Risks
+
+- The 10-page batch must stay practical and specific; future batches should be
+  driven by evidence rather than publishing many thin pages.
+- CTA copy must remain service/product discovery, not a promise of customer
+  acceptance or certified approval.
+- Public analytics must stay bounded to safe event names and enum-like metadata.
+
+## Unfinished / Needs Human Review
+
+- PR creation, remote checks, and final review are pending.
+
+## Suggested Next Task
+
+After this PR deploys, watch demo downloads, service CTA clicks, signup, and
+search traffic for these new resources before adding another content batch.
+
+## Previous Task
+
 End-of-run Product Review Backlog v1.
 
 ## Changed Files
