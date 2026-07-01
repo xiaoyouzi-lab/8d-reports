@@ -2,67 +2,67 @@
 
 ## Task Name
 
-Offsite GEO Distribution Pack v1.
+Revenue Lead Follow-Up Templates v1.
 
 ## Context
 
-Revenue Evidence Sprint v1 is deployed, and the onsite GEO/content planning work
-now needs a safe offsite distribution pack. The goal is not automated posting or
-spam. The goal is to prepare high-quality, platform-native drafts that can be
-manually reviewed and used to learn whether SQEs, quality managers, supplier
-quality engineers, and manufacturing quality teams respond to the topics.
+Revenue Evidence Sprint v1 can now capture Template Setup, Team Launch, Assisted
+First 8D / SCAR, contact, demo, signup, and export intent. The next operational
+need is consistent manual follow-up that asks for the right inputs, explains the
+service scope, and avoids overpromising.
 
 ## Goal
 
-Create a docs-only offsite GEO distribution pack for LinkedIn, Medium, Quora,
-and Reddit-safe discussion that supports revenue evidence without fake stories,
-fake statistics, over-linking, or hidden product affiliation.
+Create docs-only follow-up templates for revenue leads so service inquiries can
+be handled professionally and consistently without connecting to live email
+sending or changing product behavior.
 
 ## Scope
 
-- Add `docs/OFFSITE_GEO_DISTRIBUTION_PACK.md`.
-- Include:
-  - 10 LinkedIn posts for SQE / quality manager / supplier quality roles
-  - 5 Medium article drafts/outlines
-  - 20 Quora answer drafts
-  - 10 Reddit-safe discussion prompts
-  - anti-spam and manual tracking rules
+- Add `docs/REVENUE_LEAD_FOLLOWUP_TEMPLATES.md`.
+- Include templates for:
+  - Template Setup lead - file received
+  - Template Setup lead - file upload failed / ask reply with file
+  - Template Setup lead - quote/scope proposal
+  - Team Launch lead - discovery questions
+  - Assisted First 8D lead - request required evidence
+  - No-response follow-up 1
+  - No-response follow-up 2
+  - Paid service handoff / invoice note
+  - After delivery feedback request
+- Each template should be short, professional, and ask for a concrete next step.
+- Document required inputs, deliverables, and manual tracking boundaries.
 - Update `docs/DEV_LOG.md`.
-- Add governance checks that the document contains all required platform
-  sections and anti-spam rules.
+- Add governance checks for template coverage, no-overpromise language, and
+  sensitive tracking exclusions.
 
 ## Non-Goals
 
-- No runtime pages.
-- No auto-posting.
-- No social media API integration.
-- No fake user stories, fake statistics, fake customer logos, "best in the
-  world" claims, guaranteed customer acceptance claims, or hidden affiliation.
-- No payment, checkout, subscription, auth, password reset, Resend, export,
-  Knowledge Base search, Knowledge permissions, AI backend, production
-  configuration, or database schema changes.
+- No live email sending.
+- No Resend changes.
+- No CRM or automation integration.
+- No payment, checkout, subscription, auth, password reset, export, Knowledge
+  Base search, Knowledge permissions, AI backend, production configuration, or
+  database schema changes.
 - No production data writes.
 
 ## Acceptance Criteria
 
-- Offsite distribution pack exists and covers LinkedIn, Medium, Quora, and
-  Reddit-safe discussion.
-- LinkedIn section includes 10 post drafts with role, hook, problem, takeaway,
-  soft CTA, and link suggestion.
-- Medium section includes 5 article drafts/outlines that are not duplicate
-  onsite copy.
-- Quora section includes 20 direct answer drafts, one-link guidance, and honest
-  product-context disclosure guidance.
-- Reddit section includes 10 discussion prompts, no-sales-pitch guidance, and
-  subreddit targets as suggestions only.
-- Rules prohibit automated posting, spam, fake stories, fake statistics, fake
-  logos, over-linking, hidden affiliation, and private quality data.
+- Follow-up template doc exists.
+- All 9 required templates are present.
+- Templates ask for concrete next steps and required inputs.
+- Templates explain deliverables without promising guaranteed customer
+  acceptance, certified approval, instant turnaround, or unlimited free
+  consulting.
+- Manual tracking uses safe fields and forbids full messages, customer/supplier
+  names, product names, batch numbers, root cause, corrective action, lessons
+  learned, attachment content, credentials, and payment details.
 - Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
   `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Offsite distribution can damage trust if it is copied mechanically or posted
-  too often. Use manual review and platform-native edits.
-- Links should be used sparingly and only when they genuinely help the answer.
-- Manual tracking must avoid storing private quality-report or respondent data.
+- Templates are useful only if manually adapted to the actual lead context.
+- Quote/scope emails must remain human-reviewed before sending.
+- Follow-up tracking must not become a place where private customer or quality
+  report details are copied.

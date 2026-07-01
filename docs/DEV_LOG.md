@@ -2,6 +2,58 @@
 
 ## Latest Task
 
+Revenue Lead Follow-Up Templates v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/REVENUE_LEAD_FOLLOWUP_TEMPLATES.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added manual follow-up templates for Template Setup, Team Launch, Assisted
+  First 8D / SCAR Delivery, no-response follow-ups, paid service handoff, and
+  after-delivery feedback.
+- Each template asks for concrete next inputs, explains likely deliverables, and
+  avoids guaranteed customer acceptance, certified approval, instant turnaround,
+  unlimited free consulting, or invented evidence.
+- Documented manual tracking fields and sensitive data exclusions for full
+  messages, customer/supplier/product identifiers, batch numbers, root cause,
+  corrective action, lessons learned, attachment content, credentials, and
+  payment details.
+- No live email sending, Resend, CRM, payment, checkout, subscription, auth,
+  export, AI backend, Knowledge Base search, production configuration, or
+  database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only
+  follow-up template pack with no runtime app changes.
+
+## Risks
+
+- Templates must still be manually adapted to the lead context before sending.
+- Quote and handoff notes should remain human-reviewed.
+- Manual lead notes must avoid private customer or quality-report details.
+
+## Unfinished / Needs Human Review
+
+- PR creation, remote checks, and final review are pending.
+
+## Suggested Next Task
+
+After this PR, run the end-of-run product review backlog across public and
+authenticated surfaces.
+
+## Previous Task
+
 Offsite GEO Distribution Pack v1.
 
 ## Changed Files
