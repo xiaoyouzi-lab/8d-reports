@@ -905,6 +905,88 @@ assert.match(productOperatingMetrics, /Knowledge asset creation should be a deri
 assert.match(productOperatingMetrics, /D4\/D5 field completion should be computed from database state/, "D4/D5 completion should be computed without raw text analytics");
 assert.doesNotMatch(productOperatingMetrics, /full QMS|\bSSO\b|automatic AI approval/i, "Product metrics should not introduce unsupported product claims");
 
+const revenueEvidenceOperatingSystem = read("docs/REVENUE_EVIDENCE_OPERATING_SYSTEM.md");
+assert.match(revenueEvidenceOperatingSystem, /Revenue Evidence Operating System/, "Revenue evidence operating system doc should exist");
+assert.match(revenueEvidenceOperatingSystem, /does not add runtime tracking/, "Revenue operating system should stay docs-only");
+for (const dailySignal of [
+  "Visits",
+  "Demo report downloads",
+  "Template Setup CTA clicks",
+  "Template Setup lead submits",
+  "Team Launch CTA clicks",
+  "Assisted First 8D / SCAR CTA clicks",
+  "Contact form submits",
+  "Signup",
+  "First report created",
+  "Export attempted",
+  "Knowledge search",
+  "Editor reuse opened",
+  "AI Quality Check intent",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(dailySignal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue operating system should include daily signal: ${dailySignal}`);
+}
+for (const weeklyPattern of [
+  "Demo downloads but no leads",
+  "CTA clicks but no lead submits",
+  "Leads but no replies",
+  "Signup but no report created",
+  "Report created but no export",
+  "Knowledge reuse but no AI check",
+  "AI check but no export/share",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(weeklyPattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue operating system should include weekly decision rule: ${weeklyPattern}`);
+}
+for (const leadType of [
+  "Template Setup",
+  "Team Launch",
+  "Assisted First 8D / SCAR",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(`### ${leadType.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`), `Revenue operating system should include lead follow-up playbook for ${leadType}`);
+}
+for (const targetWindow of ["Week 1", "Month 1", "Month 3"]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(`### ${targetWindow}`), `Revenue operating system should define targets for ${targetWindow}`);
+}
+for (const requiredTarget of [
+  "10+ demo downloads",
+  "3+ service CTA clicks",
+  "1+ lead",
+  "50+ demo downloads",
+  "10+ service CTA clicks",
+  "3+ leads",
+  "1 paid assisted/service conversation",
+  "2-3 paid service deals",
+  "First Team Launch",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(requiredTarget.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Revenue operating system should include target: ${requiredTarget}`);
+}
+for (const notToDo of [
+  "blindly adding features",
+  "low-quality AI article batches",
+  "fake traffic",
+  "fabricate customer stories",
+  "guaranteed customer acceptance",
+  "unlimited free consulting",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(notToDo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue operating system should forbid: ${notToDo}`);
+}
+for (const forbiddenAnalyticsData of [
+  "full report text",
+  "customer names",
+  "supplier names",
+  "product names",
+  "batch numbers",
+  "attachment content",
+  "full queries",
+  "payment details",
+  "share tokens",
+  "passwords",
+  "secrets",
+]) {
+  assert.match(revenueEvidenceOperatingSystem, new RegExp(forbiddenAnalyticsData.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Revenue operating system should forbid sensitive analytics data: ${forbiddenAnalyticsData}`);
+}
+assert.match(revenueEvidenceOperatingSystem, /Use production data only as observed customer behavior; do not create test\s*leads, test users, or test reports in production\./, "Revenue operating system should forbid production test data creation");
+assert.doesNotMatch(revenueEvidenceOperatingSystem, /guaranteed approval|certified QMS|best in the world/i, "Revenue operating system should avoid unsupported commercial claims");
+
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
 assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");
 assert.match(pricingPage, /From \$999/, "Team Launch price should be From $999");

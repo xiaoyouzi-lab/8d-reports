@@ -2,82 +2,73 @@
 
 ## Task Name
 
-Revenue Evidence Sprint v1.
+Revenue Evidence Operating System v1.
 
 ## Context
 
-Knowledge Base, Knowledge Reuse, AI Quality Check with Knowledge Context, and
-Knowledge Capture now provide enough product capability for the current stage.
-The next priority is not another feature expansion. The priority is to collect
-commercial conversion evidence: whether visitors click, download demos, upload
-templates, submit service requests, sign up, and attempt exports.
+Revenue Evidence Sprint v1 is deployed. The site can now collect early
+conversion evidence from service CTAs, Template Setup / Team Launch / Assisted
+First 8D leads, demo downloads, signup, export intent, Knowledge reuse, and AI
+Quality Check intent.
+
+The next priority is not another product feature. The priority is to make the
+daily and weekly operating rhythm explicit so the product does not become an
+unmeasured collection of features.
 
 ## Goal
 
-Turn 8D Reports into a measurable revenue-learning system for Template Setup,
-Team Launch, and Assisted First 8D / SCAR Delivery without changing auth,
-payment, export entitlements, Knowledge permissions, or database schema.
+Define a safe, repeatable operating system for reviewing revenue evidence,
+following up with service leads, and deciding what to improve next.
 
 ## Scope
 
-- Upgrade homepage, Pricing, and demo report CTAs for service conversion.
-- Make the Template Setup / service lead funnel usable with required fields,
-  success and failure states, email notifications, and file-upload fallback.
-- Reuse the existing service request table for Template Setup, Team Launch, and
-  Assisted First 8D / SCAR Delivery leads.
-- Add privacy-safe revenue analytics events and safe referrer / UTM /
-  anonymous-session metadata.
-- Add admin-only revenue evidence metrics for the last 7 and 30 days.
-- Add Excel downloads to demo report sales assets using the existing quality
-  workbook generator.
-- Extend unauthenticated, production, governance, and authenticated smoke
-  coverage for the revenue evidence path.
+- Add `docs/REVENUE_EVIDENCE_OPERATING_SYSTEM.md`.
+- Define the daily checklist for revenue and reuse signals.
+- Define weekly decision rules for common funnel patterns.
+- Define follow-up playbooks for Template Setup, Team Launch, and Assisted First
+  8D / SCAR Delivery leads.
+- Define Week 1, Month 1, and Month 3 early revenue targets.
+- Define what not to do while collecting evidence.
+- Add governance coverage so the operating system remains present and scoped.
 - Update the development log.
 
 ## Non-Goals
 
-- No full QMS, APQP, PPAP, iOS, PWA, or external supplier request system.
-- No payment, checkout, subscription, pricing amount, auth, password reset, or
-  Resend infrastructure changes beyond non-blocking lead notification emails.
-- No report editor core-flow changes.
-- No PDF / Word / Excel export entitlement changes for real user reports.
-- No AI backend changes.
-- No Knowledge Base search, eligibility, permission, report access, or share
-  token logic changes.
-- No database schema migration.
-- No production data writes during development.
+- No runtime business logic changes.
+- No public marketing page changes.
+- No payment, checkout, subscription, pricing amount, auth, password reset,
+  Resend, export entitlement, AI backend, Knowledge Base permission/search, or
+  database schema changes.
+- No production data writes.
+- No production test leads, users, reports, or admin records.
+- No low-quality SEO page batch.
+- No fake traffic, fake search volume, fake AI citation rate, fake revenue, or
+  fabricated customer stories.
 
 ## Acceptance Criteria
 
-- Homepage keeps Start free and adds Upload your 8D template / Request template
-  setup with the required urgent 8D/SCAR copy.
-- Pricing keeps Free / Pro / Team / Single Export and makes these services
-  prominent: 8D Template Setup from $499, Team Launch from $999, Assisted First
-  8D / SCAR Delivery from $799.
-- Demo report pages include the company-format CTA and PDF / Word / Excel / ZIP
-  download links.
-- Template Setup form includes name, company, work email, role, current process,
-  use case, required export, timeline, message, and file upload.
-- Lead save does not fail just because file upload fails; users see a clear
-  re-upload warning.
-- Admin and user email failures are logged but do not block lead save.
-- Admin can view lead and file metadata without private bucket URLs.
-- Revenue analytics events are allowlisted and avoid sensitive report content.
-- Admin metrics show page views, demo downloads, template setup submissions,
-  contact submissions, signup count, export attempts, and pricing CTA clicks for
-  the last 7 and 30 days.
-- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, `npm run test:governance`, production smoke, and authenticated
-  smoke on a temporary Neon branch.
+- Revenue Evidence operating document exists.
+- Daily checklist covers visits, demo downloads, Template Setup CTA clicks,
+  Template Setup lead submits, Team Launch CTA clicks, Assisted First 8D / SCAR
+  CTA clicks, contact form submits, signup, first report created, export
+  attempted, Knowledge search, editor reuse opened, and AI Quality Check intent.
+- Weekly decision rules cover demo-download/no-lead, CTA-click/no-submit,
+  lead/no-reply, signup/no-report, report/no-export, Knowledge-reuse/no-AI-check,
+  and AI-check/no-export-share patterns.
+- Lead follow-up playbook covers Template Setup, Team Launch, and Assisted First
+  8D / SCAR Delivery.
+- Early revenue targets are defined for Week 1, Month 1, and Month 3.
+- What-not-to-do section forbids blind feature expansion, low-quality AI article
+  batches, fake traffic, fabricated proof, guaranteed customer acceptance, and
+  unlimited free consulting.
+- Governance tests protect the document and docs-only scope.
+- Required checks pass: `git diff --check`, `npx tsc --noEmit`,
+  `npm run lint`, `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Service lead emails depend on existing email configuration; failure must stay
-  non-blocking and visible in logs.
-- File upload depends on R2 configuration; lead capture must remain useful when
-  storage is unavailable.
-- Event tracking can drift into sensitive quality data; metadata must stay
-  bounded to safe enums, counts, formats, paths, referrer, UTM, and anonymous
-  session id.
-- Admin metrics use JSONB/application-level event storage; larger volume may
-  later need dedicated reporting indexes or exports.
+- Operating documents can become stale if weekly review is skipped.
+- Early targets are directional, not forecasts; they should guide decisions
+  without inventing revenue evidence.
+- Follow-up templates remain manual for now; automation should wait until real
+  lead patterns are clearer.
