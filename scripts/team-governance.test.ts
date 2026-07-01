@@ -1430,4 +1430,61 @@ assert.match(authenticatedBrowserSmoke, /anonymousSessionId/, "Authenticated smo
 
 assert.doesNotMatch(schemaFile, /revenue_metrics|lead_events|conversion_events/i, "Revenue Evidence Sprint v1 must not add database schema");
 
+const productReviewBacklog = read("docs/PRODUCT_REVIEW_BACKLOG.md");
+assert.match(productReviewBacklog, /# End-of-run Product Review Backlog/, "Product review backlog should exist");
+assert.match(productReviewBacklog, /No P0 blockers were found/, "Product review backlog should state that there are no P0 blockers");
+for (const reviewedSurface of [
+  "Homepage",
+  "Pricing",
+  "Custom Template Setup",
+  "Demo Reports",
+  "Contact",
+  "Signup",
+  "Dashboard",
+  "Report Editor",
+  "Knowledge Base",
+  "Revenue Admin Metrics",
+]) {
+  assert.match(productReviewBacklog, new RegExp(reviewedSurface.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Product review backlog should cover: ${reviewedSurface}`);
+}
+for (const requiredColumn of [
+  "Severity",
+  "Evidence",
+  "User Impact",
+  "Suggested PR",
+  "Not-to-do",
+  "Expected metric impact",
+]) {
+  assert.match(productReviewBacklog, new RegExp(requiredColumn.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")), `Product review backlog should include column: ${requiredColumn}`);
+}
+for (const backlogMetric of [
+  "template_setup_form_started",
+  "template_setup_form_submitted",
+  "demo download",
+  "signup-to-first-report",
+  "completed reports",
+  "export attempts",
+  "knowledge searches",
+  "result open rate",
+  "lead response speed",
+]) {
+  assert.match(productReviewBacklog, new RegExp(backlogMetric.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Product review backlog should tie issues to metric impact: ${backlogMetric}`);
+}
+for (const futureOnlyBoundary of [
+  "Full CRM",
+  "Automated offsite posting",
+  "Public marketing rewrite",
+  "Payment, checkout, subscription, or pricing-amount changes",
+  "Auth provider, password reset, or Resend infrastructure changes",
+  "Export entitlement or report editor save-flow changes",
+  "AI backend expansion",
+  "Database schema migration",
+  "vector database",
+  "Knowledge Base permission, eligibility, or share-token logic changes",
+]) {
+  assert.match(productReviewBacklog, new RegExp(futureOnlyBoundary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), `Product review backlog should preserve future-only boundary: ${futureOnlyBoundary}`);
+}
+assert.match(productReviewBacklog, /\| REV-P1-01 \|[\s\S]*\| REV-P2-14 \|/, "Product review backlog should include the full issue table");
+assert.doesNotMatch(productReviewBacklog, /guaranteed acceptance|certified approval|we provide automatic AI approval|we are a full QMS/i, "Product review backlog should avoid unsupported product claims");
+
 console.log("Team governance verification passed.");

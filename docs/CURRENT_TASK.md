@@ -2,67 +2,58 @@
 
 ## Task Name
 
-Revenue Lead Follow-Up Templates v1.
+End-of-run Product Review Backlog v1.
 
 ## Context
 
-Revenue Evidence Sprint v1 can now capture Template Setup, Team Launch, Assisted
-First 8D / SCAR, contact, demo, signup, and export intent. The next operational
-need is consistent manual follow-up that asks for the right inputs, explains the
-service scope, and avoids overpromising.
+Revenue Evidence Sprint v1 shipped a measurable acquisition and service-intent
+baseline. Before adding another runtime feature, the product needs a concise
+backlog that turns the end-of-run review into small, evidence-based follow-up
+PRs.
 
 ## Goal
 
-Create docs-only follow-up templates for revenue leads so service inquiries can
-be handled professionally and consistently without connecting to live email
-sending or changing product behavior.
+Audit the current product surface and document the highest-leverage P1/P2
+follow-up work across public acquisition, signup, app activation, Knowledge
+Base reuse, editor workflow, and revenue operations.
 
 ## Scope
 
-- Add `docs/REVENUE_LEAD_FOLLOWUP_TEMPLATES.md`.
-- Include templates for:
-  - Template Setup lead - file received
-  - Template Setup lead - file upload failed / ask reply with file
-  - Template Setup lead - quote/scope proposal
-  - Team Launch lead - discovery questions
-  - Assisted First 8D lead - request required evidence
-  - No-response follow-up 1
-  - No-response follow-up 2
-  - Paid service handoff / invoice note
-  - After delivery feedback request
-- Each template should be short, professional, and ask for a concrete next step.
-- Document required inputs, deliverables, and manual tracking boundaries.
-- Update `docs/DEV_LOG.md`.
-- Add governance checks for template coverage, no-overpromise language, and
-  sensitive tracking exclusions.
+- Review homepage, Pricing, Custom Template Setup, demo reports, Contact,
+  Signup, Dashboard, Report Editor, Knowledge Base, and Revenue Admin Metrics.
+- Add `docs/PRODUCT_REVIEW_BACKLOG.md` with severity, evidence, user impact,
+  suggested PR, not-to-do, and expected metric impact for each issue.
+- Keep the backlog grounded in current product behavior and current main branch.
+- Add governance coverage for the backlog artifact.
+- Update the development log.
 
 ## Non-Goals
 
-- No live email sending.
-- No Resend changes.
-- No CRM or automation integration.
-- No payment, checkout, subscription, auth, password reset, export, Knowledge
-  Base search, Knowledge permissions, AI backend, production configuration, or
-  database schema changes.
+- No runtime product feature changes.
+- No public marketing rewrite.
+- No payment, checkout, pricing amount, subscription, auth, password reset, or
+  Resend changes.
+- No report editor core-flow, export, AI backend, Knowledge Base search,
+  Knowledge Base eligibility, permission, or share-token changes.
+- No database schema migration.
 - No production data writes.
 
 ## Acceptance Criteria
 
-- Follow-up template doc exists.
-- All 9 required templates are present.
-- Templates ask for concrete next steps and required inputs.
-- Templates explain deliverables without promising guaranteed customer
-  acceptance, certified approval, instant turnaround, or unlimited free
-  consulting.
-- Manual tracking uses safe fields and forbids full messages, customer/supplier
-  names, product names, batch numbers, root cause, corrective action, lessons
-  learned, attachment content, credentials, and payment details.
-- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, and `npm run test:governance`.
+- Product review backlog exists and covers all required surfaces.
+- Each issue includes severity, evidence, user impact, suggested PR, not-to-do,
+  and expected metric impact.
+- The backlog clearly states that no P0 blockers were found.
+- The backlog separates P1/P2 follow-up work from future-only items.
+- Governance checks protect the document structure and forbidden-scope boundary.
+- Required checks pass: `git diff --check`, `npx tsc --noEmit`,
+  `npm run lint`, `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Templates are useful only if manually adapted to the actual lead context.
-- Quote/scope emails must remain human-reviewed before sending.
-- Follow-up tracking must not become a place where private customer or quality
-  report details are copied.
+- Backlog items can be mistaken for approved scope; each item must remain a
+  suggested follow-up PR, not an implementation in this docs-only task.
+- Revenue diagnostics should not create pressure to collect sensitive quality
+  content in analytics.
+- Knowledge Base scaling should wait for real workspace volume before database
+  schema or indexing work.
