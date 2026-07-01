@@ -2,6 +2,65 @@
 
 ## Latest Task
 
+Revenue Evidence Measurement Recovery + 7-Day Operating Launch.
+
+## Changed Files
+
+- `docs/REVENUE_EVIDENCE_7_DAY_LOG.md`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added the 7-day revenue evidence measurement log with Day 1 baseline values,
+  production URL check status, sitemap status, and the Day 2 minimum operating
+  plan.
+- Confirmed local GA4/GSC marketing configuration exists in private secrets,
+  without reading or recording credential contents.
+- Attempted fresh GSC and GA4 exports through the existing marketing scripts;
+  both failed with Google API `fetch failed`, including after a network retry.
+- Generated the weekly marketing report from existing historical CSV exports
+  only; live GA4/GSC data remains blocked until API access succeeds from the
+  execution environment.
+- No product runtime, auth, payment, export, AI, database schema, production
+  config, production users, production reports, or production leads were
+  changed.
+
+## Tests / Verification
+
+- `npm run marketing:gsc` failed with `fetch failed`.
+- `npm run marketing:ga4` failed with `fetch failed`.
+- Direct HTTPS probes to Google OAuth, Analytics Data, and Search Console API
+  hosts timed out from the current environment.
+- `npm run marketing:report` passed and wrote the ignored local weekly report.
+- Production URL checks from Day 1 showed `/resources`, the 10 resource pages,
+  `/custom-8d-template-setup`, `/pricing`, `/demo-reports`, and `/contact`
+  returning 200.
+- `https://www.8d-reports.com/sitemap.xml` returned 200 and contains 10
+  `/resources/` URLs.
+
+## Risks
+
+- Live GA4/GSC exports are still unavailable from the current execution
+  environment, so Day 1 acquisition metrics must be verified manually or from a
+  network environment that can reach the Google APIs.
+- The current daily evidence volume is too small to diagnose CTA conversion,
+  form friction, signup activation, or product completion with confidence.
+
+## Unfinished / Needs Human Review
+
+- Confirm GA4/GSC directly in the Google UIs or rerun exports from an
+  environment where Google API requests do not fail.
+- Submit or confirm `https://www.8d-reports.com/sitemap.xml` in Google Search
+  Console.
+- Manually distribute the Day 2 offsite content touchpoints; do not auto-post.
+
+## Suggested Next Task
+
+Restore live GA4/GSC measurement access, confirm sitemap submission, and run
+the Day 2 operating plan against admin metrics.
+
+## Previous Task
+
 Revenue GEO Content Batch 1.
 
 ## Changed Files
