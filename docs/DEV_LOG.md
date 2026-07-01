@@ -2,6 +2,68 @@
 
 ## Latest Task
 
+GEO / SEO Revenue Query Map v1.
+
+## Changed Files
+
+- `docs/CURRENT_TASK.md`
+- `docs/DEV_LOG.md`
+- `docs/GEO_REVENUE_QUERY_MAP.md`
+- `scripts/team-governance.test.ts`
+
+## Implementation Summary
+
+- Added a 160-query revenue-centered GEO/SEO query map across core 8D report,
+  SCAR / supplier corrective action, customer complaint response, industry
+  examples, role-based, Excel replacement, AI / Knowledge reuse, and service /
+  paid intent categories.
+- Mapped every query to intent type, target page type, CTA, priority,
+  commercial reason, content angle, internal link target, and safe metadata /
+  tracking event.
+- Kept all volume, ranking, AI citation, customer-demand, and revenue
+  assumptions explicitly hypothesis-based until real GSC, GA4, or first-party
+  analytics evidence is added.
+- Documented sensitive analytics exclusions for full queries, customer names,
+  product names, report text, root cause, corrective action, lessons learned,
+  batch numbers, AI prompts, and uploaded file content.
+- Added governance coverage for the query map row count, required categories,
+  required fields, representative revenue queries, CTA coverage, safe tracking
+  events, and privacy boundaries.
+- No runtime pages, public marketing copy, payment, checkout, subscription,
+  auth, password reset, Resend, export, AI backend, Knowledge Base search,
+  production configuration, or database schema changes were made.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `npm run test:governance` passed.
+- Authenticated smoke is not required because this is a docs/governance-only
+  query map with no runtime app changes.
+
+## Risks
+
+- The query map is an operating hypothesis, not search-volume proof. It should
+  be enriched later with GSC/GA4 or first-party evidence before making ranking
+  or demand claims.
+- Publishing too many thin pages would weaken the acquisition strategy. P0
+  revenue-near topics should be prioritized before broader supporting content.
+- Future tracking must keep metadata bounded to safe enums, counts, page ids,
+  categories, CTA names, and formats.
+
+## Unfinished / Needs Human Review
+
+- PR creation, remote checks, and final review are pending.
+
+## Suggested Next Task
+
+After this PR, use the query map to pick a small number of P0 content or service
+pages backed by real revenue evidence rather than publishing a broad batch.
+
+## Previous Task
+
 Revenue Evidence Operating System v1.
 
 ## Changed Files

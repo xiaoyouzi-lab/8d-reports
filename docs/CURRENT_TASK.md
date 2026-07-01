@@ -2,73 +2,87 @@
 
 ## Task Name
 
-Revenue Evidence Operating System v1.
+GEO / SEO Revenue Query Map v1.
 
 ## Context
 
-Revenue Evidence Sprint v1 is deployed. The site can now collect early
-conversion evidence from service CTAs, Template Setup / Team Launch / Assisted
-First 8D leads, demo downloads, signup, export intent, Knowledge reuse, and AI
-Quality Check intent.
+Revenue Evidence Sprint v1 is deployed, and the next commercial priority is to
+turn observed service and demo intent into a disciplined GEO/SEO query map
+before adding more runtime surfaces or public pages.
 
-The next priority is not another product feature. The priority is to make the
-daily and weekly operating rhythm explicit so the product does not become an
-unmeasured collection of features.
+This task is planning and governance only. It should define which high-intent
+queries matter for 8D Reports, how each query maps to a page type, CTA, priority,
+internal link, and privacy-safe measurement event, and which assumptions must
+remain hypotheses until enriched by GSC, GA4, or first-party analytics.
 
 ## Goal
 
-Define a safe, repeatable operating system for reviewing revenue evidence,
-following up with service leads, and deciding what to improve next.
+Create a revenue-centered GEO/SEO query map for 8D Reports that helps prioritize
+content, demo, Template Setup, Team Launch, Assisted First 8D / SCAR Delivery,
+Signup, and Knowledge/AI reuse opportunities without inventing search volume or
+publishing thin SEO pages.
 
 ## Scope
 
-- Add `docs/REVENUE_EVIDENCE_OPERATING_SYSTEM.md`.
-- Define the daily checklist for revenue and reuse signals.
-- Define weekly decision rules for common funnel patterns.
-- Define follow-up playbooks for Template Setup, Team Launch, and Assisted First
-  8D / SCAR Delivery leads.
-- Define Week 1, Month 1, and Month 3 early revenue targets.
-- Define what not to do while collecting evidence.
-- Add governance coverage so the operating system remains present and scoped.
-- Update the development log.
+- Add `docs/GEO_REVENUE_QUERY_MAP.md` with 150+ high-intent queries.
+- Cover these categories:
+  - Core 8D report intent
+  - SCAR / supplier corrective action
+  - Customer complaint response
+  - Industry examples
+  - Role-based intent
+  - Excel replacement intent
+  - AI / Knowledge reuse intent
+  - Service / paid intent
+- For every query, document:
+  - intent type
+  - target page type
+  - CTA
+  - priority P0/P1/P2
+  - why it matters
+  - content angle
+  - internal link target
+  - safe metadata / tracking event
+- Mark the map as hypothesis-based unless later enriched by real GSC, GA4, or
+  first-party evidence.
+- Add governance coverage so the query map cannot regress below the required
+  scope.
+- Update `docs/DEV_LOG.md`.
 
 ## Non-Goals
 
-- No runtime business logic changes.
-- No public marketing page changes.
-- No payment, checkout, subscription, pricing amount, auth, password reset,
-  Resend, export entitlement, AI backend, Knowledge Base permission/search, or
-  database schema changes.
+- No runtime pages or public marketing page changes.
+- No fake search volume, ranking, AI citation, revenue, or customer-demand
+  claims.
+- No low-quality AI article batches or thin SEO pages.
+- No payment, checkout, subscription, auth, password reset, Resend, export,
+  Knowledge Base search, Knowledge permissions, AI backend, production
+  configuration, or database schema changes.
 - No production data writes.
-- No production test leads, users, reports, or admin records.
-- No low-quality SEO page batch.
-- No fake traffic, fake search volume, fake AI citation rate, fake revenue, or
-  fabricated customer stories.
 
 ## Acceptance Criteria
 
-- Revenue Evidence operating document exists.
-- Daily checklist covers visits, demo downloads, Template Setup CTA clicks,
-  Template Setup lead submits, Team Launch CTA clicks, Assisted First 8D / SCAR
-  CTA clicks, contact form submits, signup, first report created, export
-  attempted, Knowledge search, editor reuse opened, and AI Quality Check intent.
-- Weekly decision rules cover demo-download/no-lead, CTA-click/no-submit,
-  lead/no-reply, signup/no-report, report/no-export, Knowledge-reuse/no-AI-check,
-  and AI-check/no-export-share patterns.
-- Lead follow-up playbook covers Template Setup, Team Launch, and Assisted First
-  8D / SCAR Delivery.
-- Early revenue targets are defined for Week 1, Month 1, and Month 3.
-- What-not-to-do section forbids blind feature expansion, low-quality AI article
-  batches, fake traffic, fabricated proof, guaranteed customer acceptance, and
-  unlimited free consulting.
-- Governance tests protect the document and docs-only scope.
-- Required checks pass: `git diff --check`, `npx tsc --noEmit`,
-  `npm run lint`, `npm run build`, and `npm run test:governance`.
+- `docs/GEO_REVENUE_QUERY_MAP.md` exists.
+- The map includes at least 150 queries across all eight required categories.
+- Every query row includes intent, target page type, CTA, priority, why it
+  matters, content angle, internal link target, and safe metadata / tracking
+  event.
+- The document clearly says search volume and demand are hypotheses unless
+  enriched by real evidence.
+- The document forbids collecting full queries, customer/product names, report
+  text, root cause, corrective action, lessons learned, batch identifiers, AI
+  prompts, and uploaded file content as analytics metadata.
+- Governance tests assert category coverage, row count, required fields,
+  representative revenue queries, safe CTAs, and safe tracking events.
+- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
+  `npm run build`, and `npm run test:governance`.
 
 ## Risks
 
-- Operating documents can become stale if weekly review is skipped.
-- Early targets are directional, not forecasts; they should guide decisions
-  without inventing revenue evidence.
-- Follow-up templates remain manual for now; automation should wait until real
-  lead patterns are clearer.
+- Query maps can drift into speculative SEO if treated as evidence. Keep volume,
+  ranking, and revenue claims out until GSC/GA4 or first-party analytics
+  supports them.
+- Publishing too many thin pages would weaken the brand and waste effort.
+  Prioritize P0 pages that connect directly to revenue evidence.
+- Analytics metadata must remain bounded to safe enums and counts, not raw
+  quality-report content.
