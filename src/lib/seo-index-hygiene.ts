@@ -14,6 +14,8 @@ export const INDEXABLE_STATIC_PATHS = [
   "/8d-report-review-service",
   "/security",
   "/faq",
+  "/help",
+  "/learn",
   "/docs",
   "/docs/getting-started",
   "/docs/create-report",

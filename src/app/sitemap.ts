@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next"
 import { revenueGeoResources } from "@/content/revenue-geo-resources"
 import { seoPages as legacySeoPages } from "@/lib/seo-pages"
 import { seoPages as programmaticSeoPages } from "@/content/seo-pages"
+import { getHelpArticles, getLearnArticles } from "@/lib/content-library"
 import { INDEXABLE_STATIC_PATHS, SITE_URL } from "@/lib/seo-index-hygiene"
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -35,10 +36,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .map((page) => entry(`/resources/${page.slug}`, "weekly", 0.82))
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
+  const helpEntries = getHelpArticles()
+    .map((page) => entry(`/help/${page.slug}`, "monthly", 0.75))
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
+  const learnEntries = getLearnArticles()
+    .map((page) => entry(`/learn/${page.slug}`, "weekly", 0.8))
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
   return [
     ...staticEntries,
     ...legacyEntries,
     ...programmaticEntries,
     ...revenueResourceEntries,
+    ...helpEntries,
+    ...learnEntries,
   ]
 }

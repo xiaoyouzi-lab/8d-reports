@@ -1,0 +1,98 @@
+platforms:
+  - platform: LinkedIn
+    purpose: Company updates, product education, and quality engineering posts
+    account_type: Company Page
+    status: application-checklist
+    login_email_alias: marketing@8d-reports.com
+    owner: Founder / marketing owner
+    2fa_owner: Founder
+    profile_url: TBD
+    required_materials:
+      - Company name and logo
+      - Website URL
+      - Short description
+      - Admin personal LinkedIn account
+    draft_method: Markdown draft copied manually into LinkedIn composer
+    api_possible: false for v1
+    secrets_location: No publishing secrets stored in repo; use 1Password if needed later
+    notes: Do not automate final post, submit, or publish clicks.
+  - platform: WeChat Official Account
+    purpose: Chinese long-form education for manufacturing quality engineers
+    account_type: Service or subscription account, to be confirmed by business registration
+    status: application-checklist
+    login_email_alias: cn-content@8d-reports.com
+    owner: Founder / China content owner
+    2fa_owner: Founder
+    profile_url: TBD
+    required_materials:
+      - Business registration material if required
+      - Operator identity verification handled manually
+      - Logo, account name, intro, website link
+    draft_method: Chinese Markdown copied manually into WeChat editor
+    api_possible: not used in v1
+    secrets_location: No AppSecret, token, password, verification code, or QR login state stored in repo
+    notes: Do not bypass QR login, real-name verification, 2FA, or platform review.
+  - platform: Zhihu
+    purpose: Non-hard-sell Q&A answers for quality and manufacturing topics
+    account_type: Personal or organization account, to be decided manually
+    status: application-checklist
+    login_email_alias: cn-content@8d-reports.com
+    owner: Founder / China content owner
+    2fa_owner: Founder
+    profile_url: TBD
+    required_materials:
+      - Profile name
+      - Bio
+      - Website link if allowed
+      - Manual identity checks if required
+    draft_method: Q&A Markdown copied manually into Zhihu composer
+    api_possible: not used in v1
+    secrets_location: No password, token, cookie, or AppSecret stored in repo
+    notes: Keep answers educational and avoid aggressive promotion.
+  - platform: Medium
+    purpose: English long-form educational articles and canonical backlinks
+    account_type: Publication or individual author
+    status: application-checklist
+    login_email_alias: content@8d-reports.com
+    owner: Founder / marketing owner
+    2fa_owner: Founder
+    profile_url: TBD
+    required_materials:
+      - Author profile
+      - Publication description if used
+      - Logo and website link
+    draft_method: Markdown copied manually into Medium editor
+    api_possible: possible but not used in v1
+    secrets_location: No integration token stored in repo; use 1Password or GitHub Secrets only if future manual workflow requires it
+    notes: Canonical link must point back to official Learn article.
+  - platform: CSDN / Juejin
+    purpose: Optional China developer and engineering distribution
+    account_type: Organization or personal account
+    status: optional
+    login_email_alias: cn-content@8d-reports.com
+    owner: Founder / China content owner
+    2fa_owner: Founder
+    profile_url: TBD
+    required_materials:
+      - Profile details
+      - Manual verification materials if required
+    draft_method: Manual copy package only
+    api_possible: not used in v1
+    secrets_location: No secrets in repo
+    notes: Use only if content matches platform audience.
+  - platform: Xiaohongshu
+    purpose: Optional awareness content for Chinese manufacturing professionals
+    account_type: Personal or business account, to be decided manually
+    status: optional
+    login_email_alias: cn-content@8d-reports.com
+    owner: Founder / China content owner
+    2fa_owner: Founder
+    profile_url: TBD
+    required_materials:
+      - Profile name and intro
+      - Visual assets
+      - Manual verification if required
+    draft_method: Manual copy and image package only
+    api_possible: not used in v1
+    secrets_location: No password, cookie, token, QR state, or AppSecret stored in repo
+    notes: Do not automate posting or scrape around platform rules.

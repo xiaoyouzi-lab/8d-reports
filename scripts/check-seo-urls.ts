@@ -5,6 +5,7 @@ import robots from "../src/app/robots";
 import { revenueGeoResources } from "../src/content/revenue-geo-resources";
 import { seoPages as legacySeoPages } from "../src/lib/seo-pages";
 import { seoPages as programmaticSeoPages } from "../src/content/seo-pages";
+import { getHelpArticles, getLearnArticles } from "../src/lib/content-library";
 import { INDEXABLE_STATIC_PATHS, LEGACY_SEO_REDIRECTS, SITE_URL } from "../src/lib/seo-index-hygiene";
 
 const requiredGscExamplePaths = [
@@ -105,6 +106,8 @@ const contentPaths = new Set([
   ...legacySeoPages.map((page) => `/${page.slug}`),
   ...programmaticSeoPages.map((page) => `/${page.slug}`),
   ...revenueGeoResources.map((page) => `/resources/${page.slug}`),
+  ...getHelpArticles().map((page) => `/help/${page.slug}`),
+  ...getLearnArticles().map((page) => `/learn/${page.slug}`),
   ...demoReportPaths,
 ]);
 
