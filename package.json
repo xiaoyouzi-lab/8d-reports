@@ -21,6 +21,7 @@
     "marketing:report": "tsx scripts/marketing/build-weekly-report.ts",
     "content:generate": "node scripts/content/generate-content-ops-v1.mjs",
     "capture:help-assets": "tsx scripts/capture-help-assets/capture-help-assets.ts",
+    "analyze:seo-keywords": "node scripts/seo/analyze-keyword-data.mjs",
     "metrics": "node scripts/metrics-dashboard.mjs"
   },
   "dependencies": {

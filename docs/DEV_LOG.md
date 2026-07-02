@@ -2,6 +2,67 @@
 
 ## Latest Task
 
+Keyword Data Research Pipeline for 8D Reports SEO/GEO.
+
+## Changed Files
+
+- `ops/seo-keywords/README.md`
+- `ops/seo-keywords/input/seed-keywords.csv`
+- `ops/seo-keywords/input/gsc-queries-template.csv`
+- `ops/seo-keywords/input/keyword-planner-template.csv`
+- `ops/seo-keywords/input/google-trends-template.csv`
+- `ops/seo-keywords/input/serp-review-template.csv`
+- `ops/seo-keywords/output/keyword-opportunity-report.csv`
+- `ops/seo-keywords/output/keyword-opportunity-summary.md`
+- `scripts/seo/analyze-keyword-data.mjs`
+- `package.json`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added an ops-only SEO keyword research workspace for candidate keywords,
+  manual export templates, generated reports, and operating instructions.
+- Added a seed keyword pool across online-tool, how-to, customer pressure,
+  rejection, SCAR, Excel alternative, export/format, industry example, AI
+  assistance, root-cause, and corrective-action clusters.
+- Added empty CSV import templates for GSC queries, Keyword Planner, Google
+  Trends, and SERP manual review. No fake search volume, CTR, CPC, competition,
+  difficulty, or trend data was added.
+- Added `scripts/seo/analyze-keyword-data.mjs` to merge synonym groups, aggregate
+  imported keyword data when present, score opportunities conservatively, and
+  write missing-data markers when real CSVs are unavailable.
+- Added `npm run analyze:seo-keywords`.
+- Generated the first output report and summary in missing-data mode so content
+  decisions remain blocked until real exports are supplied.
+- Did not add public SEO pages, modify Help/Learn body copy, modify sitemap,
+  touch auth/payment/AI/database schema, publish external content, or write
+  production data.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run test:governance` passed.
+- `npm run build` passed.
+- `npm run analyze:seo-keywords` passed and generated missing-data output for
+  absent GSC, Keyword Planner, Trends, and SERP CSVs.
+
+## Risks / Unfinished
+
+- The generated opportunity scores are conservative seed-fit scores until real
+  GSC, Keyword Planner, Google Trends, and SERP review CSVs are imported.
+- No content optimization or new-page decision should be made from the seed pool
+  alone.
+
+## Suggested Next Task
+
+Export GSC queries, Keyword Planner ideas, Google Trends comparisons, and SERP
+review notes into the documented CSV files, then rerun
+`npm run analyze:seo-keywords` before choosing page optimizations or new pages.
+
+## Previous Task
+
 Content Operations Hub v1 for Help, Learn, draft distribution, assets, publishing governance, and public Help/Learn copy polish.
 
 ## Changed Files
