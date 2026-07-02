@@ -14,6 +14,7 @@ const columns = [
     links: [
       { label: "8D template", href: "/8d-report-template" },
       { label: "8D examples", href: "/8d-report-example" },
+      { label: "Learn", href: "/learn" },
       { label: "5 Why", href: "/5-why-root-cause-template" },
       { label: "Fishbone", href: "/fishbone-diagram-example/manufacturing-defect" },
       { label: "Corrective action", href: "/corrective-action-report-template" },
@@ -22,6 +23,7 @@ const columns = [
   {
     title: "Help",
     links: [
+      { label: "Help Center", href: "/help" },
       { label: "Docs", href: "/docs" },
       { label: "FAQ", href: "/faq" },
       { label: "Security", href: "/security" },

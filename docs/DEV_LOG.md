@@ -2,6 +2,70 @@
 
 ## Latest Task
 
+Content Operations Hub v1 for Help, Learn, draft distribution, assets, and publishing governance.
+
+## Changed Files
+
+- `content/help/*.md`
+- `content/learn/*.md`
+- `content/platform-drafts/{linkedin,wechat,zhihu,medium}/*.md`
+- `public/help-assets/*/*.png`
+- `ops/accounts/platforms.yaml`
+- `ops/accounts/checklists/*.md`
+- `ops/publishing/publish-checklist.md`
+- `ops/publishing/content-style-guide.md`
+- `scripts/content/generate-content-ops-v1.mjs`
+- `scripts/capture-help-assets/capture-help-assets.ts`
+- `src/lib/content-library.ts`
+- `src/components/marketing/ContentArticle.tsx`
+- `src/app/(marketing)/help/page.tsx`
+- `src/app/(marketing)/help/[slug]/page.tsx`
+- `src/app/(marketing)/learn/page.tsx`
+- `src/app/(marketing)/learn/[slug]/page.tsx`
+- `src/app/sitemap.ts`
+- `src/lib/seo-index-hygiene.ts`
+- `scripts/check-seo-urls.ts`
+- `src/components/marketing/MarketingHeader.tsx`
+- `src/components/marketing/MarketingFooter.tsx`
+- `package.json`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added a Markdown-backed Help Center at `/help` and `/help/[slug]` with 22 module documents covering Dashboard, report creation, D0-D8, AI Draft, AI Quality Check, 5-Why, Fishbone, root cause, containment, corrective/preventive action, evidence, workflow, locking/revisions, Team, permissions, share links, export, pricing, Template Setup, Team Launch, and troubleshooting.
+- Added a Learn content library at `/learn` and `/learn/[slug]` with 8 first-batch education articles and required frontmatter: title, slug, description, type, status, canonical URL, target keywords, screenshots, videos, and last reviewed date.
+- Generated LinkedIn, WeChat, Zhihu, and Medium draft packages for each Learn article, all linking back to the official canonical URL and marked ready-for-review rather than published.
+- Added account management and application checklist files for LinkedIn, WeChat, Zhihu, Medium, CSDN/Juejin, and Xiaohongshu with no passwords, tokens, cookies, AppSecrets, API keys, verification codes, or QR login state.
+- Added manual publishing governance files that require human review and final manual publish/submit/send clicks.
+- Seeded `/public/help-assets/*` from existing audit screenshots and added a Playwright capture script for refreshing stable product screenshots with an authenticated storage state and optional report id.
+- Added Help and Learn links to the marketing header/footer and included all new content routes in sitemap and SEO URL checks.
+- Kept AI copy conservative: AI Draft and AI Quality Check are assistance only and do not approve, certify, guarantee acceptance, or create evidence.
+
+## Tests / Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed.
+- `npm run check:seo` passed with 124 sitemap URLs and 11 redirects.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run test:governance` passed.
+- `npm run build` passed and generated `/help`, 22 `/help/*` pages, `/learn`, and 8 `/learn/*` pages.
+- Local production server started at `http://localhost:3029`.
+- `curl -I` returned 200 for `/help`, `/help/ai-quality-check`, `/learn`, and `/learn/how-ai-helps-draft-but-not-approve-8d-reports`.
+- Playwright CLI snapshots verified `/help`, `/help/ai-quality-check`, and `/learn/how-ai-helps-draft-but-not-approve-8d-reports`; local-only Vercel Analytics script 404 appeared as expected and did not block rendering.
+
+## Risks / Unfinished
+
+- Help screenshots are seeded from existing audit screenshots. The capture script is ready for refreshed authenticated screenshots, but exact dashboard/editor/AI/workflow captures need a valid local authenticated storage state and report id.
+- Some seeded AI screenshots show the editor context rather than a fully opened AI result state until the authenticated capture pass is run.
+- External platform files are draft packages only. Final formatting, images, platform compliance review, and publish/submit/send actions remain manual.
+- Content should get human product/positioning review before public publishing, especially Chinese platform drafts.
+
+## Suggested Next Task
+
+Run `npm run capture:help-assets -- --base-url http://127.0.0.1:3029 --storage-state <auth-state.json> --report-id <report-id>` after preparing a safe local authenticated test report, then manually review screenshot fit inside each Help article before publishing.
+
+## Previous Task
+
 Article Material Screenshot QA.
 
 ## Changed Files

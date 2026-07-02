@@ -19,6 +19,8 @@
     "marketing:gsc": "tsx scripts/marketing/gsc-export.ts",
     "marketing:ga4": "tsx scripts/marketing/ga4-export.ts",
     "marketing:report": "tsx scripts/marketing/build-weekly-report.ts",
+    "content:generate": "node scripts/content/generate-content-ops-v1.mjs",
+    "capture:help-assets": "tsx scripts/capture-help-assets/capture-help-assets.ts",
     "metrics": "node scripts/metrics-dashboard.mjs"
   },
   "dependencies": {

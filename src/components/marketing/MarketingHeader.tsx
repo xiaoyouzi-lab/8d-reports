@@ -14,6 +14,8 @@ const navLinks = [
   { href: "/#workflow", label: "Product", match: "/" },
   { href: "/sample-report", label: "Examples", match: "/sample-report" },
   { href: "/resources", label: "Resources" },
+  { href: "/learn", label: "Learn" },
+  { href: "/help", label: "Help" },
   { href: "/pricing", label: "Pricing" },
 ]
 
