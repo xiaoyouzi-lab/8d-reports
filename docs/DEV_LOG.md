@@ -2,6 +2,107 @@
 
 ## Latest Task
 
+Article Material Screenshot QA.
+
+## Changed Files
+
+- `output/capture_article_screenshots.mjs`
+- `docs/DEV_LOG.md`
+- `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/SCREENSHOT_QA_REPORT.md`
+- `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/SCREENSHOT_BLOCKERS.md`
+- `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/P0_BEFORE_PUBLISH.md`
+- `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/screenshot_capture_result.json`
+- `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/_verified_downloads/*`
+- 26 PNG files under `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/*/screenshots/`
+
+## Implementation Summary
+
+- Read the article screenshot goal from `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/CODEX_GOAL_SHORT.md`.
+- Started the local app at `http://127.0.0.1:3028` and captured real public product UI screenshots at `1440x900`.
+- Overwrote 26 article PNGs with real screenshots from the homepage, sample report, demo report, pricing page, and verified demo ZIP contents.
+- Did not overwrite 20 authenticated-only placeholders because no safe smoke database URL, temporary Neon branch credentials, or authenticated test cookies were available. Mocking was avoided.
+- Verified the live local demo download route for PDF, Word, Excel, and ZIP before export-related screenshot reporting.
+- Generated screenshot QA reports in `/Users/xiaoyouzi/Downloads/8d_article_materials_2026-07-01/`.
+- Found a Free quantity wording conflict in `docs/DEPLOYMENT_GUIDE.md`: public/runtime copy uses 3 lifetime reports, but the deployment seed example still shows `reports_per_month = 5`.
+
+## Tests / Verification
+
+- `command -v npx`
+- Local app smoke via `curl -sI http://127.0.0.1:3028`
+- Live demo downloads via `/api/sample-reports/automotive` for PDF, DOCX, XLSX, and ZIP
+- `unzip -l` on the verified ZIP package
+- `file` on article screenshot PNGs to confirm `1440 x 900`
+- Sensitive text scan across generated material metadata/report files for secrets, cookies, DB URLs, and private tokens
+- Free quantity wording search across homepage, pricing, docs, and article materials
+
+## Risks / Unfinished
+
+- Authenticated app screenshots remain blocked: Dashboard, New Report, editor D0/D1, attachment upload, Free watermarked PDF export, sharing dialog/options/revoke, Pro search, Team workspace/activity log, and AI Quality Check result panels.
+- Several D2-D7 article screenshots use real public demo report UI rather than the authenticated editor. This is honest but should be replaced with editor screenshots once safe authenticated access is available.
+- `docs/DEPLOYMENT_GUIDE.md` should be corrected or annotated before publishing pricing/free-plan material because it contains a stale 5-report seed example.
+
+## Suggested Next Task
+
+Create or provide a temporary authenticated smoke environment, then rerun screenshot capture for the 20 blocked authenticated-only images and resolve the Free quantity P0 documentation conflict before publishing the article pack.
+
+## Previous Task
+
+Revenue Evidence Day 2 Operating Execution.
+
+## Changed Files
+
+- `docs/REVENUE_EVIDENCE_DAY_2_DISTRIBUTION.md`
+- `docs/REVENUE_EVIDENCE_DAY_2_CHECKLIST.md`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Merged docs-only PR #25, `docs: add revenue evidence day 1 operating log`.
+- Confirmed main now includes PR #25 merge commit
+  `8c29cc785de44c6902b3954525c1cfe117b015cf`.
+- Attempted read-only GA4/GSC UI access through the available browser surface;
+  Google UI hosts timed out from the current environment, matching the existing
+  Google API timeout constraint.
+- Added Day 2 manual distribution drafts for LinkedIn, Quora, Reddit-safe
+  discussion prompts, Template Setup outreach, and Team Launch outreach.
+- Added a Day 2 tracking checklist with safe fields only and an explicit posting
+  gate.
+- No product runtime, analytics implementation, auth, payment, export, AI,
+  database schema, production configuration, production users, production
+  reports, or production leads were changed.
+
+## Tests / Verification
+
+- PR #25 was open, non-draft, mergeable, Vercel passed, and docs-only before
+  squash merge.
+- GSC UI entry `https://search.google.com/search-console` timed out from the
+  current environment.
+- GA4 UI entry `https://analytics.google.com/analytics/web` timed out from the
+  current environment.
+- No external posting or outreach was performed.
+
+## Risks
+
+- GA4/GSC measurement remains blocked in the current execution environment
+  because Google UI and API hosts time out.
+- Day 2 distribution drafts still require manual review against platform rules
+  before posting or sending.
+
+## Unfinished / Needs Human Review
+
+- Confirm GSC sitemap status in the Google Search Console UI from a browser or
+  network environment that can reach Google.
+- Review and approve any specific LinkedIn, Quora, Reddit, or outreach item
+  before posting/sending.
+- Record observed clicks, replies, and safe next actions in the Day 2 checklist.
+
+## Suggested Next Task
+
+Manually execute the approved Day 2 distribution items, then record observed
+activity and admin metrics without creating production test data.
+
+## Previous Task
+
 Revenue Evidence Measurement Recovery + 7-Day Operating Launch.
 
 ## Changed Files
