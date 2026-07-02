@@ -216,12 +216,21 @@ function contentGapScore(canonical) {
   return existingPageCandidates.has(canonical) ? 35 : 75
 }
 
-function opportunityScore(row) {
+function seedFitScore(row) {
   const components = [
     row.commercial_intent_score,
     row.conversion_fit_score,
     row.content_gap_score,
   ]
+
+  const raw = average(components)
+  return raw == null ? "" : Math.round(raw)
+}
+
+function opportunityScore(row) {
+  if (!row.has_decision_data) return "pending_data"
+
+  const components = [row.seed_fit_score]
 
   if (row.gsc_impressions != null) components.push(Math.min(100, Math.log10(row.gsc_impressions + 1) * 25))
   if (row.avg_monthly_searches != null) components.push(Math.min(100, Math.log10(row.avg_monthly_searches + 1) * 25))
@@ -234,8 +243,7 @@ function opportunityScore(row) {
 }
 
 function recommendedAction(row) {
-  const missing = String(row.missing_data || "")
-  if (missing.includes("gsc") || missing.includes("keyword_planner") || missing.includes("serp")) {
+  if (!row.has_decision_data) {
     return "collect_data_before_deciding"
   }
 
@@ -337,6 +345,14 @@ for (const [canonical, seeds] of seedsByCanonical.entries()) {
   const commercialScore = commercialIntentScore(baseCluster, baseIntent)
   const conversionScore = conversionFitScore(baseCluster)
   const gapScore = contentGapScore(canonical)
+  const seedScore = seedFitScore({
+    commercial_intent_score: commercialScore,
+    conversion_fit_score: conversionScore,
+    content_gap_score: gapScore,
+  })
+  const hasSearchData = gscMatches.length > 0 || keywordPlannerMatches.length > 0
+  const hasSerpData = serpMatches.length > 0
+  const hasDecisionData = hasSearchData && hasSerpData
   const missingData = missingSources(dataStatus, {
     gsc: gscMatches,
     keywordPlanner: keywordPlannerMatches,
@@ -365,6 +381,7 @@ for (const [canonical, seeds] of seedsByCanonical.entries()) {
     commercial_intent_score: commercialScore,
     conversion_fit_score: conversionScore,
     content_gap_score: gapScore,
+    seed_fit_score: seedScore,
     opportunity_score: "",
     recommended_action: "",
     missing_data: missingData || "none",
@@ -372,6 +389,8 @@ for (const [canonical, seeds] of seedsByCanonical.entries()) {
 
   reportRow.opportunity_score = opportunityScore({
     ...reportRow,
+    has_decision_data: hasDecisionData,
+    seed_fit_score: seedScore,
     gsc_impressions: gscImpressions,
     avg_monthly_searches: avgMonthlySearches,
     trend_score: trendScore,
@@ -383,6 +402,7 @@ for (const [canonical, seeds] of seedsByCanonical.entries()) {
   })
   reportRow.recommended_action = recommendedAction({
     ...reportRow,
+    has_decision_data: hasDecisionData,
     gsc_impressions: gscImpressions,
     gsc_position: gscPosition,
     avg_monthly_searches: avgMonthlySearches,
@@ -392,7 +412,16 @@ for (const [canonical, seeds] of seedsByCanonical.entries()) {
   reportRows.push(reportRow)
 }
 
-reportRows.sort((a, b) => Number(b.opportunity_score || 0) - Number(a.opportunity_score || 0))
+reportRows.sort((a, b) => {
+  const aScore = Number(a.opportunity_score)
+  const bScore = Number(b.opportunity_score)
+  const aHasScore = Number.isFinite(aScore)
+  const bHasScore = Number.isFinite(bScore)
+  if (aHasScore && bHasScore) return bScore - aScore
+  if (aHasScore) return -1
+  if (bHasScore) return 1
+  return 0
+})
 
 const headers = [
   "keyword",
@@ -415,6 +444,7 @@ const headers = [
   "commercial_intent_score",
   "conversion_fit_score",
   "content_gap_score",
+  "seed_fit_score",
   "opportunity_score",
   "recommended_action",
   "missing_data",
@@ -430,16 +460,33 @@ const sourceSummary = [
   ["SERP review", sourceFiles.serp, dataStatus.serp.status],
 ]
 
-const loadedDataSources = Object.entries(dataStatus).filter(([, value]) => value.status === "loaded")
-const hasDecisionData = loadedDataSources.length >= 3
-const topClusters = Object.entries(
+const hasSearchSource = dataStatus.gsc.status === "loaded" || dataStatus.keywordPlanner.status === "loaded"
+const hasSerpSource = dataStatus.serp.status === "loaded"
+const hasDecisionData = hasSearchSource && hasSerpSource
+const numericOpportunityRows = reportRows.filter((row) => Number.isFinite(Number(row.opportunity_score)))
+const seedClusters = Object.entries(
   reportRows.reduce((accumulator, row) => {
+    const cluster = row.cluster || "Unclustered"
+    if (!accumulator[cluster]) {
+      accumulator[cluster] = { count: 0 }
+    }
+    accumulator[cluster].count += 1
+    return accumulator
+  }, {}),
+)
+  .map(([cluster, value]) => ({
+    cluster,
+    count: value.count,
+  }))
+
+const topClusters = Object.entries(
+  numericOpportunityRows.reduce((accumulator, row) => {
     const cluster = row.cluster || "Unclustered"
     if (!accumulator[cluster]) {
       accumulator[cluster] = { count: 0, scoreTotal: 0 }
     }
     accumulator[cluster].count += 1
-    accumulator[cluster].scoreTotal += Number(row.opportunity_score || 0)
+    accumulator[cluster].scoreTotal += Number(row.opportunity_score)
     return accumulator
   }, {}),
 )
@@ -475,16 +522,22 @@ The report does not fabricate search volume, CTR, CPC, competition, difficulty,
 or ranking data. Missing source files are reflected in the \`missing_data\`
 column and should be filled before content decisions are made.
 
-## Top Keyword Clusters
+The \`commercial_intent_score\`, \`conversion_fit_score\`,
+\`content_gap_score\`, and \`seed_fit_score\` columns are seed-level heuristics.
+They are not data-backed keyword opportunity scores.
 
-${topClusters.map((row) => `- ${row.cluster}: average opportunity score ${row.averageScore} across ${row.count} keyword groups`).join("\n")}
+${
+  hasDecisionData && topClusters.length > 0
+    ? `## Data-Backed Keyword Clusters\n\n${topClusters.map((row) => `- ${row.cluster}: average opportunity score ${row.averageScore} across ${row.count} keyword groups`).join("\n")}`
+    : `## Seed Intent Clusters Needing Data\n\nThese clusters are research candidates only. They do not prove search demand, commercial value, or content priority until GSC or Keyword Planner data plus SERP review data are imported.\n\n${seedClusters.map((row) => `- ${row.cluster}: ${row.count} keyword groups need data`).join("\n")}`
+}
 
 ## Top Page Opportunities
 
 ${
-  hasDecisionData
-    ? reportRows.slice(0, 10).map((row) => `- ${row.keyword}: ${row.recommended_action}, score ${row.opportunity_score}`).join("\n")
-    : "- No data-backed page opportunities yet. Import GSC, Keyword Planner, Trends, and SERP review CSVs first."
+  hasDecisionData && numericOpportunityRows.length > 0
+    ? numericOpportunityRows.slice(0, 10).map((row) => `- ${row.keyword}: ${row.recommended_action}, score ${row.opportunity_score}`).join("\n")
+    : "- No data-backed page opportunities yet. Import GSC or Keyword Planner data plus SERP review data first. Google Trends is optional supporting context."
 }
 
 ## Keywords Suggested For Existing Page Optimization

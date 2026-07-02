@@ -79,6 +79,12 @@ The command writes:
 - `output/keyword-opportunity-report.csv`
 - `output/keyword-opportunity-summary.md`
 
-When real data is missing, the generated summary intentionally says so. Use the
-summary as an operating checklist, not as permission to create pages without
-data.
+When real data is missing, the generated summary intentionally says so.
+`commercial_intent_score`, `conversion_fit_score`, `content_gap_score`, and
+`seed_fit_score` are seed-level heuristics only. The script only emits a real
+`opportunity_score` when GSC or Keyword Planner data and SERP review data are
+available. Google Trends can support a decision, but it does not unlock content
+decisions by itself.
+
+Use the summary as an operating checklist, not as permission to create pages
+without data.

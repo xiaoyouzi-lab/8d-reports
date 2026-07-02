@@ -19,22 +19,28 @@ The report does not fabricate search volume, CTR, CPC, competition, difficulty,
 or ranking data. Missing source files are reflected in the `missing_data`
 column and should be filled before content decisions are made.
 
-## Top Keyword Clusters
+The `commercial_intent_score`, `conversion_fit_score`,
+`content_gap_score`, and `seed_fit_score` columns are seed-level heuristics.
+They are not data-backed keyword opportunity scores.
 
-- customer pressure intent: average opportunity score 78 across 1 keyword groups
-- customer rejection intent: average opportunity score 78 across 1 keyword groups
-- online tool intent: average opportunity score 70 across 1 keyword groups
-- AI assistance intent: average opportunity score 67 across 1 keyword groups
-- Excel alternative intent: average opportunity score 65 across 2 keyword groups
-- export / format intent: average opportunity score 62 across 3 keyword groups
-- SCAR intent: average opportunity score 62 across 1 keyword groups
-- root cause / corrective action intent: average opportunity score 55 across 2 keyword groups
-- industry example intent: average opportunity score 52 across 3 keyword groups
-- how-to writing intent: average opportunity score 47 across 4 keyword groups
+## Seed Intent Clusters Needing Data
+
+These clusters are research candidates only. They do not prove search demand, commercial value, or content priority until GSC or Keyword Planner data plus SERP review data are imported.
+
+- online tool intent: 1 keyword groups need data
+- how-to writing intent: 4 keyword groups need data
+- customer pressure intent: 1 keyword groups need data
+- customer rejection intent: 1 keyword groups need data
+- SCAR intent: 1 keyword groups need data
+- Excel alternative intent: 2 keyword groups need data
+- export / format intent: 3 keyword groups need data
+- industry example intent: 3 keyword groups need data
+- AI assistance intent: 1 keyword groups need data
+- root cause / corrective action intent: 2 keyword groups need data
 
 ## Top Page Opportunities
 
-- No data-backed page opportunities yet. Import GSC, Keyword Planner, Trends, and SERP review CSVs first.
+- No data-backed page opportunities yet. Import GSC or Keyword Planner data plus SERP review data first. Google Trends is optional supporting context.
 
 ## Keywords Suggested For Existing Page Optimization
 

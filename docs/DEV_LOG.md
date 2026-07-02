@@ -29,11 +29,13 @@ Keyword Data Research Pipeline for 8D Reports SEO/GEO.
   Trends, and SERP manual review. No fake search volume, CTR, CPC, competition,
   difficulty, or trend data was added.
 - Added `scripts/seo/analyze-keyword-data.mjs` to merge synonym groups, aggregate
-  imported keyword data when present, score opportunities conservatively, and
-  write missing-data markers when real CSVs are unavailable.
+  imported keyword data when present, keep seed-level heuristic fit separate,
+  and write missing-data markers when real CSVs are unavailable.
 - Added `npm run analyze:seo-keywords`.
 - Generated the first output report and summary in missing-data mode so content
-  decisions remain blocked until real exports are supplied.
+  decisions remain blocked until real exports are supplied. In missing-data
+  mode, `opportunity_score` is `pending_data` and no data-backed opportunity
+  ranking is shown.
 - Did not add public SEO pages, modify Help/Learn body copy, modify sitemap,
   touch auth/payment/AI/database schema, publish external content, or write
   production data.
@@ -50,8 +52,9 @@ Keyword Data Research Pipeline for 8D Reports SEO/GEO.
 
 ## Risks / Unfinished
 
-- The generated opportunity scores are conservative seed-fit scores until real
-  GSC, Keyword Planner, Google Trends, and SERP review CSVs are imported.
+- `seed_fit_score` is only a seed-level heuristic. Real `opportunity_score`
+  values require GSC or Keyword Planner data plus SERP review data; Google
+  Trends is supporting context only.
 - No content optimization or new-page decision should be made from the seed pool
   alone.
 
