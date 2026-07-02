@@ -36,7 +36,7 @@ Use view-only links for customers, managers, or reviewers. Use editable links on
 
 ## Screenshot or video reference
 
-See the page media reference for /help-assets/share-link/share-link.png. If the asset needs to be refreshed, run the Playwright capture script in scripts/capture-help-assets with an authenticated storage state.
+The screenshot above shows where this feature appears in the report workflow. Use it to match the guidance with the product screen. If your screen looks different, check your plan, role, report status, or workspace permissions.
 
 ## Example content
 

@@ -15,7 +15,8 @@ Use this before any Help, Learn, or external platform content is manually publis
 
 - Screenshot or video reference is present where relevant.
 - Screenshots do not expose private customer data.
-- Any missing screenshot is noted with the capture script path and reason.
+- Any missing screenshot is tracked in `ops/publishing/help-asset-refresh.md`
+  before public publishing.
 
 ## Platform state
 

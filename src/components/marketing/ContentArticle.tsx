@@ -133,25 +133,25 @@ export function ArticleMediaReferences({
     <div className={cn("rounded-lg border border-slate-200 bg-slate-50 p-5", className)}>
       <h2 className="text-base font-semibold text-slate-950">Screenshot or video reference</h2>
       <div className="mt-4 grid gap-3">
-        {screenshots.map((src) => (
+        {screenshots.map((src, index) => (
           <a
             key={src}
             href={src}
             className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:text-indigo-700 hover:ring-indigo-200"
           >
             <ImageIcon className="h-4 w-4 text-indigo-600" />
-            {src}
+            {screenshots.length > 1 ? `Open product screenshot ${index + 1}` : "Open product screenshot"}
             <ExternalLink className="ml-auto h-3.5 w-3.5 text-slate-400" />
           </a>
         ))}
-        {videos.map((src) => (
+        {videos.map((src, index) => (
           <a
             key={src}
             href={src}
             className="inline-flex items-center gap-2 rounded-md bg-white px-3 py-2 text-sm font-medium text-slate-700 ring-1 ring-slate-200 transition hover:text-indigo-700 hover:ring-indigo-200"
           >
             <Video className="h-4 w-4 text-indigo-600" />
-            {src}
+            {videos.length > 1 ? `Open product video ${index + 1}` : "Open product video"}
             <ExternalLink className="ml-auto h-3.5 w-3.5 text-slate-400" />
           </a>
         ))}

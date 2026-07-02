@@ -2,7 +2,7 @@
 
 ## Latest Task
 
-Content Operations Hub v1 for Help, Learn, draft distribution, assets, and publishing governance.
+Content Operations Hub v1 for Help, Learn, draft distribution, assets, publishing governance, and public Help/Learn copy polish.
 
 ## Changed Files
 
@@ -13,6 +13,7 @@ Content Operations Hub v1 for Help, Learn, draft distribution, assets, and publi
 - `ops/accounts/platforms.yaml`
 - `ops/accounts/checklists/*.md`
 - `ops/publishing/publish-checklist.md`
+- `ops/publishing/help-asset-refresh.md`
 - `ops/publishing/content-style-guide.md`
 - `scripts/content/generate-content-ops-v1.mjs`
 - `scripts/capture-help-assets/capture-help-assets.ts`
@@ -38,6 +39,8 @@ Content Operations Hub v1 for Help, Learn, draft distribution, assets, and publi
 - Added account management and application checklist files for LinkedIn, WeChat, Zhihu, Medium, CSDN/Juejin, and Xiaohongshu with no passwords, tokens, cookies, AppSecrets, API keys, verification codes, or QR login state.
 - Added manual publishing governance files that require human review and final manual publish/submit/send clicks.
 - Seeded `/public/help-assets/*` from existing audit screenshots and added a Playwright capture script for refreshing stable product screenshots with an authenticated storage state and optional report id.
+- Replaced public Help Center screenshot maintenance notes with user-facing guidance about matching the screenshot to the product screen.
+- Moved internal screenshot refresh instructions into `ops/publishing/help-asset-refresh.md` so public Help and Learn pages do not expose capture tooling, local paths, storage state, or report ids.
 - Added Help and Learn links to the marketing header/footer and included all new content routes in sitemap and SEO URL checks.
 - Kept AI copy conservative: AI Draft and AI Quality Check are assistance only and do not approve, certify, guarantee acceptance, or create evidence.
 
@@ -49,6 +52,8 @@ Content Operations Hub v1 for Help, Learn, draft distribution, assets, and publi
 - `npm run lint` passed with 11 existing warnings and 0 errors.
 - `npm run test:governance` passed.
 - `npm run build` passed and generated `/help`, 22 `/help/*` pages, `/learn`, and 8 `/learn/*` pages.
+- Public Help/Learn Markdown body scan passed for internal capture/tooling terms.
+- Rendered local production spot-check passed for `/help/ai-draft`, `/help/ai-quality-check`, `/help/5-why`, and `/learn/what-is-8d-reports`; visible page text no longer exposes `/help-assets/` paths or internal refresh instructions.
 - Local production server started at `http://localhost:3029`.
 - `curl -I` returned 200 for `/help`, `/help/ai-quality-check`, `/learn`, and `/learn/how-ai-helps-draft-but-not-approve-8d-reports`.
 - Playwright CLI snapshots verified `/help`, `/help/ai-quality-check`, and `/learn/how-ai-helps-draft-but-not-approve-8d-reports`; local-only Vercel Analytics script 404 appeared as expected and did not block rendering.
@@ -62,7 +67,7 @@ Content Operations Hub v1 for Help, Learn, draft distribution, assets, and publi
 
 ## Suggested Next Task
 
-Run `npm run capture:help-assets -- --base-url http://127.0.0.1:3029 --storage-state <auth-state.json> --report-id <report-id>` after preparing a safe local authenticated test report, then manually review screenshot fit inside each Help article before publishing.
+Use `ops/publishing/help-asset-refresh.md` when a safe local authenticated test report is available, then manually review screenshot fit inside each Help article before publishing.
 
 ## Previous Task
 
