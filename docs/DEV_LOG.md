@@ -2,6 +2,80 @@
 
 ## Latest Task
 
+P0+ PR2 guest preview API, temporary preview storage, and anonymous rate limiting.
+
+## Changed Files
+
+- `drizzle/0006_p0_plus_previews.sql`
+- `src/lib/db/schema.ts`
+- `src/lib/p0-plus/config.ts`
+- `src/lib/p0-plus/tokens.ts`
+- `src/lib/p0-plus/storage.ts`
+- `src/lib/p0-plus/rate-limit.ts`
+- `src/lib/p0-plus/ai.ts`
+- `src/lib/p0-plus/preview-service.ts`
+- `src/lib/p0-plus/preview-service.test.ts`
+- `src/app/api/p0-plus/preview/route.ts`
+- `src/app/api/p0-plus/preview/[token]/route.ts`
+- `package.json`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added a dedicated `p0_plus_previews` temporary preview table and Drizzle
+  schema definition. The table stores only token hashes, bounded raw input,
+  preview JSON, hashed limiter keys, expiry, and optional future conversion
+  reference.
+- Added hidden API routes for `POST /api/p0-plus/preview` and
+  `GET /api/p0-plus/preview/[token]`.
+- Added `P0_PLUS_PREVIEW_ENABLED`, which defaults disabled. When disabled,
+  the public preview API returns a disabled response before parsing input,
+  calling AI, or creating preview rows.
+- Added an isolated P0+ anonymous limiter for body size, visible text length,
+  IP key, and browser token key.
+- Added preview-safe AI service using the PR1 P0+ AI contract and schema
+  validation. It uses only submitted text plus output language and does not
+  query private reports, team data, history, or knowledge context.
+- Added preview-service tests with mock AI/storage/limiter coverage for disabled
+  flag, valid preview creation, short/oversized input, rate limiting, invalid AI
+  output, unknown/expired token lookup, and privacy fields.
+- Added PR review hardening for route-level oversized body rejection before
+  parsing JSON, bilingual output language normalization, and sanitized
+  `conversion.reportDataPatch` storage/response payloads.
+- Did not add homepage UI, preview page UI, login handoff, report conversion,
+  report creation changes, existing AI endpoint changes, auth/signup/login
+  changes, payment, export, share, team permission changes, SEO/content pages,
+  or stash restore.
+
+## Tests / Verification
+
+- `npm run test:p0-plus-preview` passed.
+- `npm run test:p0-plus` passed.
+- `git diff --check` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+
+## Risks
+
+- Preview storage is hidden behind the disabled-by-default feature flag, but
+  enabling it in an environment requires running the new database migration and
+  ensuring AI provider configuration is present.
+- The anonymous limiter is isolated and intentionally small. It can be moved to
+  durable storage later without changing route shape.
+
+## Unfinished / Needs Human Review
+
+- Confirm migration rollout plan before enabling `P0_PLUS_PREVIEW_ENABLED`.
+- Review whether PR3 should add the preview page or homepage intake first.
+
+## Suggested Next Task
+
+After this PR is reviewed and merged, start the next P0+ PR from updated `main`
+and keep it scoped to either hidden preview UI or login handoff per the approved
+breakdown.
+
+## Previous Task
+
 P0+ PR1 AI expert brain, schema, mapper, and deterministic fixtures.
 
 ## Changed Files

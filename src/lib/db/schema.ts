@@ -290,6 +290,24 @@ export const aiTasks = pgTable("ai_tasks", {
   index("idx_ai_tasks_type").on(table.taskType),
 ]);
 
+export const p0PlusPreviews = pgTable("p0_plus_previews", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tokenHash: text("token_hash").notNull().unique(),
+  boundedRawInput: text("bounded_raw_input").notNull(),
+  outputLanguage: text("output_language").notNull().default("en"),
+  previewPayloadJson: jsonb("preview_payload_json").notNull(),
+  clientIpHash: text("client_ip_hash").notNull(),
+  browserTokenHash: text("browser_token_hash"),
+  expiresAt: timestamp("expires_at").notNull(),
+  convertedReportId: uuid("converted_report_id").references(() => reports.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_p0_plus_previews_token_hash").on(table.tokenHash),
+  index("idx_p0_plus_previews_expires_at").on(table.expiresAt),
+  index("idx_p0_plus_previews_client_ip_hash").on(table.clientIpHash),
+]);
+
 export const customTemplateRequests = pgTable("custom_template_requests", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
