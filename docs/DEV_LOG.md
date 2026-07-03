@@ -2,6 +2,64 @@
 
 ## Latest Task
 
+P0+ PR1 AI expert brain, schema, mapper, and deterministic fixtures.
+
+## Changed Files
+
+- `src/lib/p0-plus/schema.ts`
+- `src/lib/p0-plus/prompts.ts`
+- `src/lib/p0-plus/mapper.ts`
+- `src/lib/p0-plus/__fixtures__/helpers.ts`
+- `src/lib/p0-plus/__fixtures__/injection-molding-flash.ts`
+- `src/lib/p0-plus/__fixtures__/smt-pcba-solder-defect.ts`
+- `src/lib/p0-plus/__fixtures__/scar-unclear-roles.ts`
+- `src/lib/p0-plus/p0-plus.test.ts`
+- `package.json`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added an isolated P0+ preview response schema and runtime validator covering
+  source status, readiness status, risk level, D0-D8 draft fields,
+  `readiness_check`, required section checks, `next_actions`, and conversion
+  patch structure.
+- Added the P0+ AI prompt contract with two roles: Quality Case Intake Analyst
+  and Senior Quality Readiness Reviewer.
+- Added a preview-to-`ReportData` mapper that only carries verified
+  `provided` / `extracted` safe fields and rejects unknown, unsafe, or
+  unverified fields.
+- Added deterministic fixtures for injection molding flash/excess material,
+  SMT/PCBA solder defect, and unclear SCAR customer/supplier roles.
+- Added `npm run test:p0-plus` using the existing lightweight `tsx` +
+  `node:assert/strict` pattern.
+- Did not add homepage UI, public API routes, temporary draft storage, database
+  migrations, auth/signup/login changes, payment, export, share, team
+  permission changes, SEO/content pages, or existing AI endpoint changes.
+
+## Tests / Verification
+
+- `npm run test:p0-plus` passed.
+- `git diff --check` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+
+## Risks
+
+- This establishes contracts only. Later PRs still need to decide the public
+  preview API boundary, temporary preview storage, and anonymous rate limiting.
+
+## Unfinished / Needs Human Review
+
+- Confirm the PR1 schema names and fixture expectations before starting public
+  preview API or homepage work.
+
+## Suggested Next Task
+
+After this PR is reviewed and merged, start the next P0+ PR only from updated
+`main` and keep it scoped to the approved PR breakdown.
+
+## Previous Task
+
 Keyword Data Research Pipeline for 8D Reports SEO/GEO.
 
 ## Changed Files
