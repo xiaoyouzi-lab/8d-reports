@@ -6,14 +6,13 @@
 - GSC queries: `ops/seo-keywords/input/gsc-queries.csv` (missing_file)
 - Keyword Planner: `ops/seo-keywords/input/keyword-planner.csv` (missing_file)
 - Google Trends: `ops/seo-keywords/input/google-trends.csv` (missing_file)
-- SERP review: `ops/seo-keywords/input/serp-review.csv` (missing_file)
+- SERP review: `ops/seo-keywords/input/serp-review.csv` (loaded)
 
 ## Missing Data
 
 - gsc: missing_file
 - keywordPlanner: missing_file
 - trends: missing_file
-- serp: missing_file
 
 The report does not fabricate search volume, CTR, CPC, competition, difficulty,
 or ranking data. Missing source files are reflected in the `missing_data`
