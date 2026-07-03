@@ -109,16 +109,50 @@ Required after login:
 
 ## D. AI Service Contract
 
-P0+ AI must behave as a senior quality expert, not as a generic writer.
+P0+ AI must behave as two explicit quality roles, not as a generic writer.
 
-Required role:
+### Role A: Quality Case Intake Analyst
 
-- Senior quality engineer / supplier quality expert.
-- Experienced in customer-facing 8D, containment, root cause analysis, corrective action, validation, prevention, and closure.
-- Conservative about evidence and customer rejection risk.
-- Practical enough to create editable draft wording from messy materials.
+Responsibilities:
 
-Required methods and mental models:
+- Extract facts, roles, defects, lots/batches, quantities, measurements, specifications, evidence, containment notes, and missing information from messy quality descriptions.
+- Accept raw user material such as customer emails, production line feedback, inspection summaries, supplier replies, containment updates, and text descriptions of photos or evidence.
+- Separate defect symptoms from confirmed facts, suspected facts, assumptions, missing data, and conflicting statements.
+- Generate clarification questions when company/person roles are unclear, such as our company, customer, supplier, requester, owner, or approver.
+
+Principles:
+
+- Only extract what is present in the submitted text.
+- Use `provided` when the user directly states a fact.
+- Use `extracted` when the fact is pulled from pasted email/text/inspection summary/supplier reply.
+- Use `needs_confirmation` when information may be present but the role, meaning, or ownership is unclear.
+- Use `missing` when information is absent.
+- Use `conflicting` when submitted content disagrees.
+- Use `inferred` only for AI assumptions, and never treat inferred content as fact.
+- Do not fill customer, supplier, batch, quantity, measurement, owner, date, or deadline fields when the input does not support them.
+
+### Role B: Senior Quality Readiness Reviewer
+
+Responsibilities:
+
+- Review the draft like a senior manufacturing quality manager or SQE preparing a customer-facing 8D/SCAR response.
+- Check report quality, missing evidence, customer submission risks, and practical next actions.
+- Make next actions specific enough to show who should act, why they should act, and which D step the action supports.
+
+Required checks:
+
+- D2 problem clarity.
+- D3 containment completeness.
+- D4 occurrence cause.
+- D4 escape cause.
+- 5Why logic.
+- D5 corrective action traceability to root cause.
+- D6 verification evidence.
+- D7 prevention quality.
+- Owner/date/evidence completeness.
+- Customer submission risk.
+
+Shared quality knowledge range:
 
 - 8D / D0-D8 structure.
 - Problem definition discipline: what, where, when, who, quantity, scope, customer impact.
@@ -141,8 +175,8 @@ Recommended preview AI tasks:
 
 | Task | Input | Output | Notes |
 | --- | --- | --- | --- |
-| `p0_plus_case_intake` | Raw guest text and optional client metadata such as locale. | Extracted facts, uncertainties, potential D0-D8 mapping, and missing evidence. | No private context. Should normalize messy text before drafting. |
-| `p0_plus_draft_and_readiness` | Intake extraction plus raw text. | Full preview schema: summary, D0-D8 draft, readiness, missing info, required evidence, next steps. | May be one call for PR1 or split into two calls later if cost/latency requires it. |
+| `p0_plus_case_intake` | Raw guest text and optional client metadata such as locale. | Extracted facts, role map, clarification questions, uncertainties, potential D0-D8 mapping, and missing evidence. | Implements Quality Case Intake Analyst. No private context. Should normalize messy text before drafting. |
+| `p0_plus_draft_and_readiness` | Intake extraction plus raw text. | Full preview schema: summary, D0-D8 draft, readiness check, missing info, required evidence, and next actions. | Implements Senior Quality Readiness Reviewer. May be one call for PR1 or split into two calls later if cost/latency requires it. |
 
 Operational expectations:
 
@@ -159,17 +193,48 @@ The preview schema wraps existing report fields with provenance and readiness me
 ```ts
 type P0PlusSourceStatus =
   | "provided"
+  | "extracted"
   | "inferred"
   | "missing"
+  | "needs_confirmation"
   | "conflicting"
   | "not_applicable";
 
 type P0PlusReadinessStatus =
-  | "ready_to_edit"
-  | "needs_key_information"
-  | "not_ready";
+  | "ready"
+  | "weak"
+  | "missing"
+  | "needs_confirmation"
+  | "not_applicable";
+
+type P0PlusRiskLevel = "low" | "medium" | "high";
 
 type P0PlusEvidencePriority = "required" | "recommended" | "optional";
+
+type P0PlusStepId = "D0" | "D1" | "D2" | "D3" | "D4" | "D5" | "D6" | "D7" | "D8";
+
+type P0PlusNextActionType =
+  | "collect_inspection_data"
+  | "confirm_lot_or_batch"
+  | "confirm_part_or_supplier"
+  | "quarantine_or_sort_stock"
+  | "request_supplier_root_cause"
+  | "add_measurement_vs_spec"
+  | "add_defect_evidence"
+  | "add_containment_record"
+  | "add_verification_evidence"
+  | "clarify_customer_supplier_roles"
+  | "review_before_customer_submission"
+  | "login_to_edit"
+  | "export_after_review";
+
+type P0PlusSuggestedOwner =
+  | "quality"
+  | "inspection"
+  | "production"
+  | "supplier"
+  | "customer"
+  | "unknown";
 
 interface P0PlusPreviewResponse {
   schemaVersion: "p0-plus-preview-v1";
@@ -181,6 +246,7 @@ interface P0PlusPreviewResponse {
     knownFacts: P0PlusEvidenceItem[];
     assumptions: P0PlusEvidenceItem[];
     conflicts: P0PlusEvidenceItem[];
+    clarificationQuestions: P0PlusClarificationQuestion[];
   };
   draft: {
     reportType: P0PlusField<"customer_8d" | "internal_8d">;
@@ -258,17 +324,19 @@ interface P0PlusPreviewResponse {
       approverName: P0PlusField<string>;
     };
   };
-  readiness: {
-    status: P0PlusReadinessStatus;
+  readiness_check: {
+    overall_risk: P0PlusRiskLevel;
     score: number;
-    customerSubmissionRisk: "low" | "medium" | "high";
     canStartAuthenticatedEdit: boolean;
-    blockers: P0PlusEvidenceItem[];
-    warnings: P0PlusEvidenceItem[];
+    section_checks: P0PlusSectionCheck[];
+    customer_submission_risks: P0PlusEvidenceItem[];
+    missing_evidence: P0PlusEvidenceItem[];
+    recommended_fixes: P0PlusEvidenceItem[];
+    next_actions: P0PlusNextAction[];
   };
   missingInformation: P0PlusEvidenceItem[];
   requiredEvidence: P0PlusRequiredEvidence[];
-  nextSteps: P0PlusNextStep[];
+  next_actions: P0PlusNextAction[];
   conversion: {
     recommendedReportTitle: string;
     reportDataPatch: Partial<ReportData>;
@@ -285,7 +353,7 @@ interface P0PlusField<T> {
 }
 
 interface P0PlusEvidenceItem {
-  stepId?: "D0" | "D1" | "D2" | "D3" | "D4" | "D5" | "D6" | "D7" | "D8";
+  stepId?: P0PlusStepId;
   label: string;
   detail: string;
   sourceStatus: P0PlusSourceStatus;
@@ -293,7 +361,7 @@ interface P0PlusEvidenceItem {
 }
 
 interface P0PlusRequiredEvidence {
-  stepId: "D0" | "D1" | "D2" | "D3" | "D4" | "D5" | "D6" | "D7" | "D8";
+  stepId: P0PlusStepId;
   title: string;
   whyItMatters: string;
   examples: string[];
@@ -307,11 +375,41 @@ interface P0PlusAttachmentReference {
   note: string;
 }
 
-interface P0PlusNextStep {
-  action: "collect_information" | "login_to_edit" | "save_report" | "run_quality_check" | "export_after_review";
+interface P0PlusClarificationQuestion {
+  question: string;
+  reason: string;
+  linkedStepId: P0PlusStepId;
+  sourceStatus: "needs_confirmation" | "missing" | "conflicting";
+}
+
+interface P0PlusSectionCheck {
+  stepId: "D2" | "D3" | "D4" | "D5" | "D6" | "D7" | "D8";
+  checkType:
+    | "problem_clarity"
+    | "containment_completeness"
+    | "occurrence_cause"
+    | "escape_cause"
+    | "five_why_logic"
+    | "corrective_action_traceability"
+    | "verification_evidence"
+    | "prevention_quality"
+    | "owner_date_evidence_completeness";
+  status: P0PlusReadinessStatus;
+  finding: string;
+  risk: P0PlusRiskLevel;
+  recommended_fix: string;
+  required_evidence: string[];
+}
+
+interface P0PlusNextAction {
+  actionType: P0PlusNextActionType;
   title: string;
   detail: string;
-  priority: "primary" | "secondary";
+  reason: string;
+  suggestedOwner: P0PlusSuggestedOwner;
+  priority: "high" | "medium" | "low";
+  linkedStepId: P0PlusStepId;
+  sourceStatus: P0PlusSourceStatus;
 }
 ```
 
@@ -320,8 +418,13 @@ Schema rules:
 - `reportDataPatch` may only include keys from existing `ReportData`.
 - `reportDataPatch` must not include signatures, approval dates, uploaded attachment URLs, or export metadata.
 - Every generated field must include `sourceStatus`.
+- `provided` means the user explicitly supplied the fact.
+- `extracted` means the fact was pulled from pasted email, text, inspection summary, or supplier reply.
 - Fields marked `inferred` must be visible as assumptions in preview.
+- Fields marked `needs_confirmation` must produce a clarification question or next action.
 - Missing evidence must remain missing; AI must not fill it with invented details.
+- `readiness_check.section_checks` must cover D2 problem clarity, D3 containment completeness, D4 occurrence cause, D4 escape cause, 5Why logic, D5 corrective action traceability, D6 verification evidence, D7 prevention quality, and owner/date/evidence completeness.
+- `next_actions` must always explain who should act, why the action matters, and which D step it supports.
 - P1-lite attachment handling is relationship-only. The user may mention "photo shows leak at connector" in text, but P0+ does not perform image/video recognition or deep file parsing.
 
 ## F. Guest Preview Data Model
@@ -470,6 +573,18 @@ P0+ implementation must preserve these guarantees:
 
 Use deterministic mocked AI outputs for:
 
+- Injection molding flash / excess material:
+  - Input characteristics: production line found flash or excess material on an injection molded part; supplier is mentioned; photos are mentioned; batch/lot is missing or uncertain; defect quantity is missing.
+  - Expected output: do not invent batch/lot or defect quantity; generate a useful D2 draft from the symptom and available context; mark D3, D4, and D5-D7 as `missing`, `weak`, or `needs_confirmation` as evidence requires; create `next_actions` to confirm lot/batch, count affected quantity, add defect photos/inspection data, and request supplier analysis when supplier responsibility is plausible but unconfirmed.
+- SMT / PCBA solder defect:
+  - Input characteristics: solder joint defect such as insufficient solder or bridging; preliminary inspection data exists; root cause is not yet known.
+  - Expected output: do not invent root cause; distinguish defect symptom from pending D4 occurrence cause and escape cause; create `next_actions` to add 5Why, process parameters, reflow profile, solder paste/stencil evidence, inspection escape investigation, and measurement versus specification records.
+- Customer email requests SCAR but roles are unclear:
+  - Input characteristics: pasted email includes multiple companies or people; it is unclear which company is our company, customer, or supplier; customer requests SCAR/8D and a deadline may be present.
+  - Expected output: generate clarification questions exactly covering "Which company is your company?", "Which company is the customer?", "Which company is the supplier?", "Who requested the 8D/SCAR?", and "What is the submission deadline?"; do not fill customer or supplier fields without evidence; mark affected fields as `needs_confirmation`.
+
+Optional additional fixtures may include:
+
 - Sparse complaint: only customer says "part failed in field"; expected result should produce a limited draft and many blockers.
 - Strong inspection summary: defect counts, batch, containment, owner, and validation evidence present; expected result should mark more sections ready but still avoid approval language.
 - Conflicting supplier reply: supplier denies defect but inspection notes show failures; expected result should flag conflict and customer rejection risk.
@@ -494,7 +609,7 @@ Use deterministic mocked AI outputs for:
 ### UI Smoke Tests
 
 - Homepage guest input renders and validates empty/short/oversized states.
-- Successful preview page shows summary, D0-D8 draft, missing evidence, readiness, and next steps.
+- Successful preview page shows summary, D0-D8 draft, missing evidence, `readiness_check`, and `next_actions`.
 - Preview page has no save, upload, share, or export controls.
 - Login/signup callback returns to continuation route.
 - After conversion, user lands in existing editor with mapped draft fields.
@@ -517,7 +632,7 @@ Scope:
 
 - Add P0+ schema/types and validation.
 - Add preview-safe AI prompt contract.
-- Add mocked fixture tests for sparse, strong, and conflicting cases.
+- Add deterministic fixture tests for injection molding flash/excess material, SMT/PCBA solder defect, and unclear SCAR customer/supplier roles.
 - Add mapping helper from preview schema to `Partial<ReportData>`.
 
 Non-goals:
@@ -525,15 +640,17 @@ Non-goals:
 - No homepage UI.
 - No public AI route.
 - No database migration.
-- No export/share/payment/auth changes.
+- No auth/payment/export/share changes.
 
 Acceptance:
 
 - Fixture tests prove conservative missing-evidence handling.
+- Fixture tests prove `provided`, `extracted`, `inferred`, `missing`, `needs_confirmation`, `conflicting`, and `not_applicable` statuses are used correctly.
+- Fixture tests prove `readiness_check` and `next_actions` identify owner, reason, linked D step, and customer submission risk.
 - Mapping rejects unknown or unsafe fields.
 - No runtime public behavior changes unless explicitly hidden behind tests-only helpers.
 
-Recommended first implementation task: start here. It creates the contract before exposing anonymous AI.
+Recommended first implementation task: start here. PR1 is AI expert brain + schema + deterministic fixtures only. It creates the contract before exposing anonymous AI.
 
 ### PR2: Guest Preview API And Rate Limit
 
@@ -562,7 +679,7 @@ Scope:
 
 - Add homepage intake component.
 - Add preview page display.
-- Add next-step guidance UI.
+- Add `next_actions` guidance UI that shows owner, reason, linked D step, and priority.
 - Preserve existing public page structure and routes.
 
 Non-goals:
