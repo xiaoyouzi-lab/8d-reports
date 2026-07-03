@@ -39,6 +39,9 @@ P0+ PR2 guest preview API, temporary preview storage, and anonymous rate limitin
 - Added preview-service tests with mock AI/storage/limiter coverage for disabled
   flag, valid preview creation, short/oversized input, rate limiting, invalid AI
   output, unknown/expired token lookup, and privacy fields.
+- Added PR review hardening for route-level oversized body rejection before
+  parsing JSON, bilingual output language normalization, and sanitized
+  `conversion.reportDataPatch` storage/response payloads.
 - Did not add homepage UI, preview page UI, login handoff, report conversion,
   report creation changes, existing AI endpoint changes, auth/signup/login
   changes, payment, export, share, team permission changes, SEO/content pages,

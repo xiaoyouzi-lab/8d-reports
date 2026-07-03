@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { POST } from "@/app/api/p0-plus/preview/route";
 import { P0PlusPreviewAiError, type P0PlusPreviewAiClient } from "@/lib/p0-plus/ai";
 import type { P0PlusRateLimiter } from "@/lib/p0-plus/rate-limit";
 import type {
@@ -9,7 +10,7 @@ import type {
 import type { P0PlusPreviewResponse } from "@/lib/p0-plus/schema";
 import { createP0PlusPreview, getP0PlusPreview } from "@/lib/p0-plus/preview-service";
 import { hashPreviewToken } from "@/lib/p0-plus/tokens";
-import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config";
+import { isP0PlusPreviewEnabled, normalizeP0PlusOutputLanguage, P0_PLUS_PREVIEW_MAX_BODY_BYTES } from "@/lib/p0-plus/config";
 import { injectionMoldingFlashFixture } from "@/lib/p0-plus/__fixtures__/injection-molding-flash";
 
 function clonePreview(): P0PlusPreviewResponse {
@@ -80,6 +81,43 @@ async function main() {
   assert.equal(isP0PlusPreviewEnabled(), false, "P0+ preview feature flag should be disabled by default");
   if (originalFeatureFlag !== undefined) process.env.P0_PLUS_PREVIEW_ENABLED = originalFeatureFlag;
 
+  const disabledRouteResponse = await POST({
+    headers: new Headers({ "content-length": String(P0_PLUS_PREVIEW_MAX_BODY_BYTES + 1) }),
+    json: () => {
+      throw new Error("disabled route should not parse request body");
+    },
+  } as never);
+  assert.equal(disabledRouteResponse.status, 404, "Feature flag disabled route should return before parsing body");
+
+  process.env.P0_PLUS_PREVIEW_ENABLED = "true";
+  const oversizedRouteResponse = await POST({
+    headers: new Headers({ "content-length": String(P0_PLUS_PREVIEW_MAX_BODY_BYTES + 1) }),
+    json: () => {
+      throw new Error("oversized route should not parse request body");
+    },
+  } as never);
+  assert.equal(oversizedRouteResponse.status, 413, "Oversized content-length should be rejected at route layer");
+  assert.deepEqual(await oversizedRouteResponse.json(), {
+    error: "Preview input is too large",
+    code: "body_too_large",
+  });
+  if (originalFeatureFlag === undefined) {
+    delete process.env.P0_PLUS_PREVIEW_ENABLED;
+  } else {
+    process.env.P0_PLUS_PREVIEW_ENABLED = originalFeatureFlag;
+  }
+
+  assert.equal(normalizeP0PlusOutputLanguage("en"), "en");
+  assert.equal(normalizeP0PlusOutputLanguage("english"), "en");
+  assert.equal(normalizeP0PlusOutputLanguage("zh"), "zh-CN");
+  assert.equal(normalizeP0PlusOutputLanguage("zh-CN"), "zh-CN");
+  assert.equal(normalizeP0PlusOutputLanguage("chinese"), "zh-CN");
+  assert.equal(normalizeP0PlusOutputLanguage("bilingual"), "bilingual");
+  assert.equal(normalizeP0PlusOutputLanguage("both"), "bilingual");
+  assert.equal(normalizeP0PlusOutputLanguage("en-zh"), "bilingual");
+  assert.equal(normalizeP0PlusOutputLanguage("zh-en"), "bilingual");
+  assert.equal(normalizeP0PlusOutputLanguage("unknown"), "en");
+
   const disabledAi = new MockAiClient();
   const disabledStorage = new MockStorage();
   const disabledResult = await createP0PlusPreview(
@@ -120,6 +158,26 @@ async function main() {
   assert.equal(enabledStorage.created[0]?.tokenHash, hashPreviewToken("test-preview-token-1234567890"));
   assert.notEqual(enabledStorage.created[0]?.tokenHash, "test-preview-token-1234567890", "Token must not be stored in plaintext");
   assert.equal(enabledStorage.created[0]?.expiresAt.toISOString(), "2026-07-04T00:00:00.000Z", "Preview should expire after 24 hours");
+
+  const bilingualAi = new MockAiClient();
+  const bilingualStorage = new MockStorage();
+  const bilingualResult = await createP0PlusPreview(
+    {
+      enabled: true,
+      body: { rawInput: validRawInput, outputLanguage: "both" },
+      clientIp: "203.0.113.17",
+      now: new Date("2026-07-03T00:00:00.000Z"),
+    },
+    {
+      aiClient: bilingualAi,
+      storage: bilingualStorage,
+      rateLimiter: new MockRateLimiter(),
+      createToken: () => "bilingual-preview-token-1234567890",
+    },
+  );
+  assert.equal(bilingualResult.status, 201, "Bilingual preview should be accepted");
+  assert.equal(bilingualStorage.created[0]?.outputLanguage, "bilingual", "Bilingual output language should be stored");
+  assert.equal(bilingualResult.body.outputLanguage, "bilingual", "Bilingual output language should be returned");
 
   for (const body of [{ rawInput: "" }, { rawInput: "too short" }]) {
     const ai = new MockAiClient();
@@ -169,6 +227,62 @@ async function main() {
   assert.equal(invalidResult.status, 502, "Invalid AI schema should fail safely");
   assert.equal(invalidAi.calls, 1, "Invalid AI schema still means AI was called once");
   assert.equal(invalidStorage.created.length, 0, "Invalid AI schema must not create preview");
+
+  const unsafePreview = clonePreview();
+  unsafePreview.conversion.reportDataPatch = {
+    ...unsafePreview.conversion.reportDataPatch,
+    preparedSignatureUrl: "/api/attachments/private-signature/file",
+    privateUserId: "user_123",
+    approverName: "Unverified Approver",
+    batchNumber: "AI guessed batch",
+    defectQuantity: "AI guessed quantity",
+  } as P0PlusPreviewResponse["conversion"]["reportDataPatch"] & Record<string, string>;
+  const unsafeAi = new MockAiClient(unsafePreview);
+  const unsafeStorage = new MockStorage();
+  const unsafeResult = await createP0PlusPreview(
+    {
+      enabled: true,
+      body: { rawInput: validRawInput },
+      clientIp: "203.0.113.18",
+      now: new Date("2026-07-03T00:00:00.000Z"),
+    },
+    {
+      aiClient: unsafeAi,
+      storage: unsafeStorage,
+      rateLimiter: new MockRateLimiter(),
+      createToken: () => "unsafe-preview-token-1234567890",
+    },
+  );
+  assert.equal(unsafeResult.status, 201, "Unsafe conversion patch fields should be sanitized, not fail the preview");
+  const unsafePostPreview = unsafeResult.body.preview as P0PlusPreviewResponse;
+  const unsafePostPatchText = JSON.stringify(unsafePostPreview.conversion.reportDataPatch);
+  for (const forbidden of ["preparedSignatureUrl", "privateUserId", "approverName", "AI guessed batch", "AI guessed quantity"]) {
+    assert.equal(unsafePostPatchText.includes(forbidden), false, `POST conversion patch must not include unsafe field/value ${forbidden}`);
+  }
+  assert.deepEqual(
+    (unsafeStorage.created[0]?.previewPayloadJson as P0PlusPreviewResponse).conversion.reportDataPatch,
+    {
+      problemSource: "production line",
+      problemDescription:
+        "Production line found flash/excess material on an injection molded part. Supplier and photos are mentioned, but lot and quantity are not confirmed.",
+      whereFound: "production line",
+      productName: "injection molded part",
+    },
+    "Stored conversion patch should only include safe provided/extracted fields",
+  );
+  const unsafeGet = await getP0PlusPreview(
+    {
+      enabled: true,
+      token: "unsafe-preview-token-1234567890",
+      now: new Date("2026-07-03T00:00:01.000Z"),
+    },
+    { storage: unsafeStorage },
+  );
+  const unsafeGetPreview = unsafeGet.body.preview as P0PlusPreviewResponse;
+  const unsafeGetPatchText = JSON.stringify(unsafeGetPreview.conversion.reportDataPatch);
+  for (const forbidden of ["preparedSignatureUrl", "privateUserId", "approverName", "AI guessed batch", "AI guessed quantity"]) {
+    assert.equal(unsafeGetPatchText.includes(forbidden), false, `GET conversion patch must not include unsafe field/value ${forbidden}`);
+  }
 
   const aiFailure = new MockAiClient(new P0PlusPreviewAiError("invalid json"));
   const aiFailureStorage = new MockStorage();

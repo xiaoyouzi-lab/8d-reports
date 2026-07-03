@@ -17,6 +17,7 @@ import {
 } from "@/lib/p0-plus/storage";
 import { createPreviewToken, hashPreviewLimiterKey, hashPreviewToken } from "@/lib/p0-plus/tokens";
 import { validateP0PlusPreviewResponse, type P0PlusPreviewResponse } from "@/lib/p0-plus/schema";
+import { mapP0PlusPreviewToReportDataPatch } from "@/lib/p0-plus/mapper";
 
 export interface CreateP0PlusPreviewRequest {
   body: unknown;
@@ -157,6 +158,15 @@ export async function createP0PlusPreview(
     };
   }
 
+  const sanitizedPatch = mapP0PlusPreviewToReportDataPatch(validation.data).patch;
+  const sanitizedPreview: P0PlusPreviewResponse = {
+    ...validation.data,
+    conversion: {
+      ...validation.data.conversion,
+      reportDataPatch: sanitizedPatch,
+    },
+  };
+
   const token = dependencies.createToken?.() || createPreviewToken();
   const tokenHash = hashPreviewToken(token);
   const now = request.now || new Date();
@@ -164,7 +174,7 @@ export async function createP0PlusPreview(
     tokenHash,
     boundedRawInput: rawInput.slice(0, P0_PLUS_PREVIEW_RAW_INPUT_STORAGE_CHARS),
     outputLanguage,
-    previewPayloadJson: validation.data,
+    previewPayloadJson: sanitizedPreview,
     clientIpHash: ipKey,
     browserTokenHash,
     expiresAt: new Date(now.getTime() + P0_PLUS_PREVIEW_TTL_MS),

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config";
+import { isP0PlusPreviewBodyTooLarge, isP0PlusPreviewEnabled } from "@/lib/p0-plus/config";
 import { createP0PlusPreview } from "@/lib/p0-plus/preview-service";
 import { getForwardedIp } from "@/lib/p0-plus/tokens";
 
@@ -14,6 +14,13 @@ export async function POST(req: NextRequest) {
   }
 
   const contentLength = req.headers.get("content-length");
+  if (isP0PlusPreviewBodyTooLarge(contentLength)) {
+    return NextResponse.json(
+      { error: "Preview input is too large", code: "body_too_large" },
+      { status: 413 },
+    );
+  }
+
   const bodyBytes = contentLength ? Number(contentLength) : null;
   const body = await req.json().catch(() => ({}));
   const browserToken = req.headers.get("x-p0-plus-browser-token")

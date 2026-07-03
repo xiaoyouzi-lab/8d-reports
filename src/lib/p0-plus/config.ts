@@ -10,6 +10,17 @@ export function isP0PlusPreviewEnabled() {
 }
 
 export function normalizeP0PlusOutputLanguage(value: unknown) {
-  if (value === "zh-CN" || value === "zh") return "zh-CN";
+  if (typeof value !== "string") return "en";
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "zh" || normalized === "zh-cn" || normalized === "chinese") return "zh-CN";
+  if (normalized === "bilingual" || normalized === "both" || normalized === "en-zh" || normalized === "zh-en") {
+    return "bilingual";
+  }
   return "en";
+}
+
+export function isP0PlusPreviewBodyTooLarge(contentLength: string | null) {
+  if (!contentLength) return false;
+  const bodyBytes = Number(contentLength);
+  return Number.isFinite(bodyBytes) && bodyBytes > P0_PLUS_PREVIEW_MAX_BODY_BYTES;
 }
