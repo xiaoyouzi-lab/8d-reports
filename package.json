@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test:p0-plus": "tsx src/lib/p0-plus/p0-plus.test.ts",
     "test:governance": "tsx scripts/team-governance.test.ts",
     "test:production-smoke": "tsx scripts/production-smoke.test.ts",
     "test:auth-smoke": "tsx scripts/authenticated-production-smoke.test.ts",
