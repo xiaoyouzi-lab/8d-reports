@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:p0-plus": "tsx src/lib/p0-plus/p0-plus.test.ts",
     "test:p0-plus-preview": "tsx src/lib/p0-plus/preview-service.test.ts",
+    "test:p0-plus-ui": "tsx src/lib/p0-plus/preview-ui.test.tsx",
     "test:governance": "tsx scripts/team-governance.test.ts",
     "test:production-smoke": "tsx scripts/production-smoke.test.ts",
     "test:auth-smoke": "tsx scripts/authenticated-production-smoke.test.ts",

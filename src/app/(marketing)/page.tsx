@@ -11,8 +11,10 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { PrimaryCTA } from "@/components/marketing/MarketingActions"
+import { P0PlusIntake } from "@/components/marketing/P0PlusIntake"
 import { JsonLd, PageHero, PageShell, Section, SectionHeader } from "@/components/marketing/MarketingPrimitives"
 import { socialOpenGraphImage } from "@/lib/marketing-content"
+import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config"
 
 export const metadata: Metadata = {
   title: "8D Report Software for Customer-Ready Quality Reports",
@@ -188,6 +190,8 @@ function HeroProductPreview() {
 }
 
 export default function LandingPage() {
+  const p0PlusPreviewEnabled = isP0PlusPreviewEnabled()
+
   return (
     <PageShell>
       <JsonLd data={productJsonLd} />
@@ -219,24 +223,30 @@ export default function LandingPage() {
           </>
         }
       >
-        <HeroProductPreview />
-        <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-          <p className="text-sm font-semibold text-indigo-950">
-            Turn your Word / Excel 8D template into a reusable online workflow.
-          </p>
-          <p className="mt-1 text-sm leading-6 text-indigo-900">
-            For teams that need customer-ready 8D/SCAR delivery before a full
-            QMS rollout.
-          </p>
-        </div>
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          {facts.map((fact) => (
-            <div key={fact} className="flex items-center gap-2 text-sm font-medium text-slate-700">
-              <Check className="h-4 w-4 text-emerald-600" />
-              {fact}
+        {p0PlusPreviewEnabled ? (
+          <P0PlusIntake />
+        ) : (
+          <>
+            <HeroProductPreview />
+            <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+              <p className="text-sm font-semibold text-indigo-950">
+                Turn your Word / Excel 8D template into a reusable online workflow.
+              </p>
+              <p className="mt-1 text-sm leading-6 text-indigo-900">
+                For teams that need customer-ready 8D/SCAR delivery before a full
+                QMS rollout.
+              </p>
             </div>
-          ))}
-        </div>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {facts.map((fact) => (
+                <div key={fact} className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  {fact}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </PageHero>
 
       <Section id="workflow">

@@ -2,6 +2,76 @@
 
 ## Latest Task
 
+P0+ PR3 homepage guest intake UI and read-only preview page.
+
+## Changed Files
+
+- `src/lib/p0-plus/limits.ts`
+- `src/lib/p0-plus/config.ts`
+- `src/lib/p0-plus/preview-ui.ts`
+- `src/lib/p0-plus/preview-ui.test.tsx`
+- `src/components/marketing/P0PlusIntake.tsx`
+- `src/components/p0-plus/P0PlusPreviewContent.tsx`
+- `src/app/(marketing)/page.tsx`
+- `src/app/p0-plus/preview/[token]/page.tsx`
+- `package.json`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added a server-gated homepage P0+ intake module that only renders when
+  `P0_PLUS_PREVIEW_ENABLED` is enabled. The default disabled state keeps the
+  existing homepage experience and does not expose a public preview entry.
+- Added client-side intake validation and submit handling for empty/short input,
+  oversized input, loading state, disabled/rate-limit/generation errors, output
+  language selection, and success navigation to `/p0-plus/preview/[token]`.
+- Added a read-only preview page that uses the PR2 preview service, returns
+  `notFound()` when the feature flag is disabled or the token is invalid, and
+  renders case summary, D0-D8 draft fields, source status labels, readiness
+  checks, missing information, required evidence, clarification questions, and
+  next actions.
+- Added a client-safe P0+ limits module so UI helpers do not import server env
+  feature-flag code.
+- Added lightweight `tsx` + `node:assert` UI/helper coverage for homepage flag
+  rendering, input validation before API calls, success token handling,
+  disabled/rate-limit/error prompts, and read-only preview payload rendering.
+- Did not add login handoff conversion, convert-to-report, formal report
+  creation, quota consumption, report editor changes, existing AI endpoint
+  changes, auth/signup/login mechanism changes, payment, export, share links,
+  team permission changes, production feature flag changes, Vercel env changes,
+  stash restore, or SEO/content page changes beyond the homepage flag-gated
+  mount.
+
+## Tests / Verification
+
+- `npm run test:p0-plus-ui` passed.
+- `npm run test:p0-plus-preview` passed.
+- `npm run test:p0-plus` passed.
+- `git diff --check` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+
+## Risks
+
+- The homepage intake and preview page remain hidden until the feature flag is
+  enabled in an environment with the PR2 migration and AI provider configured.
+- This PR intentionally stops at read-only preview. Authenticated conversion to
+  a saved report still needs a later PR.
+
+## Unfinished / Needs Human Review
+
+- Review copy and layout before enabling `P0_PLUS_PREVIEW_ENABLED` outside local
+  testing.
+- Define the PR4 conversion/login handoff contract before connecting this
+  preview to saved reports.
+
+## Suggested Next Task
+
+After this PR is reviewed and merged, start the next P0+ PR from updated `main`
+and keep it scoped to login handoff / convert-to-report only if approved.
+
+## Previous Task
+
 P0+ PR2 guest preview API, temporary preview storage, and anonymous rate limiting.
 
 ## Changed Files

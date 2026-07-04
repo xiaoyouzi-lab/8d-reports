@@ -1,8 +1,12 @@
-export const P0_PLUS_PREVIEW_TTL_MS = 24 * 60 * 60 * 1000;
-export const P0_PLUS_PREVIEW_MAX_BODY_BYTES = 24_000;
-export const P0_PLUS_PREVIEW_MAX_INPUT_CHARS = 10_000;
-export const P0_PLUS_PREVIEW_MIN_VISIBLE_CHARS = 40;
-export const P0_PLUS_PREVIEW_RAW_INPUT_STORAGE_CHARS = 10_000;
+export {
+  P0_PLUS_PREVIEW_TTL_MS,
+  P0_PLUS_PREVIEW_MAX_BODY_BYTES,
+  P0_PLUS_PREVIEW_MAX_INPUT_CHARS,
+  P0_PLUS_PREVIEW_MIN_VISIBLE_CHARS,
+  P0_PLUS_PREVIEW_RAW_INPUT_STORAGE_CHARS,
+} from "@/lib/p0-plus/limits";
+
+import { P0_PLUS_PREVIEW_MAX_BODY_BYTES } from "@/lib/p0-plus/limits";
 
 export function isP0PlusPreviewEnabled() {
   const value = (process.env.P0_PLUS_PREVIEW_ENABLED || "").trim().toLowerCase();
