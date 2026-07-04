@@ -191,37 +191,53 @@ function HeroProductPreview() {
 
 export default function LandingPage() {
   const p0PlusPreviewEnabled = isP0PlusPreviewEnabled()
+  const heroTitle = p0PlusPreviewEnabled
+    ? "Turn messy quality notes into structured 8D reports."
+    : "Finish customer-ready 8D reports without rebuilding them in Excel."
+  const heroDescription = p0PlusPreviewEnabled
+    ? "Paste complaint emails, production feedback, inspection notes, supplier updates, or rough case details. AI drafts the report, checks missing evidence, and tells you what to do next."
+    : "Need to submit a customer-ready 8D or SCAR this week? Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, or Excel with attachments when present."
+  const heroActions = p0PlusPreviewEnabled ? (
+    <PrimaryCTA
+      href="/sample-report"
+      page="home"
+      location="hero"
+      variant="ghost"
+    >
+      View complete example
+    </PrimaryCTA>
+  ) : (
+    <>
+      <PrimaryCTA href="/signup" page="home" location="hero">
+        Start free with 3 reports
+      </PrimaryCTA>
+      <PrimaryCTA
+        href="/custom-8d-template-setup#request"
+        page="home"
+        location="hero"
+        variant="secondary"
+        eventData={{ service: "template_setup" }}
+      >
+        Upload your 8D template
+      </PrimaryCTA>
+      <PrimaryCTA
+        href="/sample-report"
+        page="home"
+        location="hero"
+        variant="ghost"
+      >
+        View complete example
+      </PrimaryCTA>
+    </>
+  )
 
   return (
     <PageShell>
       <JsonLd data={productJsonLd} />
       <PageHero
-        title="Finish customer-ready 8D reports without rebuilding them in Excel."
-        description="Need to submit a customer-ready 8D or SCAR this week? Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, or Excel with attachments when present."
-        actions={
-          <>
-            <PrimaryCTA href="/signup" page="home" location="hero">
-              Start free with 3 reports
-            </PrimaryCTA>
-            <PrimaryCTA
-              href="/custom-8d-template-setup#request"
-              page="home"
-              location="hero"
-              variant="secondary"
-              eventData={{ service: "template_setup" }}
-            >
-              Upload your 8D template
-            </PrimaryCTA>
-            <PrimaryCTA
-              href="/sample-report"
-              page="home"
-              location="hero"
-              variant="ghost"
-            >
-              View complete example
-            </PrimaryCTA>
-          </>
-        }
+        title={heroTitle}
+        description={heroDescription}
+        actions={heroActions}
       >
         {p0PlusPreviewEnabled ? (
           <P0PlusIntake />

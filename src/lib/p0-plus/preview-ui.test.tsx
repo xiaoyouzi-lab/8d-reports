@@ -25,11 +25,34 @@ function makeResponse(status: number, body: Record<string, unknown>) {
   };
 }
 
+function firstHeroSection(html: string) {
+  const sectionStart = html.indexOf("<section");
+  const sectionEnd = html.indexOf("</section>", sectionStart);
+  assert.notEqual(sectionStart, -1, "Rendered homepage should include a hero section");
+  assert.notEqual(sectionEnd, -1, "Rendered homepage hero section should close");
+  return html.slice(sectionStart, sectionEnd);
+}
+
 async function main() {
   const originalFeatureFlag = process.env.P0_PLUS_PREVIEW_ENABLED;
   try {
     delete process.env.P0_PLUS_PREVIEW_ENABLED;
     const disabledHomeHtml = renderToStaticMarkup(<LandingPage />);
+    assert.equal(
+      disabledHomeHtml.includes("Finish customer-ready 8D reports without rebuilding them in Excel."),
+      true,
+      "Feature flag disabled homepage should preserve the existing hero title",
+    );
+    assert.equal(
+      disabledHomeHtml.includes("Need to submit a customer-ready 8D or SCAR this week?"),
+      true,
+      "Feature flag disabled homepage should preserve the existing hero description",
+    );
+    assert.equal(
+      disabledHomeHtml.includes("Turn messy quality notes into structured 8D reports."),
+      false,
+      "Feature flag disabled homepage should not show the P0+ hero title",
+    );
     assert.equal(
       disabledHomeHtml.includes("Turn messy quality notes into a structured 8D report."),
       false,
@@ -43,6 +66,17 @@ async function main() {
 
     process.env.P0_PLUS_PREVIEW_ENABLED = "true";
     const enabledHomeHtml = renderToStaticMarkup(<LandingPage />);
+    const enabledHeroHtml = firstHeroSection(enabledHomeHtml);
+    assert.equal(
+      enabledHomeHtml.includes("Turn messy quality notes into structured 8D reports."),
+      true,
+      "Feature flag enabled homepage should show the P0+ hero title",
+    );
+    assert.equal(
+      enabledHomeHtml.includes("Paste complaint emails, production feedback, inspection notes, supplier updates, or rough case details."),
+      true,
+      "Feature flag enabled homepage should show the P0+ hero description",
+    );
     assert.equal(
       enabledHomeHtml.includes("Turn messy quality notes into a structured 8D report."),
       true,
@@ -52,6 +86,16 @@ async function main() {
       enabledHomeHtml.includes("Generate 8D Draft"),
       true,
       "Homepage should show preview submit button when feature flag is enabled",
+    );
+    assert.equal(
+      enabledHeroHtml.includes("Upload your 8D template"),
+      false,
+      "Feature flag enabled hero should not promote template upload as a first-screen CTA",
+    );
+    assert.equal(
+      enabledHeroHtml.includes("Start free with 3 reports"),
+      false,
+      "Feature flag enabled hero should not promote signup as the first-screen main CTA",
     );
   } finally {
     if (originalFeatureFlag === undefined) {
