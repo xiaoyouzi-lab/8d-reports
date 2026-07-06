@@ -1,4 +1,4 @@
-import { and, eq, gt } from "drizzle-orm";
+import { and, eq, gt, isNull } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { p0PlusPreviews } from "@/lib/db/schema";
 import type { P0PlusPreviewResponse } from "@/lib/p0-plus/schema";
@@ -32,6 +32,10 @@ export interface P0PlusPreviewStorage {
   findActiveByTokenHash(tokenHash: string, now?: Date): Promise<P0PlusPreviewRecord | null>;
 }
 
+export interface P0PlusPreviewConversionStorage extends P0PlusPreviewStorage {
+  markConverted(previewId: string, reportId: string, now?: Date): Promise<P0PlusPreviewRecord | null>;
+}
+
 function toPreviewRecord(row: typeof p0PlusPreviews.$inferSelect): P0PlusPreviewRecord {
   return {
     ...row,
@@ -63,6 +67,16 @@ export class DbP0PlusPreviewStorage implements P0PlusPreviewStorage {
       .from(p0PlusPreviews)
       .where(and(eq(p0PlusPreviews.tokenHash, tokenHash), gt(p0PlusPreviews.expiresAt, now)))
       .limit(1);
+
+    return row ? toPreviewRecord(row) : null;
+  }
+
+  async markConverted(previewId: string, reportId: string, now = new Date()): Promise<P0PlusPreviewRecord | null> {
+    const [row] = await db
+      .update(p0PlusPreviews)
+      .set({ convertedReportId: reportId, updatedAt: now })
+      .where(and(eq(p0PlusPreviews.id, previewId), isNull(p0PlusPreviews.convertedReportId)))
+      .returning();
 
     return row ? toPreviewRecord(row) : null;
   }

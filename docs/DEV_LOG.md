@@ -1425,6 +1425,58 @@ PR #8 Quality Knowledge Base v1.
 - V1 scans recent eligible JSONB report rows in application code. This is conservative and avoids schema migration, but large workspaces may eventually need indexed/materialized search.
 - Free users can access their own completed-report Knowledge Base assets; this adds a focused completed-report reuse surface without changing pricing configuration.
 
+# 2026-07-06 — P0+ Preview Conversion PR4
+
+## Task
+
+Implement P0+ PR4: authenticated login handoff, confirmation page, and conversion from temporary preview to formal editable report. Do not start PR5 and do not modify export, payment, share, team permissions, production feature flags, Vercel env, SEO pages, or stash.
+
+## Changed Files
+
+- Added `src/app/p0-plus/continue/[token]/page.tsx` for authenticated confirmation before conversion.
+- Added `src/app/api/p0-plus/preview/[token]/convert/route.ts` for authenticated POST-only conversion.
+- Added `src/components/p0-plus/P0PlusContinueActions.tsx` for the explicit confirmation button.
+- Added `src/lib/p0-plus/convert.ts` and `src/lib/p0-plus/paths.ts` for conversion state, safe login callback paths, idempotency, and mapper-based sanitization.
+- Added `src/lib/report-creation.ts` and updated `src/app/api/reports/route.ts` so normal report creation and P0+ conversion share quota, Team viewer, report owner, report number, and activity logging boundaries.
+- Updated `src/lib/p0-plus/storage.ts` with converted report marking using the existing `converted_report_id` column.
+- Updated `src/components/p0-plus/P0PlusPreviewContent.tsx` and `src/app/p0-plus/preview/[token]/page.tsx` so the read-only preview CTA routes to the continuation page after login.
+- Added `src/lib/p0-plus/convert.test.ts` and updated `src/lib/p0-plus/preview-ui.test.tsx`.
+
+## Implementation Summary
+
+- Feature flag remains default-disabled. When `P0_PLUS_PREVIEW_ENABLED` is not enabled, preview conversion routes are hidden or return safe disabled/not found responses.
+- GET `/p0-plus/continue/[token]` never creates a report. It only checks auth, token state, expiry, and converted status, then renders a confirmation page or safe unavailable state.
+- Unauthenticated continuation visits redirect to `/login?callbackUrl=/p0-plus/continue/[token]` through a local callback path.
+- Authenticated POST `/api/p0-plus/preview/[token]/convert` creates the formal report only after the user clicks `Create editable report`.
+- Conversion calls no AI, reads no private knowledge context, creates no share link, performs no export, uploads no attachments, and writes no signature/approval/private/export/share fields.
+- Conversion uses `mapP0PlusPreviewToReportDataPatch`; only `provided` and `extracted` safe fields are written. Inferred, missing, needs-confirmation, conflicting, unknown, and unsafe fields are filtered.
+- Report creation goes through shared formal creation logic, preserving Free quota checks, Pro/Team entitlement behavior, Team viewer blocking, owner assignment, report numbering, and `report_created` activity logging.
+- Conversion is idempotent for repeated POSTs after `converted_report_id` is set: accessible users receive the existing report redirect and do not create another report or consume quota again.
+
+## Tests / Verification
+
+- `npx tsx src/lib/p0-plus/convert.test.ts` passed.
+- `npm run test:p0-plus-ui` passed.
+- `npm run test:p0-plus-preview` passed.
+- `npm run test:p0-plus` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+## Risks
+
+- Sequential idempotency is covered. Highly concurrent double-click/race behavior relies on the converted marker and existing database constraints; a stronger transactional claim could be considered later if preview conversion volume grows.
+- The shared report creation helper intentionally preserves current report creation behavior; sample report creation remains separate and unchanged.
+
+## Unfinished / Needs Human Review
+
+- Review copy on the confirmation page before enabling the feature flag in any environment.
+- Review whether PR5 should add a post-conversion onboarding hint inside the existing editor, without changing export/payment/share/team behavior.
+
+## Suggested Next Task
+
+After PR4 is reviewed and merged, start PR5 from fresh `main`: polish authenticated post-conversion guidance in the existing editor, still behind the P0+ feature flag and without touching export/payment/share/team permissions.
+
 ## Previous Unfinished / Needs Human Review
 
 - Confirm whether Knowledge Base should remain available to all logged-in users or become a Pro/Team entitlement later.
