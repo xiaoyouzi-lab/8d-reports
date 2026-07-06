@@ -11,8 +11,10 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { PrimaryCTA } from "@/components/marketing/MarketingActions"
+import { P0PlusIntake } from "@/components/marketing/P0PlusIntake"
 import { JsonLd, PageHero, PageShell, Section, SectionHeader } from "@/components/marketing/MarketingPrimitives"
 import { socialOpenGraphImage } from "@/lib/marketing-content"
+import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config"
 
 export const metadata: Metadata = {
   title: "8D Report Software for Customer-Ready Quality Reports",
@@ -188,55 +190,79 @@ function HeroProductPreview() {
 }
 
 export default function LandingPage() {
+  const p0PlusPreviewEnabled = isP0PlusPreviewEnabled()
+  const heroTitle = p0PlusPreviewEnabled
+    ? "Turn messy quality notes into structured 8D reports."
+    : "Finish customer-ready 8D reports without rebuilding them in Excel."
+  const heroDescription = p0PlusPreviewEnabled
+    ? "Paste complaint emails, production feedback, inspection notes, supplier updates, or rough case details. AI drafts the report, checks missing evidence, and tells you what to do next."
+    : "Need to submit a customer-ready 8D or SCAR this week? Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, or Excel with attachments when present."
+  const heroActions = p0PlusPreviewEnabled ? (
+    <PrimaryCTA
+      href="/sample-report"
+      page="home"
+      location="hero"
+      variant="ghost"
+    >
+      View complete example
+    </PrimaryCTA>
+  ) : (
+    <>
+      <PrimaryCTA href="/signup" page="home" location="hero">
+        Start free with 3 reports
+      </PrimaryCTA>
+      <PrimaryCTA
+        href="/custom-8d-template-setup#request"
+        page="home"
+        location="hero"
+        variant="secondary"
+        eventData={{ service: "template_setup" }}
+      >
+        Upload your 8D template
+      </PrimaryCTA>
+      <PrimaryCTA
+        href="/sample-report"
+        page="home"
+        location="hero"
+        variant="ghost"
+      >
+        View complete example
+      </PrimaryCTA>
+    </>
+  )
+
   return (
     <PageShell>
       <JsonLd data={productJsonLd} />
       <PageHero
-        title="Finish customer-ready 8D reports without rebuilding them in Excel."
-        description="Need to submit a customer-ready 8D or SCAR this week? Capture the issue, collect evidence, work through D0-D8, review changes, and export PDF, Word, or Excel with attachments when present."
-        actions={
-          <>
-            <PrimaryCTA href="/signup" page="home" location="hero">
-              Start free with 3 reports
-            </PrimaryCTA>
-            <PrimaryCTA
-              href="/custom-8d-template-setup#request"
-              page="home"
-              location="hero"
-              variant="secondary"
-              eventData={{ service: "template_setup" }}
-            >
-              Upload your 8D template
-            </PrimaryCTA>
-            <PrimaryCTA
-              href="/sample-report"
-              page="home"
-              location="hero"
-              variant="ghost"
-            >
-              View complete example
-            </PrimaryCTA>
-          </>
-        }
+        title={heroTitle}
+        description={heroDescription}
+        actions={heroActions}
       >
-        <HeroProductPreview />
-        <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
-          <p className="text-sm font-semibold text-indigo-950">
-            Turn your Word / Excel 8D template into a reusable online workflow.
-          </p>
-          <p className="mt-1 text-sm leading-6 text-indigo-900">
-            For teams that need customer-ready 8D/SCAR delivery before a full
-            QMS rollout.
-          </p>
-        </div>
-        <div className="mt-5 grid gap-2 sm:grid-cols-2">
-          {facts.map((fact) => (
-            <div key={fact} className="flex items-center gap-2 text-sm font-medium text-slate-700">
-              <Check className="h-4 w-4 text-emerald-600" />
-              {fact}
+        {p0PlusPreviewEnabled ? (
+          <P0PlusIntake />
+        ) : (
+          <>
+            <HeroProductPreview />
+            <div className="mt-5 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+              <p className="text-sm font-semibold text-indigo-950">
+                Turn your Word / Excel 8D template into a reusable online workflow.
+              </p>
+              <p className="mt-1 text-sm leading-6 text-indigo-900">
+                For teams that need customer-ready 8D/SCAR delivery before a full
+                QMS rollout.
+              </p>
             </div>
-          ))}
-        </div>
+            <div className="mt-5 grid gap-2 sm:grid-cols-2">
+              {facts.map((fact) => (
+                <div key={fact} className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                  <Check className="h-4 w-4 text-emerald-600" />
+                  {fact}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </PageHero>
 
       <Section id="workflow">
