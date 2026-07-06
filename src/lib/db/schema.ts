@@ -300,12 +300,16 @@ export const p0PlusPreviews = pgTable("p0_plus_previews", {
   browserTokenHash: text("browser_token_hash"),
   expiresAt: timestamp("expires_at").notNull(),
   convertedReportId: uuid("converted_report_id").references(() => reports.id, { onDelete: "set null" }),
+  conversionClaimToken: text("conversion_claim_token"),
+  conversionClaimedAt: timestamp("conversion_claimed_at"),
+  conversionClaimExpiresAt: timestamp("conversion_claim_expires_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_p0_plus_previews_token_hash").on(table.tokenHash),
   index("idx_p0_plus_previews_expires_at").on(table.expiresAt),
   index("idx_p0_plus_previews_client_ip_hash").on(table.clientIpHash),
+  index("idx_p0_plus_previews_conversion_claim_expires_at").on(table.conversionClaimExpiresAt),
 ]);
 
 export const customTemplateRequests = pgTable("custom_template_requests", {

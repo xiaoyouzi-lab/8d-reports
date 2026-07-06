@@ -1425,6 +1425,56 @@ PR #8 Quality Knowledge Base v1.
 - V1 scans recent eligible JSONB report rows in application code. This is conservative and avoids schema migration, but large workspaces may eventually need indexed/materialized search.
 - Free users can access their own completed-report Knowledge Base assets; this adds a focused completed-report reuse surface without changing pricing configuration.
 
+# 2026-07-06 — P0+ Preview Conversion Concurrency Hardening
+
+## Task
+
+Fix PR #34 P0+ conversion idempotency and concurrent double-submit behavior. Keep PR #34 draft/open, append a commit only, do not start PR5, and do not modify export, payment, share, team permissions, editor UI, production feature flags, Vercel env, SEO pages, or stash.
+
+## Changed Files
+
+- Added `drizzle/0007_p0_plus_preview_conversion_claim.sql`.
+- Updated `src/lib/db/schema.ts` with P0+ preview conversion claim fields.
+- Updated `src/lib/p0-plus/storage.ts` with atomic `claimConversion`, claim cleanup, and claim-token-gated `markConverted`.
+- Updated `src/lib/p0-plus/convert.ts` so conversion claims before creating a formal report, clears claims on report creation failure, and returns safe 409 responses when conversion is already in progress or conversion status cannot be confirmed.
+- Updated `src/lib/p0-plus/convert.test.ts` with concurrent double POST, creation failure cleanup, mark failure, and existing idempotency coverage.
+- Updated `src/lib/p0-plus/paths.ts`, `src/components/p0-plus/P0PlusPreviewContent.tsx`, and UI tests to encode the login `callbackUrl`.
+- Updated `src/lib/p0-plus/preview-service.test.ts` mocks for the new preview record fields.
+
+## Implementation Summary
+
+- Added nullable conversion claim fields to `p0_plus_previews`: `conversion_claim_token`, `conversion_claimed_at`, and `conversion_claim_expires_at`.
+- `claimConversion` is a single database update guarded by active preview, `converted_report_id IS NULL`, and no unexpired existing claim.
+- `convertP0PlusPreviewToReport` now creates a formal report only after the claim succeeds.
+- A second concurrent POST that cannot claim re-reads the preview; if already converted and accessible it returns the existing redirect, otherwise it returns a safe 409 in-progress response without creating a report or consuming quota.
+- If formal report creation fails because of quota, Team viewer role, or another creation error, the current claim is cleared so the user can retry after fixing the issue.
+- `markConverted` now requires the same claim token and clears claim fields after setting `converted_report_id`.
+- If `markConverted` fails, conversion no longer pretends success or leaks the newly created report id.
+- Login callback paths are encoded while still resolving to local `/p0-plus/continue/[token]` paths after login parsing.
+
+## Tests / Verification
+
+- `npx tsx src/lib/p0-plus/convert.test.ts` passed.
+- `npm run test:p0-plus-ui` passed.
+- `npm run test:p0-plus-preview` passed.
+- `npm run test:p0-plus` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `git diff --check main...HEAD` passed before staging; staged diff check will be run before commit.
+
+## Risks
+
+- The claim prevents duplicate report creation for concurrent POSTs while the claim is active. If a process creates a report and then fails before marking converted, the response is safe and the claim remains until expiry; an operator may need to inspect if that rare orphan case appears in logs.
+- The migration is additive and nullable, but production migration ordering should still be reviewed before enabling the feature flag.
+
+## Unfinished / Needs Human Review
+
+- Review the 10-minute claim TTL against expected production latency before enabling P0+ preview conversion.
+
+## Suggested Next Task
+
+After PR #34 is reviewed and merged, start PR5 from fresh `main`; do not build on the local API-fallback commit unless it has been synchronized from merged `main`.
+
 # 2026-07-06 — P0+ Preview Conversion PR4
 
 ## Task

@@ -207,7 +207,7 @@ async function main() {
     "Priority: high",
     "Linked step: D2",
     "After signing in, you can save this preview as an editable report.",
-    "/login?callbackUrl=/p0-plus/continue/preview-token-123",
+    "/login?callbackUrl=%2Fp0-plus%2Fcontinue%2Fpreview-token-123",
   ]) {
     assert.equal(previewHtml.includes(expected), true, `Preview page should include ${expected}`);
   }

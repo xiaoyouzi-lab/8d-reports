@@ -235,7 +235,7 @@ export function P0PlusPreviewPageContent({
               </div>
             </div>
             <Link
-              href={`/login?callbackUrl=${continuePath}`}
+              href={`/login?callbackUrl=${encodeURIComponent(continuePath)}`}
               className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
             >
               Sign in to edit and export this report

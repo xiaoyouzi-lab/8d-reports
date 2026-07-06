@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config";
 import { mapP0PlusPreviewToReportDataPatch } from "@/lib/p0-plus/mapper";
 import { hashPreviewToken } from "@/lib/p0-plus/tokens";
@@ -24,6 +25,7 @@ export interface P0PlusConversionDependencies {
   storage?: P0PlusPreviewConversionStorage;
   createReport?: (input: CreateReportFromDataInput) => Promise<CreateReportFromDataResult>;
   getAccessibleReport?: (reportId: string, userId: string) => Promise<{ id: string } | null>;
+  createClaimToken?: () => string;
 }
 
 export interface P0PlusConversionRequest {
@@ -93,6 +95,26 @@ function safeNotFoundResponse(code = "p0_plus_preview_expired_or_not_found"): P0
   };
 }
 
+function conversionInProgressResponse(): P0PlusConversionResult {
+  return {
+    status: 409,
+    body: {
+      error: "Preview conversion is already in progress. Try again in a moment.",
+      code: "p0_plus_conversion_in_progress",
+    },
+  };
+}
+
+function conversionStatusUnknownResponse(): P0PlusConversionResult {
+  return {
+    status: 409,
+    body: {
+      error: "Preview conversion status could not be confirmed. Try again in a moment.",
+      code: "p0_plus_conversion_status_unknown",
+    },
+  };
+}
+
 function safeUnavailableState(code = "p0_plus_preview_expired_or_not_found"): P0PlusContinuationState {
   return {
     kind: "unavailable",
@@ -122,6 +144,10 @@ function previewSummary(preview: P0PlusPreviewResponse) {
 
 function reportRedirectPath(reportId: string) {
   return `/reports/${reportId}`;
+}
+
+function createDefaultClaimToken() {
+  return randomUUID();
 }
 
 async function resolveConvertedReport(
@@ -208,8 +234,33 @@ export async function convertP0PlusPreviewToReport(
     };
   }
 
+  const claimToken = (dependencies.createClaimToken || createDefaultClaimToken)();
+  const claimed = await storage.claimConversion(record.id, claimToken, now);
+  if (!claimed) {
+    const latest = await storage.findActiveByTokenHash(hashPreviewToken(request.token), now);
+    if (!latest) return safeNotFoundResponse();
+
+    const latestConverted = await resolveConvertedReport(latest, request.user.id, dependencies);
+    if (latestConverted && !latestConverted.allowed) return safeNotFoundResponse();
+    if (latestConverted?.allowed) {
+      return {
+        status: 200,
+        body: {
+          reportId: latestConverted.reportId,
+          redirectPath: latestConverted.redirectPath,
+          reused: true,
+        },
+      };
+    }
+
+    return conversionInProgressResponse();
+  }
+
   const preview = validateRecordPreview(record);
-  if (!preview) return safeNotFoundResponse("p0_plus_preview_invalid");
+  if (!preview) {
+    await storage.clearConversionClaim(record.id, claimToken, now);
+    return safeNotFoundResponse("p0_plus_preview_invalid");
+  }
 
   const mapped = mapP0PlusPreviewToReportDataPatch(preview);
   if (mapped.issues.length > 0) {
@@ -226,17 +277,31 @@ export async function convertP0PlusPreviewToReport(
   if (safeDataPatch.priority !== priority) delete safeDataPatch.priority;
 
   const createReport = dependencies.createReport || createReportFromData;
-  const created = await createReport({
-    user: request.user,
-    title: sanitizeReportTitle(preview.conversion.recommendedReportTitle),
-    reportType,
-    priority,
-    source: "p0_plus_preview",
-    data: safeDataPatch,
-    status: "draft",
-  });
+  let created: CreateReportFromDataResult;
+  try {
+    created = await createReport({
+      user: request.user,
+      title: sanitizeReportTitle(preview.conversion.recommendedReportTitle),
+      reportType,
+      priority,
+      source: "p0_plus_preview",
+      data: safeDataPatch,
+      status: "draft",
+    });
+  } catch (error) {
+    await storage.clearConversionClaim(record.id, claimToken, now);
+    console.error("P0+ preview conversion report creation failed", { previewId: record.id, error });
+    return {
+      status: 500,
+      body: {
+        error: "Report could not be created",
+        code: "p0_plus_report_creation_failed",
+      },
+    };
+  }
 
   if (!created.ok) {
+    await storage.clearConversionClaim(record.id, claimToken, now);
     return {
       status: created.status,
       body: {
@@ -246,7 +311,7 @@ export async function convertP0PlusPreviewToReport(
     };
   }
 
-  const marked = await storage.markConverted(record.id, created.report.id, now);
+  const marked = await storage.markConverted(record.id, created.report.id, claimToken, now);
   if (!marked) {
     const latest = await storage.findActiveByTokenHash(hashPreviewToken(request.token), now);
     const latestConverted = latest ? await resolveConvertedReport(latest, request.user.id, dependencies) : null;
@@ -262,8 +327,8 @@ export async function convertP0PlusPreviewToReport(
     }
     console.warn("P0+ preview conversion could not mark preview as converted", {
       previewId: record.id,
-      reportId: created.report.id,
     });
+    return conversionStatusUnknownResponse();
   }
 
   return {

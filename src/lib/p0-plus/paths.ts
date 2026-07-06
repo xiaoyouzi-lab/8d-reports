@@ -7,5 +7,5 @@ export function getP0PlusContinuePath(token: string) {
 }
 
 export function getP0PlusContinueLoginPath(token: string) {
-  return `/login?callbackUrl=${getP0PlusContinuePath(token)}`;
+  return `/login?callbackUrl=${encodeURIComponent(getP0PlusContinuePath(token))}`;
 }

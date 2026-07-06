@@ -23,7 +23,10 @@ function clonePreview(): P0PlusPreviewResponse {
 
 class MockConversionStorage implements P0PlusPreviewConversionStorage {
   records = new Map<string, P0PlusPreviewRecord>();
+  claimCalls = 0;
+  clearCalls = 0;
   markCalls = 0;
+  forceMarkFailure = false;
 
   async create(input: CreateP0PlusPreviewInput) {
     const record: P0PlusPreviewRecord = {
@@ -36,6 +39,9 @@ class MockConversionStorage implements P0PlusPreviewConversionStorage {
       browserTokenHash: input.browserTokenHash || null,
       expiresAt: input.expiresAt,
       convertedReportId: null,
+      conversionClaimToken: null,
+      conversionClaimedAt: null,
+      conversionClaimExpiresAt: null,
       createdAt: new Date("2026-07-03T00:00:00.000Z"),
       updatedAt: new Date("2026-07-03T00:00:00.000Z"),
     };
@@ -49,11 +55,61 @@ class MockConversionStorage implements P0PlusPreviewConversionStorage {
     return record;
   }
 
-  async markConverted(previewId: string, reportId: string, now = new Date()) {
-    this.markCalls += 1;
+  async claimConversion(previewId: string, claimToken: string, now = new Date()) {
+    this.claimCalls += 1;
     for (const [tokenHash, record] of this.records.entries()) {
-      if (record.id !== previewId || record.convertedReportId) continue;
-      const updated = { ...record, convertedReportId: reportId, updatedAt: now };
+      const hasActiveClaim = record.conversionClaimToken
+        && record.conversionClaimExpiresAt
+        && record.conversionClaimExpiresAt > now;
+      if (record.id !== previewId || record.convertedReportId || record.expiresAt <= now || hasActiveClaim) continue;
+      const updated = {
+        ...record,
+        conversionClaimToken: claimToken,
+        conversionClaimedAt: now,
+        conversionClaimExpiresAt: new Date(now.getTime() + 10 * 60 * 1000),
+        updatedAt: now,
+      };
+      this.records.set(tokenHash, updated);
+      return updated;
+    }
+    return null;
+  }
+
+  async clearConversionClaim(previewId: string, claimToken: string, now = new Date()) {
+    this.clearCalls += 1;
+    for (const [tokenHash, record] of this.records.entries()) {
+      if (record.id !== previewId || record.conversionClaimToken !== claimToken) continue;
+      this.records.set(tokenHash, {
+        ...record,
+        conversionClaimToken: null,
+        conversionClaimedAt: null,
+        conversionClaimExpiresAt: null,
+        updatedAt: now,
+      });
+    }
+  }
+
+  async markConverted(previewId: string, reportId: string, claimToken: string, now = new Date()) {
+    this.markCalls += 1;
+    if (this.forceMarkFailure) return null;
+    for (const [tokenHash, record] of this.records.entries()) {
+      if (
+        record.id !== previewId
+        || record.convertedReportId
+        || record.conversionClaimToken !== claimToken
+        || !record.conversionClaimExpiresAt
+        || record.conversionClaimExpiresAt <= now
+      ) {
+        continue;
+      }
+      const updated = {
+        ...record,
+        convertedReportId: reportId,
+        conversionClaimToken: null,
+        conversionClaimedAt: null,
+        conversionClaimExpiresAt: null,
+        updatedAt: now,
+      };
       this.records.set(tokenHash, updated);
       return updated;
     }
@@ -76,6 +132,9 @@ function addRecord(
     browserTokenHash: null,
     expiresAt: new Date("2026-07-04T00:00:00.000Z"),
     convertedReportId: null,
+    conversionClaimToken: null,
+    conversionClaimedAt: null,
+    conversionClaimExpiresAt: null,
     createdAt: new Date("2026-07-03T00:00:00.000Z"),
     updatedAt: new Date("2026-07-03T00:00:00.000Z"),
     ...overrides,
@@ -125,8 +184,8 @@ async function main() {
 
   assert.equal(
     getP0PlusContinueLoginPath(token),
-    "/login?callbackUrl=/p0-plus/continue/preview-token-1234567890",
-    "Unauthenticated continuation should use a safe local login callback",
+    "/login?callbackUrl=%2Fp0-plus%2Fcontinue%2Fpreview-token-1234567890",
+    "Unauthenticated continuation should use an encoded safe local login callback",
   );
 
   const disabledStorage = new MockConversionStorage();
@@ -203,7 +262,9 @@ async function main() {
   assert.equal(validResult.body.reportId, "report_1");
   assert.equal(validResult.body.redirectPath, "/reports/report_1");
   assert.equal(validCreate.inputs.length, 1, "Valid conversion should consume report creation quota once");
+  assert.equal(validStorage.claimCalls, 1, "Valid conversion should claim before report creation");
   assert.equal(validStorage.markCalls, 1, "Valid conversion should mark preview converted");
+  assert.equal(validStorage.clearCalls, 0, "Valid conversion should not clear a successful claim");
   assert.equal(validCreate.inputs[0]?.source, "p0_plus_preview");
   assert.equal(validCreate.inputs[0]?.title, "Injection molded part flash/excess material");
   assert.deepEqual(
@@ -229,6 +290,82 @@ async function main() {
   assert.equal(repeatResult.status, 200, "Repeat conversion should return existing report");
   assert.equal(repeatResult.body.reportId, "report_1");
   assert.equal(validCreate.inputs.length, 1, "Repeat conversion must not create a duplicate report or consume quota again");
+
+  const inProgressStorage = new MockConversionStorage();
+  addRecord(inProgressStorage, "in-progress-preview-token-1234567890", {
+    conversionClaimToken: "claim_already_running",
+    conversionClaimedAt: new Date("2026-07-03T00:00:00.000Z"),
+    conversionClaimExpiresAt: new Date("2026-07-03T00:10:00.000Z"),
+  });
+  const inProgressCreate = makeCreateReportMock();
+  const inProgressResult = await convertP0PlusPreviewToReport(
+    {
+      enabled: true,
+      token: "in-progress-preview-token-1234567890",
+      user,
+      now: new Date("2026-07-03T00:00:01.000Z"),
+    },
+    {
+      storage: inProgressStorage,
+      createReport: inProgressCreate.createReport,
+      getAccessibleReport: async () => null,
+      createClaimToken: () => "claim_second_request",
+    },
+  );
+  assert.equal(inProgressResult.status, 409, "Concurrent double POST should return in-progress response");
+  assert.equal(inProgressResult.body.code, "p0_plus_conversion_in_progress");
+  assert.equal(inProgressCreate.inputs.length, 0, "Concurrent double POST must not create a duplicate report or consume quota");
+  assert.equal(inProgressStorage.markCalls, 0, "Concurrent double POST must not mark without a claim");
+
+  const creationFailureStorage = new MockConversionStorage();
+  addRecord(creationFailureStorage, "quota-failure-preview-token-1234567890");
+  const creationFailureResult = await convertP0PlusPreviewToReport(
+    {
+      enabled: true,
+      token: "quota-failure-preview-token-1234567890",
+      user,
+      now: new Date("2026-07-03T00:00:01.000Z"),
+    },
+    {
+      storage: creationFailureStorage,
+      createReport: async () => ({
+        ok: false,
+        status: 403,
+        body: { error: "Quota exhausted. Upgrade to Pro or Team to create more reports." },
+      }),
+      getAccessibleReport: async () => null,
+      createClaimToken: () => "claim_quota_failure",
+    },
+  );
+  assert.equal(creationFailureResult.status, 403, "Report creation failure should surface the formal creation error");
+  assert.equal(creationFailureStorage.claimCalls, 1, "Creation failure path should have claimed conversion");
+  assert.equal(creationFailureStorage.clearCalls, 1, "Creation failure should clear the current claim for retry");
+  assert.equal(creationFailureStorage.markCalls, 0, "Creation failure must not mark converted");
+  const creationFailureRecord = creationFailureStorage.records.get(hashPreviewToken("quota-failure-preview-token-1234567890"));
+  assert.equal(creationFailureRecord?.conversionClaimToken, null, "Cleared claim should allow later retry");
+
+  const markFailureStorage = new MockConversionStorage();
+  markFailureStorage.forceMarkFailure = true;
+  addRecord(markFailureStorage, "mark-failure-preview-token-1234567890");
+  const markFailureCreate = makeCreateReportMock();
+  const markFailureResult = await convertP0PlusPreviewToReport(
+    {
+      enabled: true,
+      token: "mark-failure-preview-token-1234567890",
+      user,
+      now: new Date("2026-07-03T00:00:01.000Z"),
+    },
+    {
+      storage: markFailureStorage,
+      createReport: markFailureCreate.createReport,
+      getAccessibleReport: async () => null,
+      createClaimToken: () => "claim_mark_failure",
+    },
+  );
+  assert.equal(markFailureResult.status, 409, "markConverted failure should not be reported as success");
+  assert.equal(markFailureResult.body.code, "p0_plus_conversion_status_unknown");
+  assert.equal(markFailureCreate.inputs.length, 1, "mark failure happens after the single formal create attempt");
+  assert.equal(JSON.stringify(markFailureResult.body).includes("report_1"), false, "mark failure must not leak the private report id");
 
   const inaccessibleStorage = new MockConversionStorage();
   addRecord(inaccessibleStorage, "converted-inaccessible-token-1234567890", {
