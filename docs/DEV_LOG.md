@@ -2,6 +2,51 @@
 
 ## Latest Task
 
+P0+ PR5 E2E smoke, hardening, and Preview environment validation checklist.
+
+## Changed Files
+
+- `docs/P0_PLUS_PREVIEW_VALIDATION.md`
+- `scripts/p0-plus-smoke.test.ts`
+- `package.json`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added a P0+ validation checklist for local and Vercel Preview environments.
+- Documented PR1-PR4 preconditions, required local/Preview env, manual validation steps, rollback, privacy notes, and expired preview cleanup status.
+- Added a coverage matrix mapping the P0+ minimum loop to existing tests and manual validation.
+- Added `npm run test:p0-plus-smoke`, a lightweight `tsx` runner that executes the existing P0+ schema, preview API, UI, and conversion tests without calling a real AI provider.
+- The smoke runner deletes `P0_PLUS_PREVIEW_ENABLED` from child-process env so the default-disabled baseline is preserved while individual tests still exercise enabled cases with mocks.
+- Did not modify runtime routes, components, AI backend, database schema, export templates, payment, share links, team permissions, report editor UI, production env, Vercel env, SEO/content pages, or stash.
+
+## Tests / Verification
+
+- `npm run test:p0-plus` passed.
+- `npm run test:p0-plus-preview` passed.
+- `npm run test:p0-plus-ui` passed.
+- `npx tsx src/lib/p0-plus/convert.test.ts` passed.
+- `npm run test:p0-plus-smoke` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+## Risks
+
+- PR5 documents Preview validation but does not itself prove a live Vercel Preview environment has the feature flag, migrations, AI provider, database, and auth configured correctly.
+- Expired preview rows fail safely at lookup time, but automatic deletion is still a future cleanup task.
+
+## Unfinished / Needs Human Review
+
+- Run the documented manual validation path in a local or Vercel Preview environment before enabling the feature anywhere beyond test environments.
+- Confirm production launch timing separately; PR5 does not enable production.
+
+## Suggested Next Task
+
+After PR5 is reviewed, run the documented Preview validation checklist in a controlled non-production environment. Do not start P1 file parsing, supplier links, one-click AI fixes, or production feature-flag rollout until explicitly approved.
+
+## Previous Task
+
 P0+ PR3 homepage guest intake UI and read-only preview page.
 
 ## Changed Files
