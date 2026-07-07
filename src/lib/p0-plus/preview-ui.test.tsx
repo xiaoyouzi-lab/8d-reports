@@ -4,6 +4,7 @@ import LandingPage from "@/app/(marketing)/page";
 import { P0PlusPreviewPageContent } from "@/components/p0-plus/P0PlusPreviewContent";
 import { injectionMoldingFlashFixture } from "@/lib/p0-plus/__fixtures__/injection-molding-flash";
 import { P0_PLUS_PREVIEW_MAX_INPUT_CHARS } from "@/lib/p0-plus/limits";
+import { getP0PlusContinuePath } from "@/lib/p0-plus/paths";
 import {
   submitP0PlusIntake,
   validateP0PlusIntakeInput,
@@ -182,6 +183,7 @@ async function main() {
       preview={injectionMoldingFlashFixture.response}
       tokenExpiresAt="2026-07-04T00:00:00.000Z"
       outputLanguage="en"
+      continuePath={getP0PlusContinuePath("preview-token-123")}
     />,
   );
 
@@ -204,6 +206,8 @@ async function main() {
     "Owner: quality",
     "Priority: high",
     "Linked step: D2",
+    "After signing in, you can save this preview as an editable report.",
+    "/login?callbackUrl=%2Fp0-plus%2Fcontinue%2Fpreview-token-123",
   ]) {
     assert.equal(previewHtml.includes(expected), true, `Preview page should include ${expected}`);
   }

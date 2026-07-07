@@ -44,6 +44,9 @@ class MockStorage implements P0PlusPreviewStorage {
       browserTokenHash: input.browserTokenHash || null,
       expiresAt: input.expiresAt,
       convertedReportId: null,
+      conversionClaimToken: null,
+      conversionClaimedAt: null,
+      conversionClaimExpiresAt: null,
       createdAt: new Date("2026-07-03T00:00:00.000Z"),
       updatedAt: new Date("2026-07-03T00:00:00.000Z"),
     };

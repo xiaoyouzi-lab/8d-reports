@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { P0PlusPreviewPageContent } from "@/components/p0-plus/P0PlusPreviewContent";
 import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config";
+import { getP0PlusContinuePath } from "@/lib/p0-plus/paths";
 import { getP0PlusPreview } from "@/lib/p0-plus/preview-service";
 import { validateP0PlusPreviewResponse } from "@/lib/p0-plus/schema";
 
@@ -32,6 +33,7 @@ export default async function P0PlusPreviewPage({
       preview={validation.data}
       tokenExpiresAt={String(result.body.tokenExpiresAt || "")}
       outputLanguage={String(result.body.outputLanguage || "en")}
+      continuePath={getP0PlusContinuePath(token)}
     />
   );
 }

@@ -182,10 +182,12 @@ export function P0PlusPreviewPageContent({
   preview,
   tokenExpiresAt,
   outputLanguage,
+  continuePath,
 }: {
   preview: P0PlusPreviewResponse;
   tokenExpiresAt: string;
   outputLanguage: string;
+  continuePath: string;
 }) {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -228,13 +230,12 @@ export function P0PlusPreviewPageContent({
               <div>
                 <p className="text-sm font-semibold text-slate-950">Sign in to edit and export this report</p>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Editing, saving, sharing, and exporting require sign in. Report conversion will be enabled in the
-                  next step.
+                  After signing in, you can save this preview as an editable report.
                 </p>
               </div>
             </div>
             <Link
-              href="/login?callbackUrl=/dashboard"
+              href={`/login?callbackUrl=${encodeURIComponent(continuePath)}`}
               className="mt-4 inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-700"
             >
               Sign in to edit and export this report
