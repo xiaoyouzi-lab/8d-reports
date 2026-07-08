@@ -8,9 +8,21 @@ export {
 
 import { P0_PLUS_PREVIEW_MAX_BODY_BYTES } from "@/lib/p0-plus/limits";
 
-export function isP0PlusPreviewEnabled() {
+export const P0_PLUS_VALIDATION_PREVIEW_BRANCH = "validation/p0-plus-preview-smoke";
+
+function isExplicitP0PlusPreviewFlagEnabled() {
   const value = (process.env.P0_PLUS_PREVIEW_ENABLED || "").trim().toLowerCase();
   return value === "1" || value === "true" || value === "yes";
+}
+
+export function isP0PlusPreviewValidationFallbackEnabled() {
+  // VALIDATION-ONLY: this branch fallback exists only for PR #36 and must not be merged to main.
+  return process.env.VERCEL_ENV === "preview"
+    && process.env.VERCEL_GIT_COMMIT_REF === P0_PLUS_VALIDATION_PREVIEW_BRANCH;
+}
+
+export function isP0PlusPreviewEnabled() {
+  return isExplicitP0PlusPreviewFlagEnabled() || isP0PlusPreviewValidationFallbackEnabled();
 }
 
 export function normalizeP0PlusOutputLanguage(value: unknown) {

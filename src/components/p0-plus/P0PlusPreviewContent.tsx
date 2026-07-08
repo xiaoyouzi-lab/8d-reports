@@ -183,11 +183,13 @@ export function P0PlusPreviewPageContent({
   tokenExpiresAt,
   outputLanguage,
   continuePath,
+  validationMode = false,
 }: {
   preview: P0PlusPreviewResponse;
   tokenExpiresAt: string;
   outputLanguage: string;
   continuePath: string;
+  validationMode?: boolean;
 }) {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
@@ -211,6 +213,11 @@ export function P0PlusPreviewPageContent({
       </header>
 
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+        {validationMode ? (
+          <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950">
+            Validation preview mode. This temporary PR is for testing only and must not be merged.
+          </div>
+        ) : null}
         <section className="grid gap-5 lg:grid-cols-[1fr_360px] lg:items-start">
           <div>
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">

@@ -5,7 +5,10 @@ import { ArrowRight, ShieldAlert } from "lucide-react";
 import { P0PlusContinueActions } from "@/components/p0-plus/P0PlusContinueActions";
 import { getSessionUser } from "@/lib/api-helpers";
 import { getP0PlusContinuationState } from "@/lib/p0-plus/convert";
-import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config";
+import {
+  isP0PlusPreviewEnabled,
+  isP0PlusPreviewValidationFallbackEnabled,
+} from "@/lib/p0-plus/config";
 import {
   getP0PlusContinueLoginPath,
   getP0PlusPreviewPath,
@@ -23,7 +26,21 @@ function formatExpiresAt(value: Date) {
   return value.toISOString();
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function ValidationBanner() {
+  return (
+    <div className="mb-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950">
+      Validation preview mode. This temporary PR is for testing only and must not be merged.
+    </div>
+  );
+}
+
+function Shell({
+  children,
+  validationMode = false,
+}: {
+  children: React.ReactNode;
+  validationMode?: boolean;
+}) {
   return (
     <main className="min-h-screen bg-slate-50 text-slate-950">
       <header className="border-b border-slate-200 bg-white">
@@ -39,14 +56,17 @@ function Shell({ children }: { children: React.ReactNode }) {
           </span>
         </div>
       </header>
-      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">{children}</div>
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+        {validationMode ? <ValidationBanner /> : null}
+        {children}
+      </div>
     </main>
   );
 }
 
-function SafeUnavailable() {
+function SafeUnavailable({ validationMode = false }: { validationMode?: boolean }) {
   return (
-    <Shell>
+    <Shell validationMode={validationMode}>
       <section className="max-w-2xl rounded-lg border border-slate-200 bg-white p-6">
         <p className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
           Preview unavailable
@@ -74,20 +94,21 @@ export default async function P0PlusContinuePage({
   params: Promise<{ token: string }>;
 }) {
   if (!isP0PlusPreviewEnabled()) notFound();
+  const validationMode = isP0PlusPreviewValidationFallbackEnabled();
 
   const { token } = await params;
   const user = await getSessionUser();
   if (!user) redirect(getP0PlusContinueLoginPath(token));
 
   const state = await getP0PlusContinuationState({ token, userId: user.id });
-  if (state.kind === "unavailable") return <SafeUnavailable />;
+  if (state.kind === "unavailable") return <SafeUnavailable validationMode={validationMode} />;
 
   const previewPath = getP0PlusPreviewPath(token);
   const expiresAt = formatExpiresAt(state.expiresAt);
 
   if (state.kind === "already_converted") {
     return (
-      <Shell>
+      <Shell validationMode={validationMode}>
         <section className="grid gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
           <div className="rounded-lg border border-slate-200 bg-white p-6">
             <p className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
@@ -120,7 +141,7 @@ export default async function P0PlusContinuePage({
   }
 
   return (
-    <Shell>
+    <Shell validationMode={validationMode}>
       <section className="grid gap-6 lg:grid-cols-[1fr_340px] lg:items-start">
         <div className="rounded-lg border border-slate-200 bg-white p-6">
           <p className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">
