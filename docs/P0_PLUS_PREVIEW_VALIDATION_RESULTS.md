@@ -1,5 +1,9 @@
 # P0+ Preview Validation Results
 
+PR #36 validation-only fallback is active only for Vercel preview branch
+`validation/p0-plus-preview-smoke`. This PR must be closed after validation and
+must not be merged.
+
 ## Environment
 
 - Branch:

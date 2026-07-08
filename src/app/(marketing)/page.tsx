@@ -14,7 +14,10 @@ import { PrimaryCTA } from "@/components/marketing/MarketingActions"
 import { P0PlusIntake } from "@/components/marketing/P0PlusIntake"
 import { JsonLd, PageHero, PageShell, Section, SectionHeader } from "@/components/marketing/MarketingPrimitives"
 import { socialOpenGraphImage } from "@/lib/marketing-content"
-import { isP0PlusPreviewEnabled } from "@/lib/p0-plus/config"
+import {
+  isP0PlusPreviewEnabled,
+  isP0PlusPreviewValidationFallbackEnabled,
+} from "@/lib/p0-plus/config"
 
 export const metadata: Metadata = {
   title: "8D Report Software for Customer-Ready Quality Reports",
@@ -189,8 +192,17 @@ function HeroProductPreview() {
   )
 }
 
+function P0PlusValidationBanner() {
+  return (
+    <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-950">
+      Validation preview mode. This temporary PR is for testing only and must not be merged.
+    </div>
+  )
+}
+
 export default function LandingPage() {
   const p0PlusPreviewEnabled = isP0PlusPreviewEnabled()
+  const p0PlusValidationMode = isP0PlusPreviewValidationFallbackEnabled()
   const heroTitle = p0PlusPreviewEnabled
     ? "Turn messy quality notes into structured 8D reports."
     : "Finish customer-ready 8D reports without rebuilding them in Excel."
@@ -240,7 +252,10 @@ export default function LandingPage() {
         actions={heroActions}
       >
         {p0PlusPreviewEnabled ? (
-          <P0PlusIntake />
+          <>
+            {p0PlusValidationMode ? <P0PlusValidationBanner /> : null}
+            <P0PlusIntake />
+          </>
         ) : (
           <>
             <HeroProductPreview />

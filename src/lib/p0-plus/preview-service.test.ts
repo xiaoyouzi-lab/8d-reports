@@ -10,7 +10,12 @@ import type {
 import type { P0PlusPreviewResponse } from "@/lib/p0-plus/schema";
 import { createP0PlusPreview, getP0PlusPreview } from "@/lib/p0-plus/preview-service";
 import { hashPreviewToken } from "@/lib/p0-plus/tokens";
-import { isP0PlusPreviewEnabled, normalizeP0PlusOutputLanguage, P0_PLUS_PREVIEW_MAX_BODY_BYTES } from "@/lib/p0-plus/config";
+import {
+  isP0PlusPreviewEnabled,
+  isP0PlusPreviewValidationFallbackEnabled,
+  normalizeP0PlusOutputLanguage,
+  P0_PLUS_PREVIEW_MAX_BODY_BYTES,
+} from "@/lib/p0-plus/config";
 import { injectionMoldingFlashFixture } from "@/lib/p0-plus/__fixtures__/injection-molding-flash";
 
 function clonePreview(): P0PlusPreviewResponse {
@@ -80,9 +85,83 @@ const validRawInput = [
 
 async function main() {
   const originalFeatureFlag = process.env.P0_PLUS_PREVIEW_ENABLED;
+  const originalVercelEnv = process.env.VERCEL_ENV;
+  const originalVercelGitCommitRef = process.env.VERCEL_GIT_COMMIT_REF;
+
+  function restoreEnv() {
+    if (originalFeatureFlag === undefined) {
+      delete process.env.P0_PLUS_PREVIEW_ENABLED;
+    } else {
+      process.env.P0_PLUS_PREVIEW_ENABLED = originalFeatureFlag;
+    }
+    if (originalVercelEnv === undefined) {
+      delete process.env.VERCEL_ENV;
+    } else {
+      process.env.VERCEL_ENV = originalVercelEnv;
+    }
+    if (originalVercelGitCommitRef === undefined) {
+      delete process.env.VERCEL_GIT_COMMIT_REF;
+    } else {
+      process.env.VERCEL_GIT_COMMIT_REF = originalVercelGitCommitRef;
+    }
+  }
+
   delete process.env.P0_PLUS_PREVIEW_ENABLED;
+  delete process.env.VERCEL_ENV;
+  delete process.env.VERCEL_GIT_COMMIT_REF;
   assert.equal(isP0PlusPreviewEnabled(), false, "P0+ preview feature flag should be disabled by default");
-  if (originalFeatureFlag !== undefined) process.env.P0_PLUS_PREVIEW_ENABLED = originalFeatureFlag;
+  assert.equal(
+    isP0PlusPreviewValidationFallbackEnabled(),
+    false,
+    "Validation fallback should be disabled by default",
+  );
+
+  process.env.VERCEL_ENV = "preview";
+  process.env.VERCEL_GIT_COMMIT_REF = "validation/p0-plus-preview-smoke";
+  assert.equal(
+    isP0PlusPreviewValidationFallbackEnabled(),
+    true,
+    "Validation preview branch fallback should enable only on the validation Preview deployment",
+  );
+  assert.equal(
+    isP0PlusPreviewEnabled(),
+    true,
+    "Validation preview branch fallback should enable P0+ for PR #36 Preview testing",
+  );
+
+  process.env.VERCEL_ENV = "production";
+  process.env.VERCEL_GIT_COMMIT_REF = "validation/p0-plus-preview-smoke";
+  delete process.env.P0_PLUS_PREVIEW_ENABLED;
+  assert.equal(
+    isP0PlusPreviewValidationFallbackEnabled(),
+    false,
+    "Production must not use the validation branch fallback",
+  );
+  assert.equal(
+    isP0PlusPreviewEnabled(),
+    false,
+    "Production must stay disabled without an explicit P0_PLUS_PREVIEW_ENABLED flag",
+  );
+  process.env.P0_PLUS_PREVIEW_ENABLED = "true";
+  assert.equal(
+    isP0PlusPreviewEnabled(),
+    true,
+    "Explicit P0_PLUS_PREVIEW_ENABLED should still enable P0+",
+  );
+
+  process.env.VERCEL_ENV = "preview";
+  process.env.VERCEL_GIT_COMMIT_REF = "main";
+  delete process.env.P0_PLUS_PREVIEW_ENABLED;
+  assert.equal(
+    isP0PlusPreviewValidationFallbackEnabled(),
+    false,
+    "Main branch Preview deployments must not use the validation fallback",
+  );
+  assert.equal(isP0PlusPreviewEnabled(), false, "Main branch Preview deployments should remain disabled by default");
+
+  delete process.env.P0_PLUS_PREVIEW_ENABLED;
+  delete process.env.VERCEL_ENV;
+  delete process.env.VERCEL_GIT_COMMIT_REF;
 
   const disabledRouteResponse = await POST({
     headers: new Headers({ "content-length": String(P0_PLUS_PREVIEW_MAX_BODY_BYTES + 1) }),
@@ -109,6 +188,7 @@ async function main() {
   } else {
     process.env.P0_PLUS_PREVIEW_ENABLED = originalFeatureFlag;
   }
+  restoreEnv();
 
   assert.equal(normalizeP0PlusOutputLanguage("en"), "en");
   assert.equal(normalizeP0PlusOutputLanguage("english"), "en");

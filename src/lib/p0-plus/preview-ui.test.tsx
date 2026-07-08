@@ -36,8 +36,31 @@ function firstHeroSection(html: string) {
 
 async function main() {
   const originalFeatureFlag = process.env.P0_PLUS_PREVIEW_ENABLED;
+  const originalVercelEnv = process.env.VERCEL_ENV;
+  const originalVercelGitCommitRef = process.env.VERCEL_GIT_COMMIT_REF;
+
+  function restoreEnv() {
+    if (originalFeatureFlag === undefined) {
+      delete process.env.P0_PLUS_PREVIEW_ENABLED;
+    } else {
+      process.env.P0_PLUS_PREVIEW_ENABLED = originalFeatureFlag;
+    }
+    if (originalVercelEnv === undefined) {
+      delete process.env.VERCEL_ENV;
+    } else {
+      process.env.VERCEL_ENV = originalVercelEnv;
+    }
+    if (originalVercelGitCommitRef === undefined) {
+      delete process.env.VERCEL_GIT_COMMIT_REF;
+    } else {
+      process.env.VERCEL_GIT_COMMIT_REF = originalVercelGitCommitRef;
+    }
+  }
+
   try {
     delete process.env.P0_PLUS_PREVIEW_ENABLED;
+    delete process.env.VERCEL_ENV;
+    delete process.env.VERCEL_GIT_COMMIT_REF;
     const disabledHomeHtml = renderToStaticMarkup(<LandingPage />);
     assert.equal(
       disabledHomeHtml.includes("Finish customer-ready 8D reports without rebuilding them in Excel."),
@@ -66,6 +89,8 @@ async function main() {
     );
 
     process.env.P0_PLUS_PREVIEW_ENABLED = "true";
+    delete process.env.VERCEL_ENV;
+    delete process.env.VERCEL_GIT_COMMIT_REF;
     const enabledHomeHtml = renderToStaticMarkup(<LandingPage />);
     const enabledHeroHtml = firstHeroSection(enabledHomeHtml);
     assert.equal(
@@ -98,12 +123,57 @@ async function main() {
       false,
       "Feature flag enabled hero should not promote signup as the first-screen main CTA",
     );
+
+    delete process.env.P0_PLUS_PREVIEW_ENABLED;
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_GIT_COMMIT_REF = "validation/p0-plus-preview-smoke";
+    const validationHomeHtml = renderToStaticMarkup(<LandingPage />);
+    assert.equal(
+      validationHomeHtml.includes("Turn messy quality notes into structured 8D reports."),
+      true,
+      "Validation Preview branch fallback should show the P0+ hero title",
+    );
+    assert.equal(
+      validationHomeHtml.includes("Generate 8D Draft"),
+      true,
+      "Validation Preview branch fallback should show the P0+ intake",
+    );
+    assert.equal(
+      validationHomeHtml.includes("Validation preview mode. This temporary PR is for testing only and must not be merged."),
+      true,
+      "Validation Preview branch fallback should show the warning banner",
+    );
+
+    delete process.env.P0_PLUS_PREVIEW_ENABLED;
+    process.env.VERCEL_ENV = "production";
+    process.env.VERCEL_GIT_COMMIT_REF = "validation/p0-plus-preview-smoke";
+    const productionFallbackHtml = renderToStaticMarkup(<LandingPage />);
+    assert.equal(
+      productionFallbackHtml.includes("Finish customer-ready 8D reports without rebuilding them in Excel."),
+      true,
+      "Production should preserve the old homepage without an explicit flag",
+    );
+    assert.equal(
+      productionFallbackHtml.includes("Generate 8D Draft"),
+      false,
+      "Production must not show P0+ intake from validation branch fallback",
+    );
+    assert.equal(
+      productionFallbackHtml.includes("Validation preview mode. This temporary PR is for testing only and must not be merged."),
+      false,
+      "Production must not show the validation fallback banner",
+    );
+
+    process.env.VERCEL_ENV = "preview";
+    process.env.VERCEL_GIT_COMMIT_REF = "main";
+    const mainPreviewHtml = renderToStaticMarkup(<LandingPage />);
+    assert.equal(
+      mainPreviewHtml.includes("Generate 8D Draft"),
+      false,
+      "Main branch Preview deployments must not show P0+ intake from validation fallback",
+    );
   } finally {
-    if (originalFeatureFlag === undefined) {
-      delete process.env.P0_PLUS_PREVIEW_ENABLED;
-    } else {
-      process.env.P0_PLUS_PREVIEW_ENABLED = originalFeatureFlag;
-    }
+    restoreEnv();
   }
 
   let fetchCalls = 0;
@@ -184,6 +254,7 @@ async function main() {
       tokenExpiresAt="2026-07-04T00:00:00.000Z"
       outputLanguage="en"
       continuePath={getP0PlusContinuePath("preview-token-123")}
+      validationMode
     />,
   );
 
@@ -206,6 +277,7 @@ async function main() {
     "Owner: quality",
     "Priority: high",
     "Linked step: D2",
+    "Validation preview mode. This temporary PR is for testing only and must not be merged.",
     "After signing in, you can save this preview as an editable report.",
     "/login?callbackUrl=%2Fp0-plus%2Fcontinue%2Fpreview-token-123",
   ]) {
