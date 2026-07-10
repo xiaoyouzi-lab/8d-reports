@@ -178,6 +178,20 @@ async function main() {
     assert.match(failedResult.message, /failed/i);
   }
 
+  const schemaInvalidResult = await submitP0PlusIntake({
+    rawInput: validRawInput,
+    outputLanguage: "en",
+    fetchImpl: async () => makeResponse(502, { code: "preview_schema_invalid" }),
+  });
+  assert.equal(schemaInvalidResult.ok, false, "Schema-invalid response should be surfaced");
+  if (!schemaInvalidResult.ok) {
+    assert.equal(
+      schemaInvalidResult.message,
+      "The AI returned an incomplete report structure. Please try again shortly.",
+    );
+    assert.equal(schemaInvalidResult.message.includes("clearer notes"), false);
+  }
+
   const previewHtml = renderToStaticMarkup(
     <P0PlusPreviewPageContent
       preview={injectionMoldingFlashFixture.response}

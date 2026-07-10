@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import {
+  P0_PLUS_DRAFT_FIELD_NAMES,
   P0_PLUS_REQUIRED_SECTION_CHECKS,
   P0_PLUS_SOURCE_STATUSES,
   validateP0PlusPreviewResponse,
@@ -7,7 +8,12 @@ import {
   type P0PlusPreviewResponse,
 } from "@/lib/p0-plus/schema";
 import { mapP0PlusPreviewToReportDataPatch } from "@/lib/p0-plus/mapper";
-import { P0_PLUS_AI_CONTRACT_PROMPT, P0_PLUS_QUALITY_DOMAIN_KNOWLEDGE, P0_PLUS_STRICT_BANS } from "@/lib/p0-plus/prompts";
+import {
+  P0_PLUS_AI_CONTRACT_PROMPT,
+  P0_PLUS_JSON_SCAFFOLD,
+  P0_PLUS_QUALITY_DOMAIN_KNOWLEDGE,
+  P0_PLUS_STRICT_BANS,
+} from "@/lib/p0-plus/prompts";
 import { injectionMoldingFlashFixture } from "@/lib/p0-plus/__fixtures__/injection-molding-flash";
 import { scarUnclearRolesFixture } from "@/lib/p0-plus/__fixtures__/scar-unclear-roles";
 import { smtPcbaSolderDefectFixture } from "@/lib/p0-plus/__fixtures__/smt-pcba-solder-defect";
@@ -151,3 +157,44 @@ assert.match(P0_PLUS_AI_CONTRACT_PROMPT, /Do not invent corrective action/i);
 assert.match(P0_PLUS_AI_CONTRACT_PROMPT, /Do not approve the report/i);
 assert.match(P0_PLUS_AI_CONTRACT_PROMPT, /Do not certify or prove compliance/i);
 assert.match(P0_PLUS_AI_CONTRACT_PROMPT, /must not use private knowledge context, historical reports, or team data/i);
+
+const requiredTopLevelKeys = [
+  "schemaVersion",
+  "generatedAt",
+  "modelTask",
+  "inputSummary",
+  "draft",
+  "readiness_check",
+  "missingInformation",
+  "requiredEvidence",
+  "next_actions",
+  "conversion",
+] as const;
+
+assert.equal(
+  validateP0PlusPreviewResponse(P0_PLUS_JSON_SCAFFOLD).success,
+  true,
+  "Prompt scaffold should remain valid when the runtime schema changes",
+);
+for (const key of requiredTopLevelKeys) {
+  assert.equal(key in P0_PLUS_JSON_SCAFFOLD, true, `Prompt scaffold should include top-level key ${key}`);
+  assert.match(P0_PLUS_AI_CONTRACT_PROMPT, new RegExp(`\\b${key}\\b`), `Prompt should name top-level key ${key}`);
+}
+
+for (const [stepId, fieldNames] of Object.entries(P0_PLUS_DRAFT_FIELD_NAMES)) {
+  assert.equal(stepId in P0_PLUS_JSON_SCAFFOLD.draft, true, `Prompt scaffold should include ${stepId}`);
+  for (const fieldName of fieldNames) {
+    assert.equal(
+      fieldName in P0_PLUS_JSON_SCAFFOLD.draft[stepId as keyof typeof P0_PLUS_DRAFT_FIELD_NAMES],
+      true,
+      `Prompt scaffold should include ${stepId}.${fieldName}`,
+    );
+    assert.match(P0_PLUS_AI_CONTRACT_PROMPT, new RegExp(`\\b${fieldName}\\b`), `Prompt should name ${stepId}.${fieldName}`);
+  }
+}
+
+assert.deepEqual(
+  Object.keys(P0_PLUS_JSON_SCAFFOLD.draft.D0.problemSource),
+  ["value", "sourceStatus", "rationale", "sourceQuote", "confidence"],
+  "Prompt scaffold should provide the exact P0PlusField structure",
+);

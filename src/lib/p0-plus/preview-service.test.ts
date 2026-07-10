@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { POST } from "@/app/api/p0-plus/preview/route";
-import { P0PlusPreviewAiError, type P0PlusPreviewAiClient } from "@/lib/p0-plus/ai";
+import {
+  DeepSeekP0PlusPreviewAiClient,
+  P0_PLUS_PREVIEW_MAX_TOKENS,
+  P0PlusPreviewAiError,
+  P0PlusPreviewAiSchemaError,
+  type P0PlusPreviewAiClient,
+  type P0PlusPreviewAiFetch,
+} from "@/lib/p0-plus/ai";
 import type { P0PlusRateLimiter } from "@/lib/p0-plus/rate-limit";
 import type {
   CreateP0PlusPreviewInput,
@@ -78,6 +85,24 @@ const validRawInput = [
   "Supplier is mentioned, photos are available, but lot and defect quantity are missing.",
 ].join(" ");
 
+function deepSeekCompletion(content: string) {
+  return new Response(
+    JSON.stringify({
+      choices: [{ message: { content } }],
+    }),
+    { status: 200, headers: { "Content-Type": "application/json" } },
+  );
+}
+
+function requestBody(init?: RequestInit) {
+  assert.equal(typeof init?.body, "string", "DeepSeek request should have a JSON body");
+  return JSON.parse(init.body as string) as {
+    model: string;
+    max_tokens: number;
+    messages: Array<{ role: string; content: string }>;
+  };
+}
+
 async function main() {
   const originalFeatureFlag = process.env.P0_PLUS_PREVIEW_ENABLED;
   delete process.env.P0_PLUS_PREVIEW_ENABLED;
@@ -120,6 +145,111 @@ async function main() {
   assert.equal(normalizeP0PlusOutputLanguage("en-zh"), "bilingual");
   assert.equal(normalizeP0PlusOutputLanguage("zh-en"), "bilingual");
   assert.equal(normalizeP0PlusOutputLanguage("unknown"), "en");
+
+  const originalApiKey = process.env.DEEPSEEK_API_KEY;
+  const originalPreviewModel = process.env.DEEPSEEK_PREVIEW_MODEL;
+  try {
+    process.env.DEEPSEEK_API_KEY = "test-only-key";
+    delete process.env.DEEPSEEK_PREVIEW_MODEL;
+
+    const repairResponses = [
+      deepSeekCompletion(JSON.stringify({ error: "generic response" })),
+      deepSeekCompletion(JSON.stringify(clonePreview())),
+    ];
+    const repairCalls: Array<{ init?: RequestInit }> = [];
+    const repairFetch: P0PlusPreviewAiFetch = async (_input, init) => {
+      repairCalls.push({ init });
+      const response = repairResponses.shift();
+      assert.ok(response, "Repair test should make at most two model calls");
+      return response;
+    };
+    const repairedPreview = await new DeepSeekP0PlusPreviewAiClient(repairFetch).generatePreview({
+      rawInput: validRawInput,
+      outputLanguage: "en",
+    });
+    assert.equal(repairedPreview.schemaVersion, "p0-plus-preview-v1");
+    assert.equal(repairCalls.length, 2, "One schema repair retry should recover a valid second response");
+    const firstRequest = requestBody(repairCalls[0]?.init);
+    const repairRequest = requestBody(repairCalls[1]?.init);
+    assert.equal(firstRequest.model, "deepseek-v4-flash", "Preview AI should use the new default DeepSeek model");
+    assert.equal(firstRequest.max_tokens, P0_PLUS_PREVIEW_MAX_TOKENS);
+    assert.equal(firstRequest.max_tokens, 10_000, "Preview output budget should fit the full D0-D8 contract");
+    assert.equal(repairRequest.messages.some((message) => message.role === "assistant"), true);
+    assert.match(repairRequest.messages.at(-1)?.content || "", /Validator issues:/);
+    assert.match(repairRequest.messages.at(-1)?.content || "", /schemaVersion/);
+    assert.match(repairRequest.messages.at(-1)?.content || "", /Exact JSON scaffold:/);
+    assert.match(repairRequest.messages.at(-1)?.content || "", /Do not add, guess, or change facts/i);
+
+    const invalidResponses = [
+      deepSeekCompletion(JSON.stringify({ error: "first invalid response" })),
+      deepSeekCompletion(JSON.stringify({ error: "second invalid response" })),
+    ];
+    let invalidRepairCalls = 0;
+    const invalidRepairClient = new DeepSeekP0PlusPreviewAiClient(async () => {
+      invalidRepairCalls += 1;
+      const response = invalidResponses.shift();
+      assert.ok(response, "Schema repair must stop after one retry");
+      return response;
+    });
+    const invalidRepairStorage = new MockStorage();
+    const invalidRepairResult = await createP0PlusPreview(
+      { enabled: true, body: { rawInput: validRawInput }, clientIp: "203.0.113.19" },
+      {
+        aiClient: invalidRepairClient,
+        storage: invalidRepairStorage,
+        rateLimiter: new MockRateLimiter(),
+      },
+    );
+    assert.equal(invalidRepairCalls, 2, "Schema repair should make one initial call and one retry only");
+    assert.equal(invalidRepairResult.status, 502);
+    assert.equal(invalidRepairResult.body.code, "preview_schema_invalid");
+    assert.equal(invalidRepairStorage.created.length, 0, "Failed schema repair must not create a preview row");
+
+    await assert.rejects(
+      () =>
+        new DeepSeekP0PlusPreviewAiClient(async () =>
+          deepSeekCompletion(JSON.stringify({ error: "still invalid" })),
+        ).generatePreview({ rawInput: validRawInput, outputLanguage: "en" }),
+      P0PlusPreviewAiSchemaError,
+      "Two schema-invalid responses should expose the internal schema error type",
+    );
+
+    const sensitiveText = "CONFIDENTIAL CUSTOMER EMAIL QUALITY DATA";
+    const capturedSchemaLogs: unknown[][] = [];
+    const originalConsoleError = console.error;
+    console.error = (...args: unknown[]) => {
+      capturedSchemaLogs.push(args);
+    };
+    try {
+      await assert.rejects(
+        () =>
+          new DeepSeekP0PlusPreviewAiClient(async () =>
+            deepSeekCompletion(JSON.stringify({ unexpected: sensitiveText })),
+          ).generatePreview({ rawInput: sensitiveText, outputLanguage: "en" }),
+        P0PlusPreviewAiSchemaError,
+      );
+    } finally {
+      console.error = originalConsoleError;
+    }
+    const schemaLogText = JSON.stringify(capturedSchemaLogs);
+    assert.equal(schemaLogText.includes(sensitiveText), false, "Schema logs must not contain input or AI output values");
+    for (const safeLogField of ["model", "contentLength", "topLevelKeys", "validatorIssues"]) {
+      assert.equal(schemaLogText.includes(safeLogField), true, `Schema logs should include safe field ${safeLogField}`);
+    }
+
+    process.env.DEEPSEEK_PREVIEW_MODEL = "preview-contract-test-model";
+    let configuredModel = "";
+    await new DeepSeekP0PlusPreviewAiClient(async (_input, init) => {
+      configuredModel = requestBody(init).model;
+      return deepSeekCompletion(JSON.stringify(clonePreview()));
+    }).generatePreview({ rawInput: validRawInput, outputLanguage: "en" });
+    assert.equal(configuredModel, "preview-contract-test-model", "Preview model env override should be honored");
+  } finally {
+    if (originalApiKey === undefined) delete process.env.DEEPSEEK_API_KEY;
+    else process.env.DEEPSEEK_API_KEY = originalApiKey;
+    if (originalPreviewModel === undefined) delete process.env.DEEPSEEK_PREVIEW_MODEL;
+    else process.env.DEEPSEEK_PREVIEW_MODEL = originalPreviewModel;
+  }
 
   const disabledAi = new MockAiClient();
   const disabledStorage = new MockStorage();
@@ -228,6 +358,7 @@ async function main() {
     { aiClient: invalidAi, storage: invalidStorage, rateLimiter: new MockRateLimiter() },
   );
   assert.equal(invalidResult.status, 502, "Invalid AI schema should fail safely");
+  assert.equal(invalidResult.body.code, "preview_schema_invalid");
   assert.equal(invalidAi.calls, 1, "Invalid AI schema still means AI was called once");
   assert.equal(invalidStorage.created.length, 0, "Invalid AI schema must not create preview");
 
@@ -294,6 +425,7 @@ async function main() {
     { aiClient: aiFailure, storage: aiFailureStorage, rateLimiter: new MockRateLimiter() },
   );
   assert.equal(aiFailureResult.status, 502, "Invalid AI JSON/provider failure should fail safely");
+  assert.equal(aiFailureResult.body.code, "preview_generation_failed");
   assert.equal(aiFailure.calls, 1, "AI failure path should call AI once");
   assert.equal(aiFailureStorage.created.length, 0, "Invalid AI JSON/provider failure must not create preview");
 
