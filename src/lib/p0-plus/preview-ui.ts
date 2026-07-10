@@ -97,7 +97,10 @@ export function getP0PlusPreviewErrorMessage(status: number, code: unknown) {
   if (code === "body_too_large" || code === "input_too_long" || status === 413) {
     return `Keep the preview input under ${P0_PLUS_PREVIEW_MAX_INPUT_CHARS.toLocaleString()} characters.`;
   }
-  if (code === "preview_generation_failed" || code === "preview_schema_invalid" || status >= 500) {
+  if (code === "preview_schema_invalid") {
+    return "The AI returned an incomplete report structure. Please try again shortly.";
+  }
+  if (code === "preview_generation_failed" || status >= 500) {
     return "Preview generation failed. Try again with clearer notes.";
   }
   return "Preview generation failed. Try again with clearer notes.";

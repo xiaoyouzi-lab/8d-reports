@@ -2,6 +2,68 @@
 
 ## Latest Task
 
+P0+ DeepSeek JSON contract enforcement bugfix.
+
+## Changed Files
+
+- `src/lib/p0-plus/prompts.ts`
+- `src/lib/p0-plus/ai.ts`
+- `src/lib/p0-plus/preview-service.ts`
+- `src/lib/p0-plus/preview-ui.ts`
+- `src/lib/p0-plus/p0-plus.test.ts`
+- `src/lib/p0-plus/preview-service.test.ts`
+- `src/lib/p0-plus/preview-ui.test.tsx`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Added a schema-derived, validator-compatible P0PlusPreviewResponse JSON scaffold with every top-level key, every
+  D0-D8 draft field, every required readiness section check, the exact P0PlusField shape, and required next-action
+  fields/enums.
+- Strengthened the DeepSeek system prompt to require the complete scaffold and JSON-only output without Markdown,
+  code fences, or explanatory text.
+- Changed the P0+ preview model to `DEEPSEEK_PREVIEW_MODEL || "deepseek-v4-flash"` and raised the bounded completion
+  limit from 4,000 to 10,000 tokens.
+- Added one schema-repair attempt only when the first response is parseable JSON but fails validation. The repair gets
+  validator issues and the exact scaffold, must preserve original facts, and cannot create a preview row unless the
+  repaired response validates.
+- Added a distinct `preview_schema_invalid` response and user-facing message for incomplete model structure. Provider,
+  network, balance, and invalid-JSON failures remain `preview_generation_failed`.
+- Limited schema-failure logs to model, content length, top-level keys, and validator issues. Raw input and full model
+  output are not logged.
+- Did not modify database schema/migrations, auth, payment, export, share, team permissions, report editor, production
+  feature flags, Vercel env, PR #36 validation fallback, or SEO/content pages.
+
+## Tests / Verification
+
+- `npm run test:p0-plus` passed.
+- `npm run test:p0-plus-preview` passed.
+- `npm run test:p0-plus-ui` passed.
+- `npx tsx src/lib/p0-plus/convert.test.ts` passed.
+- `npm run test:p0-plus-smoke` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed. Existing BetterAuth database-adapter warnings were printed during static page collection.
+- `git diff --check` passed.
+
+## Risks
+
+- A schema-invalid response can now make one additional provider call, increasing latency and AI cost for that request;
+  the retry count is hard-limited to one.
+- The provider path is covered with deterministic mocked responses. A non-production Preview deployment still needs a
+  real DeepSeek end-to-end check after this bugfix is deployed.
+
+## Unfinished / Needs Human Review
+
+- Review and merge the bugfix independently from validation PR #36.
+- Re-run the three P0+ validation cases in a non-production Preview deployment after the bugfix is available there.
+
+## Suggested Next Task
+
+After merge, deploy this bugfix to a controlled validation Preview and re-run the injection molding, unclear-role SCAR,
+and SMT/PCBA cases. Keep production P0+ disabled until those results are reviewed.
+
+## Previous Task
+
 P0+ PR5 E2E smoke, hardening, and Preview environment validation checklist.
 
 ## Changed Files
