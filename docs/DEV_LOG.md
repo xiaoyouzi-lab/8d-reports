@@ -1,5 +1,647 @@
 # Development Log
 
+## Completed: PR-G6 Customer Review Workspace
+
+- Added a version-frozen `customer-review-v1` authorization snapshot. Customer
+  links now receive only human-confirmed English sections, product/supplier
+  context, supplier submission time, review version, and evidence IDs that an
+  internal human explicitly approved on a confirmed Mapping. Current-session
+  mappings override the legacy confirmed-translation compatibility source;
+  AI suggestions, Reviewer findings, supplier raw answers, internal notes,
+  commercial data, and other-organization content are not copied into the
+  snapshot. Existing active customer links using the prior text snapshot remain
+  readable through a strict legacy parser.
+- Replaced the generic external customer form with an English Customer Review
+  Workspace: Supplier Corrective Action Response header, product/issue/
+  supplier/submission context, structured Problem/Containment/Root Cause/
+  Corrective Action/Verification/Prevention sections, authorized evidence,
+  field-local comments, explicit Request Changes, and a two-step acceptance
+  confirmation. The completion message states that customer acceptance does
+  not close the Case.
+- Added field-level Customer Feedback. Every return stores the customer
+  participant and organization, task ID, submitted time, affected field,
+  field-specific comment, and Case version in both the Case response history
+  and immutable activity metadata. Customer Accept and Request Changes now
+  commit the Case update, task completion, version snapshot, and activity in a
+  single Neon HTTP transactional batch. Accept transitions only to
+  `customer_accepted`; Request Changes uses the existing
+  `changes_requested_by_customer` → `internal_review` path.
+- Added token-scoped evidence download at
+  `/api/quality-case-tasks/[token]/evidence/[evidenceId]`. The route requires an
+  active, unexpired, unrevoked customer task; verifies the Evidence ID is in
+  that task's immutable authorization snapshot and belongs to the same Case;
+  and serves it read-only with `private, no-store` and `nosniff`. Customer
+  tokens still cannot use the supplier-only upload route.
+- Added `customer-review.test.ts` for confirmed-only projection, AI/internal
+  data exclusion, Customer Accepted without closure, feedback creation,
+  field-comment persistence, token hashing/scope, expiration rejection,
+  evidence allowlisting, legacy snapshot compatibility, and no customer upload.
+  Extended output tests and disposable authenticated smoke through Supplier →
+  Internal Review → Ready for Customer → Customer Token → Request Changes →
+  Internal Review → revised Customer Token → Accept.
+- Browser verification used the real Next.js page with a fully local
+  intercepted authorization snapshot, so no database was contacted. Desktop
+  and 390px mobile layouts had zero horizontal overflow; field comments,
+  Request Changes, two-step Accept, completion states, and console output were
+  verified. Screenshots are stored under `output/playwright/pr-g6/`.
+- Checks completed: all Customer Review, Internal Review, Supplier Package,
+  Quality Case contract/external/security/service/migration/output/document
+  tests; TypeScript; `git diff --check`; governance; full ESLint (0 errors,
+  11 pre-existing warnings outside PR-G6); and the production Next.js build.
+  The disposable database smoke was expanded and type-checked but not run
+  because every required `SMOKE_*` database variable was unset.
+- No schema, payment, legacy Report workflow, export, email-send, production
+  configuration, or production data was changed. A real disposable-database
+  smoke remains a release gate when safe Neon smoke variables are available.
+  Suggested next task: PR-G7 Effectiveness Verification Workspace, including
+  verification-plan/result separation, evidence due dates, overdue handling,
+  human completion, and explicit close/reopen controls.
+
+## Completed: PR-G5 Internal Quality Coordinator Workspace
+
+- Added `reviewSupplierResponsePackage()` and the auditable Quality Reviewer
+  Run path. The deterministic baseline detects direct-cause language such as
+  “operator error,” training-only actions, missing occurrence/escape logic,
+  unlinked evidence, and unresolved information. Optional provider output is
+  schema checked and can only add findings, risks, questions, and a suggested
+  next action. Results are advisory, contain no score, cannot confirm root
+  cause or effectiveness, and have no workflow authority.
+- Added a three-column coordinator workspace to the existing Quality Case
+  detail page for `supplier_submitted` and `internal_review`: immutable
+  supplier answers and unconfirmed AI interpretations on the left, Quality
+  Review findings and human mapping confirmation in the center, and explicit
+  next actions/customer-draft preparation on the right. Existing 8D output,
+  evidence, audit timeline, permissions, and all other Case states remain on
+  their prior paths.
+- Added `confirmMappingDecision()` with an atomic Neon HTTP batch for the
+  human confirmation, semantic mapping decision, and audit activity. It
+  validates Case/session/answer/evidence scope and records
+  `reportWritePerformed: false`; no legacy Report or `quality_case_texts`
+  content is changed. Customer drafts accept only confirmed English mappings
+  backed by a human confirmation record and explicitly remain unsent drafts.
+- Added owner-only supplier supplement/reinvestigation actions. The
+  coordinator must provide a reason, one or more questions, scoped fields, and
+  a future deadline. The existing state machine records the manual decision,
+  creates a new supplier token task, and returns the questions to the default
+  Guided supplier surface without exposing internal notes or commercial data.
+- Added the authenticated `/api/quality-cases/[id]/internal-review` boundary
+  for workspace reads, Reviewer Runs, mapping confirmation, customer draft
+  preparation, explicit workflow decisions, and supplier follow-up. Internal
+  Team access is reused; viewers cannot mutate, editors can review/confirm,
+  and only the Case owner/coordinator can create an external supplier task.
+- Added `internal-quality-review.test.ts` for the six requested review cases,
+  AI/provider authority boundaries, confirmed-only draft filtering, state
+  transitions, and Report non-pollution guards. Extended external-task tests
+  for the allowlisted follow-up projection and expanded the disposable
+  authenticated smoke through Package → Internal Review → Reviewer Run →
+  Mapping Confirmation → Customer Draft → Guided Supplier Follow-up.
+- Checks completed: PR-G5 tests, Supplier Response Package tests, every
+  existing Quality Case contract/security/service/migration/output test,
+  TypeScript, full ESLint (0 errors; 11 pre-existing warnings), governance,
+  Quality Case document export, and production `next build`. Safe smoke
+  database variables were not available, so the database/browser smoke was
+  prepared and type-checked but not executed; no production database or live
+  AI provider was used.
+- Residual risk: the inherited external-task creator performs its participant,
+  token, Case-version, and activity writes sequentially. The new follow-up
+  service reports a recoverable `changes_requested_from_supplier` state if
+  task creation fails, but hard transactionality for all external-task
+  creation should be a focused infrastructure PR rather than folded into
+  PR-G5. Suggested next task: PR-G6 Customer Review Workspace with the same
+  confirmed-content allowlist and explicit human acceptance boundary.
+
+## Completed: PR-G4.1 Supplier Response Package Service Layer
+
+- Added `buildSupplierResponsePackage()` as a read-only, token/session-scoped
+  domain projection. It aggregates Case/task context, every original answer
+  revision, current answers, AI Run provenance and unconfirmed
+  interpretations, advisory insights, missing information, evidence
+  requirements and explicit answer/insight/stage associations, advisory
+  readiness states, and semantic-to-legacy mapping suggestions. It selects
+  only evidence uploaded by the current supplier participant and never reads
+  or writes a legacy Report.
+- Added `submitSupplierResponsePackage()` as the only public supplier-submit
+  path for Guided and Expert modes. It requires an explicit supplier
+  confirmation, stores the complete package snapshot, serializes concurrent
+  retries with a transaction-scoped advisory lock inside the Neon HTTP
+  driver's supported transactional batch, creates the existing workflow
+  submission audit with package metadata, and invokes
+  `submitExternalQualityCaseTask()` inside the same database transaction.
+  Provider output cannot confirm root cause, approve, close, generate a final
+  customer report, or independently transition the Case.
+- Supplier submission is content-addressed and idempotent. Rebuilding an
+  unchanged ledger returns the same package id; a completed-token retry returns
+  the existing confirmation without creating another confirmation, activity,
+  version, or transition. Transaction failure rolls back the confirmation and
+  task mutation together. Readiness is explicitly advisory and never blocks a
+  supplier from submitting incomplete information for human review.
+- Updated the public external-task route so supplier submissions require
+  `sessionId`, `guided|expert` mode, and confirmation text, then use the package
+  service. The lower-level external task executor rejects direct supplier
+  free-text submissions that do not carry package metadata. Customer review
+  actions keep their existing path.
+- Added `supplier-response-package.test.ts` for complete aggregation, answer
+  revisions, AI provenance, evidence links, stable package identity, report
+  non-pollution, Guided/Expert shared orchestration, supplier-submitted →
+  internal-review contract, retry idempotency, and transaction failure. Added
+  `test:supplier-response-package` for repeatable execution.
+- Extended the existing disposable authenticated smoke to cover Token,
+  Session, Answer, failed-or-accepted AI Run audit, linked Evidence, Package,
+  advisory Readiness, Confirmation, Submission Audit, both Guided and Expert
+  modes, retry idempotency, and the existing internal review workflow. The
+  smoke remains fail-closed behind `SMOKE_DB=true`; no safe smoke database was
+  available in this local run, so no database or browser smoke was executed.
+
+## In Progress: PR-G4 Guided Supplier Experience
+
+- Added a supplier-token-scoped Guided session service and
+  `/api/quality-case-tasks/[token]/guidance` endpoint. It validates the hashed,
+  active supplier task, creates the first Guided session/question only within
+  that task's Case, preserves the supplier's original answer revision, and
+  invokes the PR-G3 Investigator without granting any workflow authority.
+- Supplier links now default to `SupplierGuidedTask`: a Chinese invitation
+  summary, one-question-at-a-time AI investigation, plain-language explanation,
+  progress, privacy boundary, and an explicit Expert Mode switch. Customer
+  review remains on its existing isolated surface.
+- AI/provider failure is a safe degradation: the original answer remains
+  audited and the supplier is told to continue later or use Expert Mode; no
+  AI conclusion is fabricated or submitted.
+- Local static checks passed. Real supplier-token and browser flow validation
+  remains pending a disposable database with the PR-G2 migration applied.
+
+## Completed: PR-G3 AI Quality Investigator Engine
+
+- Added `src/lib/quality-cases/guided-investigator.ts`, a server-side,
+  schema-validated DeepSeek Investigator that is deliberately separate from
+  report drafting and the generic Quality Agent chat. It accepts only an
+  authorized Case/session/question/answer scope, creates an AI Run before the
+  provider call, persists accepted or failed policy outcomes, and stores the
+  resulting follow-up question, advisory insights, evidence requirements, and
+  proposed semantic mappings in the PR-G2 audit ledger.
+- The server computes the investigation state, mandatory direct-cause,
+  training-only, inspection-only, and verification follow-ups from PR-G1.
+  Model output cannot include root-cause confirmation, report patches,
+  workflow actions, approvals, or closure; invalid output is rejected. No
+  investigator path writes a Report field or transitions a Quality Case.
+- Added authenticated `POST /api/quality-cases/[id]/guidance/investigator`.
+  It requires normal internal Case edit access and bounded session/question/
+  answer IDs; external token invocation and Guided UI remain later work.
+- Added `src/lib/quality-cases/guided-investigator.test.ts` covering valid
+  structured output, forbidden report/workflow fields, and the conservative
+  investigator prompt. No live provider call or production Case data was used.
+
+## Completed: PR-G2 Guided Investigation Ledger and Reversible Migration
+
+- Added the additive PR-G2 Guided investigation ledger to
+  `src/lib/db/schema.ts` and `drizzle/0011_guided_quality_investigation.sql`.
+  A Quality Case can now own Guided sessions, question snapshots, append-only
+  original-answer revisions, all three types of AI run, advisory insights,
+  evidence requirements, human confirmations, and semantic mapping decisions.
+- Every AI run persists agent/source type, prompt identifier/version/input
+  hash, response JSON, confidence, model identifier when supplied, policy
+  outcome, and generated time. The schema has no report/output write column:
+  human confirmation and a mapping decision remain separate from any future
+  authorized output action.
+- Added `drizzle/0011_guided_quality_investigation.rollback.sql`. It drops only
+  the eight PR-G2 ledger tables in dependency order and does not touch legacy
+  reports, users, workspaces, pre-existing Quality Case tables, exports,
+  sharing, permissions, payment, or production configuration.
+- Extended the temporary-Neon migration rehearsal to apply 0008–0011 twice,
+  validate the Guided audit columns, execute the dedicated rollback, prove
+  `quality_cases` remains, then reapply 0011 for downstream smoke. The script
+  remains hard-gated by `SMOKE_DB=true` and safe smoke-branch evidence.
+- Added `docs/GUIDED_DATA_RETENTION.md` with case-lifetime audit retention,
+  closed-Case retention, temporary browser-state boundaries, and the rule that
+  no quality fact or AI response belongs in temporary session storage.
+- Updated `docs/AUTHENTICATED_SMOKE_TESTING.md` with the up → rollback → reapply
+  disposable-database procedure. No database was connected during this local
+  implementation because safe smoke credentials were not provided.
+
+## Completed: PR-G1 Guided Quality Experience Domain Contract
+
+- Added `src/lib/quality-cases/guided-contract.ts`: a pure TypeScript contract
+  for Guided stages/questions, original human answers, separately unconfirmed
+  AI interpretation/suggestions, missing information, evidence requirements,
+  advisory-only Quality Insights, semantic answer → quality-concept → output
+  mappings, completion checks, and the three future Quality Coach data
+  contracts.
+- The mapping layer targets semantic output keys first and exposes legacy 8D
+  fields only as human-confirmation-required compatibility references. This
+  keeps Guided Mode usable for SCAR, CAR, CAPA, NCR Response, and customer
+  templates without allowing a question or AI output to write a report field.
+- Added `src/lib/quality-cases/guided-contract.test.ts` with deterministic
+  coverage for stages, direct-cause/training/inspection/effectiveness
+  follow-ups, conservative answer classifications, evidence requirements,
+  completion gaps, future-output mappings, and the no-workflow-authority Coach
+  boundary. No AI provider call is made.
+- This PR-G1 slice makes no database, route, UI, report-data, export, share,
+  permission, payment, environment, or production configuration change.
+
+## Completed: Guided Experience Product Specification
+
+- Added `docs/GUIDED_EXPERIENCE_PRODUCT_SPEC.md`, turning the Guided Experience
+  audit into an implementation-ready product specification. It defines role
+  boundaries, three complete journeys, ordinary-language Guided stages and
+  report mappings, ten representative quality cases, separated Investigator /
+  Quality Reviewer / Customer Simulator prompt responsibilities, mandatory AI
+  safeguards, UI wireframes, Expert Mode coexistence, additive data design,
+  twenty AI quality tests, acceptance criteria, sequencing, and release risks.
+- This documentation-only task makes no code, schema, route, export, payment,
+  permission, provider, environment, or production-data change.
+
+## Planned: Guided Experience Redesign Audit
+
+- Audited Quality Case persistence, legacy 8D field mapping, current AI draft
+  and review routes, and internal/external authorization boundaries for the
+  requested AI Quality Engineer experience.
+- Added `docs/GUIDED_EXPERIENCE_AUDIT.md` with the Guided/Expert decision,
+  additive migration approach, six independently revertible PR slices, field
+  mapping, permission impact, and browser acceptance evidence. No product,
+  schema, payment, export, share, AI-provider, or production configuration was
+  changed in this audit step.
+
+## Work In Progress: Quality Case Platform PR1–PR4 Core Collaboration
+
+### Changed Files
+
+- `src/lib/quality-cases/contract.ts`
+- `src/lib/quality-cases/contract.test.ts`
+- `src/lib/quality-cases/access.ts`
+- `src/lib/quality-cases/task-tokens.ts`
+- `src/lib/quality-cases/external-projection.ts`
+- `src/lib/quality-cases/security.test.ts`
+- `src/lib/quality-cases/service.ts`
+- `src/lib/quality-cases/service.test.ts`
+- `src/lib/quality-cases/external-tasks.ts`
+- `src/lib/quality-cases/external-tasks.test.ts`
+- `src/lib/db/schema.ts`
+- `drizzle/0008_quality_case_foundation.sql`
+- `drizzle/0009_p0_plus_quality_case_conversion.sql`
+- `drizzle/0010_quality_case_task_authorized_response.sql`
+- `src/lib/quality-cases/migration.test.ts`
+- `src/lib/p0-plus/convert-case.ts`
+- `src/app/api/p0-plus/preview/[token]/convert-case/route.ts`
+- `src/components/p0-plus/P0PlusContinueActions.tsx`
+- `src/components/marketing/P0PlusIntake.tsx`
+- `src/lib/p0-plus/preview-ui.ts`
+- `src/lib/p0-plus/preview-ui.test.tsx`
+- `src/lib/p0-plus/preview-ui.ts`
+- `src/lib/p0-plus/preview-ui.test.tsx`
+- `src/components/LocaleProvider.tsx`
+- `src/components/LangSwitcher.tsx`
+- `src/app/(auth)/login/login-form.tsx`
+- `src/app/(auth)/signup/signup-form.tsx`
+- `src/app/(auth)/layout.tsx`
+- `src/components/marketing/MarketingHeader.tsx`
+- `src/components/marketing/MarketingFooter.tsx`
+- `src/components/marketing/P0PlusIntake.tsx`
+- `src/components/marketing/PlanCard.tsx`
+- `src/components/LangSwitcher.tsx`
+- `src/app/zh/layout.tsx`
+- `src/app/zh/page.tsx`
+- `src/app/zh/pricing/page.tsx`
+- `src/app/(app)/layout.tsx`
+- `src/messages/en.json`
+- `src/messages/zh-CN.json`
+- `src/app/api/quality-cases/route.ts`
+- `src/app/api/quality-cases/[id]/route.ts`
+- `src/app/api/quality-cases/[id]/workflow/route.ts`
+- `src/app/api/quality-cases/[id]/tasks/route.ts`
+- `src/app/api/quality-case-tasks/[token]/route.ts`
+- `src/app/api/quality-case-tasks/[token]/evidence/route.ts`
+- `src/app/api/quality-case-tasks/[token]/claim/route.ts`
+- `src/app/api/quality-cases/[id]/tasks/[taskId]/route.ts`
+- `src/app/api/quality-case-evidence/[id]/route.ts`
+- `src/app/(app)/cases/page.tsx`
+- `src/app/(app)/cases/[id]/page.tsx`
+- `src/components/quality-cases/QualityCasesWorkspace.tsx`
+- `src/components/quality-cases/DashboardQualityCaseSummary.tsx`
+- `src/app/(app)/dashboard/page.tsx`
+- `src/components/quality-cases/QualityCaseDetail.tsx`
+- `src/components/quality-cases/AssigneeSelector.tsx`
+- `src/components/quality-cases/ExternalTaskComposer.tsx`
+- `src/components/quality-cases/ExternalTaskLinks.tsx`
+- `src/components/quality-cases/WorkflowActionPanel.tsx`
+- `src/components/quality-cases/OutputComposer.tsx`
+- `src/lib/quality-cases/outputs.ts`
+- `src/lib/quality-case-word-export.ts`
+- `src/lib/quality-case-word-export.test.ts`
+- `src/lib/quality-cases/output-content.ts`
+- `src/lib/quality-cases/output-content.test.ts`
+- `src/app/api/quality-cases/[id]/outputs/8d/route.ts`
+- `src/app/api/quality-cases/[id]/texts/route.ts`
+- `src/components/quality-cases/BilingualContentPanel.tsx`
+- `src/components/quality-cases/ExternalTaskPage.tsx`
+- `src/app/supplier/[token]/page.tsx`
+- `src/app/customer-review/[token]/page.tsx`
+- `src/app/(app)/layout.tsx`
+- `src/proxy.ts`
+- `docs/QUALITY_CASE_PLATFORM_FOUNDATION.md`
+- `docs/QUALITY_CASE_RELEASE_AUDIT.md`
+- `docs/AUTHENTICATED_SMOKE_TESTING.md`
+- `scripts/smoke/rehearse-quality-case-migrations.ts`
+- `scripts/smoke/authenticated-smoke.ts`
+- `.github/workflows/authenticated-smoke.yml`
+- `scripts/team-governance.test.ts`
+- `docs/DEV_LOG.md`
+
+### Implementation Summary
+
+- Added a database-independent Quality Case state-machine contract for the
+  customer complaint → supplier response → internal review → customer review
+  → effectiveness verification → closure lifecycle.
+- Enforced the product safety rule that `customer_accepted` cannot close a
+  case; internal effectiveness verification must occur before a separately
+  authorized close action.
+- Defined the audit-event payload, external-task allowlist, internal-only
+  data categories, bilingual source/AI/confirmed text model, and overdue
+  semantics for the persistence and UI PRs that follow.
+- Added additive Quality Case tables for case records, participants, report
+  output links, immutable version snapshots, activities, task links, evidence,
+  and bilingual field text. No legacy report table was altered.
+- Added an explicit `pgcrypto` extension guard to the not-yet-applied Quality
+  Case migration because the SQL uses `gen_random_uuid()`. Added a read-only
+  migration safety gate which verifies additive-only Case tables, token and
+  visibility safety, P0+ nullable conversion linkage, and absence of
+  destructive SQL against legacy tables. It never opens a database connection.
+- Added an internal access helper that reuses only existing Team-workspace
+  boundaries, plus separate cryptographically random task-token hashing,
+  expiry/revocation/completion checks, and allowlist-only external projections.
+- Added authenticated Quality Case APIs for manual creation, queue listing,
+  detail loading, and guarded workflow transitions. State updates use a
+  compare-and-set status write and record a new version plus audit activity.
+- Added Chinese-first `/cases` dashboard and `/cases/[id]` case workspace with
+  all required states, queue counts, current waiting party, next action,
+  deadline, overdue signal, participants, and immutable audit timeline.
+- Case detail now also renders the deadline state inline as not overdue,
+  due-today/due-soon, or overdue by a precise day count, rather than forcing
+  the coordinator to infer status from the date alone.
+- New Cases now explicitly assign the creating coordinator as the responsible
+  internal owner. Case detail resolves and displays that person; older Cases
+  safely fall back to the Case owner until reassignment is added in a later
+  focused workflow slice.
+- Added controlled internal reassignment for Case owners and editors. Only
+  active Owner/Editor workspace members are selectable; Viewers are rejected
+  server-side. Each reassignment writes a new immutable Case version and an
+  `assignee_changed` audit activity. When an authorized Team editor acts on a
+  Case for the first time, the service records them as an internal participant
+  under the coordinator organization before proceeding, so the same Team
+  boundary used for reading is valid for workflow participation as well.
+- Reframed the existing authenticated Dashboard as a Quality workbench without
+  removing the legacy report list. Its first actionable section now shows the
+  Quality Case queues for internal review, supplier/customer waiting states,
+  returns, approaching/overdue deadlines, effectiveness verification, and
+  closure, with direct access to create or review Cases.
+- Completed the authenticated Dashboard's visible Chinese mode without
+  changing report, Team, quota, checkout, or search behavior. The workbench,
+  report guidance, upgrade prompt, team controls, search/empty states, table
+  labels, workflow states, and priorities now follow the independently chosen
+  UI language. The app navigation, plan badge, account menu, and loading state
+  use the same language choice, while English remains unchanged for English
+  users.
+- Added `/cases` to the server-side protected-path boundary. Anonymous access
+  now redirects directly to login with a safe callback URL.
+- Added revocable, expiring, hash-only external task links. Internal owners can
+  create a Chinese supplier response link or English customer review link only
+  in workflow-appropriate states; raw tokens are returned only once.
+- Added public minimal-projection routes and no-registration task pages.
+  Supplier submission moves the Case to internal review; customer acceptance
+  moves it only to `customer_accepted`; customer change requests return it for
+  internal processing. External roles cannot close or reopen a Case.
+- Added supplier-scoped evidence upload with file allowlists and a 10MB limit.
+  Each evidence object is bound to the current Case and task participant;
+  submission can only attach evidence IDs owned by that participant. New
+  evidence defaults to internal visibility and is not automatically shown to a
+  customer.
+- External supplier submissions and customer decisions now preserve content
+  diffs in their immutable activity records, not merely a status change.
+  Repeated customer change requests append to the prior request history rather
+  than overwriting it. The internal audit timeline renders bounded before/after
+  summaries so reviewers can see what was changed without exposing those
+  details to external task links.
+- Added a separate P0+ preview-to-Quality-Case conversion route. It requires a
+  human-confirmed coordinator organization, preserves conservative preview
+  facts/missing-information metadata as internal Case context, and keeps the
+  existing preview-to-Report conversion unchanged for compatibility.
+- Added safe local text-file intake to the P0+ complaint entry. `.txt`, `.md`,
+  `.eml`, and `.csv` files are read into the existing bounded preview textbox
+  and must pass the same concrete-detail/character validation as pasted text.
+  PDF, Word, and image files are explicitly not claimed to be parsed; users
+  receive a clear paste-an-excerpt fallback instead.
+- Expanded the client-side P0+ intake to extract the literal main-document text
+  from a bounded `.docx` file in the browser. The original file is never sent
+  to the preview API; the same character and fact-detail validation applies to
+  the extracted text. PDF, images, and legacy `.doc` remain explicitly
+  unsupported rather than being misrepresented as parsed/OCR content.
+- Fixed persisted user language selection without making the static marketing
+  surface dynamic. A client locale provider reads the existing locale cookie
+  after hydration, while the server keeps SEO pages statically generated.
+  Login and signup plus email-verification text now use the bilingual auth
+  dictionary; language controls are present on marketing, auth, and app shells.
+- Supplied an explicit UTC time zone to the shared `next-intl` provider. This
+  removes the framework's server-rendered `ENVIRONMENT_FALLBACK` warning during
+  static generation without changing Case deadline calculations, which use the
+  browser's local clock in the Case UI.
+- Added independent, statically generated Chinese acquisition routes at `/zh`
+  and `/zh/pricing`, with Chinese navigation, footer, pricing copy, accurate
+  plan limits, and a Chinese P0+ guest-intake surface when the existing feature
+  flag is enabled. English `/` and `/pricing`, their canonical URLs, checkout,
+  and existing SEO content remain unchanged. Marketing-language switching now
+  maps these two English/Chinese page pairs rather than relying on a request
+  locale that would make public SEO pages dynamic.
+- Added the internal workflow action panel to Case detail. It exposes only
+  state-valid actions, sends all writes through the server-side state machine,
+  and requires return comments/field IDs/due dates plus close/reopen comments
+  before the corresponding transition can be requested.
+- Added account-claim and revocation service boundaries for external tasks.
+  A completed external participant can carry the raw token through signup to
+  claim the task in their own account; claiming never grants access to the
+  originating Case. Coordinators can revoke an active task through a
+  case-scoped, authenticated endpoint.
+- Added coordinator-facing external-link status cards on Case detail. Raw
+  tokens remain unavailable after their one-time creation response, while the
+  coordinator can see the intended party, expiry, completion/revocation state,
+  and revoke only a still-active link. The service now also rejects attempts to
+  revoke completed or expired links.
+- Added the internal evidence review surface and private evidence download
+  route. The route rechecks authenticated Case access before reading R2, uses
+  attachment-safe response headers, and does not automatically authorize any
+  customer task link to see supplier evidence.
+- Added a Quality Case → existing 8D output adapter. It creates a normal,
+  quota-governed report with only safe Case fields and stores the output link
+  separately, preserving all existing report editing/export/payment behavior.
+- Added an output-type guard around that adapter. Cases configured as SCAR,
+  CAR, CAPA, NCR Response, or Corrective Action Report cannot silently create
+  an incompatible 8D artifact; the UI keeps collaboration available and states
+  that the dedicated template is not yet enabled. This is intentional product
+  safety, not a claim that non-8D exports are already implemented.
+- Added a dedicated, authenticated DOCX output for non-8D Case types (SCAR,
+  CAR, CAPA, NCR Response, and Corrective Action Report). It is Pro/Team
+  gated, records an export audit event, uses only the confirmed English /
+  bilingual field mappings, deliberately omits internal evidence by default,
+  and does not reuse or mutate legacy report records or export routes.
+- Hardened customer-review delivery so a task link cannot use raw supplier
+  response, Chinese source text, or an AI draft as its customer-facing
+  payload. Creating a customer task now requires a human-confirmed English
+  complaint summary and snapshots the approved English sections into the task
+  record. Existing customer links without that snapshot fail safely and must
+  be reissued. Customer return now requires selecting at least one of the
+  sections actually authorized to that customer, producing meaningful
+  requested-field audit data rather than a generic placeholder.
+- Hardened that output adapter with explicit English and bilingual modes. The
+  D2 complaint summary uses only an internal user's confirmed English text for
+  English output, or the original plus that confirmed English text for
+  bilingual output. An AI draft is deliberately ignored, and output creation
+  is blocked with an actionable error until the human confirmation exists.
+- Expanded the compatibility adapter from D2 alone to controlled D2–D8
+  mappings for complaint, containment, confirmed root cause, corrective
+  action, implementation, effectiveness method, prevention, and lessons
+  learned. The Case editor now stores each field's source, AI draft, and
+  confirmed English independently; only the confirmed text enters an English
+  output, while bilingual output preserves source plus confirmed English.
+- Activated original, AI-draft, and human-confirmed translation persistence
+  through authenticated Case text APIs and the Case detail editor. Confirmed
+  translations include the acting user and timestamp; the UI explicitly keeps
+  AI draft text out of final customer output until a human confirms it.
+- Added deterministic coverage for all required statuses, returns, external
+  visibility isolation, confirmed-translation selection, overdue state, and
+  the customer-acceptance/closure separation.
+- Completed the internal audit projection for the required actor identity.
+  Case detail now joins internal activity actors to their user name/email and
+  preserves an external participant's invited display name in activity metadata.
+  The timeline shows actor, organization, timestamp, version, comment, field
+  diff, and evidence references to authorized internal users only; public task
+  links still use their separate allowlist projection and cannot read it.
+- Expanded the internal timeline to surface the requested-change field list,
+  operation-specific due date, and links to each evidence object recorded on an
+  activity. It uses the existing authenticated evidence-download route and
+  renders a neutral unavailable state if a referenced object no longer exists
+  or is not returned to the authorized reviewer.
+- Extended the manual, temporary-Neon-branch authenticated smoke workflow with
+  a real Quality Case migration rehearsal. After baseline schema initialization,
+  it removes only the new Case tables and P0+ Case-link column from the already
+  empty disposable branch, applies both repository-owned Quality Case SQL files
+  for first creation and then again for idempotence, and verifies required
+  tables, `pgcrypto`, internal evidence visibility, and the nullable P0+
+  conversion link. The scripts retain the existing explicit `SMOKE_DB=true`
+  safety gate and never load a local `.env`.
+- Extended the same browser smoke with an authenticated coordinator-created
+  SCAR Case. It exercises two supplier links, supplier submission and return,
+  two customer links, customer return and acceptance, effectiveness
+  verification, closure, reopening, and activity-log presence. It also checks
+  that an unauthenticated supplier task projection excludes internal notes, AI
+  risk assessment, commercial information, and other supplier data.
+- Did not alter existing report routes, report data, auth, payment, exports,
+  P0+ behavior, production configuration, or public pages. The new database
+  schema is additive and its migration has not been run in any environment.
+- Added a requirement-by-requirement release-audit matrix that separates
+  implementation evidence from disposable-environment and production evidence,
+  records intentionally unsupported document formats/output layouts, and
+  defines the no-production-data staged release sequence.
+
+### Tests / Verification
+
+- `npx tsx src/lib/quality-cases/contract.test.ts` passed.
+- `npx tsx src/lib/quality-cases/security.test.ts` passed.
+- `npx tsx src/lib/quality-cases/service.test.ts` passed.
+- `npx tsx src/lib/quality-cases/external-tasks.test.ts` passed.
+- `npx tsx src/lib/quality-cases/output-content.test.ts` passed; it proves an
+  AI-only draft cannot enter an English output and that bilingual output uses
+  the confirmed translation rather than the AI draft.
+- The output-content test also covers D3–D8 field mapping in both English and
+  bilingual modes and proves optional AI-only content is omitted.
+- `npm run test:quality-case-migration` passed.
+- `npm run test:quality-case-document` passed with a real generated DOCX
+  package.
+- Re-ran the Quality Case contract, isolation, service, and external-task
+  suites after the task-link UI/service hardening; all passed.
+- Re-ran the Quality Case contract, service, and external-task suites after
+  responsible-owner display was added; all passed.
+- Re-ran the Quality Case contract, service, visibility-isolation, and
+  external-task suites after internal assignee/reassignment hardening; all
+  passed. Service tests assert that only owner/editor roles are assignable.
+- External-task tests now verify repeated customer-return history is preserved
+  and supplier response changes carry a content diff.
+- Re-ran TypeScript plus contract, security, service, external-task, and
+  governance suites after the audit actor projection change; all passed.
+- Re-ran TypeScript, contract, external-task, and governance checks after the
+  timeline began rendering requested fields, due dates, and evidence links;
+  all passed.
+- Output-content tests now verify that customer review rejects AI-only content
+  and that an authorized customer payload uses only human-confirmed English;
+  source Chinese and AI drafts are excluded. The disposable browser smoke now
+  also verifies that customer-task creation is blocked before confirmation and
+  that its public projection contains neither draft nor supplier free-form text.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run build` passed; the Quality Case APIs and `/cases` routes are present
+  in the production route manifest.
+- `npm run test:p0-plus` and `npx tsx src/lib/p0-plus/convert.test.ts` passed;
+  the P0+ Quality Case conversion route is included in the production manifest.
+- `npm run test:p0-plus-ui` passed after text-file intake validation was added.
+- Re-ran `npm run test:p0-plus-ui` and `npm run test:p0-plus` after local DOCX
+  extraction was added; both passed. The UI test verifies local text-file
+  extraction, DOCX XML text/paragraph handling, supported-file boundaries, and
+  rejection of PDFs.
+- `npm run test:governance` passed after the Quality Case smoke rehearsal and
+  bilingual application navigation expectations were added.
+- `npm run smoke:db:rehearse-quality-case` was run without smoke environment
+  variables and failed closed before any database connection, with the expected
+  `SMOKE_DB=true is required` message.
+- Browser regression: unauthenticated `/cases` redirects server-side to
+  `/login?callbackUrl=%2Fcases`; an invalid public supplier token renders only
+  the generic unavailable state and exposes no Case fields.
+- Browser regression: switching login from English to Chinese updates the
+  login labels, actions, feedback control, and language toggle. Production
+  build confirms public SEO routes remain static/SSG rather than becoming
+  fully dynamic.
+- Browser regression: `/zh` and `/zh/pricing` render Chinese headings,
+  navigation, CTAs, pricing limits, and footer links; a 390px mobile viewport
+  has no visible horizontal overflow in the Chinese hero. Switching `/zh/pricing`
+  with the visible `EN` control lands on `/pricing`.
+- Browser regression: with the existing P0+ flag explicitly enabled in a
+  local-only development instance, `/zh` renders the Chinese file-import
+  control, accepted text-format boundary, bounded-input copy, and the same
+  conservative AI limitation statement. No complaint was submitted and no AI
+  request was made during the check.
+- `git diff --check` passed.
+- After the Chinese routes were added, `npx tsc --noEmit`, `npm run lint`,
+  `npm run build`, and `git diff --check` passed. The production manifest
+  lists `/zh` and `/zh/pricing` as static routes.
+- After Dashboard and app-shell localization, `npx tsc --noEmit`, `npm run
+  lint`, `npm run build`, and `git diff --check` passed again. ESLint reports
+  only the same 11 pre-existing warnings and no errors.
+
+### Risks / Next Step
+
+- The additive migration is not applied in a disposable database yet; no
+  production or local production-like data was modified in this work.
+- The bilingual 8D compatibility adapter covers the principal D2–D8 narrative
+  fields but does not yet map every legacy field, attachment placement, or
+  non-8D output template. Non-8D Cases now have a controlled generic DOCX
+  response, but not customer-specific SCAR/CAR/CAPA layouts or evidence-package
+  assembly. The evidence, account claim,
+  and task-revocation boundaries also still need a disposable-environment
+  integration test against real object storage and the additive schema.
+- Assignment requires the existing active Team membership boundary; there is
+  no separate Case-only invitation path. Real Team-member reassignment and
+  workflow participation still need controlled-environment integration tests.
+- The existing anonymous report-share flow remains unsuitable for this workflow
+  because it is broader than a task-scoped external authorization boundary.
+- The newly localized authenticated workbench has build/type coverage but has
+  not been visually exercised with a real Chinese authenticated account in a
+  controlled environment; no credentials or production data were used.
+- DOCX intake deliberately extracts only `word/document.xml` text and does not
+  promise layout preservation, PDF parsing, image OCR, or attachment storage.
+  A customer needing those formats receives the explicit paste-excerpt path;
+  adding server-side document/OCR processing would need separate privacy,
+  malware-scanning, retention, and provider review.
+- The new Quality Case migration and three-party browser smoke are wired into
+  the manual disposable-Neon workflow but have not run here because no explicit
+  smoke branch credentials/configuration are present. Production migration and
+  feature enablement remain prohibited until that run succeeds and its artifact
+  is reviewed.
+
 ## Latest Task
 
 P0+ PR5 E2E smoke, hardening, and Preview environment validation checklist.
@@ -1692,3 +2334,164 @@ Marketing Data Pipeline v1 for 8d-reports.com.
 - Added `marketing:gsc`, `marketing:ga4`, and `marketing:report` package scripts.
 - Established data reliability grades and conservative operating rules.
 - This work intentionally excludes live CSV exports, real weekly reports, and Google credentials from Git.
+# 2026-07-11 — PR-G7 Effectiveness Verification Workspace
+
+## Implementation Summary
+
+- Added an additive, multi-cycle effectiveness-verification ledger: Cycle,
+  Plan, Execution, Result, result-linked Evidence, human Review, Audit, and
+  traceable Verification Coach runs.
+- Expanded the Quality Case contract with explicit planning, execution,
+  submission, internal review, and verified-effective states. Customer Accepted
+  and the legacy effectiveness state can no longer close directly.
+- Added internal services and APIs for plan/execution/result persistence,
+  advisory readiness checks, evidence linkage, human review, failure/reopen,
+  and close-after-human-approval.
+- Added hash-token supplier verification tasks. Suppliers can plan, execute,
+  attach evidence, and submit, but cannot approve, fail, reopen, or close.
+- Added internal and supplier-facing responsive workspaces. Existing ReportData,
+  D0-D8 editing, export, payment, and marketing behavior were not changed.
+- Added `docs/EFFECTIVENESS_VERIFICATION.md` with the state machine, data
+  lifecycle, permission matrix, AI boundary, API boundary, test status, and RC
+  recommendation.
+
+## Changed Files
+
+- Domain/schema/migrations: `src/lib/db/schema.ts`,
+  `drizzle/0012_effectiveness_verification.sql`, dedicated rollback,
+  `src/lib/quality-cases/contract.ts`, `effectiveness-verification.ts`, and
+  `verification-tasks.ts`.
+- APIs/UI: internal verification routes, supplier verification-token routes,
+  `/verification/[token]`, both Verification Workspace components, and Quality
+  Case list/detail integration.
+- Tests/smoke/docs: effectiveness tests, migration contract/rehearsal,
+  authenticated smoke, package script, screenshots, and this log.
+
+## Tests / Checks
+
+- Quality Case migration contract passed.
+- Supplier Response Package, Internal Quality Review, Customer Review,
+  Effectiveness Verification, Quality Case contract/security/service tests
+  passed.
+- `npx tsc --noEmit` passed.
+- Scoped PR-G7 ESLint passed with 0 warnings/errors.
+- `npm run build` passed on Next.js 16.2.6.
+- Real Chromium desktop/mobile rendering passed; 390px horizontal-overflow check
+  returned true.
+- Migration smoke safety gate passed by refusing execution without
+  `SMOKE_DB=true`; no production database or object storage was contacted.
+
+## Risks / Unfinished
+
+- The disposable database and test object-storage variables are not available
+  in this environment, so migration up/rollback and full authenticated normal +
+  failure lifecycle smoke are prepared but not executed against a database.
+- Customer visibility is intentionally limited to separately authorized content;
+  a customer-facing verification-result projection is not added to the existing
+  customer-review link in this PR.
+- Before release, run concurrency tests around simultaneous submit/review actions
+  on a disposable database and verify orphan-object cleanup for an object upload
+  whose subsequent database batch fails.
+
+## Suggested Next Task
+
+Enter Release Candidate. Provision disposable DB/object storage, execute the
+prepared migration/authenticated smoke for normal and failed cycles, run
+Supplier/Coordinator/Customer usability sessions, fix only release blockers,
+and prepare the demo and commercial launch checklist.
+# 2026-07-11 — Release Candidate Quality Case validation
+
+## Outcome
+
+- Created an empty, temporary Neon project and disposable S3-compatible object
+  store; no production data or credentials were used.
+- Passed migration up, idempotent re-run, PR-G2/PR-G7 scoped rollback, and
+  reapply against real Postgres.
+- Passed the three-party Quality Case lifecycle from supplier Guided/Expert
+  response through customer acceptance, effectiveness verification, close,
+  reopen, failed verification, and a new preserved cycle.
+- Passed concurrent supplier submission, token hashing, cross-workspace denial,
+  evidence persistence, and audit inspections.
+
+## RC defects fixed
+
+- Qualified raw SQL columns in Supplier Response Package and Customer Review
+  atomic guards after real Postgres exposed ambiguous `id` joins.
+- Hardened authenticated smoke login hydration and API-shape assertions.
+- Added explicit isolated S3 endpoint support without changing Cloudflare R2
+  production defaults.
+- Added scoped Quality Case smoke, concurrent submit, failure/recovery, and
+  environment-aware object upload validation.
+
+## Verification
+
+- Scoped RC artifact: `output/rc-validation/quality-case-smoke-result.json` — passed.
+- 24 required Quality Case tables and 73 migration statements verified.
+- Latest RC Case: 30 activities, 13 Verification audits, three retained cycles.
+- Quality Case migration, Supplier Package, Internal Review, Customer Review,
+  Effectiveness Verification, contract, security, and service tests passed.
+- TypeScript passed; ESLint passed with 11 existing warnings and no errors.
+- Next.js 16.2.6 production build passed; `git diff --check` passed.
+
+## Risks / unfinished
+
+- Outbound staging email delivery was not tested; `.example.test` identities
+  intentionally do not receive mail.
+- Provider-specific Cloudflare R2 preview credentials/CORS/lifecycle remain a
+  final release gate; compatible S3 upload/read passed locally.
+- The broad non-RC authenticated smoke has an existing AI Quality Check fallback
+  expectation mismatch in this environment.
+
+## Suggested next task
+
+Run preview/canary validation with a staging mailbox and temporary Cloudflare R2
+bucket, then promote only after those two release gates pass.
+# 2026-07-11 — RC-2 Preview Hardening
+
+## Outcome
+
+- Added real Resend Supplier and Customer invitation delivery around existing
+  external task links, with task-derived idempotency, bilingual content, and a
+  manual-link fallback when provider delivery fails.
+- Added Preview-only authenticated diagnostics for Resend `lastEvent` and
+  controlled token-expiry testing; Production returns 404.
+- Added R2 orphan-object compensation to all three Quality Case Evidence upload
+  paths. Database persistence failures now attempt object deletion and emit a
+  structured cleanup result without file content or credentials.
+- Made the legacy AI Quality Check smoke expectation explicit and
+  environment-aware without changing runtime AI behavior.
+- Created and validated a disposable Vercel + Neon Preview. Four Resend test
+  invitations reached `delivered`; Supplier/Customer links opened; authorized
+  projections, revoked tokens, and expired tokens behaved correctly.
+- Cloudflare rejected independent bucket creation with `403 AccessDenied`.
+  The configured Production/shared bucket was not used. Canary remains NO-GO.
+- Removed the branch database variable, all three temporary Preview
+  deployments, the temporary Neon project, and the temporary env file.
+
+## Checks
+
+- `npx tsc --noEmit` — PASS.
+- `npm run test:preview-hardening` — PASS.
+- Supplier Response Package / Internal Review / Customer Review /
+  Effectiveness Verification tests — PASS.
+- `npm run test:governance` — PASS.
+- `npm run build` locally and Vercel Preview — PASS.
+- `npm run lint` — PASS, 0 errors and 11 pre-existing warnings.
+- Preview Resend/Token browser smoke — PASS, 7/7 checks and 4 delivered
+  messages.
+- Cloudflare R2 Provider smoke — BLOCKED at isolated bucket creation (403).
+
+## Risks and unfinished items
+
+- An R2 administrator must provision a private Preview bucket and least-
+  privilege token before the full deployed Evidence lifecycle can run.
+- Perform one interactive team mailbox rendering check before Canary.
+- Do not use `vercel env run` as proof that branch-scoped Sensitive variables
+  were injected. The RC attempt briefly seeded the generic Preview database;
+  exact cleanup removed 3 fixed smoke users and 2 smoke plans immediately.
+
+## Suggested next task
+
+Provision the isolated R2 Preview bucket, configure branch-scoped Preview
+credentials, run the real R2 smoke and complete deployed Quality Case scoped
+smoke. Promote to a named-user Canary only if both pass.

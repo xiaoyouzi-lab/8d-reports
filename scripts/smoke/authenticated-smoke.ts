@@ -20,13 +20,29 @@ const draftTitle = "KB Smoke Test - Draft Containment";
 const inProgressTitle = "KB Smoke Test - In Progress Torque";
 const internalReviewTitle = "KB Smoke Test - Internal Review Leak";
 const outsiderTitle = "KB Smoke Test - Outsider Visible Risk";
+const qualityCaseTitle = "QC Smoke Test - Supplier Corrective Action";
+const qualityCaseInternalNote = "QC smoke internal note must never reach an external task.";
+const qualityCaseCommercialInfo = "QC smoke commercial terms must remain internal.";
 const resultPath = process.env.SMOKE_RESULT_PATH || "output/authenticated-smoke-result.json";
 const completedReportId = process.env.SMOKE_COMPLETED_REPORT_ID || "";
 const draftReportId = process.env.SMOKE_DRAFT_REPORT_ID || "";
+const hasSmokeObjectStorage = Boolean(
+  process.env.R2_ENDPOINT &&
+    process.env.R2_ACCESS_KEY_ID &&
+    process.env.R2_SECRET_ACCESS_KEY,
+);
+const verifyInvitationEmail = process.env.SMOKE_VERIFY_INVITATION_EMAIL === "true";
+const supplierInvitationEmail = process.env.SMOKE_SUPPLIER_INVITATION_EMAIL || "";
+const customerInvitationEmail = process.env.SMOKE_CUSTOMER_INVITATION_EMAIL || "";
+const aiQualityCheckExpectation = process.env.SMOKE_AI_EXPECTATION || "either";
+if (!["either", "available", "unavailable"].includes(aiQualityCheckExpectation))
+  throw new Error("SMOKE_AI_EXPECTATION must be either, available, or unavailable.");
 
 type SmokeCheckStatus = "passed" | "failed" | "skipped";
 
 const completedSteps: string[] = [];
+const emailDeliveries: Array<{ taskType: string; providerMessageId: string }> = [];
+let customerInvitationSequence = 0;
 let currentStep = "not started";
 let failedStep: string | null = null;
 let activePage: Page | null = null;
@@ -36,6 +52,8 @@ const checks: Record<string, SmokeCheckStatus> = {
   unauthenticatedSecurity: "skipped",
   login: "skipped",
   dashboardNavigation: "skipped",
+  qualityCaseWorkflow: "skipped",
+  emailInvitations: "skipped",
   knowledgeEligibility: "skipped",
   editorKnowledgeReuse: "skipped",
   knowledgeReadiness: "skipped",
@@ -57,6 +75,9 @@ const REDACTED_ARTIFACT_TERMS = [
   inProgressTitle,
   internalReviewTitle,
   outsiderTitle,
+  qualityCaseTitle,
+  qualityCaseInternalNote,
+  qualityCaseCommercialInfo,
   "SmokeTest#2026!",
   "KB-SMOKE-001",
   "KB-SMOKE-002",
@@ -100,6 +121,15 @@ const REDACTED_ARTIFACT_TERMS = [
   "revenue-smoke@example.test",
   "Need customer-ready SCAR format for a line complaint this week.",
   "revenue-smoke-template.pdf",
+  "QC smoke supplier observed an assembly mismatch and isolated the affected lot.",
+  "QC smoke revised supplier response verified the requested process control.",
+  "qc-smoke-supplier-evidence.pdf",
+  "QC smoke human-confirmed supplier response summary.",
+  "Please explain which process control prevents recurrence.",
+  "Please attach a verification record linked to the improvement.",
+  "QC smoke customer revision requested for the problem summary.",
+  "QC smoke confirmed corrective action for customer review.",
+  "QC smoke customer authorization confirmation.",
 ].filter(Boolean);
 
 function toUrl(path: string) {
@@ -110,6 +140,7 @@ function markCheckForStep(stepName: string, status: SmokeCheckStatus) {
   if (stepName === "unauthenticated security") checks.unauthenticatedSecurity = status;
   if (stepName === "login") checks.login = status;
   if (stepName === "dashboard navigation" || stepName === "mobile navigation") checks.dashboardNavigation = status;
+  if (stepName === "quality case workflow") checks.qualityCaseWorkflow = status;
   if (
     stepName.startsWith("knowledge ") ||
     stepName === "open report" ||
@@ -188,6 +219,7 @@ function writeSmokeResult(status: "passed" | "failed", details: {
     capturedEventNames: capturedEvents.map((event) => event.eventName),
     analyticsEventCount: capturedEvents.length,
     checks,
+    emailDeliveries,
     createdAt: new Date().toISOString(),
     authenticated: details.authenticated,
     database: databaseSummary,
@@ -365,13 +397,646 @@ async function verifyUnauthenticatedSecurity() {
 async function login(page: Page) {
   activePage = page;
   await page.goto(toUrl("/login"), { waitUntil: "domcontentloaded" });
-  await page.getByLabel("Email").fill(ownerEmail);
-  await page.getByLabel("Password").fill(ownerPassword);
+  // Next dev can finish React hydration after DOMContentLoaded. Filling before
+  // hydration lets React replace the DOM values, producing an empty 400 login.
+  await page.waitForLoadState("networkidle");
+  const email = page.getByLabel("Email");
+  const password = page.getByLabel("Password");
+  await email.fill(ownerEmail);
+  await password.fill(ownerPassword);
+  assert.equal(await email.inputValue(), ownerEmail, "Hydrated login email must retain the smoke identity.");
+  assert.equal(await password.inputValue(), ownerPassword, "Hydrated login password must retain the smoke credential.");
+  const authResponse = page.waitForResponse(
+    (response) => response.url().includes("/api/auth/sign-in/email"),
+    { timeout: 15000 },
+  );
   await Promise.all([
     page.waitForURL(/\/dashboard/, { timeout: 15000 }),
     page.getByRole("button", { name: "Sign in" }).click(),
   ]);
-  await waitForBodyText(page, "My Reports");
+  const response = await authResponse;
+  assert.equal(response.status(), 200, `Smoke login must return 200, received ${response.status()}.`);
+  await waitForBodyText(page, "Quality workbench");
+}
+
+async function jsonRequest(
+  page: Page,
+  path: string,
+  method: "GET" | "POST" | "PUT",
+  body?: Record<string, unknown>,
+) {
+  return page.evaluate(async ({ path: requestPath, method: requestMethod, body: requestBody }) => {
+    const response = await fetch(requestPath, {
+      method: requestMethod,
+      headers: requestBody ? { "Content-Type": "application/json" } : undefined,
+      body: requestBody ? JSON.stringify(requestBody) : undefined,
+    });
+    return {
+      status: response.status,
+      body: await response.json().catch(() => ({})),
+    };
+  }, { path, method, body });
+}
+
+function record(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+}
+
+async function createExternalTask(page: Page, caseId: string, taskType: "supplier_response" | "customer_review", participantName: string) {
+  const recipientEmail = taskType === "supplier_response"
+    ? supplierInvitationEmail
+    : customerInvitationEmail.replace("@", `+${++customerInvitationSequence}@`);
+  const response = await jsonRequest(page, `/api/quality-cases/${caseId}/tasks`, "POST", {
+    taskType,
+    participantName,
+    participantOrganization: taskType === "supplier_response" ? "QC Smoke Supplier" : "QC Smoke Customer",
+    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    ...(verifyInvitationEmail ? { recipientEmail } : {}),
+  });
+  assert.equal(response.status, 201, `Creating a ${taskType} task must succeed.`);
+  const token = record(response.body).token;
+  if (typeof token !== "string") {
+    throw new Error("External task creation did not return a one-time task token.");
+  }
+  if (verifyInvitationEmail) {
+    assert.ok(recipientEmail, `A ${taskType} test mailbox is required when invitation email verification is enabled.`);
+    assert.equal(record(response.body).emailDelivery, "sent", `${taskType} invitation must be accepted by Resend.`);
+    const providerMessageId = record(response.body).providerMessageId;
+    assert.equal(typeof providerMessageId, "string", `${taskType} invitation must return a Resend message id.`);
+    emailDeliveries.push({ taskType, providerMessageId: String(providerMessageId) });
+    checks.emailInvitations = "passed";
+  }
+  return token;
+}
+
+async function submitExternalTask(
+  token: string,
+  body: Record<string, unknown>,
+) {
+  const api = await request.newContext({ baseURL: baseUrl });
+  try {
+    const response = await api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}`, { data: body });
+    assert.equal(response.status(), 200, "External task submission must succeed.");
+    return await response.json();
+  } finally {
+    await api.dispose();
+  }
+}
+
+async function submitGuidedSupplierResponsePackage(
+  token: string,
+  mode: "guided" | "expert",
+  answerText: string,
+) {
+  const api = await request.newContext({ baseURL: baseUrl });
+  try {
+    const guidanceResponse = await api.get(`/api/quality-case-tasks/${encodeURIComponent(token)}/guidance`);
+    assert.equal(guidanceResponse.status(), 200, "A supplier token must create or resume its Guided Session.");
+    const guidance = record(await guidanceResponse.json());
+    const sessionId = guidance.sessionId;
+    const question = record(guidance.question);
+    if (typeof sessionId !== "string" || typeof question.id !== "string") {
+      throw new Error("Supplier guidance did not return a scoped session and question.");
+    }
+
+    const answerResponse = await api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}/guidance`, {
+      data: { sessionId, questionId: question.id, answer: answerText },
+    });
+    assert.equal(answerResponse.status(), 200, "The supplier answer must be added to the Guided ledger.");
+
+    const [{ db }, schema, drizzle, taskTokens, packageService] = await Promise.all([
+      import("@/lib/db"),
+      import("@/lib/db/schema"),
+      import("drizzle-orm"),
+      import("@/lib/quality-cases/task-tokens"),
+      import("@/lib/quality-cases/supplier-response-package"),
+    ]);
+    const [task] = await db.select().from(schema.qualityCaseTaskLinks).where(drizzle.eq(schema.qualityCaseTaskLinks.tokenHash, taskTokens.hashQualityCaseTaskToken(token))).limit(1);
+    assert.ok(task, "The token must resolve to a supplier task in the smoke database.");
+    const [answer] = await db.select().from(schema.qualityCaseGuidanceAnswers).where(drizzle.eq(schema.qualityCaseGuidanceAnswers.sessionId, sessionId)).limit(1);
+    assert.ok(answer, "The supplier answer must be persisted before packaging.");
+    const aiRuns = await db.select().from(schema.qualityCaseGuidanceAiRuns).where(drizzle.eq(schema.qualityCaseGuidanceAiRuns.sessionId, sessionId));
+    assert.ok(aiRuns.length > 0, "An Investigator Run audit must exist even when the provider is unavailable.");
+    const [evidence] = await db.insert(schema.qualityCaseEvidence).values({
+      caseId: task.caseId,
+      uploadedByParticipantId: task.participantId,
+      visibility: "internal",
+      storagePath: `smoke/quality-cases/${task.caseId}/${crypto.randomUUID()}-evidence.pdf`,
+      filename: "qc-smoke-supplier-evidence.pdf",
+      mimeType: "application/pdf",
+      fileSize: 128,
+    }).returning();
+    await db.insert(schema.qualityCaseGuidanceEvidenceRequirements).values({
+      caseId: task.caseId,
+      sessionId,
+      questionId: answer.questionId,
+      answerId: answer.id,
+      aiRunId: aiRuns.at(-1)?.id || null,
+      requirementKey: "supplier_smoke_record",
+      sourceType: "smoke_fixture",
+      reason: "Temporary smoke evidence must remain linked to the answer and investigation stage.",
+      requirementSnapshot: { evidenceIds: [evidence.id] },
+      status: "satisfied",
+      satisfiedAt: new Date(),
+    });
+
+    const responsePackage = await packageService.buildSupplierResponsePackage({ token, sessionId });
+    assert.equal(responsePackage.caseContext.taskId, task.id, "The package must remain scoped to the token task.");
+    assert.ok(responsePackage.investigation.originalAnswers.some((item) => item.id === answer.id), "The package must include the original supplier answer.");
+    assert.ok(responsePackage.investigation.aiRuns.length > 0, "The package must include Investigator Run provenance.");
+    assert.ok(responsePackage.evidence.files.some((item) => item.id === evidence.id && item.requirementIds.length > 0), "The package must link evidence to a requirement and investigation stage.");
+    assert.equal(responsePackage.readiness.advisoryOnly, true, "Readiness must remain advisory.");
+    assert.equal(responsePackage.readiness.doesNotBlockSubmission, true, "Missing readiness data must not block supplier submission.");
+
+    const submissionPayload = {
+      action: "supplier_submit",
+      sessionId,
+      mode,
+      confirmationText: "I confirm that these answers and evidence reflect the supplier investigation.",
+    };
+    const concurrentResponses = await Promise.all([
+      api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}`, { data: submissionPayload }),
+      api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}`, { data: submissionPayload }),
+    ]);
+    for (const response of concurrentResponses)
+      assert.equal(response.status(), 200, "Concurrent Supplier Response Package submission must resolve idempotently.");
+    const concurrentSubmissions = await Promise.all(
+      concurrentResponses.map(async (response) => record(await response.json())),
+    );
+    assert.equal(
+      concurrentSubmissions.filter((item) => item.alreadySubmitted === false).length,
+      1,
+      "Exactly one concurrent supplier submission may create the package audit.",
+    );
+    assert.equal(
+      concurrentSubmissions.filter((item) => item.alreadySubmitted === true).length,
+      1,
+      "The racing supplier submission must return the committed package idempotently.",
+    );
+    const submission = concurrentSubmissions.find((item) => item.alreadySubmitted === false) || {};
+    assert.equal(submission.status, "supplier_submitted", "Supplier submission must wait for internal review.");
+    assert.equal(submission.alreadySubmitted, false, "The first package submission must create its audit records.");
+
+    const confirmationsBeforeRetry = await db.select().from(schema.qualityCaseGuidanceConfirmations).where(drizzle.and(drizzle.eq(schema.qualityCaseGuidanceConfirmations.sessionId, sessionId), drizzle.eq(schema.qualityCaseGuidanceConfirmations.confirmationType, "supplier_response_package")));
+    const auditsBeforeRetry = (await db.select().from(schema.qualityCaseActivities).where(drizzle.and(drizzle.eq(schema.qualityCaseActivities.caseId, task.caseId), drizzle.eq(schema.qualityCaseActivities.actionType, "supplier_submit")))).filter((activity) => record(activity.metadata).sessionId === sessionId);
+    assert.equal(confirmationsBeforeRetry.length, 1, "Submission must create one Supplier Confirmation.");
+    assert.equal(auditsBeforeRetry.length, 1, "Submission must create one supplier submission audit.");
+    const confirmedSnapshot = record(confirmationsBeforeRetry[0].confirmedSnapshot);
+    assert.equal(record(confirmedSnapshot.responsePackage).packageId, responsePackage.packageId, "The confirmation must retain the exact auditable package snapshot.");
+    assert.equal(record(auditsBeforeRetry[0].metadata).packageId, responsePackage.packageId, "The workflow audit must reference the package id.");
+
+    const retryResponse = await api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}`, {
+      data: {
+        action: "supplier_submit",
+        sessionId,
+        mode,
+        confirmationText: "Idempotent retry of the same supplier package.",
+      },
+    });
+    assert.equal(retryResponse.status(), 200, "A supplier submission retry must be idempotent.");
+    assert.equal(record(await retryResponse.json()).alreadySubmitted, true, "The retry must return the prior submission.");
+    const confirmationsAfterRetry = await db.select().from(schema.qualityCaseGuidanceConfirmations).where(drizzle.and(drizzle.eq(schema.qualityCaseGuidanceConfirmations.sessionId, sessionId), drizzle.eq(schema.qualityCaseGuidanceConfirmations.confirmationType, "supplier_response_package")));
+    const auditsAfterRetry = (await db.select().from(schema.qualityCaseActivities).where(drizzle.and(drizzle.eq(schema.qualityCaseActivities.caseId, task.caseId), drizzle.eq(schema.qualityCaseActivities.actionType, "supplier_submit")))).filter((activity) => record(activity.metadata).sessionId === sessionId);
+    assert.equal(confirmationsAfterRetry.length, confirmationsBeforeRetry.length, "A retry must not duplicate Supplier Confirmation.");
+    assert.equal(auditsAfterRetry.length, auditsBeforeRetry.length, "A retry must not duplicate Submission Audit.");
+    return { sessionId, packageId: responsePackage.packageId };
+  } finally {
+    await api.dispose();
+  }
+}
+
+async function verifyInternalQualityCoordinatorWorkspace(
+  page: Page,
+  caseId: string,
+) {
+  const initial = await jsonRequest(
+    page,
+    `/api/quality-cases/${caseId}/internal-review`,
+    "GET",
+  );
+  assert.equal(initial.status, 200, "The coordinator must be able to open Internal Quality Review.");
+  const initialBody = record(initial.body);
+  const responsePackage = record(initialBody.package);
+  assert.equal(
+    responsePackage.schemaVersion,
+    "supplier-response-package-v1",
+    "Internal Review must read the submitted Supplier Response Package.",
+  );
+  assert.equal(
+    record(initialBody.permissions).canReview,
+    true,
+    "The Case coordinator must have review permission.",
+  );
+
+  const started = await jsonRequest(
+    page,
+    `/api/quality-cases/${caseId}/internal-review`,
+    "POST",
+    { action: "start_internal_review" },
+  );
+  assert.equal(started.status, 200, "Starting Internal Review must be an explicit human action.");
+
+  const reviewed = await jsonRequest(
+    page,
+    `/api/quality-cases/${caseId}/internal-review`,
+    "POST",
+    { action: "run_review" },
+  );
+  assert.equal(reviewed.status, 200, "AI Quality Review must persist an auditable Reviewer Run.");
+  const review = record(record(reviewed.body).review);
+  assert.equal(review.advisoryOnly, true, "AI Quality Review must remain advisory.");
+  assert.equal(review.mayTransitionCase, false, "AI Quality Review must not transition the Case.");
+  assert.ok(Array.isArray(review.findings), "AI Quality Review must return findings instead of a score.");
+
+  const workspace = await jsonRequest(
+    page,
+    `/api/quality-cases/${caseId}/internal-review`,
+    "GET",
+  );
+  assert.equal(workspace.status, 200, "The persisted quality review must be reloadable.");
+  const workspaceBody = record(workspace.body);
+  assert.equal(workspaceBody.reviewPersisted, true, "The Reviewer Run must be marked as persisted.");
+  const mappings = Array.isArray(workspaceBody.mappings) ? workspaceBody.mappings : [];
+  const mapping = mappings.map(record).find(
+    (candidate) =>
+      typeof candidate.id === "string" &&
+      typeof candidate.semanticKey === "string",
+  );
+  assert.ok(mapping, "The coordinator must receive a semantic mapping suggestion.");
+  const packageEvidence = record(record(workspaceBody.package).evidence);
+  const evidenceIds = (Array.isArray(packageEvidence.files) ? packageEvidence.files : [])
+    .map((file) => record(file).id)
+    .filter((id): id is string => typeof id === "string");
+
+  const confirmation = await jsonRequest(
+    page,
+    `/api/quality-cases/${caseId}/internal-review`,
+    "POST",
+    {
+      action: "confirm_mapping",
+      mappingId: mapping?.id,
+      semanticKey: mapping?.semanticKey,
+      confirmedText: "QC smoke human-confirmed supplier response summary.",
+      language: "en",
+      approvedEvidenceIds: evidenceIds,
+      comment: "QC smoke coordinator confirmation.",
+    },
+  );
+  assert.equal(confirmation.status, 200, "A coordinator must be able to confirm a mapping.");
+  assert.equal(
+    record(confirmation.body).reportWritePerformed,
+    false,
+    "Mapping confirmation must not write the legacy Report.",
+  );
+
+  const draftResponse = await jsonRequest(
+    page,
+    `/api/quality-cases/${caseId}/internal-review`,
+    "POST",
+    { action: "build_customer_draft", format: "english_email" },
+  );
+  assert.equal(draftResponse.status, 200, "Confirmed facts must be eligible for customer draft preparation.");
+  const draft = record(draftResponse.body);
+  assert.equal(draft.isDraft, true, "Customer preparation must be labeled as a draft.");
+  assert.equal(draft.maySend, false, "The draft service must not send customer communication.");
+  assert.match(
+    String(draft.draft || ""),
+    /human-confirmed supplier response summary/,
+    "The draft must use the human-confirmed English mapping.",
+  );
+
+  const followUp = await jsonRequest(
+    page,
+    `/api/quality-cases/${caseId}/internal-review`,
+    "POST",
+    {
+      action: "request_supplier_update",
+      reason: "The response needs a system-control explanation and linked verification evidence.",
+      questions: [
+        "Please explain which process control prevents recurrence.",
+        "Please attach a verification record linked to the improvement.",
+      ],
+      requestedFieldIds: ["occurrence_analysis", "effectiveness_verification"],
+      dueAt: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  );
+  assert.equal(followUp.status, 200, "The coordinator must be able to request a supplier supplement.");
+  const token = record(followUp.body).token;
+  assert.equal(typeof token, "string", "The supplier follow-up must return a one-time task token.");
+
+  const publicApi = await request.newContext({ baseURL: baseUrl });
+  try {
+    const guidanceResponse = await publicApi.get(
+      `/api/quality-case-tasks/${encodeURIComponent(String(token))}/guidance`,
+    );
+    assert.equal(guidanceResponse.status(), 200, "The follow-up token must return to Guided supplier experience.");
+    const guidance = record(await guidanceResponse.json());
+    const supplierFollowUp = record(guidance.followUp);
+    assert.ok(
+      Array.isArray(supplierFollowUp.questions) && supplierFollowUp.questions.length === 2,
+      "The supplier must see the coordinator's scoped follow-up questions.",
+    );
+    const publicText = JSON.stringify(guidance);
+    assert.equal(publicText.includes(qualityCaseInternalNote), false, "Supplier follow-up must not leak internal notes.");
+    assert.equal(publicText.includes(qualityCaseCommercialInfo), false, "Supplier follow-up must not leak commercial data.");
+  } finally {
+    await publicApi.dispose();
+  }
+  return String(token);
+}
+
+async function verifyQualityCaseWorkflow(page: Page) {
+  await smokeStep("quality case workflow", async () => {
+    const created = await jsonRequest(page, "/api/quality-cases", "POST", {
+      title: qualityCaseTitle,
+      coordinatorOrganization: "QC Smoke Coordinator",
+      outputType: "scar",
+      priority: "high",
+      dueAt: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+      caseData: {
+        complaintSummary: "QC smoke complaint summary.",
+        internalNotes: qualityCaseInternalNote,
+        commercialInformation: qualityCaseCommercialInfo,
+        aiRiskAssessment: "QC smoke AI risk assessment must remain internal.",
+        otherSupplierData: "QC smoke other supplier data must remain internal.",
+      },
+    });
+    assert.equal(created.status, 201, "An authenticated coordinator must create a Quality Case.");
+    const caseId = record(created.body).id;
+    if (typeof caseId !== "string") {
+      throw new Error("Created Quality Case did not return an id.");
+    }
+    const supplierTask = await createExternalTask(page, caseId, "supplier_response", "QC Smoke Supplier User");
+    const publicApi = await request.newContext({ baseURL: baseUrl });
+    try {
+      const projection = await publicApi.get(`/api/quality-case-tasks/${encodeURIComponent(supplierTask)}`);
+      assert.equal(projection.status(), 200, "Supplier task must be available without an account.");
+      const publicText = JSON.stringify(await projection.json());
+      for (const internalValue of [
+        qualityCaseInternalNote,
+        qualityCaseCommercialInfo,
+        "QC smoke AI risk assessment must remain internal.",
+        "QC smoke other supplier data must remain internal.",
+      ]) {
+        assert.equal(publicText.includes(internalValue), false, "External supplier projection must omit internal Case data.");
+      }
+    } finally {
+      await publicApi.dispose();
+    }
+
+    await submitGuidedSupplierResponsePackage(
+      supplierTask,
+      "guided",
+      "QC smoke supplier observed an assembly mismatch and isolated the affected lot.",
+    );
+    const revisedSupplierTask = await verifyInternalQualityCoordinatorWorkspace(page, caseId);
+    await submitGuidedSupplierResponsePackage(
+      revisedSupplierTask,
+      "expert",
+      "QC smoke revised supplier response verified the requested process control.",
+    );
+    const restartReview = await jsonRequest(
+      page,
+      `/api/quality-cases/${caseId}/internal-review`,
+      "POST",
+      { action: "start_internal_review" },
+    );
+    assert.equal(restartReview.status, 200, "The revised supplier package must return to Internal Review.");
+    const acceptForCustomer = await jsonRequest(
+      page,
+      `/api/quality-cases/${caseId}/internal-review`,
+      "POST",
+      { action: "accept_for_customer_preparation" },
+    );
+    assert.equal(acceptForCustomer.status, 200, "Only the coordinator can accept the response for customer preparation.");
+
+    const unconfirmedCustomerTask = await jsonRequest(page, `/api/quality-cases/${caseId}/tasks`, "POST", {
+      taskType: "customer_review",
+      participantName: "QC Smoke Customer User",
+      participantOrganization: "QC Smoke Customer",
+      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    });
+    assert.equal(unconfirmedCustomerTask.status, 400, "Customer review must be blocked until an English response is human-confirmed.");
+    const confirmedText = await jsonRequest(page, `/api/quality-cases/${caseId}/texts`, "PUT", {
+      fieldPath: "complaint_summary",
+      original: { language: "zh-CN", text: "QC smoke 客户投诉摘要。" },
+      aiTranslation: { language: "en", text: "QC smoke draft that must not be shared." },
+      confirmedTranslation: { language: "en", text: "QC smoke human-confirmed customer complaint summary." },
+    });
+    assert.equal(confirmedText.status, 200, "A coordinator must save a human-confirmed customer summary before customer review.");
+    const customerTask = await createExternalTask(page, caseId, "customer_review", "QC Smoke Customer User");
+    const customerApi = await request.newContext({ baseURL: baseUrl });
+    try {
+      const projection = await customerApi.get(`/api/quality-case-tasks/${encodeURIComponent(customerTask)}`);
+      assert.equal(projection.status(), 200, "Customer task must be available after a human confirms the English response.");
+      const publicText = JSON.stringify(await projection.json());
+      assert.equal(publicText.includes("QC smoke human-confirmed customer complaint summary."), true, "Customer projection must include the confirmed English response.");
+      for (const unapprovedValue of [
+        "QC smoke draft that must not be shared.",
+        "QC smoke revised supplier response verified the requested process control.",
+        qualityCaseInternalNote,
+        qualityCaseCommercialInfo,
+      ]) {
+        assert.equal(publicText.includes(unapprovedValue), false, "Customer projection must omit AI drafts, supplier free-form text, and internal Case data.");
+      }
+    } finally {
+      await customerApi.dispose();
+    }
+    await submitExternalTask(customerTask, {
+      action: "request_customer_changes",
+      fieldComments: [
+        {
+          fieldPath: "complaint_summary",
+          comment: "QC smoke customer revision requested for the problem summary.",
+        },
+      ],
+    });
+    const returnedDetail = await jsonRequest(page, `/api/quality-cases/${caseId}`, "GET");
+    const returnedActivities = record(returnedDetail.body).activities;
+    assert.ok(Array.isArray(returnedActivities), "Customer feedback must be visible in the internal audit timeline.");
+    const customerFeedbackActivity = returnedActivities
+      .map(record)
+      .find((activity) => activity.actionType === "request_customer_changes");
+    const feedbackComments = record(customerFeedbackActivity?.metadata).fieldComments;
+    assert.ok(
+      Array.isArray(feedbackComments) &&
+        record(feedbackComments[0]).fieldPath === "complaint_summary",
+      "Customer feedback must retain its field, comment, actor context, and Case version.",
+    );
+
+    const returnedToReview = await jsonRequest(
+      page,
+      `/api/quality-cases/${caseId}/workflow`,
+      "POST",
+      { action: "start_internal_review" },
+    );
+    assert.equal(returnedToReview.status, 200, "Customer feedback must return to Internal Review.");
+    const reviewWorkspace = await jsonRequest(
+      page,
+      `/api/quality-cases/${caseId}/internal-review`,
+      "GET",
+    );
+    assert.equal(reviewWorkspace.status, 200, "The coordinator must be able to review customer feedback.");
+    const reviewBody = record(reviewWorkspace.body);
+    const reviewMappings = Array.isArray(reviewBody.mappings)
+      ? reviewBody.mappings.map(record)
+      : [];
+    const mappingForCustomer = reviewMappings.find(
+      (mapping) =>
+        typeof mapping.id === "string" &&
+        typeof mapping.semanticKey === "string",
+    );
+    assert.ok(mappingForCustomer, "The revised supplier package must expose a mapping for confirmation.");
+    const reviewEvidence = record(record(reviewBody.package).evidence);
+    const approvedEvidenceIds = (Array.isArray(reviewEvidence.files)
+      ? reviewEvidence.files
+      : [])
+      .map((file) => record(file).id)
+      .filter((id): id is string => typeof id === "string");
+    const confirmedMapping = await jsonRequest(
+      page,
+      `/api/quality-cases/${caseId}/internal-review`,
+      "POST",
+      {
+        action: "confirm_mapping",
+        mappingId: mappingForCustomer?.id,
+        semanticKey: mappingForCustomer?.semanticKey,
+        confirmedText: "QC smoke confirmed corrective action for customer review.",
+        language: "en",
+        approvedEvidenceIds,
+        comment: "QC smoke customer authorization confirmation.",
+      },
+    );
+    assert.equal(confirmedMapping.status, 200, "Only a human-confirmed mapping may enter the customer snapshot.");
+    const readyAgain = await jsonRequest(
+      page,
+      `/api/quality-cases/${caseId}/workflow`,
+      "POST",
+      { action: "mark_ready_for_customer" },
+    );
+    assert.equal(readyAgain.status, 200, "The coordinator must explicitly return the Case to customer preparation.");
+
+    const finalCustomerTask = await createExternalTask(page, caseId, "customer_review", "QC Smoke Customer User");
+    const finalCustomerApi = await request.newContext({ baseURL: baseUrl });
+    try {
+      const projectionResponse = await finalCustomerApi.get(
+        `/api/quality-case-tasks/${encodeURIComponent(finalCustomerTask)}`,
+      );
+      assert.equal(projectionResponse.status(), 200, "The revised customer snapshot must be available.");
+      const projection = record(await projectionResponse.json());
+      const projectedResponse = record(record(projection.projection).customer_response);
+      const projectedEvidence = record(projection.projection).customer_evidence;
+      assert.ok(Array.isArray(projectedResponse.sections), "Customer Review must expose structured confirmed sections.");
+      assert.equal(
+        JSON.stringify(projectedResponse).includes("QC smoke confirmed corrective action for customer review."),
+        true,
+        "The revised snapshot must include the human-confirmed mapping.",
+      );
+      assert.ok(
+        Array.isArray(projectedEvidence) && projectedEvidence.length > 0,
+        "Only coordinator-authorized evidence must appear in the customer snapshot.",
+      );
+    } finally {
+      await finalCustomerApi.dispose();
+    }
+    await submitExternalTask(finalCustomerTask, { action: "customer_accept" });
+
+    let detail = await jsonRequest(page, `/api/quality-cases/${caseId}`, "GET");
+    assert.equal(detail.status, 200, "Coordinator must retain access to the Quality Case.");
+    assert.equal(record(record(detail.body).qualityCase).status, "customer_accepted", "Customer acceptance must not close the Case.");
+
+    const plan = await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "save_plan", plan: { method: "Leak test and outgoing inspection review", description: "Validate three consecutive lots", ownerName: "QC Smoke Coordinator", organization: "QC Smoke Organization", plannedStartAt: "2026-07-12", plannedEndAt: "2026-07-20", dueAt: "2026-07-22", sampleSize: 1500, sampleScope: "Three consecutive lots, 500 parts per lot across two lines", acceptanceCriteria: "100% leak-test pass and no repeated defect" } });
+    assert.equal(plan.status, 200, "Customer Accepted must enter verification planning, not Closed.");
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "start_execution" })).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "save_execution", execution: { executorName: "QC Smoke Supplier QE", executorOrganization: "QC Smoke Supplier", executionStartAt: "2026-07-12", executionEndAt: "2026-07-20", actualScope: "Three consecutive lots across two lines", executionNotes: "Executed per approved plan", resultSummary: "All 1500 parts passed", actualSampleSize: 1500, passFail: "pass", criteriaComparison: "Meets 100% pass criterion" } })).status, 200);
+    const verificationEvidence = await page.evaluate(async (path) => {
+      const form = new FormData();
+      form.append("file", new File(["QC smoke verification evidence"], "verification-smoke.pdf", { type: "application/pdf" }));
+      form.append("evidenceType", "test_report");
+      form.append("description", "QC smoke linked verification report");
+      const response = await fetch(path, { method: "POST", body: form });
+      return { status: response.status, body: await response.json().catch(() => ({})) };
+    }, `/api/quality-cases/${caseId}/verification/evidence`);
+    assert.equal(verificationEvidence.status, 201, "Verification evidence must upload and link to the current result.");
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "submit" })).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "review", decision: "approved", comment: "QC smoke evidence meets the acceptance criteria." })).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "close", comment: "QC smoke verification approved and traceable." })).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/workflow`, "POST", { action: "reopen_case", comment: "QC smoke recurrence path." })).status, 200);
+
+    detail = await jsonRequest(page, `/api/quality-cases/${caseId}`, "GET");
+    const detailBody = record(detail.body);
+    assert.equal(record(detailBody.qualityCase).status, "reopened", "An authorized coordinator must be able to reopen a closed Case.");
+    const actions = record(detailBody).activities;
+    assert.ok(Array.isArray(actions), "Case detail must return an auditable activity timeline.");
+    for (const action of [
+      "supplier_submit",
+      "request_supplier_changes",
+      "request_customer_changes",
+      "customer_accept",
+      "start_effectiveness_verification",
+      "start_verification_execution",
+      "submit_verification",
+      "start_verification_review",
+      "approve_verification",
+      "close_case",
+      "reopen_case",
+    ]) {
+      assert.ok(actions.some((activity) => record(activity).actionType === action), `Activity timeline must record ${action}.`);
+    }
+
+    // Failure recovery uses the already reopened Case. The direct status setup
+    // represents completion of a new supplier/customer investigation cycle;
+    // all verification transitions themselves still go through public APIs.
+    const [{ db }, schema, drizzle] = await Promise.all([
+      import("@/lib/db"),
+      import("@/lib/db/schema"),
+      import("drizzle-orm"),
+    ]);
+    await db.update(schema.qualityCases).set({
+      status: "customer_accepted",
+      waitingOn: "internal",
+      nextAction: "RC fixture: new investigation cycle received customer acceptance.",
+      updatedAt: new Date(),
+    }).where(drizzle.eq(schema.qualityCases.id, caseId));
+    const failurePlan = {
+      action: "save_plan",
+      plan: {
+        method: "Repeat production validation after recurrence",
+        description: "RC failure recovery cycle",
+        ownerName: "QC Smoke Coordinator",
+        organization: "QC Smoke Organization",
+        plannedStartAt: "2026-07-23",
+        plannedEndAt: "2026-07-25",
+        dueAt: "2026-07-26",
+        sampleSize: 300,
+        sampleScope: "Three production shifts, 100 parts per shift",
+        acceptanceCriteria: "No repeated defect in all 300 parts",
+      },
+    };
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", failurePlan)).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "start_execution" })).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "save_execution", execution: { executorName: "QC Smoke Supplier QE", executorOrganization: "QC Smoke Supplier", executionStartAt: "2026-07-23", executionEndAt: "2026-07-25", actualScope: "Three production shifts", executionNotes: "A recurrence was observed during the third shift", resultSummary: "One repeated defect found", actualSampleSize: 300, passFail: "fail", criteriaComparison: "Failed the no-recurrence criterion" } })).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "submit" })).status, 200);
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", { action: "review", decision: "failed", comment: "Repeated defect proves the action was ineffective." })).status, 200);
+    const failedWorkspace = await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "GET");
+    assert.equal(record(record(record(failedWorkspace.body).access).qualityCase).status, "reopened", "Failed verification must reopen investigation.");
+    const failedCycles = Array.isArray(record(failedWorkspace.body).cycles) ? record(failedWorkspace.body).cycles as unknown[] : [];
+    assert.ok(failedCycles.map(record).some((cycle) => cycle.cycleNumber === 1 && cycle.status === "verified_effective"), "The prior effective cycle must remain immutable history.");
+    assert.ok(failedCycles.map(record).some((cycle) => cycle.cycleNumber === 2 && cycle.status === "verification_failed"), "The failed cycle must remain in the ledger.");
+
+    await db.update(schema.qualityCases).set({
+      status: "customer_accepted",
+      waitingOn: "internal",
+      nextAction: "RC fixture: replacement investigation accepted.",
+      updatedAt: new Date(),
+    }).where(drizzle.eq(schema.qualityCases.id, caseId));
+    assert.equal((await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "POST", failurePlan)).status, 200);
+    const replacementWorkspace = await jsonRequest(page, `/api/quality-cases/${caseId}/verification`, "GET");
+    const replacementCycles = Array.isArray(record(replacementWorkspace.body).cycles) ? record(replacementWorkspace.body).cycles as unknown[] : [];
+    assert.ok(replacementCycles.map(record).some((cycle) => cycle.cycleNumber === 3 && cycle.status === "verification_planning"), "Recovery must create a new cycle without overwriting failed history.");
+  });
 }
 
 async function verifyDashboardAndNavigation(page: Page, events: CapturedEvent[]) {
@@ -443,11 +1108,16 @@ async function verifyTemplateSetupLead(page: Page, events: CapturedEvent[]) {
     const event = await runAndWaitForEvent(events, "template_setup_form_submitted", async () => {
       await page.getByRole("button", { name: "Submit setup request" }).click();
       await waitForBodyText(page, "Request received.");
-      await waitForBodyText(page, "file upload could not be completed", { caseInsensitive: true });
+      if (!hasSmokeObjectStorage)
+        await waitForBodyText(page, "file upload could not be completed", { caseInsensitive: true });
     });
     assert.equal(event.metadata.requestType, "template_setup", "Template setup smoke should submit the template_setup request type");
     assert.equal(event.metadata.hasFile, true, "Template setup smoke should include a file attempt");
-    assert.equal(event.metadata.fileUploadWarning, true, "Template setup smoke should surface upload warning metadata");
+    assert.equal(
+      event.metadata.fileUploadWarning,
+      !hasSmokeObjectStorage,
+      "Template setup smoke upload metadata must reflect whether isolated object storage is available",
+    );
   });
 }
 
@@ -721,7 +1391,7 @@ async function verifyKnowledgeReadiness(page: Page, events: CapturedEvent[]) {
 async function verifyAiQualityCheck(page: Page, events: CapturedEvent[]) {
   assert.ok(completedReportId, "SMOKE_COMPLETED_REPORT_ID is required for AI Quality Check smoke");
 
-  await smokeStep("ai quality check knowledge context unavailable fallback", async () => {
+  await smokeStep("ai quality check knowledge context environment-aware result", async () => {
     await page.goto(toUrl(`/reports/${completedReportId}`), { waitUntil: "domcontentloaded" });
     const aiTrigger = page.getByRole("button", { name: /^AI$/ });
     await aiTrigger.waitFor({ timeout: 12000 });
@@ -729,10 +1399,24 @@ async function verifyAiQualityCheck(page: Page, events: CapturedEvent[]) {
     const startIndex = events.length;
     await aiTrigger.click();
     await waitForBodyText(page, "AI Quality Check — Beta");
+    const responsePromise = page.waitForResponse((response) =>
+      response.url().includes("/api/ai/report-review") && response.request().method() === "POST",
+    );
     await page.getByRole("button", { name: "Review report" }).click();
-    await waitForBodyText(page, "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.", {
-      timeout: 20000,
-    });
+    const reviewResponse = await responsePromise;
+    const providerAvailable = reviewResponse.ok();
+    if (aiQualityCheckExpectation === "available")
+      assert.equal(providerAvailable, true, "AI Quality Check must succeed when SMOKE_AI_EXPECTATION=available.");
+    if (aiQualityCheckExpectation === "unavailable")
+      assert.equal(providerAvailable, false, "AI Quality Check must use the safe fallback when SMOKE_AI_EXPECTATION=unavailable.");
+    if (providerAvailable) {
+      await waitForBodyText(page, "AI Quality Check result", { timeout: 20000 });
+    } else {
+      assert.equal(reviewResponse.status(), 503, "Unavailable AI Quality Check must return the safe 503 fallback.");
+      await waitForBodyText(page, "AI Quality Check is temporarily unavailable. Your report is safely saved. Please try again later.", {
+        timeout: 20000,
+      });
+    }
     await page.waitForFunction(
       () => document.body.innerText.includes("Knowledge context used:") ||
         document.body.innerText.includes("No reusable knowledge context found yet."),
@@ -874,6 +1558,14 @@ async function verifyAuthenticatedFlow() {
 
     await smokeStep("login", () => login(page));
     await verifyDashboardAndNavigation(page, capturedEvents);
+    await verifyQualityCaseWorkflow(page);
+    if (process.env.SMOKE_SCOPE === "quality-case") {
+      await context.close();
+      return {
+        events: capturedEvents.map((event) => event.eventName),
+        eventCount: capturedEvents.length,
+      };
+    }
     await verifyTemplateSetupLead(page, capturedEvents);
     await verifyKnowledge(page, capturedEvents);
     await verifyEditorKnowledgeReuse(page, capturedEvents);

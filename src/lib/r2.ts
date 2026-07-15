@@ -6,12 +6,14 @@ export function getR2Client(): S3Client | null {
   const accountId = process.env.R2_ACCOUNT_ID;
   const accessKeyId = process.env.R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
+  const endpoint = process.env.R2_ENDPOINT;
 
-  if (!accountId || !accessKeyId || !secretAccessKey) return null;
+  if ((!accountId && !endpoint) || !accessKeyId || !secretAccessKey) return null;
 
   return new S3Client({
     region: "auto",
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    endpoint: endpoint || `https://${accountId}.r2.cloudflarestorage.com`,
+    forcePathStyle: process.env.R2_FORCE_PATH_STYLE === "true",
     credentials: { accessKeyId, secretAccessKey },
   });
 }
@@ -106,4 +108,26 @@ export async function deleteR2Object(key: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+/**
+ * Compensates for an object write that succeeded before its database record or
+ * relation failed. The structured event is intentionally free of file content
+ * and credentials so Preview logs can prove whether cleanup succeeded.
+ */
+export async function cleanupOrphanedR2Object(
+  key: string,
+  context: string,
+  remove: (objectKey: string) => Promise<boolean> = deleteR2Object,
+) {
+  const cleaned = await remove(key);
+  const event = {
+    event: "r2_orphan_cleanup",
+    context,
+    key,
+    outcome: cleaned ? "deleted" : "delete_failed",
+  };
+  if (cleaned) console.warn("[R2] orphan cleanup completed", event);
+  else console.error("[R2] orphan cleanup failed", event);
+  return event;
 }

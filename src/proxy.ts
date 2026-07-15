@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server"
 const LANG_COOKIE = "NEXT_LOCALE"
 const PUBLIC_LOCALE = "en"
 
-const protectedPaths = ["/dashboard", "/reports"]
+const protectedPaths = ["/dashboard", "/reports", "/cases"]
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl

@@ -23,6 +23,7 @@ import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
 import { cn } from "@/lib/utils"
 
+import { DashboardQualityCaseSummary } from "@/components/quality-cases/DashboardQualityCaseSummary"
 interface Report {
   id: string
   title: string
@@ -315,6 +316,8 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      <DashboardQualityCaseSummary />
 
       <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 lg:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

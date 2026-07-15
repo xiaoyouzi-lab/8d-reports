@@ -1,0 +1,5 @@
+import { NextRequest, NextResponse } from "next/server";
+import { answerSupplierGuidance, getSupplierGuidance } from "@/lib/quality-cases/guided-supplier";
+export const dynamic = "force-dynamic";
+export async function GET(_request: NextRequest, { params }: { params: Promise<{ token: string }> }) { const { token } = await params; const value = await getSupplierGuidance(token); return value ? NextResponse.json(value) : NextResponse.json({ error: "任务链接不可用" }, { status: 404 }); }
+export async function POST(request: NextRequest, { params }: { params: Promise<{ token: string }> }) { const { token } = await params; const body = await request.json().catch(() => ({})); if (![body.sessionId, body.questionId, body.answer].every((value) => typeof value === "string" && value.length)) return NextResponse.json({ error: "sessionId、questionId 和回答不能为空。" }, { status: 400 }); const result = await answerSupplierGuidance({ token, sessionId: body.sessionId, questionId: body.questionId, answer: body.answer }); return result.ok ? NextResponse.json(result.value) : NextResponse.json({ error: result.error }, { status: result.status }); }

@@ -52,6 +52,9 @@ jobs:
       - name: Initialize schema
         run: npx drizzle-kit push --force
 
+      - name: Rehearse additive Quality Case SQL migrations
+        run: npm run smoke:db:rehearse-quality-case
+
       - name: Seed authenticated smoke fixtures
         run: npm run smoke:seed-auth
 
@@ -75,6 +78,7 @@ jobs:
         env:
           SMOKE_BASE_URL: http://127.0.0.1:3028
           SMOKE_RESULT_PATH: output/authenticated-smoke-result.json
+          SMOKE_AI_EXPECTATION: unavailable
         run: npm run smoke:auth
 
       - name: Upload smoke result

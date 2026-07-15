@@ -9,7 +9,9 @@ import {
   jsonb,
   serial,
   index,
+  uniqueIndex,
   cidr,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
@@ -300,6 +302,7 @@ export const p0PlusPreviews = pgTable("p0_plus_previews", {
   browserTokenHash: text("browser_token_hash"),
   expiresAt: timestamp("expires_at").notNull(),
   convertedReportId: uuid("converted_report_id").references(() => reports.id, { onDelete: "set null" }),
+  convertedCaseId: uuid("converted_case_id").references(() => qualityCases.id, { onDelete: "set null" }),
   conversionClaimToken: text("conversion_claim_token"),
   conversionClaimedAt: timestamp("conversion_claimed_at"),
   conversionClaimExpiresAt: timestamp("conversion_claim_expires_at"),
@@ -310,6 +313,461 @@ export const p0PlusPreviews = pgTable("p0_plus_previews", {
   index("idx_p0_plus_previews_expires_at").on(table.expiresAt),
   index("idx_p0_plus_previews_client_ip_hash").on(table.clientIpHash),
   index("idx_p0_plus_previews_conversion_claim_expires_at").on(table.conversionClaimExpiresAt),
+  index("idx_p0_plus_previews_converted_case_id").on(table.convertedCaseId),
+]);
+
+/**
+ * Quality Cases are intentionally independent from legacy reports. A case can
+ * later reference one or more report outputs without changing historical 8D
+ * records or their access/export semantics.
+ */
+export const qualityCases = pgTable("quality_cases", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  ownerId: text("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id").references(() => teamWorkspaces.id, { onDelete: "set null" }),
+  title: text("title").notNull(),
+  status: text("status").notNull().default("draft"),
+  outputType: text("output_type").notNull().default("8d"),
+  priority: text("priority").notNull().default("medium"),
+  waitingOn: text("waiting_on").notNull().default("internal"),
+  nextAction: text("next_action").notNull().default("Prepare the case before assigning a supplier task."),
+  assigneeUserId: text("assignee_user_id").references(() => users.id, { onDelete: "set null" }),
+  dueAt: timestamp("due_at"),
+  currentVersion: integer("current_version").notNull().default(1),
+  caseData: jsonb("case_data").notNull().default("{}"),
+  closedAt: timestamp("closed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_cases_owner_id").on(table.ownerId),
+  index("idx_quality_cases_workspace_id").on(table.workspaceId),
+  index("idx_quality_cases_status_due_at").on(table.status, table.dueAt),
+  index("idx_quality_cases_assignee_user_id").on(table.assigneeUserId),
+  index("idx_quality_cases_updated_at").on(table.updatedAt.desc()),
+]);
+
+export const qualityCaseParticipants = pgTable("quality_case_participants", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  role: text("role").notNull(),
+  displayName: text("display_name").notNull(),
+  email: text("email"),
+  organizationName: text("organization_name"),
+  isInternal: boolean("is_internal").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_participants_case_id").on(table.caseId),
+  index("idx_quality_case_participants_user_id").on(table.userId),
+]);
+
+export const qualityCaseOutputs = pgTable("quality_case_outputs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  reportId: uuid("report_id").references(() => reports.id, { onDelete: "set null" }),
+  outputType: text("output_type").notNull(),
+  languageMode: text("language_mode").notNull().default("en"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_outputs_case_id").on(table.caseId),
+  index("idx_quality_case_outputs_report_id").on(table.reportId),
+]);
+
+export const qualityCaseVersions = pgTable("quality_case_versions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  snapshot: jsonb("snapshot").notNull(),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_versions_case_version").on(table.caseId, table.version),
+]);
+
+export const qualityCaseActivities = pgTable("quality_case_activities", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  version: integer("version").notNull(),
+  actionType: text("action_type").notNull(),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  actorRole: text("actor_role").notNull(),
+  actorOrganization: text("actor_organization"),
+  comment: text("comment"),
+  requestedFieldIds: jsonb("requested_field_ids").notNull().default("[]"),
+  dueAt: timestamp("due_at"),
+  diff: jsonb("diff").notNull().default("{}"),
+  evidenceIds: jsonb("evidence_ids").notNull().default("[]"),
+  metadata: jsonb("metadata").notNull().default("{}"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_activities_case_created_at").on(table.caseId, table.createdAt.desc()),
+  index("idx_quality_case_activities_actor_id").on(table.actorId),
+]);
+
+export const qualityCaseTaskLinks = pgTable("quality_case_task_links", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  participantId: uuid("participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  taskType: text("task_type").notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  allowedSections: jsonb("allowed_sections").notNull().default("[]"),
+  authorizedResponse: jsonb("authorized_response"),
+  expiresAt: timestamp("expires_at").notNull(),
+  revokedAt: timestamp("revoked_at"),
+  completedAt: timestamp("completed_at"),
+  claimedByUserId: text("claimed_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_task_links_case_id").on(table.caseId),
+  index("idx_quality_case_task_links_expires_at").on(table.expiresAt),
+]);
+
+export const qualityCaseEvidence = pgTable("quality_case_evidence", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  uploadedByParticipantId: uuid("uploaded_by_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  visibility: text("visibility").notNull().default("internal"),
+  storagePath: text("storage_path").notNull(),
+  filename: text("filename").notNull(),
+  mimeType: text("mime_type"),
+  fileSize: integer("file_size"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_evidence_case_id").on(table.caseId),
+]);
+
+export const qualityCaseTexts = pgTable("quality_case_texts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  fieldPath: text("field_path").notNull(),
+  original: jsonb("original").notNull(),
+  aiTranslation: jsonb("ai_translation"),
+  confirmedTranslation: jsonb("confirmed_translation"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_texts_case_id").on(table.caseId),
+  index("idx_quality_case_texts_case_field").on(table.caseId, table.fieldPath),
+]);
+
+/**
+ * Guided investigation records are additive to Quality Cases. They are an
+ * auditable investigation ledger, not an AI chat transcript and not a
+ * shortcut for writing legacy report fields. A later authorized service maps
+ * a human-confirmed decision to an output.
+ */
+export const qualityCaseGuidanceSessions = pgTable("quality_case_guidance_sessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  taskLinkId: uuid("task_link_id").references(() => qualityCaseTaskLinks.id, { onDelete: "set null" }),
+  participantId: uuid("participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  mode: text("mode").notNull().default("guided"),
+  language: text("language").notNull().default("zh-CN"),
+  status: text("status").notNull().default("active"),
+  promptPolicyVersion: text("prompt_policy_version").notNull(),
+  retentionClass: text("retention_class").notNull().default("case_audit"),
+  retainUntil: timestamp("retain_until"),
+  temporaryExpiresAt: timestamp("temporary_expires_at"),
+  metadata: jsonb("metadata").notNull().default("{}"),
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_qc_guidance_sessions_case_created").on(table.caseId, table.createdAt.desc()),
+  index("idx_qc_guidance_sessions_task_link").on(table.taskLinkId),
+  index("idx_qc_guidance_sessions_retention").on(table.retentionClass, table.retainUntil),
+]);
+
+export const qualityCaseGuidanceAiRuns = pgTable("quality_case_guidance_ai_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").notNull().references(() => qualityCaseGuidanceSessions.id, { onDelete: "cascade" }),
+  agentType: text("agent_type").notNull(),
+  sourceType: text("source_type").notNull(),
+  promptIdentifier: text("prompt_identifier").notNull(),
+  promptVersion: text("prompt_version").notNull(),
+  promptInputHash: text("prompt_input_hash").notNull(),
+  modelIdentifier: text("model_identifier"),
+  response: jsonb("response").notNull(),
+  confidence: text("confidence").notNull(),
+  requestMetadata: jsonb("request_metadata").notNull().default("{}"),
+  policyOutcome: text("policy_outcome").notNull().default("accepted"),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_qc_guidance_ai_runs_case_generated").on(table.caseId, table.generatedAt.desc()),
+  index("idx_qc_guidance_ai_runs_session_generated").on(table.sessionId, table.generatedAt.desc()),
+  index("idx_qc_guidance_ai_runs_agent_type").on(table.agentType),
+]);
+
+export const qualityCaseGuidanceQuestions = pgTable("quality_case_guidance_questions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").notNull().references(() => qualityCaseGuidanceSessions.id, { onDelete: "cascade" }),
+  aiRunId: uuid("ai_run_id").references(() => qualityCaseGuidanceAiRuns.id, { onDelete: "set null" }),
+  questionKey: text("question_key").notNull(),
+  questionVersion: text("question_version").notNull(),
+  sourceType: text("source_type").notNull(),
+  stage: text("stage").notNull(),
+  category: text("category").notNull(),
+  userFacingQuestion: text("user_facing_question").notNull(),
+  explanation: text("explanation"),
+  qualityConcepts: jsonb("quality_concepts").notNull().default("[]"),
+  followUpRuleIds: jsonb("follow_up_rule_ids").notNull().default("[]"),
+  evidenceRequirementIds: jsonb("evidence_requirement_ids").notNull().default("[]"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_qc_guidance_questions_session_created").on(table.sessionId, table.createdAt),
+  index("idx_qc_guidance_questions_case_key").on(table.caseId, table.questionKey),
+]);
+
+/** Each user edit appends a revision. Original quality information is never overwritten. */
+export const qualityCaseGuidanceAnswers = pgTable("quality_case_guidance_answers", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").notNull().references(() => qualityCaseGuidanceSessions.id, { onDelete: "cascade" }),
+  questionId: uuid("question_id").notNull().references(() => qualityCaseGuidanceQuestions.id, { onDelete: "cascade" }),
+  answerGroupId: uuid("answer_group_id").notNull(),
+  revision: integer("revision").notNull().default(1),
+  supersedesAnswerId: uuid("supersedes_answer_id").references((): AnyPgColumn => qualityCaseGuidanceAnswers.id, { onDelete: "set null" }),
+  sourceType: text("source_type").notNull(),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  actorParticipantId: uuid("actor_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  actorOrganization: text("actor_organization"),
+  originalText: text("original_text").notNull(),
+  language: text("language").notNull(),
+  classification: text("classification").notNull(),
+  linkedQualityConcepts: jsonb("linked_quality_concepts").notNull().default("[]"),
+  missingInformation: jsonb("missing_information").notNull().default("[]"),
+  followUpQuestionIds: jsonb("follow_up_question_ids").notNull().default("[]"),
+  evidenceRequirementIds: jsonb("evidence_requirement_ids").notNull().default("[]"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("uq_qc_guidance_answers_revision").on(table.sessionId, table.answerGroupId, table.revision),
+  index("idx_qc_guidance_answers_session_created").on(table.sessionId, table.createdAt.desc()),
+  index("idx_qc_guidance_answers_question_created").on(table.questionId, table.createdAt.desc()),
+  index("idx_qc_guidance_answers_actor_id").on(table.actorId),
+]);
+
+export const qualityCaseGuidanceInsights = pgTable("quality_case_guidance_insights", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").notNull().references(() => qualityCaseGuidanceSessions.id, { onDelete: "cascade" }),
+  aiRunId: uuid("ai_run_id").notNull().references(() => qualityCaseGuidanceAiRuns.id, { onDelete: "cascade" }),
+  answerId: uuid("answer_id").references(() => qualityCaseGuidanceAnswers.id, { onDelete: "set null" }),
+  insightKey: text("insight_key").notNull(),
+  kind: text("kind").notNull(),
+  severity: text("severity").notNull(),
+  sourceType: text("source_type").notNull(),
+  message: text("message").notNull(),
+  suggestedQuestion: text("suggested_question"),
+  affectedConcepts: jsonb("affected_concepts").notNull().default("[]"),
+  evidenceRequirementIds: jsonb("evidence_requirement_ids").notNull().default("[]"),
+  confidence: text("confidence").notNull(),
+  generatedAt: timestamp("generated_at").notNull().defaultNow(),
+  resolvedAt: timestamp("resolved_at"),
+  resolvedBy: text("resolved_by").references(() => users.id, { onDelete: "set null" }),
+}, (table) => [
+  index("idx_qc_guidance_insights_session_generated").on(table.sessionId, table.generatedAt.desc()),
+  index("idx_qc_guidance_insights_ai_run").on(table.aiRunId),
+]);
+
+export const qualityCaseGuidanceEvidenceRequirements = pgTable("quality_case_guidance_evidence_requirements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").notNull().references(() => qualityCaseGuidanceSessions.id, { onDelete: "cascade" }),
+  questionId: uuid("question_id").references(() => qualityCaseGuidanceQuestions.id, { onDelete: "set null" }),
+  answerId: uuid("answer_id").references(() => qualityCaseGuidanceAnswers.id, { onDelete: "set null" }),
+  aiRunId: uuid("ai_run_id").references(() => qualityCaseGuidanceAiRuns.id, { onDelete: "set null" }),
+  requirementKey: text("requirement_key").notNull(),
+  sourceType: text("source_type").notNull(),
+  reason: text("reason").notNull(),
+  requirementSnapshot: jsonb("requirement_snapshot").notNull(),
+  status: text("status").notNull().default("open"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  satisfiedAt: timestamp("satisfied_at"),
+  satisfiedBy: text("satisfied_by").references(() => users.id, { onDelete: "set null" }),
+}, (table) => [
+  index("idx_qc_guidance_evidence_req_session_status").on(table.sessionId, table.status),
+  index("idx_qc_guidance_evidence_req_case_key").on(table.caseId, table.requirementKey),
+]);
+
+export const qualityCaseGuidanceConfirmations = pgTable("quality_case_guidance_confirmations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").notNull().references(() => qualityCaseGuidanceSessions.id, { onDelete: "cascade" }),
+  answerId: uuid("answer_id").references(() => qualityCaseGuidanceAnswers.id, { onDelete: "set null" }),
+  confirmationType: text("confirmation_type").notNull(),
+  decision: text("decision").notNull(),
+  comment: text("comment"),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  actorParticipantId: uuid("actor_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  actorOrganization: text("actor_organization"),
+  confirmedSnapshot: jsonb("confirmed_snapshot").notNull(),
+  confirmedAt: timestamp("confirmed_at").notNull().defaultNow(),
+}, (table) => [
+  index("idx_qc_guidance_confirmations_session_time").on(table.sessionId, table.confirmedAt.desc()),
+  index("idx_qc_guidance_confirmations_answer_time").on(table.answerId, table.confirmedAt.desc()),
+]);
+
+/** A mapping decision remains a decision ledger until a later authorized output write. */
+export const qualityCaseGuidanceFieldMappings = pgTable("quality_case_guidance_field_mappings", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  sessionId: uuid("session_id").notNull().references(() => qualityCaseGuidanceSessions.id, { onDelete: "cascade" }),
+  answerId: uuid("answer_id").notNull().references(() => qualityCaseGuidanceAnswers.id, { onDelete: "cascade" }),
+  confirmationId: uuid("confirmation_id").references(() => qualityCaseGuidanceConfirmations.id, { onDelete: "set null" }),
+  qualityConcept: text("quality_concept").notNull(),
+  semanticKey: text("semantic_key").notNull(),
+  targetReference: jsonb("target_reference").notNull(),
+  decision: text("decision").notNull().default("proposed"),
+  decidedBy: text("decided_by").references(() => users.id, { onDelete: "set null" }),
+  decidedAt: timestamp("decided_at"),
+  decisionComment: text("decision_comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_qc_guidance_mappings_session_decision").on(table.sessionId, table.decision),
+  index("idx_qc_guidance_mappings_answer").on(table.answerId),
+]);
+
+/**
+ * Effectiveness verification is a separate, append-only quality domain. It
+ * never writes legacy ReportData and preserves every historical cycle.
+ */
+export const qualityCaseVerificationCycles = pgTable("quality_case_verification_cycles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  cycleNumber: integer("cycle_number").notNull(),
+  status: text("status").notNull().default("verification_planning"),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdByParticipantId: uuid("created_by_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  completedAt: timestamp("completed_at"),
+}, (table) => [
+  uniqueIndex("uq_qc_verification_cycle_number").on(table.caseId, table.cycleNumber),
+  index("idx_qc_verification_cycles_case_created").on(table.caseId, table.createdAt.desc()),
+  index("idx_qc_verification_cycles_status").on(table.status),
+]);
+
+export const qualityCaseVerificationPlans = pgTable("quality_case_verification_plans", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  cycleId: uuid("cycle_id").notNull().references(() => qualityCaseVerificationCycles.id, { onDelete: "cascade" }),
+  method: text("method").notNull(),
+  description: text("description").notNull(),
+  ownerName: text("owner_name").notNull(),
+  organization: text("organization").notNull(),
+  plannedStartAt: timestamp("planned_start_at").notNull(),
+  plannedEndAt: timestamp("planned_end_at").notNull(),
+  dueAt: timestamp("due_at").notNull(),
+  sampleSize: integer("sample_size").notNull(),
+  sampleScope: text("sample_scope").notNull(),
+  acceptanceCriteria: text("acceptance_criteria").notNull(),
+  createdBy: text("created_by").references(() => users.id, { onDelete: "set null" }),
+  createdByParticipantId: uuid("created_by_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("uq_qc_verification_plan_cycle").on(table.cycleId),
+  index("idx_qc_verification_plans_due").on(table.dueAt),
+]);
+
+export const qualityCaseVerificationExecutions = pgTable("quality_case_verification_executions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  cycleId: uuid("cycle_id").notNull().references(() => qualityCaseVerificationCycles.id, { onDelete: "cascade" }),
+  executorName: text("executor_name").notNull(),
+  executorOrganization: text("executor_organization").notNull(),
+  executionStartAt: timestamp("execution_start_at").notNull(),
+  executionEndAt: timestamp("execution_end_at").notNull(),
+  actualScope: text("actual_scope").notNull(),
+  executionNotes: text("execution_notes").notNull(),
+  updatedBy: text("updated_by").references(() => users.id, { onDelete: "set null" }),
+  updatedByParticipantId: uuid("updated_by_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("uq_qc_verification_execution_cycle").on(table.cycleId),
+]);
+
+export const qualityCaseVerificationResults = pgTable("quality_case_verification_results", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  executionId: uuid("execution_id").notNull().references(() => qualityCaseVerificationExecutions.id, { onDelete: "cascade" }),
+  resultSummary: text("result_summary").notNull(),
+  actualSampleSize: integer("actual_sample_size").notNull(),
+  passFail: text("pass_fail").notNull(),
+  criteriaComparison: text("criteria_comparison").notNull(),
+  status: text("status").notNull().default("draft"),
+  submittedBy: text("submitted_by").references(() => users.id, { onDelete: "set null" }),
+  submittedByParticipantId: uuid("submitted_by_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  submittedAt: timestamp("submitted_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("uq_qc_verification_result_execution").on(table.executionId),
+  index("idx_qc_verification_results_status").on(table.status),
+]);
+
+export const qualityCaseVerificationEvidence = pgTable("quality_case_verification_evidence", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  resultId: uuid("result_id").notNull().references(() => qualityCaseVerificationResults.id, { onDelete: "cascade" }),
+  evidenceId: uuid("evidence_id").notNull().references(() => qualityCaseEvidence.id, { onDelete: "restrict" }),
+  evidenceType: text("evidence_type").notNull(),
+  description: text("description").notNull(),
+  uploadedBy: text("uploaded_by").references(() => users.id, { onDelete: "set null" }),
+  uploadedByParticipantId: uuid("uploaded_by_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("uq_qc_verification_result_evidence").on(table.resultId, table.evidenceId),
+  index("idx_qc_verification_evidence_result").on(table.resultId),
+]);
+
+export const qualityCaseVerificationReviews = pgTable("quality_case_verification_reviews", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  resultId: uuid("result_id").notNull().references(() => qualityCaseVerificationResults.id, { onDelete: "cascade" }),
+  reviewerId: text("reviewer_id").references(() => users.id, { onDelete: "set null" }),
+  reviewerOrganization: text("reviewer_organization").notNull(),
+  decision: text("decision").notNull(),
+  comment: text("comment").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_qc_verification_reviews_result_created").on(table.resultId, table.createdAt.desc()),
+]);
+
+export const qualityCaseVerificationAudits = pgTable("quality_case_verification_audits", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  cycleId: uuid("cycle_id").references(() => qualityCaseVerificationCycles.id, { onDelete: "set null" }),
+  actorId: text("actor_id").references(() => users.id, { onDelete: "set null" }),
+  actorParticipantId: uuid("actor_participant_id").references(() => qualityCaseParticipants.id, { onDelete: "set null" }),
+  actorOrganization: text("actor_organization"),
+  actorRole: text("actor_role").notNull(),
+  action: text("action").notNull(),
+  fromStatus: text("from_status"),
+  toStatus: text("to_status"),
+  reason: text("reason"),
+  metadata: jsonb("metadata").notNull().default("{}"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_qc_verification_audits_cycle_created").on(table.cycleId, table.createdAt.desc()),
+  index("idx_qc_verification_audits_case_created").on(table.caseId, table.createdAt.desc()),
+]);
+
+export const qualityCaseVerificationCoachRuns = pgTable("quality_case_verification_coach_runs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),
+  cycleId: uuid("cycle_id").notNull().references(() => qualityCaseVerificationCycles.id, { onDelete: "cascade" }),
+  sourceType: text("source_type").notNull(),
+  promptIdentifier: text("prompt_identifier").notNull(),
+  promptVersion: text("prompt_version").notNull(),
+  promptInputHash: text("prompt_input_hash").notNull(),
+  modelIdentifier: text("model_identifier"),
+  response: jsonb("response").notNull(),
+  confidence: text("confidence").notNull(),
+  policyOutcome: text("policy_outcome").notNull(),
+  generatedAt: timestamp("generated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_qc_verification_coach_cycle_generated").on(table.cycleId, table.generatedAt.desc()),
 ]);
 
 export const customTemplateRequests = pgTable("custom_template_requests", {

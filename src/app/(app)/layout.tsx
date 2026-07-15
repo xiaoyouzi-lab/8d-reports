@@ -4,7 +4,7 @@ import { usePathname, useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState, useRef } from "react"
 import { useLocale } from "next-intl"
-import { BookOpen, LayoutDashboard, LogOut, PlusCircle } from "lucide-react"
+import { BookOpen, ClipboardCheck, LayoutDashboard, LogOut, PlusCircle } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -74,6 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const userInitial = user?.name?.charAt(0)?.toUpperCase() || user?.email?.charAt(0)?.toUpperCase() || "U"
   const navItems = [
     { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, navItem: "dashboard" },
+    { href: "/cases", label: "Quality Cases", icon: ClipboardCheck, navItem: "quality_cases" },
     { href: "/knowledge", label: "Knowledge Base", icon: BookOpen, navItem: "knowledge_base" },
     { href: "/reports/new", label: "New Report", icon: PlusCircle, navItem: "new_report" },
   ]

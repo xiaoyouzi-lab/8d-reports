@@ -9,6 +9,7 @@ type SendEmailInput = {
   text: string;
   purpose?: string;
   allowLocalFallback?: boolean;
+  idempotencyKey?: string;
 };
 
 type SendEmailResult = {
@@ -136,6 +137,7 @@ export async function sendEmail({
   text,
   purpose = "transactional",
   allowLocalFallback = true,
+  idempotencyKey,
 }: SendEmailInput): Promise<SendEmailResult> {
   const { apiKey, from, replyTo } = getEmailConfig();
   const diagnostics = getEmailDiagnostics(to);
@@ -155,14 +157,17 @@ export async function sendEmail({
     throw new Error("Email delivery is not configured. Set RESEND_API_KEY and EMAIL_FROM.");
   }
 
-  const { data, error } = await getResendClient(apiKey).emails.send({
-    from,
-    to,
-    subject,
-    html,
-    text,
-    replyTo: replyTo || undefined,
-  });
+  const { data, error } = await getResendClient(apiKey).emails.send(
+    {
+      from,
+      to,
+      subject,
+      html,
+      text,
+      replyTo: replyTo || undefined,
+    },
+    idempotencyKey ? { idempotencyKey } : undefined,
+  );
 
   if (error) {
     console.error("[EMAIL] send failed", { purpose, providerError: error.name, ...diagnostics });
@@ -228,4 +233,14 @@ export async function sendWelcomeEmail(to: string, name: string) {
     `,
     purpose: "welcome",
   });
+}
+
+/** Preview-only diagnostics must call this behind their own environment and
+ * authentication guards. No recipient or message content is returned. */
+export async function getEmailDeliveryEvent(providerMessageId: string) {
+  const { apiKey } = getEmailConfig();
+  if (!apiKey) throw new Error("Email delivery is not configured.");
+  const { data, error } = await getResendClient(apiKey).emails.get(providerMessageId);
+  if (error) throw new Error("Email provider could not retrieve the message.");
+  return typeof data?.last_event === "string" ? data.last_event : "unknown";
 }

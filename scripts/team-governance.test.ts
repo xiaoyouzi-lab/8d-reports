@@ -371,6 +371,7 @@ assert.match(authenticatedSmoke, /report_unlocked/, "Authenticated smoke mutatio
 
 assert.equal(packageJson.scripts?.["smoke:neon"], "tsx scripts/smoke/neon-branch.ts", "Package scripts should expose temporary Neon branch automation");
 assert.equal(packageJson.scripts?.["smoke:db:reset"], "tsx scripts/smoke/reset-smoke-schema.ts", "Package scripts should expose temporary smoke schema reset");
+assert.equal(packageJson.scripts?.["smoke:db:rehearse-quality-case"], "tsx scripts/smoke/rehearse-quality-case-migrations.ts", "Package scripts should expose Quality Case migration rehearsal");
 assert.equal(packageJson.scripts?.["smoke:seed-auth"], "tsx scripts/smoke/seed-auth-smoke.ts", "Package scripts should expose authenticated smoke fixture seeding");
 assert.equal(packageJson.scripts?.["smoke:auth"], "tsx scripts/smoke/authenticated-smoke.ts", "Package scripts should expose authenticated browser smoke");
 assert.match(packageJson.scripts?.["smoke:auth:local"] || "", /SMOKE_DB=true/, "Local authenticated smoke should still require explicit smoke DB mode");
@@ -385,6 +386,7 @@ assert.match(authenticatedSmokeWorkflow, /vars\.NEON_DATABASE_NAME/, "Authentica
 assert.match(authenticatedSmokeWorkflow, /auth-smoke-\$\{\{ github\.run_id \}\}-\$\{\{ github\.run_attempt \}\}/, "Authenticated smoke workflow should create unique auth-smoke branches");
 assert.match(authenticatedSmokeWorkflow, /npm run smoke:neon -- create/, "Authenticated smoke workflow should create a temporary Neon branch");
 assert.match(authenticatedSmokeWorkflow, /npm run smoke:db:reset[\s\S]*npx drizzle-kit push --force[\s\S]*npm run smoke:seed-auth/, "Authenticated smoke workflow should reset cloned branch before schema init and seeding");
+assert.match(authenticatedSmokeWorkflow, /npx drizzle-kit push --force[\s\S]*npm run smoke:db:rehearse-quality-case[\s\S]*npm run smoke:seed-auth/, "Authenticated smoke workflow should rehearse additive Quality Case migrations after baseline schema initialization");
 assert.match(authenticatedSmokeWorkflow, /npm run dev -- --hostname 127\.0\.0\.1 --port 3028/, "Authenticated smoke workflow should run the local app in dev mode for non-secure local auth cookies");
 assert.match(authenticatedSmokeWorkflow, /if: always\(\)[\s\S]*Delete temporary Neon branch[\s\S]*npm run smoke:neon -- delete/, "Authenticated smoke workflow should delete temporary Neon branch even after failures");
 assert.match(authenticatedSmokeWorkflow, /SMOKE_RESULT_PATH: output\/authenticated-smoke-result\.json/, "Authenticated smoke workflow should save a bounded smoke artifact");
@@ -421,6 +423,18 @@ assert.match(resetSmokeSchema, /configureSmokeDatabase/, "Smoke schema reset sho
 assert.match(resetSmokeSchema, /DROP SCHEMA IF EXISTS public CASCADE/, "Smoke schema reset should clear cloned branch data");
 assert.match(resetSmokeSchema, /CREATE SCHEMA public/, "Smoke schema reset should recreate public schema");
 assert.doesNotMatch(resetSmokeSchema, /dotenv\/config/, "Smoke schema reset must not load local .env implicitly");
+
+const qualityCaseMigrationRehearsal = read("scripts/smoke/rehearse-quality-case-migrations.ts");
+assert.match(qualityCaseMigrationRehearsal, /configureSmokeDatabase/, "Quality Case migration rehearsal should run smoke DB safety checks first");
+assert.match(qualityCaseMigrationRehearsal, /0008_quality_case_foundation\.sql/, "Quality Case migration rehearsal should apply the foundation SQL");
+assert.match(qualityCaseMigrationRehearsal, /0009_p0_plus_quality_case_conversion\.sql/, "Quality Case migration rehearsal should apply the P0+ conversion SQL");
+assert.match(qualityCaseMigrationRehearsal, /0010_quality_case_task_authorized_response\.sql/, "Quality Case migration rehearsal should apply the customer-authorization SQL");
+assert.match(qualityCaseMigrationRehearsal, /information_schema\.tables/, "Quality Case migration rehearsal should verify required tables");
+assert.match(qualityCaseMigrationRehearsal, /pgcrypto/, "Quality Case migration rehearsal should verify pgcrypto");
+assert.match(qualityCaseMigrationRehearsal, /DROP TABLE IF EXISTS "\$\{table\}" CASCADE/, "Quality Case migration rehearsal should reset only named additive Case tables on the disposable branch");
+assert.match(qualityCaseMigrationRehearsal, /DROP COLUMN IF EXISTS "converted_case_id"/, "Quality Case migration rehearsal should reset only the additive P0+ Case link");
+assert.doesNotMatch(qualityCaseMigrationRehearsal, /DROP SCHEMA|DROP TABLE IF EXISTS "reports"|DROP TABLE IF EXISTS "users"/, "Quality Case migration rehearsal must not remove legacy tables itself");
+assert.doesNotMatch(qualityCaseMigrationRehearsal, /dotenv\/config/, "Quality Case migration rehearsal must not load local .env implicitly");
 
 const seedAuthSmoke = read("scripts/smoke/seed-auth-smoke.ts");
 assert.match(seedAuthSmoke, /configureSmokeDatabase/, "Authenticated seed should run smoke DB safety checks first");
@@ -499,7 +513,8 @@ assert.match(authenticatedBrowserSmoke, /knowledge_reuse_lesson_copied/, "Authen
 assert.match(authenticatedBrowserSmoke, /waitForEvent\("page"\)/, "Authenticated smoke should verify editor reuse opens reports in a new tab");
 assert.match(authenticatedBrowserSmoke, /Editor reuse Open report should preserve the current editor tab/, "Authenticated smoke should protect current editor context");
 assert.match(authenticatedBrowserSmoke, /verifyAiQualityCheck/, "Authenticated smoke should cover AI Quality Check Knowledge Context fallback");
-assert.match(authenticatedBrowserSmoke, /smokeStep\("ai quality check knowledge context unavailable fallback"/, "Authenticated smoke should name the AI Quality Check context fallback step");
+assert.match(authenticatedBrowserSmoke, /smokeStep\("ai quality check knowledge context environment-aware result"/, "Authenticated smoke should name the environment-aware AI Quality Check step");
+assert.match(authenticatedBrowserSmoke, /SMOKE_AI_EXPECTATION/, "Authenticated smoke should make the AI provider expectation explicit");
 assert.match(authenticatedBrowserSmoke, /AI Quality Check is temporarily unavailable/, "Authenticated smoke should verify safe no-real-key AI fallback");
 assert.match(authenticatedBrowserSmoke, /Knowledge context used: \\d\+ similar reports|No reusable knowledge context found yet/, "Authenticated smoke should verify AI Quality Check context count or empty state");
 assert.match(authenticatedBrowserSmoke, /ai_quality_check_knowledge_context_used/, "Authenticated smoke should accept AI Quality Check used-context analytics");
@@ -603,7 +618,8 @@ assert.match(dashboardPage, /activity\.message/, "Dashboard Team activity should
 
 const appLayout = read("src/app/(app)/layout.tsx");
 assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
-assert.match(appLayout, /label: "Dashboard"/, "App header primary navigation should label the workspace home as Dashboard");
+assert.match(appLayout, /label: isChinese \? "工作台" : "Dashboard"/, "App header primary navigation should localize the workspace home label");
+assert.match(appLayout, /label: isChinese \? "质量案例" : "Quality Cases"/, "App header primary navigation should expose bilingual Quality Cases");
 assert.match(appLayout, /Knowledge Base/, "App header menu should expose Knowledge Base");
 assert.match(appLayout, /Primary app navigation/, "App header should expose primary navigation outside the avatar menu");
 assert.match(appLayout, /href="\/dashboard"[\s\S]*navItem: "app_logo"/, "Authenticated app logo should route users back to the Dashboard");

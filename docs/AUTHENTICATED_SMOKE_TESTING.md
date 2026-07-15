@@ -10,7 +10,7 @@ Authenticated smoke testing verifies logged-in app behavior without writing to p
 - Trigger: `workflow_dispatch` only.
 - Database: temporary Neon branch created from the configured parent branch.
 - Cleanup: the temporary Neon branch is deleted in an `if: always()` workflow step.
-- Schema: the temporary branch is reset by dropping and recreating `public`, then initialized with `drizzle-kit push`.
+- Schema: the temporary branch is reset by dropping and recreating `public`, then initialized with `drizzle-kit push`. The rehearsal removes only the newly added Quality Case tables, P0+ Case-link column, and customer-task authorization snapshot from that empty branch, then applies the repository-owned SQL files twice to prove both initial creation and additive/idempotent behavior. It then applies the dedicated PR-G2 Guided-ledger rollback (which drops only its eight new tables), verifies prior Quality Case tables remain, and reapplies PR-G2 before browser smoke.
 - Fixtures: `scripts/smoke/seed-auth-smoke.ts` creates isolated smoke users, a Team workspace, and reports in eligible and excluded states.
 - Browser test: `scripts/smoke/authenticated-smoke.ts` starts from a local Next app, logs in through Better Auth, and validates the logged-in app.
 
@@ -77,6 +77,26 @@ The authenticated seed creates:
 - Outsider completed report that must not leak.
 - Team member approved internal 8D report that should be visible to the Team owner.
 
+The browser smoke also creates an isolated Quality Case through the authenticated
+API. It sends two supplier tasks and two customer tasks without registration.
+The supplier tasks exercise the shared Guided/Expert Supplier Response Package
+service with a token-scoped Session, original Answer, Investigator Run, linked
+Evidence Requirement, advisory Readiness, Supplier Confirmation, submission
+audit, and idempotent retry before internal review. The coordinator smoke then
+opens the submitted Package, explicitly starts Internal Review, persists an
+advisory Quality Reviewer Run, confirms a semantic mapping without writing the
+legacy Report, builds an unsent customer draft from that human-confirmed text,
+and creates a scoped supplier follow-up task. The supplier Guided response is
+checked for those follow-up questions and for absence of internal notes and
+commercial data. It then creates a version-frozen Customer Review snapshot,
+verifies that only human-confirmed English sections and explicitly authorized
+evidence are visible, submits a field-level Customer Feedback record, returns
+the Case to Internal Review, authorizes a revised snapshot, and records a
+separate customer acceptance. External projections are checked to omit
+internal notes/AI risk/commercial/other-supplier data. The smoke also proves
+customer acceptance is not closure, then completes effectiveness verification,
+closure, and reopening. The temporary branch is deleted after the run.
+
 The seeded report text is only test fixture data in the temporary database. The browser smoke also verifies that analytics metadata does not include the full query, customer/product names, root cause, corrective action, lessons learned, batch, or other sensitive report content.
 
 ## Browser Coverage
@@ -110,12 +130,48 @@ The authenticated smoke verifies:
 - Workflow dialog shows the `Knowledge readiness` panel.
 - Weak readiness workflow transitions show the expected non-blocking warning and emit safe readiness analytics.
 - AI Quality Check can be opened by the smoke owner.
-- AI Quality Check builds Knowledge Context before the missing-key fallback.
+- AI Quality Check builds Knowledge Context before either a configured-provider
+  result or the safe unavailable fallback.
 - AI Quality Check shows either `Knowledge context used: N similar reports` or `No reusable knowledge context found yet.`
+- `SMOKE_AI_EXPECTATION=unavailable` deterministically requires the safe 503
+  fallback; `available` requires a provider result; `either` (the local
+  default) validates whichever isolated environment is intentionally
+  configured. This changes only Smoke expectations, not runtime AI behavior.
 - AI Quality Check missing-key fallback does not expose prompt instructions or historical report content.
 - AI Quality Check Knowledge Context analytics use only safe metadata.
 - Report workflow panel includes a Knowledge Base entry.
 - Analytics payloads use safe metadata only.
+- The additive Quality Case SQL files apply twice after baseline schema setup;
+  all Quality Case tables, `pgcrypto`, internal evidence visibility, the
+  nullable P0+ `converted_case_id` link, and the customer-task authorization
+  snapshot exist afterwards.
+- Guided investigation sessions, immutable answer revisions, AI run audit
+  fields, confirmation/mapping ledger fields, and retention metadata exist
+  after the up migration. The temporary branch rehearsal then proves the
+  dedicated PR-G2 rollback removes only those new tables and that the up
+  migration can restore them without affecting the existing Case tables.
+- An authenticated coordinator can create a Quality Case and use the complete
+  supplier → internal → customer → effectiveness workflow, including return,
+  closure, reopening, and immutable activity recording.
+- Guided and Expert supplier submissions share the same package service. The
+  smoke verifies Token → Session → Answer → AI Run → linked Evidence → Package
+  → advisory Readiness → Confirmation → Submission Audit, then retries the
+  same package and proves no duplicate confirmation or audit is created.
+- Internal Quality Review reads the exact submitted Package and returns
+  findings instead of a score. The smoke proves the review is advisory and
+  cannot transition the Case, then verifies human mapping confirmation,
+  no-Report-write metadata, confirmed-only customer draft preparation, and an
+  explicit coordinator-owned transition back to a Guided supplier follow-up.
+- Customer Review remains registration-free and token-scoped. The smoke
+  verifies Ready for Customer → Customer Review → field-level Request Changes
+  → Internal Review → revised Customer Review → Customer Accepted, including
+  structured confirmed sections, authorized evidence metadata, feedback
+  field/version audit data, and the rule that acceptance is not closure.
+- Supplier/customer task links remain public only for their authorized task.
+  The smoke asserts internal notes, AI risk assessment, commercial information,
+  and other-supplier data are absent from an external supplier projection; it
+  also proves a customer link is rejected until an English response is
+  human-confirmed and then receives no AI draft or supplier free-form text.
 
 ## Local Use
 
