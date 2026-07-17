@@ -2655,3 +2655,6 @@ smoke. Promote to a named-user Canary only if both pass.
 - Corrected the deployed-smoke login assertion to use the stable Dashboard
   landing contract after Preview proved authentication succeeded but the old
   “Quality workbench” copy was absent.
+- Improved a failing concurrent-submission assertion so the redacted Canary
+  report distinguishes an idempotency result from an API 404 without exposing
+  a task token or response payload.

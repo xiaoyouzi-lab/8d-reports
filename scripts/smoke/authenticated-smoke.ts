@@ -577,11 +577,17 @@ async function submitGuidedSupplierResponsePackage(
       api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}`, { data: submissionPayload }),
       api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}`, { data: submissionPayload }),
     ]);
-    for (const response of concurrentResponses)
-      assert.equal(response.status(), 200, "Concurrent Supplier Response Package submission must resolve idempotently.");
     const concurrentSubmissions = await Promise.all(
       concurrentResponses.map(async (response) => record(await response.json())),
     );
+    for (const [index, response] of concurrentResponses.entries()) {
+      const error = concurrentSubmissions[index].error;
+      assert.equal(
+        response.status(),
+        200,
+        `Concurrent Supplier Response Package submission must resolve idempotently (response ${index + 1}; error=${typeof error === "string" ? error : "none"}).`,
+      );
+    }
     assert.equal(
       concurrentSubmissions.filter((item) => item.alreadySubmitted === false).length,
       1,
