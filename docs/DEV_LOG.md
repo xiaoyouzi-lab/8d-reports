@@ -2674,3 +2674,13 @@ smoke. Promote to a named-user Canary only if both pass.
 - This change modifies only the RC Canary workflow and its operational log.
   It does not modify product behavior, Preview configuration, database data,
   R2 objects, email, or Production resources.
+
+## Connectivity Result
+
+- The final branch-push connectivity run (`29551257883`) passed after the
+  bypass cookie was reused for the public application probe.
+- DNS and TLS succeeded; the cookie-establishing root request returned an
+  expected same-origin `307`, while the final read-only application request
+  returned `200` with its expected boolean response contract.
+- The redacted Artifact contains no credentials, tokens, cookies, URLs with
+  query parameters, response bodies, or response headers.
