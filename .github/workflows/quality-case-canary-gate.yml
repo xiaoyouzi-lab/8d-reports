@@ -113,6 +113,22 @@ jobs:
           app_sso=false
           if grep -qiE 'vercel authentication|login\.vercel\.com' "$probe_dir/root.body" "$probe_dir/root.headers"; then root_sso=true; fi
           if grep -qiE 'vercel authentication|login\.vercel\.com' "$probe_dir/application.body" "$probe_dir/application.headers"; then app_sso=true; fi
+          classify_redirect() {
+            local headers_file="$1"
+            local location=""
+            location="$(awk 'BEGIN{IGNORECASE=1} /^location:[[:space:]]*/ { sub(/^[^:]*:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit }' "$headers_file")"
+            if [[ -z "$location" ]]; then
+              printf 'none'
+            elif [[ "$location" == https://vercel.com/* || "$location" == https://login.vercel.com/* || "$location" == https://*.vercel.sh/* ]]; then
+              printf 'vercel_sso'
+            elif [[ "$location" == /* || "$location" == "https://$host"/* ]]; then
+              printf 'same_preview'
+            else
+              printf 'cross_origin'
+            fi
+          }
+          root_redirect="$(classify_redirect "$probe_dir/root.headers")"
+          app_redirect="$(classify_redirect "$probe_dir/application.headers")"
           app_contract=false
           if jq -e 'type == "object" and (.available | type == "boolean")' "$probe_dir/application.body" >/dev/null 2>&1; then app_contract=true; fi
 
@@ -121,13 +137,13 @@ jobs:
             failure_layer="network_dns"
           elif [[ "$root_curl_exit" != 0 || "$root_status" == "000" ]]; then
             failure_layer="network_or_tls"
-          elif [[ "$root_sso" == true ]]; then
+          elif [[ "$root_sso" == true || "$root_redirect" == "vercel_sso" ]]; then
             failure_layer="vercel_protection"
           elif [[ ! "$root_status" =~ ^[23] ]]; then
             failure_layer="root_route"
           elif [[ "$app_curl_exit" != 0 || "$app_status" == "000" ]]; then
             failure_layer="network_or_tls"
-          elif [[ "$app_sso" == true ]]; then
+          elif [[ "$app_sso" == true || "$app_redirect" == "vercel_sso" ]]; then
             failure_layer="vercel_protection"
           elif [[ "$app_status" != "200" ]]; then
             failure_layer="application_route"
@@ -141,12 +157,14 @@ jobs:
             --arg rootCurlExit "$root_curl_exit" \
             --arg appStatus "$app_status" \
             --arg appCurlExit "$app_curl_exit" \
+            --arg rootRedirect "$root_redirect" \
+            --arg appRedirect "$app_redirect" \
             --arg failureLayer "$failure_layer" \
             --argjson dns "$dns" \
             --argjson rootSso "$root_sso" \
             --argjson appSso "$app_sso" \
             --argjson appContract "$app_contract" \
-            '{gate:"connectivity", host:$host, dns:$dns, root:{httpStatus:$rootStatus,curlExit:$rootCurlExit,ssoDetected:$rootSso}, application:{path:"/api/quality-agent/chat",httpStatus:$appStatus,curlExit:$appCurlExit,ssoDetected:$appSso,responseContract:$appContract}, failureLayer:$failureLayer, ssoBypassed:(($rootSso or $appSso) | not), applicationReached:($appStatus == "200" and $appContract)}' \
+            '{gate:"connectivity", host:$host, dns:$dns, root:{httpStatus:$rootStatus,curlExit:$rootCurlExit,ssoDetected:$rootSso,redirectClass:$rootRedirect}, application:{path:"/api/quality-agent/chat",httpStatus:$appStatus,curlExit:$appCurlExit,ssoDetected:$appSso,redirectClass:$appRedirect,responseContract:$appContract}, failureLayer:$failureLayer, ssoBypassed:(($rootSso or $appSso or $rootRedirect == "vercel_sso" or $appRedirect == "vercel_sso") | not), applicationReached:($appStatus == "200" and $appContract)}' \
             > artifacts/connectivity-summary.json
 
           if [[ "$failure_layer" != "none" ]]; then
@@ -230,12 +248,14 @@ jobs:
                 httpStatus: value.root.httpStatus || null,
                 curlExit: value.root.curlExit || null,
                 ssoDetected: value.root.ssoDetected ?? null,
+                redirectClass: value.root.redirectClass || null,
               } : null,
               application: value.application ? {
                 path: value.application.path || null,
                 httpStatus: value.application.httpStatus || null,
                 curlExit: value.application.curlExit || null,
                 ssoDetected: value.application.ssoDetected ?? null,
+                redirectClass: value.application.redirectClass || null,
                 responseContract: value.application.responseContract ?? null,
               } : null,
             };

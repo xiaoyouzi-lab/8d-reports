@@ -2662,6 +2662,9 @@ smoke. Promote to a named-user Canary only if both pass.
 - Updated the connectivity report to always preserve only status codes, curl
   exit codes, and a classified failure layer. Raw response bodies and headers
   remain temporary and are removed before artifact upload.
+- The diagnostic report classifies redirect destinations without preserving a
+  URL, so a Vercel SSO redirect can be distinguished from an application or
+  cross-origin redirect without exposing query parameters.
 
 ## Scope Boundary
 
