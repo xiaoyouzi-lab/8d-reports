@@ -2665,3 +2665,12 @@ smoke. Promote to a named-user Canary only if both pass.
 - Extended fixture cleanup to remove only the smoke-owned Verification Evidence
   links before user/case cascades; the domain link remains restrictive for
   normal audit data and this does not change production deletion semantics.
+
+# 2026-07-17 — Canary Gate Finalization
+
+- Final isolated Full Gate passed in GitHub Actions Run 29554792374, including
+  migration rehearsal, deployed lifecycle, Preview R2 compensation, invitation
+  delivery, and fixed-fixture cleanup.
+- Removed the temporary RC branch `push` trigger and marker-based Full Gate
+  path. The retained workflow accepts only explicit `workflow_dispatch` input,
+  preventing ordinary branch pushes from creating Preview Smoke activity.
