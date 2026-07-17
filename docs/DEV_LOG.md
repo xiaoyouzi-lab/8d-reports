@@ -2565,3 +2565,12 @@ smoke. Promote to a named-user Canary only if both pass.
   cannot yet create and guarantee cleanup of its own temporary Neon project.
 - Run the connectivity phase first. Provision and grant a disposable Neon
   automation credential only if it passes; do not use a Production database.
+
+## Dispatch Result
+
+- GitHub Actions only permits `workflow_dispatch` for workflows present on the
+  repository default branch. The Canary workflow intentionally exists only on
+  the RC branch, so GitHub rejected dispatch before it created a run.
+- No Neon project, Preview deployment operation, database write, or Preview
+  request occurred. The temporary GitHub Environment and its Secrets/Variables
+  were removed immediately.
