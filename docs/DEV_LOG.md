@@ -929,6 +929,57 @@ Keyword Data Research Pipeline for 8D Reports SEO/GEO.
   touch auth/payment/AI/database schema, publish external content, or write
   production data.
 
+## Current Task
+
+Automated scheduled task system for product health, SEO, regression smoke, export, permissions, content backlog, and growth review.
+
+## Current Task Summary
+
+- Added a shared automation CLI at `scripts/automation/run.ts`.
+- Added npm scripts for product health, SEO, exports, permissions, content, critical smoke, daily, weekly, and monthly automation.
+- Added GitHub Actions schedules for daily product health, daily SEO watch, weekly full audit, weekly SEO refresh, and monthly growth review.
+- Added `config/seo-keywords.json` to map priority keywords to existing pages, CTAs, and internal-link suggestions.
+- Added Codex Automations prompt templates under `.codex/automations/`.
+- Added automation docs for scheduled tasks, Vercel Cron decision, and Codex GitHub Action setup.
+- Kept automation output as reports, backlog, and draft suggestions only. No auth, payment, database schema, environment variable, export logic, production config, or public route behavior was changed.
+
+## Current Verification
+
+- `git diff --check` passed.
+- `npx tsc --noEmit` passed after correcting a test fixture type in `src/lib/p0-plus/p0-plus.test.ts`.
+- `npm run lint` passed with 11 existing warnings and 0 errors.
+- `npm run test:governance` passed.
+- `npm run check:seo` passed with 124 sitemap URLs and 11 redirects checked.
+- `npm run build` passed.
+- `npm run automation:daily` passed and generated ignored local reports under `reports/automation/2026-07-08/`.
+- `npm run audit:seo` passed and generated an ignored local SEO report under `reports/seo/2026-07-08/`.
+- `npm run audit:content` passed in daily and weekly modes; weekly mode generated ignored draft suggestions under `content/drafts/2026-07-08/`.
+- `npm run test:p0-plus` passed.
+
+## Current Risks
+
+- Automation is static/source-based by default. Live production smoke and database-backed checks remain skipped unless the relevant environment variables are configured.
+- GitHub Actions summarize P0/P1 findings and upload artifacts, but they do not automatically create issues or draft PRs.
+- SEO drafts are intentionally suggestions and must be manually reviewed before publishing.
+
+## Current Unfinished / Needs Human Review
+
+- Confirm whether future Codex GitHub Action integration should be enabled after `OPENAI_API_KEY` is configured in GitHub Secrets.
+- Confirm whether any future Vercel Cron production health endpoint is needed; the current decision is to keep these jobs in GitHub Actions.
+
+## Current Suggested Next Task
+
+Run the new workflows manually from GitHub Actions after merge, inspect the first artifacts, and tune audit thresholds before adding any deeper production checks.
+
+## Follow-up Run - 2026-07-09
+
+- Ran `npm run automation:daily`.
+- Generated ignored local reports under `reports/automation/2026-07-09/`.
+- Daily summary result: 77 PASS, 1 WARNING, 1 SKIPPED, 0 FAIL, 1 INFO.
+- No failing P0/P1 findings. P1 permission and export guard checks passed.
+- The skipped item was live smoke environment coverage because `PRODUCTION_BASE_URL` / `AUTH_SMOKE_BASE_URL` was not provided.
+- The warning was the conservative Full-QMS claim guardrail. Manual spot-check showed the matched copy is boundary-setting language around not replacing a full QMS, not an unsupported product claim.
+
 ## Tests / Verification
 
 - `git diff --check` passed.
@@ -2594,3 +2645,26 @@ smoke. Promote to a named-user Canary only if both pass.
   edge, but the root response was a redirect and did not yield a runtime log.
 - Extended the same read-only gate with an authenticated no-write API request
   so the next push verifies application-runtime reachability separately.
+
+# 2026-07-17 — Connectivity Gate Route Audit
+
+## Outcome
+
+- Audited failed Run `29547740741` without creating Neon infrastructure or
+  running the lifecycle smoke.
+- The failed probe targeted `GET /api/knowledge/search`, but that route only
+  implements `POST`; Next.js correctly returns `405 Method Not Allowed` before
+  its session guard or query logic. The workflow incorrectly treated that
+  expected method response as a network or Preview reachability failure.
+- Replaced the probe with the existing public `GET /api/quality-agent/chat`.
+  It is non-mutating, does not require a session, does not query the
+  application database, and returns a small boolean availability contract.
+- Updated the connectivity report to always preserve only status codes, curl
+  exit codes, and a classified failure layer. Raw response bodies and headers
+  remain temporary and are removed before artifact upload.
+
+## Scope Boundary
+
+- This change modifies only the RC Canary workflow and its operational log.
+  It does not modify product behavior, Preview configuration, database data,
+  R2 objects, email, or Production resources.

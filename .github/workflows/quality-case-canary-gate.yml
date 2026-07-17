@@ -78,26 +78,80 @@ jobs:
           set -euo pipefail
           host="${PREVIEW_URL#https://}"
           host="${host%%/*}"
-          getent ahosts "$host" >/dev/null
-          status="$(curl --fail-with-body --connect-timeout 20 --max-time 60 \
-            --silent --show-error --output artifacts/preview-body.txt \
-            --dump-header artifacts/preview-headers.txt --write-out '%{http_code}' \
-            -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
-            -H 'x-vercel-set-bypass-cookie: true' "$PREVIEW_URL/")"
-          case "$status" in 2*|3*) ;; *) exit 1;; esac
-          ! grep -qiE 'vercel authentication|login\.vercel\.com' artifacts/preview-body.txt
-          api_status="$(curl --fail-with-body --connect-timeout 20 --max-time 60 \
-            --silent --show-error --output artifacts/preview-api-body.txt \
-            --dump-header artifacts/preview-api-headers.txt --write-out '%{http_code}' \
-            -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
-            -H 'x-vercel-set-bypass-cookie: true' \
-            "$PREVIEW_URL/api/knowledge/search?q=canary-connectivity")"
-          case "$api_status" in 2*) ;; *) exit 1;; esac
-          ! grep -qiE 'vercel authentication|login\.vercel\.com' artifacts/preview-api-body.txt
-          jq -n --arg status "$status" --arg apiStatus "$api_status" --arg host "$host" \
-            '{gate:"connectivity", dns:true, tlsAndHttp:true, httpStatus:$status, apiHttpStatus:$apiStatus, host:$host, ssoBypassed:true, applicationReached:true}' \
+          probe_dir="$(mktemp -d)"
+          trap 'rm -rf "$probe_dir"' EXIT
+          dns=false
+          if getent ahosts "$host" >/dev/null; then dns=true; fi
+
+          run_probe() {
+            local path="$1"
+            local name="$2"
+            local status_file="$probe_dir/${name}.status"
+            local curl_exit=0
+            set +e
+            curl --connect-timeout 20 --max-time 60 --silent --show-error \
+              --output "$probe_dir/${name}.body" \
+              --dump-header "$probe_dir/${name}.headers" --write-out '%{http_code}' \
+              -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
+              -H 'x-vercel-set-bypass-cookie: true' \
+              "$PREVIEW_URL$path" > "$status_file"
+            curl_exit=$?
+            set -e
+            printf '%s' "$curl_exit" > "$probe_dir/${name}.curl-exit"
+          }
+
+          run_probe "/" root
+          # This endpoint is intentionally public, GET-only, and non-mutating. It
+          # returns { available: boolean } without querying the application DB.
+          run_probe "/api/quality-agent/chat" application
+
+          root_status="$(cat "$probe_dir/root.status")"
+          root_curl_exit="$(cat "$probe_dir/root.curl-exit")"
+          app_status="$(cat "$probe_dir/application.status")"
+          app_curl_exit="$(cat "$probe_dir/application.curl-exit")"
+          root_sso=false
+          app_sso=false
+          if grep -qiE 'vercel authentication|login\.vercel\.com' "$probe_dir/root.body" "$probe_dir/root.headers"; then root_sso=true; fi
+          if grep -qiE 'vercel authentication|login\.vercel\.com' "$probe_dir/application.body" "$probe_dir/application.headers"; then app_sso=true; fi
+          app_contract=false
+          if jq -e 'type == "object" and (.available | type == "boolean")' "$probe_dir/application.body" >/dev/null 2>&1; then app_contract=true; fi
+
+          failure_layer="none"
+          if [[ "$dns" != true ]]; then
+            failure_layer="network_dns"
+          elif [[ "$root_curl_exit" != 0 || "$root_status" == "000" ]]; then
+            failure_layer="network_or_tls"
+          elif [[ "$root_sso" == true ]]; then
+            failure_layer="vercel_protection"
+          elif [[ ! "$root_status" =~ ^[23] ]]; then
+            failure_layer="root_route"
+          elif [[ "$app_curl_exit" != 0 || "$app_status" == "000" ]]; then
+            failure_layer="network_or_tls"
+          elif [[ "$app_sso" == true ]]; then
+            failure_layer="vercel_protection"
+          elif [[ "$app_status" != "200" ]]; then
+            failure_layer="application_route"
+          elif [[ "$app_contract" != true ]]; then
+            failure_layer="application_response"
+          fi
+
+          jq -n \
+            --arg host "$host" \
+            --arg rootStatus "$root_status" \
+            --arg rootCurlExit "$root_curl_exit" \
+            --arg appStatus "$app_status" \
+            --arg appCurlExit "$app_curl_exit" \
+            --arg failureLayer "$failure_layer" \
+            --argjson dns "$dns" \
+            --argjson rootSso "$root_sso" \
+            --argjson appSso "$app_sso" \
+            --argjson appContract "$app_contract" \
+            '{gate:"connectivity", host:$host, dns:$dns, root:{httpStatus:$rootStatus,curlExit:$rootCurlExit,ssoDetected:$rootSso}, application:{path:"/api/quality-agent/chat",httpStatus:$appStatus,curlExit:$appCurlExit,ssoDetected:$appSso,responseContract:$appContract}, failureLayer:$failureLayer, ssoBypassed:(($rootSso or $appSso) | not), applicationReached:($appStatus == "200" and $appContract)}' \
             > artifacts/connectivity-summary.json
-          rm -f artifacts/preview-body.txt artifacts/preview-headers.txt artifacts/preview-api-body.txt artifacts/preview-api-headers.txt
+
+          if [[ "$failure_layer" != "none" ]]; then
+            exit 1
+          fi
 
       - name: Install dependencies
         if: github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
@@ -169,8 +223,21 @@ jobs:
               tlsAndHttp: value.tlsAndHttp ?? null,
               httpStatus: value.httpStatus || null,
               apiHttpStatus: value.apiHttpStatus || null,
+              failureLayer: value.failureLayer || null,
               ssoBypassed: value.ssoBypassed ?? null,
               applicationReached: value.applicationReached ?? null,
+              root: value.root ? {
+                httpStatus: value.root.httpStatus || null,
+                curlExit: value.root.curlExit || null,
+                ssoDetected: value.root.ssoDetected ?? null,
+              } : null,
+              application: value.application ? {
+                path: value.application.path || null,
+                httpStatus: value.application.httpStatus || null,
+                curlExit: value.application.curlExit || null,
+                ssoDetected: value.application.ssoDetected ?? null,
+                responseContract: value.application.responseContract ?? null,
+              } : null,
             };
           }
           fs.writeFileSync('artifacts/canary-summary.json', `${JSON.stringify(out, null, 2)}\n`);
