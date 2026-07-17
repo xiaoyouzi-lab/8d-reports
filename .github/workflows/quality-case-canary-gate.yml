@@ -1,0 +1,181 @@
+name: Quality Case Canary Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: Run only deployment connectivity first; use full only after its gate passes.
+        required: true
+        default: connectivity
+        type: choice
+        options:
+          - connectivity
+          - full
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-case-preview-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    name: Preview Canary (${{ inputs.phase }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    environment: quality-case-preview-smoke
+    env:
+      PREVIEW_URL: ${{ vars.VERCEL_PREVIEW_URL }}
+      VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      SMOKE_DATABASE_URL: ${{ secrets.NEON_SMOKE_DATABASE_URL }}
+      SMOKE_NEON_BRANCH_NAME: ${{ vars.NEON_SMOKE_BRANCH_NAME }}
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      R2_ENDPOINT: ${{ vars.R2_ENDPOINT }}
+      R2_BUCKET_NAME: ${{ vars.R2_BUCKET_NAME }}
+      R2_PREVIEW_BUCKET: ${{ vars.R2_BUCKET_NAME }}
+      SMOKE_SCOPE: quality-case
+      SMOKE_DB: "true"
+      SMOKE_RESULT_PATH: artifacts/authenticated-smoke.json
+      SMOKE_VERIFY_INVITATION_EMAIL: "true"
+      SMOKE_SUPPLIER_INVITATION_EMAIL: delivered+quality-case-supplier@resend.dev
+      SMOKE_CUSTOMER_INVITATION_EMAIL: delivered+quality-case-customer@resend.dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Guard Preview-only inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "::add-mask::$VERCEL_AUTOMATION_BYPASS_SECRET"
+          echo "::add-mask::$SMOKE_DATABASE_URL"
+          echo "::add-mask::$R2_ACCESS_KEY_ID"
+          echo "::add-mask::$R2_SECRET_ACCESS_KEY"
+          test -n "$PREVIEW_URL"
+          test -n "$VERCEL_AUTOMATION_BYPASS_SECRET"
+          test "$R2_BUCKET_NAME" = "8d-reports-preview"
+          [[ "$PREVIEW_URL" == https://*.vercel.app* ]]
+          [[ "$PREVIEW_URL" != *"8d-reports.com"* ]]
+          [[ "$SMOKE_DATABASE_URL" != *"production"* ]]
+          [[ "$SMOKE_DATABASE_URL" != *"prod"* ]]
+          mkdir -p artifacts
+
+      - name: Preview DNS, TLS, and bypass preflight
+        id: connectivity
+        shell: bash
+        run: |
+          set -euo pipefail
+          host="${PREVIEW_URL#https://}"
+          host="${host%%/*}"
+          getent ahosts "$host" >/dev/null
+          status="$(curl --fail-with-body --connect-timeout 20 --max-time 60 \
+            --silent --show-error --output artifacts/preview-body.txt \
+            --dump-header artifacts/preview-headers.txt --write-out '%{http_code}' \
+            -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
+            -H 'x-vercel-set-bypass-cookie: true' "$PREVIEW_URL/")"
+          case "$status" in 2*|3*) ;; *) exit 1;; esac
+          ! grep -qiE 'vercel authentication|login\.vercel\.com' artifacts/preview-body.txt
+          jq -n --arg status "$status" --arg host "$host" \
+            '{gate:"connectivity", dns:true, tlsAndHttp:true, httpStatus:$status, host:$host, ssoBypassed:true}' \
+            > artifacts/connectivity-summary.json
+          rm -f artifacts/preview-body.txt artifacts/preview-headers.txt
+
+      - name: Install dependencies
+        if: inputs.phase == 'full'
+        run: npm ci
+
+      - name: Require isolated full-smoke inputs
+        if: inputs.phase == 'full'
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$SMOKE_DATABASE_URL"
+          test -n "$SMOKE_NEON_BRANCH_NAME"
+          [[ "$SMOKE_NEON_BRANCH_NAME" == *"smoke"* || "$SMOKE_NEON_BRANCH_NAME" == *"preview"* ]]
+          test -n "$R2_ACCOUNT_ID"
+          test -n "$R2_ACCESS_KEY_ID"
+          test -n "$R2_SECRET_ACCESS_KEY"
+          test -n "$R2_ENDPOINT"
+
+      - name: Migrate, rehearse rollback, and seed isolated data
+        if: inputs.phase == 'full'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL="$SMOKE_DATABASE_URL"
+          npx drizzle-kit push --force
+          npm run smoke:db:rehearse-quality-case
+          npm run smoke:seed-auth
+
+      - name: Verify dedicated R2 cleanup and compensation
+        if: inputs.phase == 'full'
+        shell: bash
+        run: |
+          set -euo pipefail
+          unset R2_BUCKET_NAME
+          export R2_PREVIEW_RESULT_PATH=artifacts/r2-preview.json
+          npm run smoke:r2-preview
+          export R2_BUCKET_NAME="$R2_PREVIEW_BUCKET"
+
+      - name: Run deployed Quality Case lifecycle
+        if: inputs.phase == 'full'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL="$SMOKE_DATABASE_URL"
+          export SMOKE_BASE_URL="$PREVIEW_URL"
+          npm run smoke:auth
+
+      - name: Produce redacted report
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const fs = require('fs');
+          const out = { phase: process.env.INPUT_PHASE || 'unknown' };
+          for (const [name, path] of Object.entries({
+            authenticated: 'artifacts/authenticated-smoke.json',
+            r2: 'artifacts/r2-preview.json',
+            connectivity: 'artifacts/connectivity-summary.json',
+          })) {
+            if (!fs.existsSync(path)) continue;
+            const value = JSON.parse(fs.readFileSync(path, 'utf8'));
+            out[name] = {
+              status: value.status || null,
+              checks: value.checks || null,
+              completedSteps: Array.isArray(value.completedSteps) ? value.completedSteps.length : null,
+              cleanupVerified: value.cleanupVerified ?? null,
+              httpStatus: value.httpStatus || null,
+              ssoBypassed: value.ssoBypassed ?? null,
+            };
+          }
+          fs.writeFileSync('artifacts/canary-summary.json', `${JSON.stringify(out, null, 2)}\n`);
+          NODE
+        env:
+          INPUT_PHASE: ${{ inputs.phase }}
+
+      - name: Clean smoke accounts
+        if: always() && inputs.phase == 'full'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export DATABASE_URL="$SMOKE_DATABASE_URL"
+          export CONFIRM_SMOKE_FIXTURE_CLEANUP=true
+          npm run smoke:cleanup-auth
+
+      - name: Upload redacted Canary report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-case-canary-${{ github.run_id }}
+          path: artifacts/canary-summary.json
+          if-no-files-found: error
+          retention-days: 14

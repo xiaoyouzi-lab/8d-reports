@@ -2495,3 +2495,73 @@ bucket, then promote only after those two release gates pass.
 Provision the isolated R2 Preview bucket, configure branch-scoped Preview
 credentials, run the real R2 smoke and complete deployed Quality Case scoped
 smoke. Promote to a named-user Canary only if both pass.
+
+# 2026-07-15 — Final Preview Canary Gate Attempt
+
+## Outcome
+
+- Verified the Ready Preview deployment metadata for
+  `codex/rc2-preview-hardening` at commit
+  `03712028c2717857616ae568c268b1919015b73d`.
+- Created a one-time empty Neon project, bound it only to the Preview branch,
+  and redeployed the same commit. The temporary branch overrides and Neon
+  project were removed during cleanup.
+- Applied the repository migrations, verified the Quality Case, Guided, and
+  Verification schema, rolled back the Guided/Verification additions while
+  retaining the core Quality Case table, then reapplied them.
+- Revalidated the dedicated `8d-reports-preview` R2 bucket: upload, download,
+  private-access rejection, simulated orphan cleanup, deletion, and zero
+  objects under the smoke prefix all passed.
+- The deployed browser smoke could not reach the Preview host: ordinary HTTPS
+  and Vercel protection-bypass requests both timed out before reaching the
+  deployment. No deployed Case, email, or application Evidence action was
+  therefore claimed as validated.
+
+## Decision
+
+- Canary is **NO-GO**. Restore a newly isolated Preview database and resolve
+  runner-to-Preview HTTPS connectivity before repeating the deployed lifecycle,
+  permission, email, idempotency, and application-level R2 compensation gates.
+
+# 2026-07-17 — Preview Automation Bypass Connectivity Check
+
+## Outcome
+
+- Confirmed the Vercel CLI session, 8D Reports project, `xiaoyouzi-labs-projects`
+  team, and Preview deployment target.
+- Created a project-level Automation Protection Bypass named
+  `codex-canary-smoke` without changing Deployment Protection or Production.
+- Stored the bypass only outside the repository in a user configuration file
+  with owner-only file permissions; no credential was written to source,
+  Git, reports, or this log.
+- Both Vercel CLI and ordinary HTTPS bypass requests timed out during network
+  connection establishment. The read-only application GET did not reach
+  runtime logs, so SSO, application routing, and database behavior were not
+  exercised.
+
+## Decision
+
+- Do not create the isolated Neon environment yet. Resolve runner-to-Preview
+  HTTPS reachability first, then repeat the read-only bypass check before the
+  full Canary smoke.
+
+# 2026-07-17 — GitHub Actions Canary Gate Preflight
+
+## Outcome
+
+- Restored GitHub CLI authentication and verified Actions availability for the
+  current repository and RC Preview branch.
+- Added a manual-only, concurrency-protected Preview Canary workflow using the
+  `quality-case-preview-smoke` GitHub Environment.
+- Stored only the Preview bypass and R2 credentials in Environment Secrets;
+  non-sensitive Preview and R2 routing values use Environment Variables.
+- The default workflow phase performs DNS, TLS, and bypass-only reads before
+  any database operation. The full phase is gated on explicit isolated-smoke
+  inputs and always uploads only a redacted summary.
+
+## Current Blocker
+
+- No Neon automation credential is available to GitHub Actions, so a full run
+  cannot yet create and guarantee cleanup of its own temporary Neon project.
+- Run the connectivity phase first. Provision and grant a disposable Neon
+  automation credential only if it passes; do not use a Production database.
