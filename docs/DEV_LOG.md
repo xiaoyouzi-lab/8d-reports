@@ -2658,3 +2658,7 @@ smoke. Promote to a named-user Canary only if both pass.
 - Improved a failing concurrent-submission assertion so the redacted Canary
   report distinguishes an idempotency result from an API 404 without exposing
   a task token or response payload.
+- Fixed the confirmed supplier-submit race: if another request commits between
+  the initial scope inspection and Package build, the later request rechecks
+  the immutable confirmation and returns the committed result instead of a
+  false task-unavailable response.

@@ -339,7 +339,25 @@ export async function submitSupplierResponsePackageWithDependencies(
   const before = await dependencies.inspect();
   if (before.existing) return { status: before.existing.status, packageId: before.existing.packageId, confirmationId: before.existing.id, alreadySubmitted: true };
   if (before.completed) throw new SupplierResponsePackageError("Supplier task is already completed without a response package.", 409);
-  const packageValue = await dependencies.buildPackage();
+  let packageValue: SupplierResponsePackage;
+  try {
+    packageValue = await dependencies.buildPackage();
+  } catch (error) {
+    // A concurrent request can commit between the first inspection and this
+    // read-only package build, which correctly makes the task unavailable.
+    // Re-inspect once so that race resolves to the committed submission rather
+    // than surfacing a false 404 to the supplier.
+    const afterBuild = await dependencies.inspect();
+    if (afterBuild.existing) {
+      return {
+        status: afterBuild.existing.status,
+        packageId: afterBuild.existing.packageId,
+        confirmationId: afterBuild.existing.id,
+        alreadySubmitted: true,
+      };
+    }
+    throw error;
+  }
   const committed = await dependencies.commitAtomic(packageValue, input.confirmationText);
   if (!committed.ok) {
     const afterFailure = await dependencies.inspect();

@@ -251,6 +251,27 @@ async function runSubmissionTests() {
   assert.equal(duplicate.confirmationId, "confirmation-1");
   assert.equal(duplicateSideEffects, 0);
 
+  // A competing request may complete after the first inspection but before
+  // this request can rebuild its read-only package. That race must return the
+  // committed submission instead of exposing a false task-unavailable error.
+  let raceInspections = 0;
+  const buildRace = await submitSupplierResponsePackageWithDependencies(
+    { confirmationText: "concurrent retry" },
+    {
+      async inspect() {
+        raceInspections += 1;
+        return raceInspections === 1
+          ? { completed: false, existing: null }
+          : { completed: true, existing: { id: "confirmation-race", packageId: packageValue.packageId, status: "supplier_submitted" } };
+      },
+      async buildPackage() { throw new SupplierResponsePackageError("Supplier task is unavailable or expired.", 404); },
+      async commitAtomic() { throw new Error("A build-race retry must not create a second submission."); },
+    },
+  );
+  assert.equal(buildRace.alreadySubmitted, true);
+  assert.equal(buildRace.confirmationId, "confirmation-race");
+  assert.equal(raceInspections, 2);
+
   // A forged token/session scope must stop before any package or mutation.
   let unauthorizedSideEffects = 0;
   await assert.rejects(
