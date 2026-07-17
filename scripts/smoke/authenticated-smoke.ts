@@ -424,7 +424,10 @@ async function login(page: Page) {
   ]);
   const response = await authResponse;
   assert.equal(response.status(), 200, `Smoke login must return 200, received ${response.status()}.`);
-  await waitForBodyText(page, "Quality workbench");
+  // The dashboard is the stable authenticated landing-page contract. Product
+  // copy may evolve, so avoid coupling the deployed lifecycle gate to a
+  // non-existent marketing phrase.
+  await waitForBodyText(page, "Dashboard");
 }
 
 async function jsonRequest(

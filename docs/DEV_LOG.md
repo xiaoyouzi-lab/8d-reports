@@ -2652,3 +2652,6 @@ smoke. Promote to a named-user Canary only if both pass.
 - Extended fixed-fixture cleanup to delete exactly the R2 evidence paths owned
   by the smoke users before database cascades remove their cases. It never
   lists or deletes unrelated Preview bucket objects.
+- Corrected the deployed-smoke login assertion to use the stable Dashboard
+  landing contract after Preview proved authentication succeeded but the old
+  “Quality workbench” copy was absent.
