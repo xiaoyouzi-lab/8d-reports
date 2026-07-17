@@ -2684,3 +2684,13 @@ smoke. Promote to a named-user Canary only if both pass.
   returned `200` with its expected boolean response contract.
 - The redacted Artifact contains no credentials, tokens, cookies, URLs with
   query parameters, response bodies, or response headers.
+
+# 2026-07-17 — Full Canary Gate Preparation
+
+- Full Canary requires an explicit temporary Environment authorization and the
+  `[full-canary]` marker on the RC branch because GitHub cannot dispatch a
+  branch-only workflow absent from the default branch.
+- Browser, API, and invitation Smoke requests carry Vercel's automation bypass
+  header without persisting it in a report.
+- Supplier Evidence in the deployed Smoke now uses the external upload API and
+  links the returned R2-backed record to the Guided answer requirement.

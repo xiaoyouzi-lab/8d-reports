@@ -32,6 +32,9 @@ jobs:
     env:
       PREVIEW_URL: ${{ vars.VERCEL_PREVIEW_URL }}
       VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      SMOKE_VERCEL_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      FULL_GATE_REQUESTED: ${{ (github.event_name == 'workflow_dispatch' && inputs.phase == 'full') || (github.event_name == 'push' && contains(github.event.head_commit.message, '[full-canary]')) }}
+      FULL_CANARY_GATE_AUTHORIZATION: ${{ secrets.FULL_CANARY_GATE_AUTHORIZATION }}
       SMOKE_DATABASE_URL: ${{ secrets.NEON_SMOKE_DATABASE_URL }}
       SMOKE_NEON_BRANCH_NAME: ${{ vars.NEON_SMOKE_BRANCH_NAME }}
       R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
@@ -69,6 +72,9 @@ jobs:
           [[ "$PREVIEW_URL" != *"8d-reports.com"* ]]
           [[ "$SMOKE_DATABASE_URL" != *"production"* ]]
           [[ "$SMOKE_DATABASE_URL" != *"prod"* ]]
+          if [[ "$FULL_GATE_REQUESTED" == "true" ]]; then
+            test "$FULL_CANARY_GATE_AUTHORIZATION" = "approved"
+          fi
           mkdir -p artifacts
 
       - name: Preview DNS, TLS, and bypass preflight
@@ -183,11 +189,11 @@ jobs:
           fi
 
       - name: Install dependencies
-        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
+        if: env.FULL_GATE_REQUESTED == 'true'
         run: npm ci
 
       - name: Require isolated full-smoke inputs
-        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
+        if: env.FULL_GATE_REQUESTED == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -200,7 +206,7 @@ jobs:
           test -n "$R2_ENDPOINT"
 
       - name: Migrate, rehearse rollback, and seed isolated data
-        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
+        if: env.FULL_GATE_REQUESTED == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -210,7 +216,7 @@ jobs:
           npm run smoke:seed-auth
 
       - name: Verify dedicated R2 cleanup and compensation
-        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
+        if: env.FULL_GATE_REQUESTED == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -220,13 +226,22 @@ jobs:
           export R2_BUCKET_NAME="$R2_PREVIEW_BUCKET"
 
       - name: Run deployed Quality Case lifecycle
-        if: github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
+        if: env.FULL_GATE_REQUESTED == 'true'
         shell: bash
         run: |
           set -euo pipefail
           export DATABASE_URL="$SMOKE_DATABASE_URL"
           export SMOKE_BASE_URL="$PREVIEW_URL"
           npm run smoke:auth
+
+      - name: Verify Preview invitation delivery
+        if: env.FULL_GATE_REQUESTED == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          export SMOKE_BASE_URL="$PREVIEW_URL"
+          export SMOKE_EMAIL_RESULT_PATH=artifacts/preview-email.json
+          npm run smoke:preview-email
 
       - name: Produce redacted report
         if: always()
@@ -239,6 +254,7 @@ jobs:
           for (const [name, path] of Object.entries({
             authenticated: 'artifacts/authenticated-smoke.json',
             r2: 'artifacts/r2-preview.json',
+            email: 'artifacts/preview-email.json',
             connectivity: 'artifacts/connectivity-summary.json',
           })) {
             if (!fs.existsSync(path)) continue;
@@ -277,7 +293,7 @@ jobs:
           INPUT_PHASE: ${{ inputs.phase }}
 
       - name: Clean smoke accounts
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
+        if: always() && env.FULL_GATE_REQUESTED == 'true'
         shell: bash
         run: |
           set -euo pipefail

@@ -9,6 +9,7 @@ const ownerEmail = process.env.SMOKE_OWNER_EMAIL || "smoke-owner@example.test";
 const ownerPassword = process.env.SMOKE_OWNER_PASSWORD || "SmokeTest#2026!";
 const supplierEmail = process.env.SMOKE_SUPPLIER_INVITATION_EMAIL || "delivered+rc2-supplier@resend.dev";
 const customerEmail = process.env.SMOKE_CUSTOMER_INVITATION_EMAIL || "delivered+rc2-customer@resend.dev";
+const previewBypassSecret = process.env.SMOKE_VERCEL_BYPASS_SECRET || "";
 
 assert.ok(baseUrl.startsWith("https://"), "SMOKE_BASE_URL must be an HTTPS Preview URL.");
 
@@ -43,7 +44,11 @@ async function main() {
   const checks: Record<string, boolean> = {};
   const providerMessageIds: string[] = [];
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext({
+      extraHTTPHeaders: previewBypassSecret
+        ? { "x-vercel-protection-bypass": previewBypassSecret }
+        : {},
+    });
     const page = await context.newPage();
     await page.goto(shareUrl, { waitUntil: "domcontentloaded" });
     await page.goto(`${baseUrl}/login`, { waitUntil: "domcontentloaded" });

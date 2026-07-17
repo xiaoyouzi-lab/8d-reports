@@ -35,6 +35,7 @@ const verifyInvitationEmail = process.env.SMOKE_VERIFY_INVITATION_EMAIL === "tru
 const supplierInvitationEmail = process.env.SMOKE_SUPPLIER_INVITATION_EMAIL || "";
 const customerInvitationEmail = process.env.SMOKE_CUSTOMER_INVITATION_EMAIL || "";
 const aiQualityCheckExpectation = process.env.SMOKE_AI_EXPECTATION || "either";
+const previewBypassSecret = process.env.SMOKE_VERCEL_BYPASS_SECRET || "";
 if (!["either", "available", "unavailable"].includes(aiQualityCheckExpectation))
   throw new Error("SMOKE_AI_EXPECTATION must be either, available, or unavailable.");
 
@@ -134,6 +135,12 @@ const REDACTED_ARTIFACT_TERMS = [
 
 function toUrl(path: string) {
   return `${baseUrl}${path}`;
+}
+
+function previewBypassHeaders(): Record<string, string> {
+  return previewBypassSecret
+    ? { "x-vercel-protection-bypass": previewBypassSecret }
+    : {};
 }
 
 function markCheckForStep(stepName: string, status: SmokeCheckStatus) {
@@ -328,6 +335,7 @@ function parseEventPayload(raw: string | null): CapturedEvent | null {
 async function createAuthenticatedContext(browser: Browser, events: CapturedEvent[]) {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
+    extraHTTPHeaders: previewBypassHeaders(),
   });
   await context.addInitScript(() => {
     Object.defineProperty(navigator, "sendBeacon", {
@@ -349,7 +357,7 @@ async function createAuthenticatedContext(browser: Browser, events: CapturedEven
 }
 
 async function verifyUnauthenticatedSecurity() {
-  const api = await request.newContext({ baseURL: baseUrl });
+  const api = await request.newContext({ baseURL: baseUrl, extraHTTPHeaders: previewBypassHeaders() });
   const getResponse = await api.get("/api/knowledge/search?q=coating");
   assert.equal(getResponse.status(), 405, "GET /api/knowledge/search should be 405");
 
@@ -361,7 +369,7 @@ async function verifyUnauthenticatedSecurity() {
 
   const browser = await chromium.launch({ headless: true });
   try {
-    const context = await browser.newContext();
+    const context = await browser.newContext({ extraHTTPHeaders: previewBypassHeaders() });
     const page = await context.newPage();
     activePage = page;
 
@@ -475,7 +483,7 @@ async function submitExternalTask(
   token: string,
   body: Record<string, unknown>,
 ) {
-  const api = await request.newContext({ baseURL: baseUrl });
+  const api = await request.newContext({ baseURL: baseUrl, extraHTTPHeaders: previewBypassHeaders() });
   try {
     const response = await api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}`, { data: body });
     assert.equal(response.status(), 200, "External task submission must succeed.");
@@ -490,7 +498,7 @@ async function submitGuidedSupplierResponsePackage(
   mode: "guided" | "expert",
   answerText: string,
 ) {
-  const api = await request.newContext({ baseURL: baseUrl });
+  const api = await request.newContext({ baseURL: baseUrl, extraHTTPHeaders: previewBypassHeaders() });
   try {
     const guidanceResponse = await api.get(`/api/quality-case-tasks/${encodeURIComponent(token)}/guidance`);
     assert.equal(guidanceResponse.status(), 200, "A supplier token must create or resume its Guided Session.");
@@ -519,15 +527,21 @@ async function submitGuidedSupplierResponsePackage(
     assert.ok(answer, "The supplier answer must be persisted before packaging.");
     const aiRuns = await db.select().from(schema.qualityCaseGuidanceAiRuns).where(drizzle.eq(schema.qualityCaseGuidanceAiRuns.sessionId, sessionId));
     assert.ok(aiRuns.length > 0, "An Investigator Run audit must exist even when the provider is unavailable.");
-    const [evidence] = await db.insert(schema.qualityCaseEvidence).values({
-      caseId: task.caseId,
-      uploadedByParticipantId: task.participantId,
-      visibility: "internal",
-      storagePath: `smoke/quality-cases/${task.caseId}/${crypto.randomUUID()}-evidence.pdf`,
-      filename: "qc-smoke-supplier-evidence.pdf",
-      mimeType: "application/pdf",
-      fileSize: 128,
-    }).returning();
+    const uploaded = await api.post(`/api/quality-case-tasks/${encodeURIComponent(token)}/evidence`, {
+      multipart: {
+        file: {
+          name: "qc-smoke-supplier-evidence.pdf",
+          mimeType: "application/pdf",
+          buffer: Buffer.from("QC smoke supplier evidence", "utf8"),
+        },
+      },
+    });
+    assert.equal(uploaded.status(), 201, "Supplier evidence must upload through the external task API.");
+    const uploadedBody = record(await uploaded.json());
+    assert.equal(typeof uploadedBody.id, "string", "Supplier evidence upload must return its Evidence id.");
+    const [evidence] = await db.select().from(schema.qualityCaseEvidence)
+      .where(drizzle.eq(schema.qualityCaseEvidence.id, String(uploadedBody.id))).limit(1);
+    assert.ok(evidence, "Uploaded supplier evidence must be persisted before it can be linked.");
     await db.insert(schema.qualityCaseGuidanceEvidenceRequirements).values({
       caseId: task.caseId,
       sessionId,
@@ -726,7 +740,7 @@ async function verifyInternalQualityCoordinatorWorkspace(
   const token = record(followUp.body).token;
   assert.equal(typeof token, "string", "The supplier follow-up must return a one-time task token.");
 
-  const publicApi = await request.newContext({ baseURL: baseUrl });
+  const publicApi = await request.newContext({ baseURL: baseUrl, extraHTTPHeaders: previewBypassHeaders() });
   try {
     const guidanceResponse = await publicApi.get(
       `/api/quality-case-tasks/${encodeURIComponent(String(token))}/guidance`,
@@ -769,7 +783,7 @@ async function verifyQualityCaseWorkflow(page: Page) {
       throw new Error("Created Quality Case did not return an id.");
     }
     const supplierTask = await createExternalTask(page, caseId, "supplier_response", "QC Smoke Supplier User");
-    const publicApi = await request.newContext({ baseURL: baseUrl });
+    const publicApi = await request.newContext({ baseURL: baseUrl, extraHTTPHeaders: previewBypassHeaders() });
     try {
       const projection = await publicApi.get(`/api/quality-case-tasks/${encodeURIComponent(supplierTask)}`);
       assert.equal(projection.status(), 200, "Supplier task must be available without an account.");
@@ -827,7 +841,7 @@ async function verifyQualityCaseWorkflow(page: Page) {
     });
     assert.equal(confirmedText.status, 200, "A coordinator must save a human-confirmed customer summary before customer review.");
     const customerTask = await createExternalTask(page, caseId, "customer_review", "QC Smoke Customer User");
-    const customerApi = await request.newContext({ baseURL: baseUrl });
+    const customerApi = await request.newContext({ baseURL: baseUrl, extraHTTPHeaders: previewBypassHeaders() });
     try {
       const projection = await customerApi.get(`/api/quality-case-tasks/${encodeURIComponent(customerTask)}`);
       assert.equal(projection.status(), 200, "Customer task must be available after a human confirms the English response.");
@@ -919,7 +933,7 @@ async function verifyQualityCaseWorkflow(page: Page) {
     assert.equal(readyAgain.status, 200, "The coordinator must explicitly return the Case to customer preparation.");
 
     const finalCustomerTask = await createExternalTask(page, caseId, "customer_review", "QC Smoke Customer User");
-    const finalCustomerApi = await request.newContext({ baseURL: baseUrl });
+    const finalCustomerApi = await request.newContext({ baseURL: baseUrl, extraHTTPHeaders: previewBypassHeaders() });
     try {
       const projectionResponse = await finalCustomerApi.get(
         `/api/quality-case-tasks/${encodeURIComponent(finalCustomerTask)}`,
