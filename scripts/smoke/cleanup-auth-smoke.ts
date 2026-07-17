@@ -1,7 +1,14 @@
 import { eq, inArray } from "drizzle-orm";
 import { db } from "../../src/lib/db";
 import { deleteR2Object } from "../../src/lib/r2";
-import { plans, qualityCaseEvidence, qualityCases, users, verifications } from "../../src/lib/db/schema";
+import {
+  plans,
+  qualityCaseEvidence,
+  qualityCases,
+  qualityCaseVerificationEvidence,
+  users,
+  verifications,
+} from "../../src/lib/db/schema";
 
 const emails = [
   "smoke-owner@example.test",
@@ -17,17 +24,28 @@ async function main() {
   // the fixed smoke users before their cases are removed, so Preview smoke
   // cleanup never enumerates or touches unrelated Preview artifacts.
   const smokeEvidence = await db
-    .select({ storagePath: qualityCaseEvidence.storagePath })
+    .select({ id: qualityCaseEvidence.id, storagePath: qualityCaseEvidence.storagePath })
     .from(qualityCaseEvidence)
     .innerJoin(qualityCases, eq(qualityCaseEvidence.caseId, qualityCases.id))
     .innerJoin(users, eq(qualityCases.ownerId, users.id))
     .where(inArray(users.email, emails));
   const storagePaths = [...new Set(smokeEvidence.map(({ storagePath }) => storagePath))];
+  const evidenceIds = smokeEvidence.map(({ id }) => id);
   const removedR2Objects = await Promise.all(storagePaths.map(async (storagePath) => {
     const removed = await deleteR2Object(storagePath);
     if (!removed) throw new Error("Smoke R2 cleanup did not confirm object deletion.");
     return removed;
   }));
+
+  // Verification Evidence deliberately references case Evidence with RESTRICT
+  // so a user cannot accidentally erase a real audit record. The smoke owns
+  // both sides, therefore remove only these exact link rows before the fixed
+  // test users trigger case cascades.
+  if (evidenceIds.length) {
+    await db
+      .delete(qualityCaseVerificationEvidence)
+      .where(inArray(qualityCaseVerificationEvidence.evidenceId, evidenceIds));
+  }
 
   const removedUsers = await db.delete(users).where(inArray(users.email, emails)).returning({ id: users.id });
   await db.delete(verifications).where(inArray(verifications.identifier, emails));

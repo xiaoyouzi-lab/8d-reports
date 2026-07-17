@@ -2662,3 +2662,6 @@ smoke. Promote to a named-user Canary only if both pass.
   the initial scope inspection and Package build, the later request rechecks
   the immutable confirmation and returns the committed result instead of a
   false task-unavailable response.
+- Extended fixture cleanup to remove only the smoke-owned Verification Evidence
+  links before user/case cascades; the domain link remains restrictive for
+  normal audit data and this does not change production deletion semantics.
