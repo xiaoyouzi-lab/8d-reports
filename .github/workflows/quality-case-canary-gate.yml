@@ -86,10 +86,18 @@ jobs:
             -H 'x-vercel-set-bypass-cookie: true' "$PREVIEW_URL/")"
           case "$status" in 2*|3*) ;; *) exit 1;; esac
           ! grep -qiE 'vercel authentication|login\.vercel\.com' artifacts/preview-body.txt
-          jq -n --arg status "$status" --arg host "$host" \
-            '{gate:"connectivity", dns:true, tlsAndHttp:true, httpStatus:$status, host:$host, ssoBypassed:true}' \
+          api_status="$(curl --fail-with-body --connect-timeout 20 --max-time 60 \
+            --silent --show-error --output artifacts/preview-api-body.txt \
+            --dump-header artifacts/preview-api-headers.txt --write-out '%{http_code}' \
+            -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
+            -H 'x-vercel-set-bypass-cookie: true' \
+            "$PREVIEW_URL/api/knowledge/search?q=canary-connectivity")"
+          case "$api_status" in 2*) ;; *) exit 1;; esac
+          ! grep -qiE 'vercel authentication|login\.vercel\.com' artifacts/preview-api-body.txt
+          jq -n --arg status "$status" --arg apiStatus "$api_status" --arg host "$host" \
+            '{gate:"connectivity", dns:true, tlsAndHttp:true, httpStatus:$status, apiHttpStatus:$apiStatus, host:$host, ssoBypassed:true, applicationReached:true}' \
             > artifacts/connectivity-summary.json
-          rm -f artifacts/preview-body.txt artifacts/preview-headers.txt
+          rm -f artifacts/preview-body.txt artifacts/preview-headers.txt artifacts/preview-api-body.txt artifacts/preview-api-headers.txt
 
       - name: Install dependencies
         if: github.event_name == 'workflow_dispatch' && inputs.phase == 'full'
@@ -157,8 +165,12 @@ jobs:
               checks: value.checks || null,
               completedSteps: Array.isArray(value.completedSteps) ? value.completedSteps.length : null,
               cleanupVerified: value.cleanupVerified ?? null,
+              dns: value.dns ?? null,
+              tlsAndHttp: value.tlsAndHttp ?? null,
               httpStatus: value.httpStatus || null,
+              apiHttpStatus: value.apiHttpStatus || null,
               ssoBypassed: value.ssoBypassed ?? null,
+              applicationReached: value.applicationReached ?? null,
             };
           }
           fs.writeFileSync('artifacts/canary-summary.json', `${JSON.stringify(out, null, 2)}\n`);

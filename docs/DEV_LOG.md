@@ -2587,3 +2587,10 @@ smoke. Promote to a named-user Canary only if both pass.
   explicit manual `full` dispatch.
 - Recreated only the temporary GitHub Environment values needed for the
   connectivity gate. No Neon configuration or production resource was added.
+
+## Follow-up
+
+- The first branch-push run bypassed Vercel protection and reached the Preview
+  edge, but the root response was a redirect and did not yield a runtime log.
+- Extended the same read-only gate with an authenticated no-write API request
+  so the next push verifies application-runtime reachability separately.
