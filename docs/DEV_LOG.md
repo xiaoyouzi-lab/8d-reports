@@ -2574,3 +2574,16 @@ smoke. Promote to a named-user Canary only if both pass.
 - No Neon project, Preview deployment operation, database write, or Preview
   request occurred. The temporary GitHub Environment and its Secrets/Variables
   were removed immediately.
+
+# 2026-07-17 — RC Branch Push Canary Trigger
+
+## Outcome
+
+- Added a push trigger restricted to `codex/rc2-preview-hardening` because
+  GitHub does not dispatch branch-only `workflow_dispatch` workflows that are
+  absent from the default branch.
+- Push events are constrained to the read-only connectivity gate; every
+  database, R2, migration, email, and lifecycle step remains restricted to an
+  explicit manual `full` dispatch.
+- Recreated only the temporary GitHub Environment values needed for the
+  connectivity gate. No Neon configuration or production resource was added.
