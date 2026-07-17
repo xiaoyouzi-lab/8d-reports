@@ -2665,6 +2665,9 @@ smoke. Promote to a named-user Canary only if both pass.
 - The diagnostic report classifies redirect destinations without preserving a
   URL, so a Vercel SSO redirect can be distinguished from an application or
   cross-origin redirect without exposing query parameters.
+- The first bypass request may only establish Vercel's same-origin bypass
+  cookie. The final application probe therefore reuses that cookie but never
+  follows a redirect automatically or contacts a different host.
 
 ## Scope Boundary
 

@@ -86,24 +86,35 @@ jobs:
           run_probe() {
             local path="$1"
             local name="$2"
+            local set_bypass_cookie="$3"
             local status_file="$probe_dir/${name}.status"
             local curl_exit=0
             set +e
-            curl --connect-timeout 20 --max-time 60 --silent --show-error \
-              --output "$probe_dir/${name}.body" \
-              --dump-header "$probe_dir/${name}.headers" --write-out '%{http_code}' \
-              -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET" \
-              -H 'x-vercel-set-bypass-cookie: true' \
+            curl_args=(
+              --connect-timeout 20 --max-time 60 --silent --show-error
+              --cookie "$probe_dir/bypass-cookie.jar" --cookie-jar "$probe_dir/bypass-cookie.jar"
+              --output "$probe_dir/${name}.body"
+              --dump-header "$probe_dir/${name}.headers" --write-out '%{http_code}'
+              -H "x-vercel-protection-bypass: $VERCEL_AUTOMATION_BYPASS_SECRET"
+            )
+            if [[ "$set_bypass_cookie" == true ]]; then
+              curl_args+=(-H 'x-vercel-set-bypass-cookie: true')
+            fi
+            curl "${curl_args[@]}" \
               "$PREVIEW_URL$path" > "$status_file"
             curl_exit=$?
             set -e
             printf '%s' "$curl_exit" > "$probe_dir/${name}.curl-exit"
           }
 
-          run_probe "/" root
-          # This endpoint is intentionally public, GET-only, and non-mutating. It
-          # returns { available: boolean } without querying the application DB.
-          run_probe "/api/quality-agent/chat" application
+          # Vercel may return a same-origin redirect while it sets the bypass
+          # cookie. Do not follow redirects; use that cookie only for the final
+          # same-host public route probe below.
+          : > "$probe_dir/bypass-cookie.jar"
+          run_probe "/" root true
+          # This endpoint is intentionally public, GET-only, and non-mutating.
+          # It returns { available: boolean } without querying the application DB.
+          run_probe "/api/quality-agent/chat" application false
 
           root_status="$(cat "$probe_dir/root.status")"
           root_curl_exit="$(cat "$probe_dir/root.curl-exit")"
