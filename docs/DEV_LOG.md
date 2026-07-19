@@ -2723,3 +2723,9 @@ smoke. Promote to a named-user Canary only if both pass.
   The facilitator must issue a temporary Vercel protected-deployment share link
   before each participant opens their in-product Coordinator or external task
   link.
+
+## Credential Rotation
+
+- Rotated the dedicated Canary Neon database credential after migration and
+  updated only the RC branch-scoped Preview `DATABASE_URL`; no credential value
+  was recorded. A final Preview-only redeploy is Ready.
