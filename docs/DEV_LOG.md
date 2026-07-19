@@ -21,6 +21,9 @@
   waiting for the supplier and the UI cannot lawfully reach Internal Review,
   Customer Review, or Verification. The named-user Canary is therefore held;
   no real participant was invited.
+- The Preview AI provider was unavailable during the browser run. Its
+  deterministic safety fallback was exercised successfully, but live
+  Investigator wording and follow-up quality remain a P1 named-user gate.
 - Desktop and 390px Supplier layout checks found no horizontal overflow. One
   non-product Preview console error remains: Vercel Live Feedback is blocked
   by the configured CSP. No application error overlay was observed.

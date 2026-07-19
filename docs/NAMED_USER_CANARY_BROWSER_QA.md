@@ -53,6 +53,7 @@ is retained in this document.
 | Detection challenge | Pass | A statement that visual sampling did not find flash triggered a question about what was checked, method, sampling scope/frequency, and whether the defect could be detected. |
 | Training-only challenge | Pass | "后续加强培训" triggered a plain-language follow-up asking for process/tooling/fixture/standard/inspection changes that make recurrence harder or easier to detect. |
 | AI/provider outage handling | Fixed P0, pass | Original answers remained saved and the UI advanced through deterministic safe questions instead of repeating an answered question or declaring an AI conclusion. |
+| Live AI Investigator quality | P1 not verified | The Preview reported that the AI assistant was unavailable throughout this run. The deterministic fallback's safety questions were verified, but a live provider's natural-language investigation must be tested before a named Supplier session. |
 | Expert Mode | P1 | It opens a free-text "专业答复模式" textarea, but exposes no save, mapping, evidence, confirmation, or shared submit action. |
 | Evidence upload, evidence links, Readiness | **P0-3 fail** | After 9/9 Guided answers, neither the normal nor Expert surface displayed an upload control, evidence requirement, Readiness Check, confirmation, or Response Package. |
 | Supplier submission | **P0-3 fail** | The completion state says "调查已完成，请等待内部审核", while the Case remains waiting for supplier and no submit control exists. This is an operation dead end, not merely a wording issue. |
@@ -93,6 +94,7 @@ test, not a pass or a claim about those permissions.
 | NUC-BQA-06 | P1 | Read the Coordinator workflow queue/detail. | Next-action explanations mix Chinese UI with English workflow text. | Quality Case workflow copy | Product copy review. |
 | NUC-BQA-07 | P2 | Load any tested Preview route. | One non-product Vercel Live Feedback script is blocked by CSP. | Preview CSP / Vercel feedback integration | Non-blocking; track separately. |
 | NUC-BQA-08 | P2 | Inspect Supplier Guided page title. | Generic legacy product title reduces context. | route metadata | Non-blocking copy improvement. |
+| NUC-BQA-09 | P1 | Answer Guided questions on this Preview. | The live AI Investigator was unavailable, so only its deterministic conservative fallback was exercised. | Preview AI configuration / provider availability | Restore and retest live AI before a named Supplier session. |
 
 ## Cleanup evidence
 
