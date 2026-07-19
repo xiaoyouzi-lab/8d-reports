@@ -14,6 +14,7 @@ import {
   getGuidedFollowUps,
   getGuidedMappings,
   getGuidedQualityInsights,
+  GUIDED_QUESTIONS,
   type AiConfidence,
   type GuidedAnswerCategory,
   type GuidedStage,
@@ -53,6 +54,40 @@ type ModelResponse = {
 
 export interface GuidedInvestigatorAiClient {
   investigate(input: { prompt: string }): Promise<unknown>;
+}
+
+type PersistedGuidedQuestion = {
+  questionKey: string;
+  stage: string;
+};
+
+/**
+ * The core stages are ordered, while AI follow-ups are deliberately inserted
+ * only when a supplied answer triggers a conservative rule. This preserves an
+ * adaptive investigation without leaving a supplier stuck when the provider
+ * is unavailable.
+ */
+export function nextCoreGuidedQuestion(question: PersistedGuidedQuestion) {
+  const coreIndex = GUIDED_QUESTIONS.findIndex(
+    (candidate) => candidate.id === question.questionKey,
+  );
+  if (coreIndex >= 0) return GUIDED_QUESTIONS[coreIndex + 1] || null;
+
+  const stageIndex = GUIDED_QUESTIONS.findIndex(
+    (candidate) => candidate.stage === question.stage,
+  );
+  return stageIndex >= 0 ? GUIDED_QUESTIONS[stageIndex + 1] || null : null;
+}
+
+export function shouldAskGuidedFollowUp(
+  question: PersistedGuidedQuestion,
+  followUpCount: number,
+) {
+  return (
+    followUpCount > 0 &&
+    !question.questionKey.startsWith("ai_follow_up:") &&
+    !question.questionKey.startsWith("system_follow_up:")
+  );
 }
 
 export class GuidedInvestigatorError extends Error {
@@ -162,26 +197,102 @@ export async function runGuidedInvestigator(input: {
   const prompt = buildGuidedInvestigatorPrompt({ stage, category, currentQuestion: text(question.userFacingQuestion, 1800), answer: text(answer.originalText, 6000), priorAnswers: priorAnswers.filter((item) => item.originalText !== answer.originalText).map((item) => text(item.originalText, 1600)).slice(-8) });
   const promptInputHash = createHash("sha256").update(prompt).digest("hex");
   const [run] = await db.insert(qualityCaseGuidanceAiRuns).values({ caseId: input.caseId, sessionId: input.sessionId, agentType: "investigator", sourceType: "deepseek", promptIdentifier: GUIDED_INVESTIGATOR_PROMPT_ID, promptVersion: GUIDED_INVESTIGATOR_PROMPT_VERSION, promptInputHash, modelIdentifier: "deepseek-chat", response: {}, confidence: "low", requestMetadata: { answerId: input.answerId }, policyOutcome: "pending" }).returning();
+  const requiredFollowUps = getGuidedFollowUps({
+    category,
+    originalAnswer: answer.originalText,
+  });
+  const askFollowUp = shouldAskGuidedFollowUp(question, requiredFollowUps.length);
+  const nextCoreQuestion = nextCoreGuidedQuestion(question);
   try {
     const raw = await (input.client || guidedInvestigatorAiClient).investigate({ prompt });
     const validated = validateGuidedInvestigatorResponse(raw);
     if (!validated.success) throw new GuidedInvestigatorError("AI Quality Investigator returned an unsafe response");
-    const requiredFollowUps = getGuidedFollowUps({ category, originalAnswer: answer.originalText });
     const allowedConcepts = new Set(question.qualityConcepts as QualityConcept[]);
     const missingConcepts = validated.data.missingConcepts.filter((concept) => allowedConcepts.has(concept));
-    const nextQuestion = requiredFollowUps[0]?.question || validated.data.nextQuestion;
-    const whyAsked = requiredFollowUps[0]?.explanation || validated.data.whyAsked;
-    const [next] = await db.insert(qualityCaseGuidanceQuestions).values({ caseId: input.caseId, sessionId: input.sessionId, aiRunId: run.id, questionKey: `ai_follow_up:${run.id}`, questionVersion: GUIDED_INVESTIGATOR_PROMPT_VERSION, sourceType: "ai_investigator", stage, category, userFacingQuestion: nextQuestion, explanation: whyAsked, qualityConcepts: missingConcepts, followUpRuleIds: requiredFollowUps.map((rule) => rule.id), evidenceRequirementIds: requiredFollowUps.flatMap((rule) => rule.evidenceRequirementIds || []) }).returning();
+    const [next] = askFollowUp
+      ? await db.insert(qualityCaseGuidanceQuestions).values({
+          caseId: input.caseId,
+          sessionId: input.sessionId,
+          aiRunId: run.id,
+          questionKey: `ai_follow_up:${run.id}`,
+          questionVersion: GUIDED_INVESTIGATOR_PROMPT_VERSION,
+          sourceType: "ai_investigator",
+          stage,
+          category,
+          userFacingQuestion: requiredFollowUps[0]?.question || validated.data.nextQuestion,
+          explanation: requiredFollowUps[0]?.explanation || validated.data.whyAsked,
+          qualityConcepts: missingConcepts,
+          followUpRuleIds: requiredFollowUps.map((rule) => rule.id),
+          evidenceRequirementIds: requiredFollowUps.flatMap((rule) => rule.evidenceRequirementIds || []),
+        }).returning()
+      : nextCoreQuestion
+        ? await db.insert(qualityCaseGuidanceQuestions).values({
+            caseId: input.caseId,
+            sessionId: input.sessionId,
+            aiRunId: run.id,
+            questionKey: nextCoreQuestion.id,
+            questionVersion: "v1",
+            sourceType: "system_template",
+            stage: nextCoreQuestion.stage,
+            category: nextCoreQuestion.category,
+            userFacingQuestion: nextCoreQuestion.userFacingQuestion,
+            explanation: nextCoreQuestion.explanation,
+            qualityConcepts: nextCoreQuestion.mappedQualityConcepts,
+            followUpRuleIds: nextCoreQuestion.followUpRuleIds,
+            evidenceRequirementIds: nextCoreQuestion.evidenceRequirementIds,
+          }).returning()
+        : [undefined];
     const insights = [...getGuidedQualityInsights({ category, originalAnswer: answer.originalText }), ...(validated.data.insight ? [{ id: "model", kind: validated.data.insight.kind, severity: "info" as const, affectedConcepts: missingConcepts, message: validated.data.insight.message, reportEligibility: "advisory_only" as const, mayTransitionCase: false as const, evidenceRequirementIds: [] }] : [])];
     await db.update(qualityCaseGuidanceAiRuns).set({ response: raw, confidence: validated.data.confidence, policyOutcome: "accepted" }).where(eq(qualityCaseGuidanceAiRuns.id, run.id));
     for (const insight of insights) await db.insert(qualityCaseGuidanceInsights).values({ caseId: input.caseId, sessionId: input.sessionId, aiRunId: run.id, answerId: input.answerId, insightKey: insight.id, kind: insight.kind, severity: insight.severity, sourceType: "ai_investigator", message: insight.message, suggestedQuestion: insight.suggestedQuestion || null, affectedConcepts: insight.affectedConcepts, evidenceRequirementIds: insight.evidenceRequirementIds, confidence: validated.data.confidence });
     for (const requirementId of new Set(requiredFollowUps.flatMap((rule) => rule.evidenceRequirementIds || []))) {
+      if (!next) continue;
       await db.insert(qualityCaseGuidanceEvidenceRequirements).values({ caseId: input.caseId, sessionId: input.sessionId, questionId: next.id, answerId: input.answerId, aiRunId: run.id, requirementKey: requirementId, sourceType: "ai_investigator", reason: "AI Investigator requested supporting evidence for the follow-up question.", requirementSnapshot: { requirementId } });
     }
     for (const mapping of getGuidedMappings({ category, concepts: missingConcepts })) await db.insert(qualityCaseGuidanceFieldMappings).values({ caseId: input.caseId, sessionId: input.sessionId, answerId: input.answerId, qualityConcept: mapping.concept, semanticKey: mapping.target.semanticKey, targetReference: mapping.target, decision: "proposed" });
     return { runId: run.id, state: STAGE_STATE[stage], answerRestatement: validated.data.answerRestatement, nextQuestion: next, mandatoryFollowUpIds: requiredFollowUps.map((rule) => rule.id), mayTransitionCase: false as const };
   } catch (error) {
     await db.update(qualityCaseGuidanceAiRuns).set({ policyOutcome: error instanceof GuidedInvestigatorError ? "rejected_or_failed" : "provider_failed" }).where(eq(qualityCaseGuidanceAiRuns.id, run.id)).catch(() => {});
-    throw error instanceof GuidedInvestigatorError ? error : new GuidedInvestigatorError("AI Quality Investigator is temporarily unavailable");
+    const [fallbackNext] = askFollowUp
+      ? await db.insert(qualityCaseGuidanceQuestions).values({
+          caseId: input.caseId,
+          sessionId: input.sessionId,
+          aiRunId: run.id,
+          questionKey: `system_follow_up:${run.id}`,
+          questionVersion: "v1",
+          sourceType: "system_template",
+          stage,
+          category,
+          userFacingQuestion: requiredFollowUps[0].question,
+          explanation: requiredFollowUps[0].explanation,
+          qualityConcepts: requiredFollowUps[0].mappedConcepts,
+          followUpRuleIds: requiredFollowUps.map((rule) => rule.id),
+          evidenceRequirementIds: requiredFollowUps.flatMap((rule) => rule.evidenceRequirementIds || []),
+        }).returning()
+      : nextCoreQuestion
+        ? await db.insert(qualityCaseGuidanceQuestions).values({
+            caseId: input.caseId,
+            sessionId: input.sessionId,
+            aiRunId: run.id,
+            questionKey: nextCoreQuestion.id,
+            questionVersion: "v1",
+            sourceType: "system_template",
+            stage: nextCoreQuestion.stage,
+            category: nextCoreQuestion.category,
+            userFacingQuestion: nextCoreQuestion.userFacingQuestion,
+            explanation: nextCoreQuestion.explanation,
+            qualityConcepts: nextCoreQuestion.mappedQualityConcepts,
+            followUpRuleIds: nextCoreQuestion.followUpRuleIds,
+            evidenceRequirementIds: nextCoreQuestion.evidenceRequirementIds,
+          }).returning()
+        : [undefined];
+    return {
+      runId: run.id,
+      state: STAGE_STATE[stage],
+      nextQuestion: fallbackNext,
+      mandatoryFollowUpIds: requiredFollowUps.map((rule) => rule.id),
+      aiUnavailable: true,
+      mayTransitionCase: false as const,
+    };
   }
 }

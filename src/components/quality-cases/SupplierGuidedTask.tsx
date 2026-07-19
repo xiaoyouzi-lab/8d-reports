@@ -98,7 +98,7 @@ export function SupplierGuidedTask({ token }: { token: string }) {
     setAnswer("");
     setNotice(
       result.aiUnavailable
-        ? "回答已保存。AI助手暂时不可用，您可以稍后继续或切换专业模式。"
+        ? "回答已保存。AI助手暂时不可用，系统会继续按下一项事实信息引导；不会把回答当作已确认结论。"
         : "已记录。AI助手正在引导下一步。",
     );
     await load();

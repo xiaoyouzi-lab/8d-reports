@@ -29,11 +29,13 @@ export async function getSupplierGuidance(token: string) {
   const questions = await db.select().from(qualityCaseGuidanceQuestions).where(eq(qualityCaseGuidanceQuestions.sessionId, session.id));
   const answers = await db.select().from(qualityCaseGuidanceAnswers).where(eq(qualityCaseGuidanceAnswers.sessionId, session.id));
   const answered = new Set(answers.map((answer) => answer.questionId));
-  const currentQuestion = [...questions].reverse().find((question) => !answered.has(question.id)) || questions.at(-1) || null;
+  const currentQuestion =
+    [...questions].reverse().find((question) => !answered.has(question.id)) ||
+    null;
   return {
     sessionId: session.id,
     question: currentQuestion,
-    progress: { answered: answers.length, total: 6 },
+    progress: { answered: answers.length, total: Math.max(6, questions.length) },
     followUp: parseSupplierFollowUpInstructions(row.task.authorizedResponse),
     caseSummary: {
       title: row.qualityCase.title,
