@@ -2674,3 +2674,27 @@ smoke. Promote to a named-user Canary only if both pass.
 - Removed the temporary RC branch `push` trigger and marker-based Full Gate
   path. The retained workflow accepts only explicit `workflow_dispatch` input,
   preventing ordinary branch pushes from creating Preview Smoke activity.
+
+# 2026-07-19 — Canary Security Closeout
+
+## Outcome
+
+- The project owner explicitly revoked the project-level Vercel Automation
+  Bypass `codex-canary-smoke`; its old secret was neither restored nor printed.
+- Confirmed the local bypass file remains absent. The remote RC branch still
+  contains only operational changes after the passed Full Gate: the manual-only
+  Canary workflow cleanup and documentation, with no Quality Case product,
+  schema, permission, or Preview-resource change.
+- Vercel deployment inspection remains `Ready`. This runner cannot complete a
+  direct unauthenticated HTTP protection probe because its TCP connection to
+  the Preview host times out before any Vercel or application response.
+- Vercel does not expose a readable Automation Bypass-name listing to the
+  available CLI metadata call, so the owner’s Vercel Settings confirmation is
+  retained as the authoritative revocation evidence.
+
+## Decision
+
+- The isolated Full Gate result in GitHub Actions Run `29554792374` remains
+  valid. With the bypass revoked and all temporary Smoke infrastructure already
+  cleaned, RC Preview is **CANARY GO**. Continue with a named, limited Canary
+  and monitor operational signals; do not expand this decision to Production.

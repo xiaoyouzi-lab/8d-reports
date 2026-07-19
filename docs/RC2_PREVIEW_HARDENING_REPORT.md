@@ -139,3 +139,57 @@ Change to GO only after all of the following are evidenced:
 6. Canary is limited to internal accounts / named suppliers, with logs watched for invitation failure, `r2_orphan_cleanup`, task conflicts, and verification transition errors.
 
 Do not promote any recorded RC-2 deployment: all were temporary and have been deleted.
+
+## 7. Final Canary Sign-Off — 2026-07-19
+
+Decision: **CANARY GO** for the RC Preview only.
+
+The earlier NO-GO decision in this report was superseded by the isolated Full
+Canary Gate after the independent Preview bucket became available. The gate
+completed successfully in [GitHub Actions Run 29554792374](https://github.com/xiaoyouzi-lab/8d-reports/actions/runs/29554792374)
+at Quality Case commit `ef7ba96966950cfe2f739d0ef4285ea4ecc633e9`.
+
+### Evidence accepted for this sign-off
+
+- A fresh, empty Neon smoke project was used and removed; no Production data
+  was copied or queried.
+- The Preview used `8d-reports-preview`; its real upload, authorized download,
+  deletion, database-failure compensation, and zero-residual-object checks
+  passed.
+- Migration up, rollback rehearsal, and reapply passed, including the Quality
+  Case, Guided, Customer Review, and Verification domains.
+- The deployed Supplier, Coordinator, Customer, and Verification lifecycle
+  passed, including Request Changes, Customer Accept, Close/Reopen, failed
+  verification, a new verification cycle, immutable prior-cycle history,
+  permissions, invitation delivery, and concurrent-submit idempotency.
+- Smoke users, tokens, database fixtures, R2 smoke objects, GitHub Environment
+  values, and the temporary Neon project were removed by the gate cleanup.
+- The temporary branch-push trigger was removed. The retained Canary workflow
+  is explicit `workflow_dispatch` only, so ordinary RC branch pushes cannot
+  start Smoke activity.
+- The project-level Automation Bypass `codex-canary-smoke` was explicitly
+  revoked in the Vercel project settings by the project owner. Its local secret
+  file had already been removed, and it was not restored, printed, or recreated.
+
+### Post-revocation verification limits
+
+Vercel's available CLI project metadata endpoint does not provide a readable
+list of Automation Bypass names to this session. The project owner’s explicit
+Vercel settings confirmation is therefore the authoritative revocation
+evidence. This runner also times out before TCP connection establishment to the
+Preview host, so an unauthenticated HTTP request cannot be interpreted as a
+Vercel Protection result. The deployment inspection itself remains `Ready`.
+
+The current remote RC head is `e226ac9dcdf6e84cfd3c9e3cb4214e468d58c9da`.
+Compared with the Full Gate commit, only the Canary workflow trigger cleanup
+and this operational documentation changed; no Quality Case product logic,
+schema, authorization rule, or Preview resource was changed after the passed
+gate.
+
+### Remaining operational risk
+
+The named-team mailbox visual rendering check remains a recommended Canary
+operational check. It is not a release blocker because the Resend delivery and
+secure-link checks passed in the isolated Full Gate. Continue to monitor
+invitation delivery, `r2_orphan_cleanup`, task-conflict, and verification
+transition errors during the limited Canary.
