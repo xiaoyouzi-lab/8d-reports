@@ -1,5 +1,43 @@
 # Development Log
 
+## Completed: Named User Canary Browser Preflight (Blocked)
+
+- Performed a real-browser, Preview-only preflight for the de-identified
+  injection-molded flash scenario using separate Coordinator and Supplier
+  browser sessions. The in-app Browser integration could establish protected
+  Preview access but repeatedly lost its DOM snapshot after navigation, so the
+  repository Playwright CLI drove the actual headed-browser checks. No API or
+  administrator shortcut was used to advance role workflows.
+- Fixed two confirmed P0 defects discovered during that preflight: the Case
+  list now opens Case Detail rather than presenting a disabled placeholder;
+  and Guided Investigator provider failure now preserves the audited answer
+  while advancing with a safe deterministic next/follow-up question. The
+  supplier browser retest verified direct-cause, detection-method, and
+  training-only challenges without turning an AI suggestion into a confirmed
+  root cause.
+- Found a remaining P0: the deployed Supplier Guided and Expert UI can finish
+  questions but provides no evidence upload, Readiness Check, confirmation,
+  Supplier Response Package, or submit action. The Case consequently remains
+  waiting for the supplier and the UI cannot lawfully reach Internal Review,
+  Customer Review, or Verification. The named-user Canary is therefore held;
+  no real participant was invited.
+- Desktop and 390px Supplier layout checks found no horizontal overflow. One
+  non-product Preview console error remains: Vercel Live Feedback is blocked
+  by the configured CSP. No application error overlay was observed.
+- The isolated named-user Neon environment was cleared after testing: no test
+  Case, task link, Evidence record, user, or session remains. No evidence
+  object reached R2 because the Supplier UI lacks an upload control. Browser
+  data and local Playwright artifacts were removed. No Production service,
+  data, or credential was accessed.
+- Checks passed: focused ESLint for the P0 Guided changes; production Next.js
+  build; real browser interaction on protected Preview. Full three-role UI
+  lifecycle is intentionally not marked passed because P0-3 blocks it.
+- Detailed evidence and retest scope: `docs/NAMED_USER_CANARY_BROWSER_QA.md`.
+  Suggested next task: wire the already-defined Supplier Response Package and
+  Evidence/Readiness capabilities into the Supplier Guided and Expert UI via
+  their single shared submission path, then rerun this browser preflight
+  before issuing named-user invitations.
+
 ## Completed: PR-G6 Customer Review Workspace
 
 - Added a version-frozen `customer-review-v1` authorization snapshot. Customer

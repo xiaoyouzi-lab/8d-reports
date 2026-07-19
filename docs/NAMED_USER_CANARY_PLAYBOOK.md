@@ -206,6 +206,12 @@ At the end of the study:
 
 ## Known limitations before first session
 
+- **Current browser-preflight hold:** `NUC-BQA-03` is P0. The Supplier UI can
+  complete Guided questions but cannot upload evidence, inspect Readiness,
+  confirm a Response Package, or submit it. Do not invite named users until
+  the issue is fixed and the three-role browser preflight is rerun; see
+  `docs/NAMED_USER_CANARY_BROWSER_QA.md`.
+
 - The roster and participant consent are still required before invitations can
   be sent. No named person, email, task token, or account was created during
   environment preparation.
