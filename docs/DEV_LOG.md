@@ -2698,3 +2698,28 @@ smoke. Promote to a named-user Canary only if both pass.
   valid. With the bypass revoked and all temporary Smoke infrastructure already
   cleaned, RC Preview is **CANARY GO**. Continue with a named, limited Canary
   and monitor operational signals; do not expand this decision to Production.
+
+# 2026-07-19 — Named User Canary Preparation
+
+## Outcome
+
+- Provisioned a new empty, dedicated Neon project for the named-user Preview;
+  it was migrated from the current repository schema without copying existing
+  8D data and is scoped only to `codex/rc2-preview-hardening` Preview.
+- Rebuilt the RC Preview with that branch-scoped database and confirmed the
+  deployment is Ready. Existing Preview R2, Resend, and AI variable names are
+  present; no Production deployment or resource was changed.
+- Re-ran the isolated Cloudflare R2 Preview Smoke. Upload, download, private
+  access rejection, database-failure compensation cleanup, and deletion passed
+  against `8d-reports-preview`.
+- Added the named-user Playbook and redacted observation template. No real
+  participant identity, account, email, task token, share link, or Evidence
+  file has been created or committed.
+
+## Current Limitation
+
+- The actual named-user session is intentionally not started until the operator
+  obtains participant consent and provides access through an approved channel.
+  The facilitator must issue a temporary Vercel protected-deployment share link
+  before each participant opens their in-product Coordinator or external task
+  link.
