@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -615,14 +615,16 @@ export function QualityCasesWorkspace() {
                           qualityCase.outputType}
                       </td>
                       <td className="px-4 py-4">
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          disabled
-                          aria-label="案例详情即将推出"
+                        <Link
+                          href={`/cases/${qualityCase.id}`}
+                          aria-label={`查看案例详情：${qualityCase.title}`}
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "icon-sm",
+                          })}
                         >
                           <ChevronRight className="size-4" />
-                        </Button>
+                        </Link>
                       </td>
                     </tr>
                   );
