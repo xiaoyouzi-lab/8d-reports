@@ -2814,3 +2814,33 @@ smoke. Promote to a named-user Canary only if both pass.
 - Rotated the dedicated Canary Neon database credential after migration and
   updated only the RC branch-scoped Preview `DATABASE_URL`; no credential value
   was recorded. A final Preview-only redeploy is Ready.
+
+# 2026-07-20 — Named User Browser Recheck: Signup OTP Authority
+
+## Fixed
+
+- Replaced the signup wrapper's independent OTP generation and direct
+  `verifications` write with an in-process call to Better Auth's canonical
+  `email-otp/send-verification-otp` endpoint. Better Auth now remains the sole
+  generator, writer, expiry/attempt enforcer, and verifier for signup OTPs.
+- Added an authority-contract test covering the wrapper delegation, the
+  installed Better Auth storage/verification convention, no manual OTP write,
+  generic error handling, and the signup callback path.
+- In an isolated RC Preview browser session, a real Resend email arrived at a
+  disposable test inbox. A wrong code and a pre-resend code were rejected; the
+  latest resent code verified successfully and redirected to `/cases`.
+
+## Current Gate
+
+- Supplier Guided UI loaded in an isolated guest context and persisted the
+  first two natural-language answers, but the visible Investigator status was
+  `AI助手暂时不可用`. The Provider key presence endpoint is true and the
+  existing Quality Expert chat can obtain a real provider response, so this is
+  narrowed to the Guided Investigator provider/contract path rather than OTP,
+  delivery, or a static fallback.
+- Added safe provider/fallback classifications that contain no prompt, answer,
+  OTP, key, token, or provider response content. The resulting Preview-only
+  diagnostic deployment is awaiting a focused retest.
+- Named User Canary remains **NO-GO** until an actual Guided Investigator run
+  returns a validated contract response and the complete Supplier-to-Customer
+  UI lifecycle is rerun.
