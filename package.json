@@ -19,6 +19,7 @@
     "test:customer-review": "tsx src/lib/quality-cases/customer-review.test.ts",
     "test:effectiveness-verification": "tsx src/lib/quality-cases/effectiveness-verification.test.ts",
     "test:preview-hardening": "tsx src/lib/quality-cases/preview-hardening.test.ts",
+    "test:auth-signup-otp": "tsx src/lib/auth-signup-otp.test.ts",
     "test:governance": "tsx scripts/team-governance.test.ts",
     "test:production-smoke": "tsx scripts/production-smoke.test.ts",
     "test:auth-smoke": "tsx scripts/authenticated-production-smoke.test.ts",
