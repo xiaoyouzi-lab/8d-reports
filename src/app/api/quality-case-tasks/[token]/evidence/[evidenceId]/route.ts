@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getR2ObjectBuffer } from "@/lib/r2";
-import { getAuthorizedCustomerEvidence } from "@/lib/quality-cases/external-tasks";
+import {
+  getAuthorizedCustomerEvidence,
+  getExternalQualityCaseTask,
+} from "@/lib/quality-cases/external-tasks";
+import { getAuthorizedSupplierGuidanceEvidence } from "@/lib/quality-cases/guided-supplier";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +15,13 @@ export async function GET(
   }: { params: Promise<{ token: string; evidenceId: string }> },
 ) {
   const { token, evidenceId } = await params;
-  const evidence = await getAuthorizedCustomerEvidence(token, evidenceId);
+  const task = await getExternalQualityCaseTask(token);
+  const evidence =
+    task?.taskType === "supplier_response"
+      ? await getAuthorizedSupplierGuidanceEvidence(token, evidenceId)
+      : task?.taskType === "customer_review"
+        ? await getAuthorizedCustomerEvidence(token, evidenceId)
+        : null;
   if (!evidence)
     return NextResponse.json(
       { error: "Authorized evidence not found." },

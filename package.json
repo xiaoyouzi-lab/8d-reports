@@ -14,6 +14,7 @@
     "test:quality-case-migration": "tsx src/lib/quality-cases/migration.test.ts",
     "test:quality-case-document": "tsx src/lib/quality-case-word-export.test.ts",
     "test:supplier-response-package": "tsx src/lib/quality-cases/supplier-response-package.test.ts",
+    "test:supplier-guided-submission": "tsx src/lib/quality-cases/supplier-guided-submission.test.ts",
     "test:internal-quality-review": "tsx src/lib/quality-cases/internal-quality-review.test.ts",
     "test:customer-review": "tsx src/lib/quality-cases/customer-review.test.ts",
     "test:effectiveness-verification": "tsx src/lib/quality-cases/effectiveness-verification.test.ts",
