@@ -1,5 +1,49 @@
 # Development Log
 
+## In progress: Supplier Guided / Expert submission P0 retest — blocked by separate signup OTP P0
+
+- Implemented the Supplier submission surface without changing the Guided
+  domain model, Quality Case state machine, ReportData, exports, payment, or
+  Production configuration. Guided and Expert review now use the same existing
+  `submitSupplierResponsePackage()` route and mode discriminator; the server
+  remains the only state-transition authority.
+- Added scoped supplier evidence UI and API integration: each upload requires
+  the active Guided session and an Evidence Requirement, server-side association
+  captures the requirement/stage/related answer or insight, supplier download
+  is task/participant scoped, and removal clears the association. R2 upload
+  followed by database-association failure invokes the existing orphan cleanup
+  path.
+- Added an advisory-only response-package panel for both modes. It shows
+  Readiness, missing information, and risk findings as suggestions rather than
+  AI approval; it requires supplier confirmation, exposes loading/retry/success
+  states, and submits idempotently to Internal Review. No AI conclusion is
+  written into a formal Report field.
+- Checks passed before deployment: `test:supplier-response-package`,
+  `test:supplier-guided-submission`, `test:preview-hardening`, focused ESLint,
+  `git diff --check`, and a production Webpack build. Bare TypeScript retains
+  two pre-existing unrelated errors in the Investigator route context and a
+  P0+ test fixture; Turbopack cannot follow the intentionally temporary
+  external `node_modules` symlink in the clean validation worktree.
+- Deployed RC commit `a2739f669b815e4bb8055ed9371fe2da88208e05` to Preview and
+  began the required real-browser rerun with an isolated Coordinator session
+  and a disposable, non-personal inbox. The Preview delivered a new OTP, but
+  its immediate UI verification returned `Invalid OTP`. The signup wrapper
+  writes `email-verification-otp-<email>` while
+  `authClient.emailOtp.verifyEmail()` validates BetterAuth's own record. This
+  separate authentication P0 prevents a legal browser login and therefore
+  blocks creation of the Case, Supplier invitation, and all downstream UI
+  evidence/submission validation. No API, database, or administrator shortcut
+  was used to bypass it.
+- The Supplier UI P0 is code-addressed but not browser-accepted. Do not invite
+  named users and do not call this Preview ready until the auth OTP mismatch is
+  fixed under a separately scoped auth change and this full three-role browser
+  retest passes. No Production resource was accessed.
+- Browser and disposable-mail artifacts were cleared. The isolated-Neon
+  cleanup guard did not recognize the currently configured Preview database
+  target, so it failed closed and did not delete the one unverified synthetic
+  coordinator account. Confirm the active isolated database target before
+  removing that account; do not point cleanup at an unconfirmed environment.
+
 ## Completed: Named User Canary Browser Preflight (Blocked)
 
 - Performed a real-browser, Preview-only preflight for the de-identified

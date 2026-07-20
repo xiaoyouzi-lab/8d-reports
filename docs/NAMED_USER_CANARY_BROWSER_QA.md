@@ -2,6 +2,42 @@
 
 ## Scope and verdict
 
+### 2026-07-20 supplier-submission retest update
+
+The RC branch now includes the P0 supplier-submission wiring in
+`a2739f669b815e4bb8055ed9371fe2da88208e05`. Both Guided and Expert review
+surfaces use the existing Supplier Response Package submit endpoint; the UI
+now exposes advisory Readiness, missing information and risks, scoped evidence
+upload/download/removal, supplier confirmation, loading/retry states, and a
+single idempotent submit action. Focused supplier-package, supplier-guided
+submission, and Preview-hardening tests, ESLint, and a production Webpack
+build passed before deployment.
+
+The required three-role browser rerun could not legally proceed past
+Coordinator registration. A new non-personal disposable test inbox received a
+fresh Preview verification email, but entering its newly issued OTP immediately
+returned `Invalid OTP`. Source inspection identifies a separate authentication
+defect: the signup wrapper stores its own OTP record under
+`email-verification-otp-<email>`, while `authClient.emailOtp.verifyEmail()`
+validates BetterAuth's OTP record. No API, database, or administrator shortcut
+was used to bypass this gate. This is a new P0 browser blocker outside the
+supplier-submission-only change scope, so the new Supplier UI, live
+Investigator, R2 evidence path, Internal Review, Customer Review, and
+Verification path are **not browser-passed** on this deployment.
+
+Browser and disposable-mail session artifacts were cleared locally. The
+unverified test account was not deleted: the Preview database target did not
+match the explicit isolated-Neon safety allowlist used by this validation, so
+the cleanup command failed closed rather than risk touching an unconfirmed
+database. Its synthetic email/name are limited to the single test account and
+must be removed only after the Preview owner confirms the active isolated
+database target.
+
+Accordingly, this document's prior P0-3 finding is code-addressed but not yet
+browser-accepted; the Preview remains **not ready for a real Named User
+Canary** until the authentication OTP mismatch is safely resolved and the full
+three-role UI retest completes.
+
 This is a browser-based preflight of the controlled Preview, using only a
 de-identified injection-molded-part scenario. It is not a substitute for a
 real participant study. No Production deployment, data, account, object
