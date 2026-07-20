@@ -163,17 +163,34 @@ export function buildGuidedInvestigatorPrompt(input: {
 export class DeepSeekGuidedInvestigatorAiClient implements GuidedInvestigatorAiClient {
   async investigate(input: { prompt: string }): Promise<unknown> {
     const apiKey = process.env.DEEPSEEK_API_KEY;
-    if (!apiKey) throw new GuidedInvestigatorError("AI Quality Investigator is not configured", 503);
+    if (!apiKey) {
+      console.error("[GUIDED INVESTIGATOR] provider is not configured");
+      throw new GuidedInvestigatorError("AI Quality Investigator is not configured", 503);
+    }
     const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       signal: AbortSignal.timeout(25_000),
       body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: input.prompt }], max_tokens: 900, temperature: 0.1, response_format: { type: "json_object" } }),
-    }).catch(() => { throw new GuidedInvestigatorError("AI Quality Investigator is temporarily unavailable"); });
-    if (!response.ok) throw new GuidedInvestigatorError("AI Quality Investigator is temporarily unavailable");
+    }).catch((error: unknown) => {
+      console.error("[GUIDED INVESTIGATOR] provider request failed", {
+        errorName: error instanceof Error ? error.name : "UnknownError",
+      });
+      throw new GuidedInvestigatorError("AI Quality Investigator is temporarily unavailable");
+    });
+    if (!response.ok) {
+      console.error("[GUIDED INVESTIGATOR] provider returned an error", { status: response.status });
+      throw new GuidedInvestigatorError("AI Quality Investigator is temporarily unavailable");
+    }
     const content = (await response.json().catch(() => null))?.choices?.[0]?.message?.content;
-    if (typeof content !== "string") throw new GuidedInvestigatorError("AI Quality Investigator returned no JSON");
-    try { return JSON.parse(content); } catch { throw new GuidedInvestigatorError("AI Quality Investigator returned invalid JSON"); }
+    if (typeof content !== "string") {
+      console.error("[GUIDED INVESTIGATOR] provider returned no JSON content");
+      throw new GuidedInvestigatorError("AI Quality Investigator returned no JSON");
+    }
+    try { return JSON.parse(content); } catch {
+      console.error("[GUIDED INVESTIGATOR] provider returned invalid JSON");
+      throw new GuidedInvestigatorError("AI Quality Investigator returned invalid JSON");
+    }
   }
 }
 
