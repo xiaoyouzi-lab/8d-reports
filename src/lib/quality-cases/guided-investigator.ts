@@ -269,6 +269,9 @@ export async function runGuidedInvestigator(input: {
     for (const mapping of getGuidedMappings({ category, concepts: missingConcepts })) await db.insert(qualityCaseGuidanceFieldMappings).values({ caseId: input.caseId, sessionId: input.sessionId, answerId: input.answerId, qualityConcept: mapping.concept, semanticKey: mapping.target.semanticKey, targetReference: mapping.target, decision: "proposed" });
     return { runId: run.id, state: STAGE_STATE[stage], answerRestatement: validated.data.answerRestatement, nextQuestion: next, mandatoryFollowUpIds: requiredFollowUps.map((rule) => rule.id), mayTransitionCase: false as const };
   } catch (error) {
+    console.error("[GUIDED INVESTIGATOR] run entered fallback", {
+      failure: error instanceof GuidedInvestigatorError ? error.message : "UnknownError",
+    });
     await db.update(qualityCaseGuidanceAiRuns).set({ policyOutcome: error instanceof GuidedInvestigatorError ? "rejected_or_failed" : "provider_failed" }).where(eq(qualityCaseGuidanceAiRuns.id, run.id)).catch(() => {});
     const [fallbackNext] = askFollowUp
       ? await db.insert(qualityCaseGuidanceQuestions).values({
