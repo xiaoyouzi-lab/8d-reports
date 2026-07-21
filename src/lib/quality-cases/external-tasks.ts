@@ -431,16 +431,36 @@ export async function createQualityCaseTask(input: {
   if (customerResponse && !customerResponse.ok)
     return { ok: false, status: 400, error: customerResponse.error };
   const token = createQualityCaseTaskToken();
-  const [participant] = await db
-    .insert(qualityCaseParticipants)
-    .values({
-      caseId: input.caseId,
-      role: type === "supplier_response" ? "supplier" : "customer",
-      displayName: name,
-      organizationName: organization,
-      isInternal: false,
-    })
-    .returning();
+  const participantRole =
+    type === "supplier_response" ? "supplier" : "customer";
+  const [existingParticipant] = await db
+    .select()
+    .from(qualityCaseParticipants)
+    .where(
+      and(
+        eq(qualityCaseParticipants.caseId, input.caseId),
+        eq(qualityCaseParticipants.role, participantRole),
+        eq(qualityCaseParticipants.displayName, name),
+        eq(qualityCaseParticipants.organizationName, organization),
+        eq(qualityCaseParticipants.isInternal, false),
+      ),
+    )
+    .orderBy(qualityCaseParticipants.createdAt)
+    .limit(1);
+  const participant =
+    existingParticipant ||
+    (
+      await db
+        .insert(qualityCaseParticipants)
+        .values({
+          caseId: input.caseId,
+          role: participantRole,
+          displayName: name,
+          organizationName: organization,
+          isInternal: false,
+        })
+        .returning()
+    )[0];
   const [taskLink] = await db.insert(qualityCaseTaskLinks).values({
     caseId: input.caseId,
     participantId: participant.id,
