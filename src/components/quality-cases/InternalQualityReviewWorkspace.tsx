@@ -382,11 +382,13 @@ export function InternalQualityReviewWorkspace({
         dueAt: followUpDueAt,
       });
       const token = typeof payload.token === "string" ? payload.token : "";
-      if (token)
+      if (token) {
         setSupplierLink(`${window.location.origin}/supplier/${token}`);
+      } else {
+        onChanged();
+      }
       toast.success("供应商补充任务已创建");
       setFollowUpMode(null);
-      onChanged();
     } catch (updateError) {
       toast.error("未能创建供应商补充任务", {
         description:
@@ -996,6 +998,14 @@ export function InternalQualityReviewWorkspace({
                   readOnly
                   aria-label="Supplier follow-up link"
                 />
+                <Button
+                  className="mt-3"
+                  size="sm"
+                  variant="outline"
+                  onClick={onChanged}
+                >
+                  已保存链接，刷新案例
+                </Button>
               </CardContent>
             </Card>
           ) : null}
