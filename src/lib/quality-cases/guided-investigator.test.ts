@@ -10,6 +10,8 @@ assert.deepEqual(classifyGuidedContractIssues(["confirmedRootCause is not permit
 const prompt = buildGuidedInvestigatorPrompt({ stage: "occurrence_cause", category: "occurrence_cause", currentQuestion: "为什么发生？", answer: "员工操作错误", priorAnswers: [] });
 assert.match(prompt, /not a report writer or approver/i);
 assert.match(prompt, /operator error/i);
-assert.match(prompt, /problem_symptom, problem_scope, problem_discovery/);
+assert.match(prompt, /occurrence_root_cause, process_control/);
+assert.match(prompt, /If none apply, return an empty array/);
+assert.doesNotMatch(prompt, /problem_symptom/);
 assert.doesNotMatch(prompt, /quality concept ids only/);
 console.log("Guided Investigator contract tests passed.");

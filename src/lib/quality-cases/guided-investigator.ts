@@ -22,7 +22,7 @@ import {
 } from "@/lib/quality-cases/guided-contract";
 
 export const GUIDED_INVESTIGATOR_PROMPT_ID = "guided-investigator";
-export const GUIDED_INVESTIGATOR_PROMPT_VERSION = "v2";
+export const GUIDED_INVESTIGATOR_PROMPT_VERSION = "v3";
 export const GUIDED_INVESTIGATOR_SCHEMA_VERSION = "guided-investigator-v1";
 export const GUIDED_INVESTIGATOR_MODEL_IDENTIFIER = "deepseek-chat";
 
@@ -41,6 +41,33 @@ const STAGE_STATE: Record<GuidedStage, GuidedInvestigationState> = {
   escape_cause: "investigating_escape",
   corrective_action: "planning_corrective_action",
   verification_and_prevention: "planning_verification_and_prevention",
+};
+
+const STAGE_MISSING_CONCEPTS: Record<GuidedStage, readonly QualityConcept[]> = {
+  problem_description: [
+    "problem_symptom",
+    "problem_scope",
+    "problem_discovery",
+  ],
+  containment: ["containment_action", "containment_scope"],
+  occurrence_cause: ["occurrence_root_cause", "process_control"],
+  escape_cause: [
+    "escape_root_cause",
+    "process_control",
+    "detection_improvement",
+  ],
+  corrective_action: [
+    "permanent_corrective_action",
+    "implementation_plan",
+    "recurrence_prevention",
+  ],
+  verification_and_prevention: [
+    "effectiveness_verification_plan",
+    "effectiveness_verification_result",
+    "recurrence_prevention",
+    "horizontal_deployment",
+    "lessons_learned",
+  ],
 };
 
 type ModelResponse = {
@@ -184,7 +211,8 @@ export function buildGuidedInvestigatorPrompt(input: {
   answer: string;
   priorAnswers: readonly string[];
 }) {
-  return `You are an AI Quality Investigator guiding a non-specialist through a quality investigation in Chinese. You are not a report writer or approver. Use only supplied answers. Never state or confirm a root cause, evidence, date, test result, approval, customer acceptance, or closure. Treat “operator error” as a direct cause and ask about process controls and detection. Treat training-only or inspection-only actions as potentially insufficient and ask about durable prevention. Ask one focused plain-language next question.\n\nReturn JSON only:\n{"schemaVersion":"guided-investigator-v1","answerRestatement":"","confidence":"low|medium|high","missingConcepts":["use only: problem_symptom, problem_scope, problem_discovery, containment_action, containment_scope, occurrence_root_cause, escape_root_cause, process_control, detection_improvement, permanent_corrective_action, implementation_plan, effectiveness_verification_plan, effectiveness_verification_result, recurrence_prevention, horizontal_deployment, lessons_learned"],"nextQuestion":"","whyAsked":"","insight":{"kind":"missing_information|logic_risk|verification_suggestion","message":""}}\n\nCurrent stage: ${input.stage}\nAnswer category: ${input.category}\nCurrent question: ${input.currentQuestion}\nUser's exact current answer: ${input.answer}\nEarlier user answers (may be empty): ${input.priorAnswers.map((item, index) => `${index + 1}. ${item}`).join("\n") || "None"}`;
+  const allowedConcepts = STAGE_MISSING_CONCEPTS[input.stage].join(", ");
+  return `You are an AI Quality Investigator guiding a non-specialist through a quality investigation in Chinese. You are not a report writer or approver. Use only supplied answers. Never state or confirm a root cause, evidence, date, test result, approval, customer acceptance, or closure. Treat “operator error” as a direct cause and ask about process controls and detection. Treat training-only or inspection-only actions as potentially insufficient and ask about durable prevention. Ask one focused plain-language next question.\n\nReturn JSON only:\n{"schemaVersion":"guided-investigator-v1","answerRestatement":"","confidence":"low|medium|high","missingConcepts":[],"nextQuestion":"","whyAsked":"","insight":{"kind":"missing_information|logic_risk|verification_suggestion","message":""}}\n\nFor missingConcepts, use zero or more exact strings from this current-stage list only: ${allowedConcepts}. If none apply, return an empty array. Never use synonyms, labels, translations, or any value outside this list.\n\nCurrent stage: ${input.stage}\nAnswer category: ${input.category}\nCurrent question: ${input.currentQuestion}\nUser's exact current answer: ${input.answer}\nEarlier user answers (may be empty): ${input.priorAnswers.map((item, index) => `${index + 1}. ${item}`).join("\n") || "None"}`;
 }
 
 export class DeepSeekGuidedInvestigatorAiClient implements GuidedInvestigatorAiClient {
