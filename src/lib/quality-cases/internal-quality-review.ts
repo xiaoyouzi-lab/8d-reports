@@ -1177,10 +1177,12 @@ export async function confirmMappingDecision(input: {
           ) then 1 else 0 end`
         : sql<number>`1 / case when exists (
             select 1 from ${qualityCaseGuidanceFieldMappings}
-            inner join ${qualityCases} on ${qualityCases.id} = ${qualityCaseGuidanceFieldMappings.caseId}
             where ${qualityCaseGuidanceFieldMappings.id} = ${mapping.id}
               and ${qualityCaseGuidanceFieldMappings.caseId} = ${input.caseId}
               and ${qualityCaseGuidanceFieldMappings.sessionId} = ${submitted.packageValue.caseContext.sessionId}
+          ) and exists (
+            select 1 from ${qualityCases}
+            where ${qualityCases.id} = ${input.caseId}
               and ${qualityCases.status} = 'internal_review'
           ) then 1 else 0 end`,
     })
