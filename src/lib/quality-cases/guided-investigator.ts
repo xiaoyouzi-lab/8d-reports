@@ -24,6 +24,7 @@ import {
 export const GUIDED_INVESTIGATOR_PROMPT_ID = "guided-investigator";
 export const GUIDED_INVESTIGATOR_PROMPT_VERSION = "v1";
 export const GUIDED_INVESTIGATOR_SCHEMA_VERSION = "guided-investigator-v1";
+export const GUIDED_INVESTIGATOR_MODEL_IDENTIFIER = "deepseek-chat";
 
 export type GuidedInvestigationState =
   | "collecting_problem"
@@ -150,6 +151,32 @@ export function validateGuidedInvestigatorResponse(value: unknown): { success: t
   };
 }
 
+export type GuidedContractErrorCategory =
+  | "response_shape"
+  | "schema_version"
+  | "confidence_enum"
+  | "missing_concepts_enum"
+  | "next_question_missing"
+  | "why_asked_missing"
+  | "forbidden_field"
+  | "insight_shape";
+
+/** Convert validator details to a stable, content-free diagnostic category. */
+export function classifyGuidedContractIssues(
+  issues: readonly string[],
+): GuidedContractErrorCategory[] {
+  return [...new Set(issues.map((issue): GuidedContractErrorCategory => {
+    if (issue === "response must be an object") return "response_shape";
+    if (issue === "schemaVersion is invalid") return "schema_version";
+    if (issue === "confidence is invalid") return "confidence_enum";
+    if (issue === "missingConcepts is invalid") return "missing_concepts_enum";
+    if (issue === "nextQuestion is required") return "next_question_missing";
+    if (issue === "whyAsked is required") return "why_asked_missing";
+    if (issue.endsWith(" is not permitted")) return "forbidden_field";
+    return "insight_shape";
+  }))];
+}
+
 export function buildGuidedInvestigatorPrompt(input: {
   stage: GuidedStage;
   category: GuidedAnswerCategory;
@@ -204,6 +231,9 @@ export async function runGuidedInvestigator(input: {
   actorId: string;
   client?: GuidedInvestigatorAiClient;
 }) {
+  const startedAt = Date.now();
+  let failureStage = "input_ownership";
+  let errorCategory: string | string[] = "not_found";
   const [session] = await db.select().from(qualityCaseGuidanceSessions).where(and(eq(qualityCaseGuidanceSessions.id, input.sessionId), eq(qualityCaseGuidanceSessions.caseId, input.caseId))).limit(1);
   const [question] = await db.select().from(qualityCaseGuidanceQuestions).where(and(eq(qualityCaseGuidanceQuestions.id, input.questionId), eq(qualityCaseGuidanceQuestions.sessionId, input.sessionId), eq(qualityCaseGuidanceQuestions.caseId, input.caseId))).limit(1);
   const [answer] = await db.select().from(qualityCaseGuidanceAnswers).where(and(eq(qualityCaseGuidanceAnswers.id, input.answerId), eq(qualityCaseGuidanceAnswers.questionId, input.questionId), eq(qualityCaseGuidanceAnswers.sessionId, input.sessionId), eq(qualityCaseGuidanceAnswers.caseId, input.caseId))).limit(1);
@@ -213,7 +243,9 @@ export async function runGuidedInvestigator(input: {
   const priorAnswers = await db.select({ originalText: qualityCaseGuidanceAnswers.originalText }).from(qualityCaseGuidanceAnswers).where(and(eq(qualityCaseGuidanceAnswers.sessionId, input.sessionId), eq(qualityCaseGuidanceAnswers.caseId, input.caseId)));
   const prompt = buildGuidedInvestigatorPrompt({ stage, category, currentQuestion: text(question.userFacingQuestion, 1800), answer: text(answer.originalText, 6000), priorAnswers: priorAnswers.filter((item) => item.originalText !== answer.originalText).map((item) => text(item.originalText, 1600)).slice(-8) });
   const promptInputHash = createHash("sha256").update(prompt).digest("hex");
-  const [run] = await db.insert(qualityCaseGuidanceAiRuns).values({ caseId: input.caseId, sessionId: input.sessionId, agentType: "investigator", sourceType: "deepseek", promptIdentifier: GUIDED_INVESTIGATOR_PROMPT_ID, promptVersion: GUIDED_INVESTIGATOR_PROMPT_VERSION, promptInputHash, modelIdentifier: "deepseek-chat", response: {}, confidence: "low", requestMetadata: { answerId: input.answerId }, policyOutcome: "pending" }).returning();
+  failureStage = "ai_run_create";
+  errorCategory = "persistence_error";
+  const [run] = await db.insert(qualityCaseGuidanceAiRuns).values({ caseId: input.caseId, sessionId: input.sessionId, agentType: "investigator", sourceType: "deepseek", promptIdentifier: GUIDED_INVESTIGATOR_PROMPT_ID, promptVersion: GUIDED_INVESTIGATOR_PROMPT_VERSION, promptInputHash, modelIdentifier: GUIDED_INVESTIGATOR_MODEL_IDENTIFIER, response: {}, confidence: "low", requestMetadata: { answerId: input.answerId }, policyOutcome: "pending" }).returning();
   const requiredFollowUps = getGuidedFollowUps({
     category,
     originalAnswer: answer.originalText,
@@ -221,9 +253,17 @@ export async function runGuidedInvestigator(input: {
   const askFollowUp = shouldAskGuidedFollowUp(question, requiredFollowUps.length);
   const nextCoreQuestion = nextCoreGuidedQuestion(question);
   try {
+    failureStage = "provider_call";
+    errorCategory = "provider_error";
     const raw = await (input.client || guidedInvestigatorAiClient).investigate({ prompt });
+    failureStage = "contract_validation";
     const validated = validateGuidedInvestigatorResponse(raw);
-    if (!validated.success) throw new GuidedInvestigatorError("AI Quality Investigator returned an unsafe response");
+    if (!validated.success) {
+      errorCategory = classifyGuidedContractIssues(validated.issues);
+      throw new GuidedInvestigatorError("AI Quality Investigator returned an unsafe response");
+    }
+    failureStage = "question_persistence";
+    errorCategory = "persistence_error";
     const allowedConcepts = new Set(question.qualityConcepts as QualityConcept[]);
     const missingConcepts = validated.data.missingConcepts.filter((concept) => allowedConcepts.has(concept));
     const [next] = askFollowUp
@@ -260,17 +300,26 @@ export async function runGuidedInvestigator(input: {
           }).returning()
         : [undefined];
     const insights = [...getGuidedQualityInsights({ category, originalAnswer: answer.originalText }), ...(validated.data.insight ? [{ id: "model", kind: validated.data.insight.kind, severity: "info" as const, affectedConcepts: missingConcepts, message: validated.data.insight.message, reportEligibility: "advisory_only" as const, mayTransitionCase: false as const, evidenceRequirementIds: [] }] : [])];
+    failureStage = "ai_run_finalize";
     await db.update(qualityCaseGuidanceAiRuns).set({ response: raw, confidence: validated.data.confidence, policyOutcome: "accepted" }).where(eq(qualityCaseGuidanceAiRuns.id, run.id));
+    failureStage = "insight_persistence";
     for (const insight of insights) await db.insert(qualityCaseGuidanceInsights).values({ caseId: input.caseId, sessionId: input.sessionId, aiRunId: run.id, answerId: input.answerId, insightKey: insight.id, kind: insight.kind, severity: insight.severity, sourceType: "ai_investigator", message: insight.message, suggestedQuestion: insight.suggestedQuestion || null, affectedConcepts: insight.affectedConcepts, evidenceRequirementIds: insight.evidenceRequirementIds, confidence: validated.data.confidence });
+    failureStage = "evidence_persistence";
     for (const requirementId of new Set(requiredFollowUps.flatMap((rule) => rule.evidenceRequirementIds || []))) {
       if (!next) continue;
       await db.insert(qualityCaseGuidanceEvidenceRequirements).values({ caseId: input.caseId, sessionId: input.sessionId, questionId: next.id, answerId: input.answerId, aiRunId: run.id, requirementKey: requirementId, sourceType: "ai_investigator", reason: "AI Investigator requested supporting evidence for the follow-up question.", requirementSnapshot: { requirementId } });
     }
+    failureStage = "mapping_persistence";
     for (const mapping of getGuidedMappings({ category, concepts: missingConcepts })) await db.insert(qualityCaseGuidanceFieldMappings).values({ caseId: input.caseId, sessionId: input.sessionId, answerId: input.answerId, qualityConcept: mapping.concept, semanticKey: mapping.target.semanticKey, targetReference: mapping.target, decision: "proposed" });
     return { runId: run.id, state: STAGE_STATE[stage], answerRestatement: validated.data.answerRestatement, nextQuestion: next, mandatoryFollowUpIds: requiredFollowUps.map((rule) => rule.id), mayTransitionCase: false as const };
   } catch (error) {
     console.error("[GUIDED INVESTIGATOR] run entered fallback", {
-      failure: error instanceof GuidedInvestigatorError ? error.message : "UnknownError",
+      failureStage,
+      errorCategory,
+      statusCode: error instanceof GuidedInvestigatorError ? error.status : 500,
+      modelIdentifier: GUIDED_INVESTIGATOR_MODEL_IDENTIFIER,
+      contractVersion: GUIDED_INVESTIGATOR_SCHEMA_VERSION,
+      durationMs: Date.now() - startedAt,
     });
     await db.update(qualityCaseGuidanceAiRuns).set({ policyOutcome: error instanceof GuidedInvestigatorError ? "rejected_or_failed" : "provider_failed" }).where(eq(qualityCaseGuidanceAiRuns.id, run.id)).catch(() => {});
     const [fallbackNext] = askFollowUp
