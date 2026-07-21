@@ -1236,7 +1236,16 @@ export async function confirmMappingDecision(input: {
         },
       }),
     ]);
-  } catch {
+  } catch (error) {
+    const errorCode = safeText(record(error).code, 80);
+    console.error(
+      JSON.stringify({
+        event: "quality_case_internal_review_failure",
+        stage: "mapping_confirmation_persistence",
+        errorCategory: errorCode || "database_batch_failed",
+        httpStatus: 409,
+      }),
+    );
     throw new InternalQualityReviewError(
       "The mapping changed before confirmation was saved. Refresh and try again.",
       409,
