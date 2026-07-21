@@ -1237,12 +1237,18 @@ export async function confirmMappingDecision(input: {
       }),
     ]);
   } catch (error) {
-    const errorCode = safeText(record(error).code, 80);
+    const databaseError = record(error);
+    const errorCode = safeText(databaseError.code, 80);
+    const errorMessage = safeText(databaseError.message, 500);
+    const ambiguousColumn =
+      errorMessage.match(/column reference "([a-zA-Z0-9_]+)"/)?.[1] || null;
     console.error(
       JSON.stringify({
         event: "quality_case_internal_review_failure",
         stage: "mapping_confirmation_persistence",
         errorCategory: errorCode || "database_batch_failed",
+        databaseRoutine: safeText(databaseError.routine, 80) || null,
+        ambiguousColumn,
         httpStatus: 409,
       }),
     );
