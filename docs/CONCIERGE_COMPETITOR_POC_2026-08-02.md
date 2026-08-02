@@ -18,7 +18,7 @@ sample/time/criterion/result verification statement.
 
 | Product | Actual attempt | Same-case output evidence | Honest result |
 | --- | --- | --- | --- |
-| Sigma Exacta 8D | Opened the live local-first tool, filled 28 fields in D0-D8 with the shared flawed case, and generated its Report view. | The generated report visibly repeated `100% inspection`, identical `employee negligence` causes, retraining, the unrelated printer action, `Action is expected to work`, `N/A` evidence, and blank prevention. It showed no alerts. | Real run. It structured and exported entered data without hallucinating, but did not flag the tested logic/evidence defects, predict customer questions, or rewrite English. It is an authoring tool, not a rejection-risk evaluator. |
+| Sigma Exacta 8D | Opened the live local-first tool and generated Report views for both the 28-field flawed case and a separate high-quality control. | The flawed report visibly repeated `100% inspection`, identical `employee negligence` causes, retraining, the unrelated printer action, `Action is expected to work`, `N/A` evidence, and blank prevention. The control included separated occurrence/escape causes, mapped actions, evidence IDs, 20,400-unit/17-lot/four-week verification, preset criteria, and horizontal deployment. Neither report showed alerts. | Two real runs. It added no facts and did not invent weaknesses for the high-quality control, but it also did not flag the flawed report, predict customer questions, or rewrite English. It is an authoring tool, not a rejection-risk evaluator. |
 | 8DReport.com | Filled and submitted the real trial form to `POST https://accounts.8dreport.com/sign-up/new-user`. | The actual response said new trial requests were not being accepted. No account was created. | Input, output, hallucination, evidence checks, logic checks, rewrites, and questions are all not verified. Public screenshots are not counted as a live run. |
 | 8D Pack | Switched the live login form to Create Account and filled it with the synthetic PoC identity. | Cloudflare Turnstile remained unresolved and the app displayed `Please complete the captcha.` No product registration request was sent. The homepage's 11/11 extraction is a canned animation with no extraction request. | No account and no custom-case run. Output quality is not verified. The CAPTCHA was not clicked or bypassed. |
 | Vantage 8D | Submitted the live Supabase signup flow. | The real signup request returned HTTP 429 and the UI reported the 15-second security limit. The flow then requires mailbox verification before a session exists. | The advertised 8D Evaluator could not be entered, so its custom-case output is not verified. |
@@ -26,6 +26,7 @@ sample/time/criterion/result verification statement.
 Local evidence captured during the audit:
 
 - `/tmp/reject-check-competitor-poc/sigma-flawed-report.png`
+- `/tmp/reject-check-competitor-poc/sigma-high-quality-report.png`
 - `/tmp/reject-check-competitor-poc/8dreport-signup-result.png`
 - `/tmp/reject-check-competitor-poc/8dpack-register-result.png`
 - `/tmp/reject-check-competitor-poc/competitor-poc-note.md`

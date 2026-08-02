@@ -8,10 +8,12 @@
   Supplier Portal, QMS, and unrelated UI work remain paused.
 - Ran live competitor PoCs with synthetic data. Sigma Exacta generated a real
   report from the shared flawed case but only reflected the weak content and
-  did not flag the tested rejection risks. 8DReport rejected the submitted
-  trial because new trials are unavailable; 8D Pack stopped at Cloudflare
-  Turnstile; Vantage signup returned HTTP 429 and still requires mailbox
-  verification. Blocked tools are recorded as not verified, not as inferior.
+  did not flag the tested rejection risks. A second real Sigma run with a
+  high-quality control added no facts and invented no weaknesses, but likewise
+  performed no critique. 8DReport rejected the submitted trial because new
+  trials are unavailable; 8D Pack stopped at Cloudflare Turnstile; Vantage
+  signup returned HTTP 429 and still requires mailbox verification. Blocked
+  tools are recorded as not verified, not as inferior.
 - Selected only the USD 99, 24-hour Deep Review for the first safe checkout.
   The USD 39 automated paid scan is paused because current evidence does not
   differentiate it from 8D Pack's advertised USD 2.99 report/lint offer.
