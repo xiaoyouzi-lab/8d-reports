@@ -1,5 +1,23 @@
 # Development Log
 
+## In progress: 8D Reject Check revenue validation
+
+- Created `codex/8d-reject-check` from remote RC2 commit `dc613fa` in a clean,
+  isolated worktree. Existing dirty worktrees and the abandoned Founding Case
+  experiment remain untouched and are not part of this branch.
+- Added the first executable product slice: a structured rejection-risk review
+  contract, a deterministic rule engine, mandatory source markers for every
+  finding, a three-risk free-preview projection, and ten acceptance cases. The
+  engine flags human-blame root cause, training-only action, inspection-only
+  action, identical occurrence/escape causes, cause/action mismatch, missing
+  implementation evidence, incomplete effectiveness verification, and vague
+  wording while refusing to manufacture material risks for a complete fixture.
+- Focused test, focused ESLint, and `git diff --check` pass. Bare TypeScript
+  still reports the two pre-existing RC2 errors in the generated RouteContext
+  type and the P0+ unsafe-field test fixture; neither is caused by this slice.
+- Revenue remains **$0**. No payment, Preview data, external release, or
+  production resource has been touched in this slice.
+
 ## In progress: Supplier Guided / Expert submission P0 retest — blocked by separate signup OTP P0
 
 - Implemented the Supplier submission surface without changing the Guided
