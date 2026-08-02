@@ -11,24 +11,32 @@ export default function PrivacyPage() {
       <h1 className="text-3xl font-bold mb-8">Privacy Policy</h1>
       <Card>
         <CardContent className="prose prose-sm max-w-none pt-6 space-y-4">
-          <p><strong>Last updated:</strong> May 20, 2026</p>
+          <p><strong>Last updated:</strong> August 2, 2026</p>
           
           <h2>1. Information We Collect</h2>
-          <p>When you create an account, we collect your name, email address, and authentication credentials. When you create 8D reports, we store the report data you provide including text, dates, and file attachments.</p>
+          <p>When you create an account, we collect your name, email address, and authentication credentials. When you use 8D Reject Check or the report editor, we process the report text and files you choose to provide.</p>
+
+          <h2>2. 8D Reject Check document handling</h2>
+          <p>For the Reject Check workflow, TXT and DOCX files are parsed on the server. The original upload is not written to Cloudflare R2; bounded extracted text, a document hash, the free result, and the complete result are stored in Neon so the task can be resumed and, after purchase, delivered.</p>
+          <p>The anonymous task link expires after 30 days. Link expiry is an access control and is not a promise of immediate database deletion. You may request earlier deletion using the contact address below, subject to transaction, fraud-prevention, dispute, and legal record requirements.</p>
           
-          <h2>2. How We Use Your Information</h2>
-          <p>We use your information solely to provide the 8D Reports service — to display your reports, enable sharing, and process your subscription. We do not sell your data to third parties.</p>
+          <h2>3. How We Use Your Information</h2>
+          <p>We use your information to provide the requested review, authenticate access, process one-time purchases or subscriptions, prevent abuse, deliver exports, handle refunds, and support the service. We do not sell report data.</p>
+          <p>When AI-enhanced analysis or rewriting is available, bounded report text may be sent to the configured AI provider solely to produce that task result. Deterministic rules run independently, and missing facts must not be presented as facts.</p>
           
-          <h2>3. Data Storage & Security</h2>
-          <p>Your data is stored on Neon (PostgreSQL) and Cloudflare R2 (file storage). All data is encrypted in transit (TLS 1.3) and at rest. Authentication uses industry-standard JWT tokens with HttpOnly, Secure, and SameSite cookies.</p>
+          <h2>4. Data Storage & Security</h2>
+          <p>Application data is stored in Neon Postgres. Attachments used by the existing report editor may be stored in Cloudflare R2. We use encrypted network connections and access controls appropriate to the service. No internet service can guarantee absolute security, so do not submit information that is not needed for the review.</p>
           
-          <h2>4. Cookies</h2>
-          <p>We use essential cookies for authentication (session tokens) and language preferences. We do not use tracking or advertising cookies.</p>
+          <h2>5. Cookies and funnel measurement</h2>
+          <p>We use essential session storage for authentication and an anonymous review-session identifier for funnel measurement. Reject Check funnel records include event name, pseudonymous session hash, traffic source, task/order references, actor category, timing, and safe failure codes. They do not include report text, uploaded filenames, confidential document content, or complete AI output.</p>
           
-          <h2>5. Your Rights</h2>
-          <p>You can export your report data at any time (PDF/Word export). You can request account deletion by contacting support. Under GDPR, you have the right to access, rectify, and erase your personal data.</p>
+          <h2>6. Payment providers and necessary processors</h2>
+          <p>Payment and tax information is handled by the checkout provider acting as merchant of record. We store provider order and transaction identifiers, amount, currency, status, and refund state for entitlement and reconciliation; we do not store full card details.</p>
+
+          <h2>7. Your Rights</h2>
+          <p>You can download available outputs and request access, correction, or deletion of personal data by contacting support. Rights and retention exceptions depend on applicable law and necessary transaction records.</p>
           
-          <h2>6. Contact</h2>
+          <h2>8. Contact</h2>
           <p>For privacy-related inquiries, contact us at 19857345237@163.com</p>
         </CardContent>
       </Card>
