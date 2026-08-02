@@ -47,8 +47,42 @@ async function sendReviewEvent(eventName: string, extra: Record<string, unknown>
   }
 }
 
-export function RejectCheckIntake() {
+const copy = {
+  en: {
+    title: "Run a free rejection check",
+    description: "See submission status, the three most serious risks, and missing-information categories.",
+    label: "Paste your 8D, SCAR, or corrective-action response",
+    placeholder: "Include the report sections you plan to submit. Missing facts stay missing; the review will not invent dates, quantities, evidence, causes, approvals, or results.",
+    divider: "or upload",
+    choose: "Choose TXT or DOCX",
+    fileHelp: "Up to 5 MB. The original file is not stored in object storage.",
+    pdf: "PDF upload is intentionally not enabled until extraction reliability passes fixture and Preview validation.",
+    empty: "Paste report content or choose a TXT/DOCX file first.",
+    failed: "The free review could not be generated.",
+    loading: "Checking submission risk…",
+    submit: "Check my report free",
+    price: "Complete Rejection Risk Review is $39 per report. No subscription required.",
+  },
+  "zh-CN": {
+    title: "免费检查客户退回风险",
+    description: "先看当前是否适合提交、最严重的三项风险和缺失信息类别。",
+    label: "粘贴准备提交的 8D、SCAR 或整改回复",
+    placeholder: "请包含准备提交的报告章节。缺失事实会保持缺失；系统不会编造日期、数量、证据、原因、批准或验证结果。",
+    divider: "或上传文件",
+    choose: "选择 TXT 或 DOCX",
+    fileHelp: "最大 5 MB；原始文件不会写入对象存储。",
+    pdf: "PDF 暂不开放，待文本提取通过固定样本和 Preview 可靠性验证后再加入。",
+    empty: "请先粘贴报告内容或选择 TXT/DOCX 文件。",
+    failed: "暂时无法生成免费审查，请重试。",
+    loading: "正在检查提交风险…",
+    submit: "免费检查我的报告",
+    price: "完整拒绝风险审查每份 39 美元，一次购买，不要求订阅。",
+  },
+} as const
+
+export function RejectCheckIntake({ locale = "en" }: { locale?: keyof typeof copy }) {
   const router = useRouter()
+  const content = copy[locale]
   const [reportText, setReportText] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
@@ -56,8 +90,8 @@ export function RejectCheckIntake() {
   const startedRef = useRef(false)
 
   useEffect(() => {
-    void sendReviewEvent("review_landing_view")
-  }, [])
+    void sendReviewEvent("review_landing_view", { locale })
+  }, [locale])
 
   const markStarted = () => {
     if (startedRef.current) return
@@ -68,7 +102,7 @@ export function RejectCheckIntake() {
   const submit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!reportText.trim() && !file) {
-      setError("Paste report content or choose a TXT/DOCX file first.")
+      setError(content.empty)
       return
     }
     markStarted()
@@ -83,11 +117,11 @@ export function RejectCheckIntake() {
       const response = await fetch("/api/rejection-reviews", { method: "POST", body })
       const data = await response.json().catch(() => null)
       if (!response.ok || typeof data?.redirectPath !== "string") {
-        throw new Error(data?.error || "The free review could not be generated.")
+        throw new Error(data?.error || content.failed)
       }
       router.push(data.redirectPath)
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : "The free review could not be generated.")
+      setError(submissionError instanceof Error ? submissionError.message : content.failed)
     } finally {
       setLoading(false)
     }
@@ -97,14 +131,14 @@ export function RejectCheckIntake() {
     <form onSubmit={submit} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xl shadow-slate-200/50 sm:p-7">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-slate-950">Run a free rejection check</h2>
-          <p className="mt-1 text-sm text-slate-600">See submission status, the three most serious risks, and missing-information categories.</p>
+          <h2 className="text-lg font-semibold text-slate-950">{content.title}</h2>
+          <p className="mt-1 text-sm text-slate-600">{content.description}</p>
         </div>
         <FileText className="size-7 shrink-0 text-indigo-600" aria-hidden="true" />
       </div>
 
       <label htmlFor="reject-check-report" className="mt-6 block text-sm font-medium text-slate-900">
-        Paste your 8D, SCAR, or corrective-action response
+        {content.label}
       </label>
       <textarea
         id="reject-check-report"
@@ -113,13 +147,13 @@ export function RejectCheckIntake() {
         onChange={(event) => setReportText(event.target.value)}
         rows={10}
         maxLength={60_000}
-        placeholder="Include the report sections you plan to submit. Missing facts stay missing; the review will not invent dates, quantities, evidence, causes, approvals, or results."
+        placeholder={content.placeholder}
         className="mt-2 w-full resize-y rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
       />
 
       <div className="my-4 flex items-center gap-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
         <span className="h-px flex-1 bg-slate-200" />
-        or upload
+        {content.divider}
         <span className="h-px flex-1 bg-slate-200" />
       </div>
 
@@ -128,8 +162,8 @@ export function RejectCheckIntake() {
           <Upload className="size-4" aria-hidden="true" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-medium text-slate-900">{file?.name || "Choose TXT or DOCX"}</span>
-          <span className="block text-xs text-slate-500">Up to 5 MB. The original file is not stored in object storage.</span>
+          <span className="block truncate font-medium text-slate-900">{file?.name || content.choose}</span>
+          <span className="block text-xs text-slate-500">{content.fileHelp}</span>
         </span>
         <input
           type="file"
@@ -144,7 +178,7 @@ export function RejectCheckIntake() {
         />
       </label>
       <p className="mt-2 text-xs text-slate-500">
-        PDF upload is intentionally not enabled until extraction reliability passes fixture and Preview validation.
+        {content.pdf}
       </p>
 
       {error && (
@@ -156,10 +190,10 @@ export function RejectCheckIntake() {
 
       <Button type="submit" size="lg" disabled={loading} className="mt-5 w-full bg-indigo-600 text-white hover:bg-indigo-700">
         {loading ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <FileText className="size-4" aria-hidden="true" />}
-        {loading ? "Checking submission risk…" : "Check my report free"}
+        {loading ? content.loading : content.submit}
       </Button>
       <p className="mt-3 text-center text-xs leading-5 text-slate-500">
-        Complete Rejection Risk Review is $39 per report. No subscription required.
+        {content.price}
       </p>
     </form>
   )

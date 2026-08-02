@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { CheckCircle2, ShieldCheck } from "lucide-react"
 import { RejectCheckIntake } from "@/components/rejection-review/RejectCheckIntake"
 
@@ -58,6 +59,9 @@ export default function ReportReviewServicePage() {
             <span className="font-semibold text-slate-950">Complete Rejection Risk Review: $39 once.</span>{" "}
             It includes all section findings, evidence gaps, likely follow-up questions, fact-safe English rewrites, and a downloadable review package. It does not guarantee customer acceptance, certify compliance, confirm root cause, or prove effectiveness.
           </div>
+          <p className="mt-6 text-center text-sm text-slate-600">
+            <Link href="/zh/8d-report-review-service" className="font-medium text-indigo-600 hover:text-indigo-700">查看中文页面</Link>
+          </p>
         </div>
       </section>
     </div>
