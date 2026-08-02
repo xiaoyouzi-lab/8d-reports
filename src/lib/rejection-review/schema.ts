@@ -62,7 +62,10 @@ export interface RejectionRiskReview {
 export interface FreeRejectionRiskPreview {
   schemaVersion: "rejection-risk-free-preview-v1";
   status: ReviewStatus;
-  topRejectionRisks: RejectionRiskFinding[];
+  topRejectionRisks: Array<Pick<
+    RejectionRiskFinding,
+    "id" | "section" | "severity" | "category" | "title" | "explanation" | "evidenceStatus" | "source"
+  >>;
   missingInformationCategories: string[];
   fullReviewExample: {
     includes: string[];
@@ -75,7 +78,16 @@ export function toFreeRejectionRiskPreview(review: RejectionRiskReview): FreeRej
   return {
     schemaVersion: "rejection-risk-free-preview-v1",
     status: review.status,
-    topRejectionRisks: review.topRejectionRisks.slice(0, 3),
+    topRejectionRisks: review.topRejectionRisks.slice(0, 3).map((finding) => ({
+      id: finding.id,
+      section: finding.section,
+      severity: finding.severity,
+      category: finding.category,
+      title: finding.title,
+      explanation: finding.explanation,
+      evidenceStatus: finding.evidenceStatus,
+      source: finding.source,
+    })),
     missingInformationCategories: review.missingInformationCategories,
     fullReviewExample: {
       includes: [

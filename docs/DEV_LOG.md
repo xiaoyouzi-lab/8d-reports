@@ -15,6 +15,27 @@
 - Focused test, focused ESLint, and `git diff --check` pass. Bare TypeScript
   still reports the two pre-existing RC2 errors in the generated RouteContext
   type and the P0+ unsafe-field test fixture; neither is caused by this slice.
+- Replaced the static beta-review CTA with an executable anonymous intake for
+  pasted text, TXT, and DOCX. DOCX extraction validates the ZIP structure,
+  CRC, compressed-file size, expanded XML size, and extracted-text bounds;
+  PDF is visibly deferred rather than accepted without a reliable parser.
+- Added isolated task, order, entitlement, and funnel ledgers with server-side
+  constraints. Raw report text and full results remain in the private task
+  record; funnel metadata is allowlisted and stores only a hashed anonymous
+  session, source classification, IDs, safe failure categories, and timing.
+  Unknown buyers default to `unknown`, and payments default to `unverified`, so
+  test, owner, friend-support, or undelivered payments cannot silently count as
+  qualified revenue.
+- Added a token-scoped free result page showing only submission status, the
+  three highest risks, source markers, and missing-information categories. The
+  complete findings, facts-to-add, customer questions, and rewrite fields are
+  not included in the free DTO.
+- Focused rule/file/privacy tests, focused ESLint, `git diff --check`, Next
+  route type generation, and a production build pass. The build logs expected
+  Better Auth adapter initialization warnings because this clean worktree has
+  no local `DATABASE_URL`; it still exits 0 and emits the new static intake,
+  dynamic result, and API routes. Bare `tsc` is now limited to the single
+  pre-existing P0+ unsafe-field fixture error after route type generation.
 - Revenue remains **$0**. No payment, Preview data, external release, or
   production resource has been touched in this slice.
 
