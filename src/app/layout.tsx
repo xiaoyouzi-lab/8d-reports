@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
 import { CookieConsent } from "@/components/CookieConsent";
 import { FeedbackWrapper } from "@/components/feedback/FeedbackWrapper";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
+import { SafeAnalytics } from "@/components/SafeAnalytics";
 import { socialOpenGraphImage, siteUrl } from "@/lib/marketing-content";
 import "./globals.css";
 
@@ -60,7 +60,7 @@ export default async function RootLayout({
         <NextIntlClientProvider locale={locale} messages={messages}>
           {children}
           <CookieConsent />
-          <Analytics />
+          <SafeAnalytics />
           <GoogleAnalytics />
           <Toaster position="top-center" offset={72} />
           <FeedbackWrapper />

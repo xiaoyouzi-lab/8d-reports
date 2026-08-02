@@ -10,9 +10,11 @@ import {
   serial,
   index,
   uniqueIndex,
+  check,
   cidr,
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -290,6 +292,136 @@ export const aiTasks = pgTable("ai_tasks", {
   index("idx_ai_tasks_user_id").on(table.userId),
   index("idx_ai_tasks_report_id").on(table.reportId),
   index("idx_ai_tasks_type").on(table.taskType),
+]);
+
+export const rejectionReviewTasks = pgTable("rejection_review_tasks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  tokenHash: text("token_hash").notNull().unique(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  anonymousSessionHash: text("anonymous_session_hash").notNull(),
+  trafficSource: text("traffic_source").notNull().default("direct"),
+  sourceType: text("source_type").notNull(),
+  sourceFilename: text("source_filename"),
+  inputText: text("input_text").notNull(),
+  inputHash: text("input_hash").notNull(),
+  status: text("status").notNull().default("free_ready"),
+  freeResultJson: jsonb("free_result_json").notNull(),
+  fullResultJson: jsonb("full_result_json").notNull(),
+  deliveryResultJson: jsonb("delivery_result_json"),
+  aiPolicyOutcome: text("ai_policy_outcome").notNull().default("rules_only"),
+  analysisFailureCode: text("analysis_failure_code"),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rejection_review_tasks_session_created").on(table.anonymousSessionHash, table.createdAt.desc()),
+  index("idx_rejection_review_tasks_user_created").on(table.userId, table.createdAt.desc()),
+  index("idx_rejection_review_tasks_expires_at").on(table.expiresAt),
+  check("chk_rejection_review_tasks_source_type", sql`${table.sourceType} in ('paste', 'txt', 'docx')`),
+  check("chk_rejection_review_tasks_status", sql`${table.status} in ('free_ready', 'full_ready', 'analysis_failed')`),
+]);
+
+export const rejectionReviewOrders = pgTable("rejection_review_orders", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull().references(() => rejectionReviewTasks.id, { onDelete: "restrict" }),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  providerRequestId: text("provider_request_id").notNull().unique(),
+  providerCheckoutId: text("provider_checkout_id").unique(),
+  providerOrderId: text("provider_order_id").unique(),
+  providerTransactionId: text("provider_transaction_id").unique(),
+  providerProductId: text("provider_product_id"),
+  priceVariant: text("price_variant").notNull().default("deep_review"),
+  providerMode: text("provider_mode").notNull().default("test"),
+  checkoutUrl: text("checkout_url"),
+  status: text("status").notNull().default("pending"),
+  customerKind: text("customer_kind").notNull().default("unknown"),
+  expectedAmountCents: integer("expected_amount_cents").notNull().default(9900),
+  paidAmountCents: integer("paid_amount_cents").notNull().default(0),
+  refundedAmountCents: integer("refunded_amount_cents").notNull().default(0),
+  currency: text("currency").notNull().default("USD"),
+  failureType: text("failure_type"),
+  qualificationStatus: text("qualification_status").notNull().default("unverified"),
+  qualificationReason: text("qualification_reason"),
+  deliverableReadyAt: timestamp("deliverable_ready_at"),
+  fullResultViewedAt: timestamp("full_result_viewed_at"),
+  exportedAt: timestamp("exported_at"),
+  paidAt: timestamp("paid_at"),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rejection_review_orders_task_created").on(table.taskId, table.createdAt.desc()),
+  index("idx_rejection_review_orders_status_created").on(table.status, table.createdAt.desc()),
+  uniqueIndex("uq_rejection_review_orders_active_task").on(table.taskId)
+    .where(sql`${table.status} in ('pending', 'processing', 'paid')`),
+  check("chk_rejection_review_orders_status", sql`${table.status} in ('pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded', 'disputed')`),
+  check("chk_rejection_review_orders_provider_mode", sql`${table.providerMode} in ('test', 'production')`),
+  check("chk_rejection_review_orders_price_variant", sql`${table.priceVariant} in ('instant_scan', 'deep_review')`),
+  check("chk_rejection_review_orders_customer_kind", sql`${table.customerKind} in ('unknown', 'owner', 'test', 'external')`),
+  check("chk_rejection_review_orders_qualification_status", sql`${table.qualificationStatus} in ('unverified', 'qualified', 'excluded_owner', 'excluded_test', 'excluded_friend', 'excluded_refund', 'excluded_dispute', 'excluded_incomplete_delivery')`),
+  check("chk_rejection_review_orders_currency", sql`${table.currency} = 'USD'`),
+  check("chk_rejection_review_orders_amounts", sql`${table.expectedAmountCents} >= 0 and ${table.paidAmountCents} >= 0 and ${table.refundedAmountCents} >= 0`),
+]);
+
+export const rejectionReviewEntitlements = pgTable("rejection_review_entitlements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  taskId: uuid("task_id").notNull().references(() => rejectionReviewTasks.id, { onDelete: "cascade" }).unique(),
+  orderId: uuid("order_id").notNull().references(() => rejectionReviewOrders.id, { onDelete: "restrict" }).unique(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "restrict" }),
+  status: text("status").notNull().default("pending"),
+  grantedAt: timestamp("granted_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revokeReason: text("revoke_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rejection_review_entitlements_user_status").on(table.userId, table.status),
+  check("chk_rejection_review_entitlements_status", sql`${table.status} in ('pending', 'active', 'revoked')`),
+]);
+
+export const rejectionReviewRevocations = pgTable("rejection_review_revocations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  providerEventId: text("provider_event_id").notNull().unique(),
+  kind: text("kind").notNull(),
+  providerObjectId: text("provider_object_id").notNull(),
+  providerTransactionId: text("provider_transaction_id").notNull(),
+  providerOrderId: text("provider_order_id"),
+  providerRequestId: text("provider_request_id"),
+  providerProductId: text("provider_product_id"),
+  amountCents: integer("amount_cents"),
+  currency: text("currency"),
+  reason: text("reason"),
+  matchedOrderId: uuid("matched_order_id").references(() => rejectionReviewOrders.id, { onDelete: "set null" }),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rejection_review_revocations_transaction").on(table.providerTransactionId),
+  index("idx_rejection_review_revocations_order").on(table.providerOrderId),
+  index("idx_rejection_review_revocations_request").on(table.providerRequestId),
+  index("idx_rejection_review_revocations_pending").on(table.processedAt),
+  check("chk_rejection_review_revocations_kind", sql`${table.kind} in ('refund', 'dispute')`),
+]);
+
+export const rejectionReviewFunnelEvents = pgTable("rejection_review_funnel_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventName: text("event_name").notNull(),
+  anonymousSessionHash: text("anonymous_session_hash").notNull(),
+  actorKind: text("actor_kind").notNull().default("anonymous"),
+  trafficSource: text("traffic_source").notNull().default("direct"),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  taskId: uuid("task_id").references(() => rejectionReviewTasks.id, { onDelete: "set null" }),
+  orderId: uuid("order_id").references(() => rejectionReviewOrders.id, { onDelete: "set null" }),
+  failureType: text("failure_type"),
+  durationMs: integer("duration_ms"),
+  metadata: jsonb("metadata").notNull().default("{}"),
+  dedupeKey: text("dedupe_key").unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rejection_review_funnel_event_created").on(table.eventName, table.createdAt.desc()),
+  index("idx_rejection_review_funnel_actor_created").on(table.actorKind, table.createdAt.desc()),
+  index("idx_rejection_review_funnel_session_created").on(table.anonymousSessionHash, table.createdAt),
+  check("chk_rejection_review_funnel_actor_kind", sql`${table.actorKind} in ('anonymous', 'unknown', 'owner', 'test', 'external')`),
+  check("chk_rejection_review_funnel_event_name", sql`${table.eventName} in ('qualified_landing_view', 'review_upload_started', 'review_upload_completed', 'review_free_result_viewed', 'review_checkout_started', 'review_purchase_completed', 'review_full_result_viewed', 'review_delivered', 'review_refund_requested', 'review_repeat_purchase')`),
 ]);
 
 export const p0PlusPreviews = pgTable("p0_plus_previews", {

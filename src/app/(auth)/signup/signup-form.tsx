@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { trackEvent } from "@/lib/analytics"
+import { authPathWithCallback, safeCallbackUrl } from "@/lib/safe-callback-url"
 
 type PreviewDebug = {
   commitSha: string
@@ -34,7 +35,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawCallback = searchParams.get("callbackUrl")
-  const callbackUrl = rawCallback && rawCallback.startsWith("/") ? rawCallback : "/dashboard"
+  const callbackUrl = safeCallbackUrl(rawCallback, "/dashboard")
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -251,7 +252,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
       </CardContent>
       <CardFooter className="justify-center border-t bg-muted/50 p-4">
         <p className="text-sm text-muted-foreground">
-          Already have an account? <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700">Sign in</Link>
+          Already have an account? <Link href={authPathWithCallback("/login", callbackUrl)} className="font-medium text-indigo-600 hover:text-indigo-700">Sign in</Link>
         </p>
       </CardFooter>
     </Card>

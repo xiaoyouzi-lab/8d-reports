@@ -1,5 +1,126 @@
 # Development Log
 
+## In progress: Concierge-first 8D Reject Check sales path
+
+- Superseded the automation-first scope without deleting existing work. The
+  unintegrated AI overlay draft is preserved in Git stash
+  `paused reject-check AI overlay draft`; PDF parsing, larger rules expansion,
+  Supplier Portal, QMS, and unrelated UI work remain paused.
+- Ran live competitor PoCs with synthetic data. Sigma Exacta generated a real
+  report from the shared flawed case but only reflected the weak content and
+  did not flag the tested rejection risks. A second real Sigma run with a
+  high-quality control added no facts and invented no weaknesses, but likewise
+  performed no critique. 8DReport rejected the submitted trial because new
+  trials are unavailable; 8D Pack stopped at Cloudflare Turnstile; Vantage
+  signup returned HTTP 429 and still requires mailbox verification. Blocked
+  tools are recorded as not verified, not as inferior.
+- Selected only the USD 99, 24-hour Deep Review for the first safe checkout.
+  The USD 39 automated paid scan is paused because current evidence does not
+  differentiate it from 8D Pack's advertised USD 2.99 report/lint offer.
+- Added a working result-page purchase control, Preview-forced Creem test mode,
+  dedicated Reject Check test/production credential names, stable request IDs,
+  exact task/order/user/product/mode/currency/amount metadata validation,
+  anonymous-task claiming after login, and one-active-order-per-task behavior.
+  Payment activates one entitlement but never exposes an unreviewed result.
+- Added refund/dispute revocation, repeat-purchase detection, a strict
+  human-delivery schema, an atomic paid-and-active delivery command, delivered
+  result rendering, and authenticated DOCX download. The public wording says
+  automated initial checks plus internal human review; it does not claim an
+  external expert, full automation, customer acceptance, confirmed root cause,
+  or proven effectiveness.
+- Replaced the old funnel vocabulary with the ten Concierge events, preserved
+  only allowlisted metadata, and added a reproducible revenue report. Actual
+  provider payments and qualified real revenue are separate. A production
+  external payment still requires manual non-friend qualification, completed
+  delivery, customer view/download, and no refund before it counts.
+- Added a synthetic free/paid result sample, updated the English and Chinese
+  landing pages, and updated privacy, terms, and refund wording for the
+  24-hour delivery boundary.
+- Closed the security audit's P1/P2 findings: sensitive review tokens are no
+  longer sent to the payment provider, sign-in callback, GA, Vercel Analytics,
+  or funnel dedupe keys; out-of-order refund/dispute events are persisted in a
+  revocation ledger and checked before a later checkout can grant access;
+  Preview and production webhook secrets are isolated; partial-refund totals
+  use an atomic maximum; the webhook body has a 256 KB limit; and the checkout
+  verifies the real provider SKU is active, one-time, USD 99, and in the
+  expected mode before opening it.
+- Checks passed: deterministic acceptance cases, TXT/DOCX extraction, funnel
+  privacy, DOCX generation, three payment suites, revenue-report tests,
+  sensitive-route analytics tests, focused ESLint, `git diff --check`, and a
+  production Next build. Bare `tsc` remains blocked only by the pre-existing
+  `p0-plus.test.ts:110` fixture error.
+- Applied and verified migrations `0014` and `0015` on the isolated Neon branch
+  `br-curly-breeze-af4rv1u5`; it contains zero review tasks, orders,
+  revocations, or funnel events. Created the remote candidate branch at the
+  audited RC2 baseline and bound only its Vercel Preview `DATABASE_URL` to this
+  isolated database. The first binding attempt contained a truncated value;
+  it was replaced before deployment, and the isolated database was then
+  reached successfully with direct SQL. Production Neon remains unchanged.
+- The revenue-report test suite passes. A live direct SQL count confirms
+  `tasks=0`, `orders=0`, `revocations=0`, and `events=0`; the local Node HTTP
+  database client could not finish the same live report because its fetch path
+  failed, so that CLI still requires deployed-Preview verification.
+- Pushed commit `82e5ad7` and opened Draft PR #38 against
+  `codex/rc2-preview-hardening`. Vercel completed the matching Preview at
+  `https://8d-reports-1ribmf9en-xiaoyouzi-labs-projects.vercel.app`; the PR's
+  Vercel check passed. This branch did not trigger a GitHub Actions run under
+  the repository's current workflow filters.
+- Ran the real protected Preview in Chromium using a temporary automation
+  bypass header. English and Chinese landing pages, the synthetic free/paid
+  sample, anonymous pasted-text intake, DOCX upload/extraction, limited free
+  results, the USD 99 offer, and the token-free generic sign-in callback all
+  rendered without a framework error overlay. Vercel's runtime-error query
+  returned no errors for the tested routes.
+- Before cleanup, the isolated funnel contained 7 test events: 1 landing, 2
+  upload starts, 2 upload completions, and 2 free-result views. The paste and
+  DOCX completion durations were 399 ms and 290 ms. There were zero checkout
+  starts, orders, payments, or revenue. All test review rows were then deleted,
+  the temporary DOCX was removed, the browser was closed, and the temporary
+  Vercel automation bypass was revoked. Post-cleanup counts are zero across
+  tasks, orders, entitlements, revocations, and funnel events.
+- Dedicated Creem test credentials, an active USD 99 test Product ID, and the
+  corresponding test webhook secret are not present. No real Provider checkout
+  or browser payment has been claimed. Revenue remains **USD 0**.
+
+## In progress: 8D Reject Check revenue validation
+
+- Created `codex/8d-reject-check` from remote RC2 commit `dc613fa` in a clean,
+  isolated worktree. Existing dirty worktrees and the abandoned Founding Case
+  experiment remain untouched and are not part of this branch.
+- Added the first executable product slice: a structured rejection-risk review
+  contract, a deterministic rule engine, mandatory source markers for every
+  finding, a three-risk free-preview projection, and ten acceptance cases. The
+  engine flags human-blame root cause, training-only action, inspection-only
+  action, identical occurrence/escape causes, cause/action mismatch, missing
+  implementation evidence, incomplete effectiveness verification, and vague
+  wording while refusing to manufacture material risks for a complete fixture.
+- Focused test, focused ESLint, and `git diff --check` pass. Bare TypeScript
+  still reports the two pre-existing RC2 errors in the generated RouteContext
+  type and the P0+ unsafe-field test fixture; neither is caused by this slice.
+- Replaced the static beta-review CTA with an executable anonymous intake for
+  pasted text, TXT, and DOCX. DOCX extraction validates the ZIP structure,
+  CRC, compressed-file size, expanded XML size, and extracted-text bounds;
+  PDF is visibly deferred rather than accepted without a reliable parser.
+- Added isolated task, order, entitlement, and funnel ledgers with server-side
+  constraints. Raw report text and full results remain in the private task
+  record; funnel metadata is allowlisted and stores only a hashed anonymous
+  session, source classification, IDs, safe failure categories, and timing.
+  Unknown buyers default to `unknown`, and payments default to `unverified`, so
+  test, owner, friend-support, or undelivered payments cannot silently count as
+  qualified revenue.
+- Added a token-scoped free result page showing only submission status, the
+  three highest risks, source markers, and missing-information categories. The
+  complete findings, facts-to-add, customer questions, and rewrite fields are
+  not included in the free DTO.
+- Focused rule/file/privacy tests, focused ESLint, `git diff --check`, Next
+  route type generation, and a production build pass. The build logs expected
+  Better Auth adapter initialization warnings because this clean worktree has
+  no local `DATABASE_URL`; it still exits 0 and emits the new static intake,
+  dynamic result, and API routes. Bare `tsc` is now limited to the single
+  pre-existing P0+ unsafe-field fixture error after route type generation.
+- Revenue remains **$0**. No payment, Preview data, external release, or
+  production resource has been touched in this slice.
+
 ## In progress: Supplier Guided / Expert submission P0 retest — blocked by separate signup OTP P0
 
 - Implemented the Supplier submission surface without changing the Guided

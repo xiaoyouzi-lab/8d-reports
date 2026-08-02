@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { analyticsEvents, subscriptions, plans, users, reportPurchases, teamMembers, teamWorkspaces } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getConfiguredProductId, getPlanFromName, isCheckoutType, type CheckoutType } from "@/lib/plans";
+import { handleRejectionReviewCreemEvent } from "@/lib/rejection-review/payment";
+import { verifyCreemWebhookSignature } from "@/lib/rejection-review/webhook-policy";
 
 export const runtime = "nodejs";
 
@@ -43,29 +45,6 @@ function isObject(value: unknown): value is JsonObject {
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-function verifyCreemSignature(payload: string, signature: string | null) {
-  const secret = process.env.CREEM_WEBHOOK_SECRET;
-  if (!secret) return false;
-  if (!signature) return false;
-
-  const expected = createHmac("sha256", secret).update(payload).digest("hex");
-  const candidates = signature
-    .split(",")
-    .map((part) => part.trim().replace(/^sha256=/i, ""))
-    .filter(Boolean);
-
-  return candidates.some((candidate) => {
-    try {
-      const expectedBuffer = Buffer.from(expected, "hex");
-      const candidateBuffer = Buffer.from(candidate, "hex");
-      return expectedBuffer.length === candidateBuffer.length
-        && timingSafeEqual(expectedBuffer, candidateBuffer);
-    } catch {
-      return false;
-    }
-  });
 }
 
 function getMetadataUserId(event: CreemPayload, sub?: CreemPayload) {
@@ -242,12 +221,19 @@ async function ensureTeamWorkspace(userId: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const contentLength = Number(req.headers.get("content-length") || "0");
+  if (Number.isFinite(contentLength) && contentLength > 256_000) {
+    return NextResponse.json({ error: "Webhook body too large" }, { status: 413 });
+  }
   const body = await req.text();
+  if (Buffer.byteLength(body, "utf8") > 256_000) {
+    return NextResponse.json({ error: "Webhook body too large" }, { status: 413 });
+  }
   const signature = req.headers.get("creem-signature")
     || req.headers.get("x-creem-signature")
     || req.headers.get("webhook-signature");
 
-  if (!verifyCreemSignature(body, signature)) {
+  if (!verifyCreemWebhookSignature(body, signature)) {
     return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
   }
 
@@ -261,6 +247,9 @@ export async function POST(req: NextRequest) {
   const eventType = event.eventType || event.type || event.event;
 
   try {
+    if (await handleRejectionReviewCreemEvent(event)) {
+      return NextResponse.json({ received: true });
+    }
     const sub = getSubscriptionPayload(event);
     const subscriptionId = asString(sub?.id) || asString(event.subscription_id) || asString(event.id);
     const status = asString(sub?.status) || asString(event.status) || "active";
@@ -385,9 +374,9 @@ export async function POST(req: NextRequest) {
           .where(eq(subscriptions.creemSubscriptionId, subscriptionId));
       }
     }
-  } catch (err) {
+  } catch {
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Webhook processing failed" },
+      { error: "Webhook processing failed" },
       { status: 500 }
     );
   }

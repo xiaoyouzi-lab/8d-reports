@@ -2,6 +2,20 @@
 
 Use this checklist before considering a task complete. Mark items as pass, fail, blocked, or not applicable.
 
+## Active Concierge Revenue Gate
+
+- Product or code completion is not revenue success.
+- A qualifying order must be production-mode, paid by an external non-friend,
+  manually classified as qualified, delivered, viewed or downloaded, and not
+  refunded or disputed.
+- Owner, test, friend-support, simulated, and incomplete-delivery payments are
+  reported separately and count as zero qualified revenue.
+- Before purchase evidence, development stays within intake, privacy, sample,
+  free preview, checkout, idempotency, order/task binding, delivery, refund,
+  funnel, and revenue reporting.
+- Automated findings or rewrites never bypass internal human review for the
+  paid 24-hour Deep Review.
+
 ## Product
 
 - The change supports the 8D Reports product direction.
