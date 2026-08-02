@@ -58,6 +58,24 @@
   `tasks=0`, `orders=0`, `revocations=0`, and `events=0`; the local Node HTTP
   database client could not finish the same live report because its fetch path
   failed, so that CLI still requires deployed-Preview verification.
+- Pushed commit `82e5ad7` and opened Draft PR #38 against
+  `codex/rc2-preview-hardening`. Vercel completed the matching Preview at
+  `https://8d-reports-1ribmf9en-xiaoyouzi-labs-projects.vercel.app`; the PR's
+  Vercel check passed. This branch did not trigger a GitHub Actions run under
+  the repository's current workflow filters.
+- Ran the real protected Preview in Chromium using a temporary automation
+  bypass header. English and Chinese landing pages, the synthetic free/paid
+  sample, anonymous pasted-text intake, DOCX upload/extraction, limited free
+  results, the USD 99 offer, and the token-free generic sign-in callback all
+  rendered without a framework error overlay. Vercel's runtime-error query
+  returned no errors for the tested routes.
+- Before cleanup, the isolated funnel contained 7 test events: 1 landing, 2
+  upload starts, 2 upload completions, and 2 free-result views. The paste and
+  DOCX completion durations were 399 ms and 290 ms. There were zero checkout
+  starts, orders, payments, or revenue. All test review rows were then deleted,
+  the temporary DOCX was removed, the browser was closed, and the temporary
+  Vercel automation bypass was revoked. Post-cleanup counts are zero across
+  tasks, orders, entitlements, revocations, and funnel events.
 - Dedicated Creem test credentials, an active USD 99 test Product ID, and the
   corresponding test webhook secret are not present. No real Provider checkout
   or browser payment has been claimed. Revenue remains **USD 0**.
