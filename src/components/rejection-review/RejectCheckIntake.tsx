@@ -34,7 +34,9 @@ async function sendReviewEvent(eventName: string, extra: Record<string, unknown>
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         eventName,
-        eventId: crypto.randomUUID(),
+        eventId: eventName === "qualified_landing_view"
+          ? `qualified-${anonymousSessionId()}`
+          : crypto.randomUUID(),
         anonymousSessionId: anonymousSessionId(),
         trafficSource: trafficSource(),
         locale: "en",
@@ -61,7 +63,7 @@ const copy = {
     failed: "The free review could not be generated.",
     loading: "Checking submission risk…",
     submit: "Check my report free",
-    price: "Complete Rejection Risk Review is $39 per report. No subscription required.",
+    price: "24-hour Deep Review is $99 per report. One-time purchase, no subscription.",
   },
   "zh-CN": {
     title: "免费检查客户退回风险",
@@ -76,7 +78,7 @@ const copy = {
     failed: "暂时无法生成免费审查，请重试。",
     loading: "正在检查提交风险…",
     submit: "免费检查我的报告",
-    price: "完整拒绝风险审查每份 39 美元，一次购买，不要求订阅。",
+    price: "24 小时深度审查每份 99 美元，一次购买，不要求订阅。",
   },
 } as const
 
@@ -90,7 +92,7 @@ export function RejectCheckIntake({ locale = "en" }: { locale?: keyof typeof cop
   const startedRef = useRef(false)
 
   useEffect(() => {
-    void sendReviewEvent("review_landing_view", { locale })
+    void sendReviewEvent("qualified_landing_view", { locale })
   }, [locale])
 
   const markStarted = () => {

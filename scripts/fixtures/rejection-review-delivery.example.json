@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "concierge-review-delivery-v1",
+  "review": {
+    "schemaVersion": "rejection-risk-review-v1",
+    "status": "high_risk",
+    "topRejectionRisks": [
+      {
+        "id": "root-cause-human-blame",
+        "section": "D4",
+        "severity": "high",
+        "category": "root_cause",
+        "title": "Root cause stops at employee negligence",
+        "explanation": "The supplied text names a person-level cause but does not identify the process condition or control failure that allowed the event.",
+        "evidenceStatus": "needs_confirmation",
+        "source": {
+          "type": "report_excerpt",
+          "section": "D4",
+          "excerpt": "Occurrence cause: employee negligence during assembly.",
+          "ruleId": "root-cause-human-blame"
+        },
+        "factsNeeded": [
+          "The process condition that made the error possible",
+          "Objective evidence supporting the occurrence cause"
+        ],
+        "likelyCustomerQuestion": "What system or process condition allowed the operator error to occur?"
+      }
+    ],
+    "findings": [
+      {
+        "id": "root-cause-human-blame",
+        "section": "D4",
+        "severity": "high",
+        "category": "root_cause",
+        "title": "Root cause stops at employee negligence",
+        "explanation": "The supplied text names a person-level cause but does not identify the process condition or control failure that allowed the event.",
+        "evidenceStatus": "needs_confirmation",
+        "source": {
+          "type": "report_excerpt",
+          "section": "D4",
+          "excerpt": "Occurrence cause: employee negligence during assembly.",
+          "ruleId": "root-cause-human-blame"
+        },
+        "factsNeeded": [
+          "The process condition that made the error possible",
+          "Objective evidence supporting the occurrence cause"
+        ],
+        "likelyCustomerQuestion": "What system or process condition allowed the operator error to occur?"
+      }
+    ],
+    "sections": [
+      {
+        "section": "D4",
+        "status": "risk_found",
+        "findingIds": [
+          "root-cause-human-blame"
+        ]
+      }
+    ],
+    "missingInformationCategories": [
+      "root_cause_evidence"
+    ],
+    "evidencePolicy": {
+      "inventedFactsAllowed": false,
+      "sourceRequiredForEveryFinding": true
+    },
+    "disclaimer": "This pre-submission review identifies risks in the supplied material. It does not guarantee customer acceptance, certify compliance, confirm root cause, or prove corrective-action effectiveness."
+  },
+  "rewrites": [
+    {
+      "section": "D2",
+      "sourceExcerpt": "Customer found 12 loose connectors in 600 units from lot L2408. Required pull force is at least 40 N; measured values were 18–26 N.",
+      "suggestedEnglish": "Customer inspection identified 12 loose connectors among 600 units from lot L2408. The required pull force is at least 40 N; recorded values were 18–26 N.",
+      "requiredPlaceholders": []
+    }
+  ],
+  "reviewerNotes": "Example only. Replace every finding and rewrite with the human-reviewed result for the paid task.",
+  "reviewerAttestation": "I verified that every claim and rewrite is grounded in the supplied report or marked as missing.",
+  "reviewedAt": "2026-08-02T00:00:00.000Z"
+}

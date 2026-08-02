@@ -16,7 +16,6 @@ export function ReviewViewTracker({ taskToken }: { taskToken: string }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         eventName: "review_free_result_viewed",
-        eventId: `free-${taskToken.slice(0, 24)}`,
         anonymousSessionId: sessionId,
         taskToken,
         locale: "en",

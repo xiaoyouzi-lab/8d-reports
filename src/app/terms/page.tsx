@@ -20,8 +20,8 @@ export default function TermsPage() {
           <h2>2. Service Description</h2>
           <p>8D Reports includes an existing report editor and 8D Reject Check, a pre-submission risk review for supplied 8D, SCAR, or corrective-action responses. The Service is provided &ldquo;as is&rdquo; without warranties.</p>
 
-          <h2>3. Complete Rejection Risk Review</h2>
-          <p>The default one-time price is $39 for one review task. It unlocks the complete analysis, modification advice, supported English rewrites, and download package for that task. A purchase does not create a subscription and does not unlock another task.</p>
+          <h2>3. 24-hour Deep Review</h2>
+          <p>The current Concierge pilot price is $99 for one review task. Automated initial checks are reviewed by a person before the result is released, normally within 24 hours of confirmed payment. Delivery includes the reviewed analysis, modification advice, fact-supported English rewrites, and a DOCX package for that task. A purchase does not create a subscription and does not unlock another task.</p>
           <p>The review identifies likely rejection risks from the material you supplied. It does not guarantee customer acceptance, certify compliance, confirm root cause, prove implementation or effectiveness, or replace qualified professional judgment. You must verify all facts and placeholders before submitting anything to a customer.</p>
           
           <h2>4. Existing Free, Pro, and Team Plans</h2>
@@ -31,7 +31,7 @@ export default function TermsPage() {
           <p>You are responsible for the accuracy of report data you enter. You must not use the Service for illegal purposes. You retain all ownership rights to your report data.</p>
           
           <h2>6. Payment and Refunds</h2>
-          <p>Payment is completed through the checkout provider. Failed, cancelled, refunded, reversed, or disputed transactions do not retain paid access. The <Link href="/refund-policy">Refund Policy</Link> is incorporated into these terms.</p>
+          <p>Payment is completed through the checkout provider. Payment alone records the order but does not expose an unreviewed draft; access begins when the reviewed package is marked delivered. Failed, cancelled, refunded, reversed, or disputed transactions do not retain paid access. The <Link href="/refund-policy">Refund Policy</Link> is incorporated into these terms.</p>
 
           <h2>7. Limitation of Liability</h2>
           <p>8D Reports shall not be liable for any indirect, incidental, or consequential damages arising from the use of the Service.</p>

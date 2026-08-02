@@ -5,6 +5,7 @@ import { classifyReviewActor } from "@/lib/rejection-review/event-policy";
 import { extractReviewSubmission, REJECTION_REVIEW_MAX_FILE_BYTES, RejectionReviewInputError } from "@/lib/rejection-review/files";
 import { hashReviewSession, recordRejectionReviewEvent } from "@/lib/rejection-review/funnel";
 import { createRejectionReviewTask, enforceRejectionReviewRateLimit, RejectionReviewRateLimitError } from "@/lib/rejection-review/service";
+import { getRejectionReviewProviderMode } from "@/lib/rejection-review/payment-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export async function POST(req: NextRequest) {
   }
   const startedAt = new Date();
   let anonymousSessionId = "";
+  let anonymousSessionHash = "";
   let trafficSource: unknown = "direct";
   let pastedText: unknown;
   let file: unknown;
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
       pastedText = body.reportText;
     }
     const ip = getForwardedIp(req.headers);
-    const anonymousSessionHash = hashReviewSession(
+    anonymousSessionHash = hashReviewSession(
       anonymousSessionId.length >= 16 ? `browser:${anonymousSessionId}` : `ip:${ip}`,
     );
     const submission = await extractReviewSubmission({ pastedText, file });
@@ -45,39 +47,43 @@ export async function POST(req: NextRequest) {
       trafficSource,
       userId: user?.id || null,
     });
-    const actorKind = user ? classifyReviewActor({ email: user.email }) : "anonymous";
-    await Promise.all([
-      recordRejectionReviewEvent({
-        eventName: "review_upload_completed",
-        anonymousSessionHash,
-        actorKind,
-        trafficSource: created.task.trafficSource,
-        userId: user?.id || null,
-        taskId: created.task.id,
-        metadata: { sourceType: submission.sourceType },
-        durationMs: analysisStartedAt.getTime() - startedAt.getTime(),
-        dedupeKey: `review_upload_completed:${created.task.id}`,
-        createdAt: analysisStartedAt,
-      }),
-      recordRejectionReviewEvent({
-        eventName: "review_analysis_started",
-        anonymousSessionHash,
-        actorKind,
-        trafficSource: created.task.trafficSource,
-        userId: user?.id || null,
-        taskId: created.task.id,
-        metadata: { sourceType: submission.sourceType, resultStatus: created.freeResult.status },
-        durationMs: Date.now() - analysisStartedAt.getTime(),
-        dedupeKey: `review_analysis_started:${created.task.id}`,
-        createdAt: analysisStartedAt,
-      }),
-    ]);
+    const actorKind = user
+      ? classifyReviewActor({ email: user.email, providerMode: getRejectionReviewProviderMode() })
+      : "anonymous";
+    await recordRejectionReviewEvent({
+      eventName: "review_upload_completed",
+      anonymousSessionHash,
+      actorKind,
+      trafficSource: created.task.trafficSource,
+      userId: user?.id || null,
+      taskId: created.task.id,
+      metadata: { sourceType: submission.sourceType, resultStatus: created.freeResult.status },
+      durationMs: Date.now() - startedAt.getTime(),
+      dedupeKey: `review_upload_completed:${created.task.id}`,
+      createdAt: analysisStartedAt,
+    });
     return NextResponse.json({
       token: created.token,
       redirectPath: `/8d-report-review-service/review/${encodeURIComponent(created.token)}`,
       expiresAt: created.task.expiresAt.toISOString(),
     }, { status: 201 });
   } catch (error) {
+    const failureType = error instanceof RejectionReviewInputError
+      ? error.code
+      : error instanceof RejectionReviewRateLimitError
+        ? "rate_limited"
+        : "review_creation_failed";
+    if (anonymousSessionHash) {
+      await recordRejectionReviewEvent({
+        eventName: "review_upload_started",
+        anonymousSessionHash,
+        actorKind: "anonymous",
+        trafficSource,
+        failureType,
+        durationMs: Date.now() - startedAt.getTime(),
+        dedupeKey: `review_upload_started:${anonymousSessionHash}:failure:${failureType}:${Date.now()}`,
+      });
+    }
     if (error instanceof RejectionReviewInputError) {
       return NextResponse.json({ error: error.message, code: error.code }, {
         status: error.code === "file_too_large" || error.code === "input_too_long" || error.code === "extracted_text_too_large" ? 413 : 400,

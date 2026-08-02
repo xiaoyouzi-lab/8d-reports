@@ -1,9 +1,10 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { AlertTriangle, ArrowLeft, CheckCircle2, LockKeyhole } from "lucide-react"
+import { AlertTriangle, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { ReviewViewTracker } from "@/components/rejection-review/ReviewViewTracker"
-import { buttonVariants } from "@/components/ui/button"
+import { ReviewPurchasePanel } from "@/components/rejection-review/ReviewPurchasePanel"
+import { getSessionUser } from "@/lib/api-helpers"
 import { getRejectionReviewTaskByToken } from "@/lib/rejection-review/service"
 import { cn } from "@/lib/utils"
 
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic"
 export const metadata: Metadata = {
   title: "Free 8D Rejection Risk Result",
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 }
 
 const statusCopy = {
@@ -30,11 +32,10 @@ const statusCopy = {
 
 export default async function FreeReviewResultPage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params
-  const task = await getRejectionReviewTaskByToken(token)
+  const [task, user] = await Promise.all([getRejectionReviewTaskByToken(token), getSessionUser()])
   if (!task) notFound()
   const preview = task.freeResultJson
   const status = statusCopy[preview.status]
-  const callbackPath = `/8d-report-review-service/review/${encodeURIComponent(token)}`
 
   return (
     <main className="min-h-screen bg-slate-50 py-10 sm:py-16">
@@ -101,28 +102,7 @@ export default async function FreeReviewResultPage({ params }: { params: Promise
           </section>
         </div>
 
-        <section className="mt-6 rounded-2xl bg-slate-950 p-6 text-white sm:p-8">
-          <div className="flex items-start gap-4">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/10">
-              <LockKeyhole className="size-5" aria-hidden="true" />
-            </span>
-            <div className="flex-1">
-              <h2 className="text-2xl font-semibold">Complete Rejection Risk Review — $39</h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
-                Unlock section-by-section findings, facts to add, likely customer questions, evidence gaps, customer-readable English rewrites, and a downloadable pre-submission review package.
-              </p>
-              <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Link
-                  href={`/login?callbackUrl=${encodeURIComponent(callbackPath)}`}
-                  className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-950 hover:bg-slate-100")}
-                >
-                  Sign in to unlock the complete review
-                </Link>
-                <span className="text-xs text-slate-400">One report · one-time purchase · no subscription</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        <ReviewPurchasePanel token={token} signedIn={Boolean(user)} />
         <p className="mx-auto mt-5 max-w-3xl text-center text-xs leading-5 text-slate-500">{preview.disclaimer}</p>
       </div>
     </main>

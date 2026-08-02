@@ -59,6 +59,22 @@ export interface RejectionRiskReview {
   disclaimer: string;
 }
 
+export interface CustomerReadableRewrite {
+  section: ReviewSection;
+  sourceExcerpt: string;
+  suggestedEnglish: string;
+  requiredPlaceholders: string[];
+}
+
+export interface ConciergeReviewDeliverable {
+  schemaVersion: "concierge-review-delivery-v1";
+  review: RejectionRiskReview;
+  rewrites: CustomerReadableRewrite[];
+  reviewerNotes: string;
+  reviewerAttestation: "I verified that every claim and rewrite is grounded in the supplied report or marked as missing.";
+  reviewedAt: string;
+}
+
 export interface FreeRejectionRiskPreview {
   schemaVersion: "rejection-risk-free-preview-v1";
   status: ReviewStatus;
@@ -101,4 +117,62 @@ export function toFreeRejectionRiskPreview(review: RejectionRiskReview): FreeRej
     },
     disclaimer: review.disclaimer,
   };
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function boundedString(value: unknown, max: number) {
+  return typeof value === "string" && value.trim().length > 0 && value.length <= max;
+}
+
+function isFinding(value: unknown): value is RejectionRiskFinding {
+  if (!isObject(value) || !REVIEW_SECTIONS.includes(value.section as ReviewSection)) return false;
+  if (!["critical", "high", "medium", "low"].includes(String(value.severity))) return false;
+  if (!["problem_definition", "containment", "root_cause", "corrective_action", "verification", "prevention", "evidence_gap", "wording"].includes(String(value.category))) return false;
+  if (!["stated", "missing", "needs_confirmation"].includes(String(value.evidenceStatus))) return false;
+  if (!boundedString(value.id, 120) || !boundedString(value.title, 500) || !boundedString(value.explanation, 4_000)) return false;
+  if (!boundedString(value.likelyCustomerQuestion, 2_000) || !Array.isArray(value.factsNeeded)) return false;
+  if (!value.factsNeeded.every((item) => boundedString(item, 1_000))) return false;
+  if (!isObject(value.source) || !boundedString(value.source.ruleId, 120)) return false;
+  if (!["report_excerpt", "missing_information", "deterministic_rule"].includes(String(value.source.type))) return false;
+  if (!REVIEW_SECTIONS.includes(value.source.section as ReviewSection)) return false;
+  if (value.source.excerpt !== undefined && typeof value.source.excerpt !== "string") return false;
+  if (value.source.type === "report_excerpt" && !boundedString(value.source.excerpt, 4_000)) return false;
+  return true;
+}
+
+function isReview(value: unknown): value is RejectionRiskReview {
+  if (!isObject(value) || value.schemaVersion !== "rejection-risk-review-v1") return false;
+  if (!REVIEW_STATUSES.includes(value.status as ReviewStatus)) return false;
+  if (!Array.isArray(value.findings) || !value.findings.every(isFinding)) return false;
+  if (!Array.isArray(value.topRejectionRisks) || !value.topRejectionRisks.every(isFinding)) return false;
+  if (!Array.isArray(value.sections) || !value.sections.every((section) => (
+    isObject(section)
+    && REVIEW_SECTIONS.includes(section.section as ReviewSection)
+    && ["no_material_issue_detected", "risk_found", "not_enough_information"].includes(String(section.status))
+    && Array.isArray(section.findingIds)
+    && section.findingIds.every((item) => boundedString(item, 120))
+  ))) return false;
+  if (!Array.isArray(value.missingInformationCategories)
+    || !value.missingInformationCategories.every((item) => boundedString(item, 200))) return false;
+  if (!isObject(value.evidencePolicy)) return false;
+  if (value.evidencePolicy.inventedFactsAllowed !== false || value.evidencePolicy.sourceRequiredForEveryFinding !== true) return false;
+  return boundedString(value.disclaimer, 4_000);
+}
+
+export function parseConciergeReviewDeliverable(value: unknown): ConciergeReviewDeliverable | null {
+  if (!isObject(value) || value.schemaVersion !== "concierge-review-delivery-v1") return null;
+  if (!isReview(value.review) || !Array.isArray(value.rewrites) || value.rewrites.length > 60) return null;
+  const rewritesValid = value.rewrites.every((rewrite) => {
+    if (!isObject(rewrite) || !REVIEW_SECTIONS.includes(rewrite.section as ReviewSection)) return false;
+    if (!boundedString(rewrite.sourceExcerpt, 4_000) || !boundedString(rewrite.suggestedEnglish, 6_000)) return false;
+    return Array.isArray(rewrite.requiredPlaceholders)
+      && rewrite.requiredPlaceholders.every((item) => boundedString(item, 500));
+  });
+  if (!rewritesValid || typeof value.reviewerNotes !== "string" || value.reviewerNotes.length > 6_000) return null;
+  if (value.reviewerAttestation !== "I verified that every claim and rewrite is grounded in the supplied report or marked as missing.") return null;
+  if (typeof value.reviewedAt !== "string" || !Number.isFinite(Date.parse(value.reviewedAt))) return null;
+  return value as unknown as ConciergeReviewDeliverable;
 }

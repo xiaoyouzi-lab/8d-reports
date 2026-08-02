@@ -1,5 +1,19 @@
 # Product Context
 
+## Active 30-day Validation Direction (Supersedes Roadmap Priority)
+
+The immediate product path is **8D Reject Check**, a Concierge pre-submission
+review for users who already have an 8D, SCAR, or corrective-action response.
+The promise is to identify why the report may be returned before the customer
+returns it. Existing editor, Pro, Team, and SEO surfaces remain available but
+are not the primary landing or development path and must not delay a paid,
+delivered validation order.
+
+Until a real external purchase proves otherwise, do not expand Supplier Portal,
+generic QMS scope, roles, workflow states, PDF parsing, AI automation, mobile,
+templates, subscriptions, or unrelated UI. See `docs/CURRENT_TASK.md` for the
+active offer and revenue qualification boundary.
+
 ## Product
 
 8D Reports is a SaaS product for creating, reviewing, managing, and exporting structured 8D quality reports. It serves manufacturing quality teams that need customer-ready corrective action documentation without relying on scattered Word, Excel, email, and attachment folders.

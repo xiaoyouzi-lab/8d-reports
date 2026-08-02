@@ -1,5 +1,67 @@
 # Development Log
 
+## In progress: Concierge-first 8D Reject Check sales path
+
+- Superseded the automation-first scope without deleting existing work. The
+  unintegrated AI overlay draft is preserved in Git stash
+  `paused reject-check AI overlay draft`; PDF parsing, larger rules expansion,
+  Supplier Portal, QMS, and unrelated UI work remain paused.
+- Ran live competitor PoCs with synthetic data. Sigma Exacta generated a real
+  report from the shared flawed case but only reflected the weak content and
+  did not flag the tested rejection risks. 8DReport rejected the submitted
+  trial because new trials are unavailable; 8D Pack stopped at Cloudflare
+  Turnstile; Vantage signup returned HTTP 429 and still requires mailbox
+  verification. Blocked tools are recorded as not verified, not as inferior.
+- Selected only the USD 99, 24-hour Deep Review for the first safe checkout.
+  The USD 39 automated paid scan is paused because current evidence does not
+  differentiate it from 8D Pack's advertised USD 2.99 report/lint offer.
+- Added a working result-page purchase control, Preview-forced Creem test mode,
+  dedicated Reject Check test/production credential names, stable request IDs,
+  exact task/order/user/product/mode/currency/amount metadata validation,
+  anonymous-task claiming after login, and one-active-order-per-task behavior.
+  Payment activates one entitlement but never exposes an unreviewed result.
+- Added refund/dispute revocation, repeat-purchase detection, a strict
+  human-delivery schema, an atomic paid-and-active delivery command, delivered
+  result rendering, and authenticated DOCX download. The public wording says
+  automated initial checks plus internal human review; it does not claim an
+  external expert, full automation, customer acceptance, confirmed root cause,
+  or proven effectiveness.
+- Replaced the old funnel vocabulary with the ten Concierge events, preserved
+  only allowlisted metadata, and added a reproducible revenue report. Actual
+  provider payments and qualified real revenue are separate. A production
+  external payment still requires manual non-friend qualification, completed
+  delivery, customer view/download, and no refund before it counts.
+- Added a synthetic free/paid result sample, updated the English and Chinese
+  landing pages, and updated privacy, terms, and refund wording for the
+  24-hour delivery boundary.
+- Closed the security audit's P1/P2 findings: sensitive review tokens are no
+  longer sent to the payment provider, sign-in callback, GA, Vercel Analytics,
+  or funnel dedupe keys; out-of-order refund/dispute events are persisted in a
+  revocation ledger and checked before a later checkout can grant access;
+  Preview and production webhook secrets are isolated; partial-refund totals
+  use an atomic maximum; the webhook body has a 256 KB limit; and the checkout
+  verifies the real provider SKU is active, one-time, USD 99, and in the
+  expected mode before opening it.
+- Checks passed: deterministic acceptance cases, TXT/DOCX extraction, funnel
+  privacy, DOCX generation, three payment suites, revenue-report tests,
+  sensitive-route analytics tests, focused ESLint, `git diff --check`, and a
+  production Next build. Bare `tsc` remains blocked only by the pre-existing
+  `p0-plus.test.ts:110` fixture error.
+- Applied and verified migrations `0014` and `0015` on the isolated Neon branch
+  `br-curly-breeze-af4rv1u5`; it contains zero review tasks, orders,
+  revocations, or funnel events. Created the remote candidate branch at the
+  audited RC2 baseline and bound only its Vercel Preview `DATABASE_URL` to this
+  isolated database. The first binding attempt contained a truncated value;
+  it was replaced before deployment, and the isolated database was then
+  reached successfully with direct SQL. Production Neon remains unchanged.
+- The revenue-report test suite passes. A live direct SQL count confirms
+  `tasks=0`, `orders=0`, `revocations=0`, and `events=0`; the local Node HTTP
+  database client could not finish the same live report because its fetch path
+  failed, so that CLI still requires deployed-Preview verification.
+- Dedicated Creem test credentials, an active USD 99 test Product ID, and the
+  corresponding test webhook secret are not present. No real Provider checkout
+  or browser payment has been claimed. Revenue remains **USD 0**.
+
 ## In progress: 8D Reject Check revenue validation
 
 - Created `codex/8d-reject-check` from remote RC2 commit `dc613fa` in a clean,

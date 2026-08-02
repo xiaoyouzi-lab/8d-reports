@@ -307,6 +307,7 @@ export const rejectionReviewTasks = pgTable("rejection_review_tasks", {
   status: text("status").notNull().default("free_ready"),
   freeResultJson: jsonb("free_result_json").notNull(),
   fullResultJson: jsonb("full_result_json").notNull(),
+  deliveryResultJson: jsonb("delivery_result_json"),
   aiPolicyOutcome: text("ai_policy_outcome").notNull().default("rules_only"),
   analysisFailureCode: text("analysis_failure_code"),
   expiresAt: timestamp("expires_at").notNull(),
@@ -329,11 +330,12 @@ export const rejectionReviewOrders = pgTable("rejection_review_orders", {
   providerOrderId: text("provider_order_id").unique(),
   providerTransactionId: text("provider_transaction_id").unique(),
   providerProductId: text("provider_product_id"),
+  priceVariant: text("price_variant").notNull().default("deep_review"),
   providerMode: text("provider_mode").notNull().default("test"),
   checkoutUrl: text("checkout_url"),
   status: text("status").notNull().default("pending"),
   customerKind: text("customer_kind").notNull().default("unknown"),
-  expectedAmountCents: integer("expected_amount_cents").notNull().default(3900),
+  expectedAmountCents: integer("expected_amount_cents").notNull().default(9900),
   paidAmountCents: integer("paid_amount_cents").notNull().default(0),
   refundedAmountCents: integer("refunded_amount_cents").notNull().default(0),
   currency: text("currency").notNull().default("USD"),
@@ -354,7 +356,9 @@ export const rejectionReviewOrders = pgTable("rejection_review_orders", {
     .where(sql`${table.status} in ('pending', 'processing', 'paid')`),
   check("chk_rejection_review_orders_status", sql`${table.status} in ('pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded', 'disputed')`),
   check("chk_rejection_review_orders_provider_mode", sql`${table.providerMode} in ('test', 'production')`),
+  check("chk_rejection_review_orders_price_variant", sql`${table.priceVariant} in ('instant_scan', 'deep_review')`),
   check("chk_rejection_review_orders_customer_kind", sql`${table.customerKind} in ('unknown', 'owner', 'test', 'external')`),
+  check("chk_rejection_review_orders_qualification_status", sql`${table.qualificationStatus} in ('unverified', 'qualified', 'excluded_owner', 'excluded_test', 'excluded_friend', 'excluded_refund', 'excluded_dispute', 'excluded_incomplete_delivery')`),
   check("chk_rejection_review_orders_currency", sql`${table.currency} = 'USD'`),
   check("chk_rejection_review_orders_amounts", sql`${table.expectedAmountCents} >= 0 and ${table.paidAmountCents} >= 0 and ${table.refundedAmountCents} >= 0`),
 ]);
@@ -373,6 +377,29 @@ export const rejectionReviewEntitlements = pgTable("rejection_review_entitlement
 }, (table) => [
   index("idx_rejection_review_entitlements_user_status").on(table.userId, table.status),
   check("chk_rejection_review_entitlements_status", sql`${table.status} in ('pending', 'active', 'revoked')`),
+]);
+
+export const rejectionReviewRevocations = pgTable("rejection_review_revocations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  providerEventId: text("provider_event_id").notNull().unique(),
+  kind: text("kind").notNull(),
+  providerObjectId: text("provider_object_id").notNull(),
+  providerTransactionId: text("provider_transaction_id").notNull(),
+  providerOrderId: text("provider_order_id"),
+  providerRequestId: text("provider_request_id"),
+  providerProductId: text("provider_product_id"),
+  amountCents: integer("amount_cents"),
+  currency: text("currency"),
+  reason: text("reason"),
+  matchedOrderId: uuid("matched_order_id").references(() => rejectionReviewOrders.id, { onDelete: "set null" }),
+  processedAt: timestamp("processed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_rejection_review_revocations_transaction").on(table.providerTransactionId),
+  index("idx_rejection_review_revocations_order").on(table.providerOrderId),
+  index("idx_rejection_review_revocations_request").on(table.providerRequestId),
+  index("idx_rejection_review_revocations_pending").on(table.processedAt),
+  check("chk_rejection_review_revocations_kind", sql`${table.kind} in ('refund', 'dispute')`),
 ]);
 
 export const rejectionReviewFunnelEvents = pgTable("rejection_review_funnel_events", {
@@ -394,7 +421,7 @@ export const rejectionReviewFunnelEvents = pgTable("rejection_review_funnel_even
   index("idx_rejection_review_funnel_actor_created").on(table.actorKind, table.createdAt.desc()),
   index("idx_rejection_review_funnel_session_created").on(table.anonymousSessionHash, table.createdAt),
   check("chk_rejection_review_funnel_actor_kind", sql`${table.actorKind} in ('anonymous', 'unknown', 'owner', 'test', 'external')`),
-  check("chk_rejection_review_funnel_event_name", sql`${table.eventName} in ('review_landing_view', 'review_upload_started', 'review_upload_completed', 'review_analysis_started', 'review_free_result_viewed', 'review_checkout_started', 'review_purchase_completed', 'review_full_result_viewed', 'review_export_downloaded', 'review_refund_requested')`),
+  check("chk_rejection_review_funnel_event_name", sql`${table.eventName} in ('qualified_landing_view', 'review_upload_started', 'review_upload_completed', 'review_free_result_viewed', 'review_checkout_started', 'review_purchase_completed', 'review_full_result_viewed', 'review_delivered', 'review_refund_requested', 'review_repeat_purchase')`),
 ]);
 
 export const p0PlusPreviews = pgTable("p0_plus_previews", {

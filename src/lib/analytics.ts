@@ -1,6 +1,7 @@
 "use client"
 
 import { getGa4EventName } from "@/lib/analytics-taxonomy";
+import { isSensitiveAnalyticsPath } from "@/lib/sensitive-analytics";
 
 type EventMetadata = Record<string, unknown>;
 type AnalyticsPlan = "free" | "pro" | "team";
@@ -54,6 +55,7 @@ export function trackEvent(
   reportId?: string,
 ) {
   if (typeof window === "undefined") return;
+  if (isSensitiveAnalyticsPath(window.location.pathname)) return;
 
   const enrichedMetadata = marketingContext(metadata);
 

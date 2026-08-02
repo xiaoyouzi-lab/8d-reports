@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS "rejection_review_tasks" (
   "status" text NOT NULL DEFAULT 'free_ready' CHECK ("status" IN ('free_ready', 'full_ready', 'analysis_failed')),
   "free_result_json" jsonb NOT NULL,
   "full_result_json" jsonb NOT NULL,
+  "delivery_result_json" jsonb,
   "ai_policy_outcome" text NOT NULL DEFAULT 'rules_only',
   "analysis_failure_code" text,
   "expires_at" timestamp NOT NULL,
@@ -31,16 +32,17 @@ CREATE TABLE IF NOT EXISTS "rejection_review_orders" (
   "provider_order_id" text UNIQUE,
   "provider_transaction_id" text UNIQUE,
   "provider_product_id" text,
+  "price_variant" text NOT NULL DEFAULT 'deep_review' CHECK ("price_variant" IN ('instant_scan', 'deep_review')),
   "provider_mode" text NOT NULL DEFAULT 'test' CHECK ("provider_mode" IN ('test', 'production')),
   "checkout_url" text,
   "status" text NOT NULL DEFAULT 'pending' CHECK ("status" IN ('pending', 'processing', 'paid', 'failed', 'cancelled', 'refunded', 'disputed')),
   "customer_kind" text NOT NULL DEFAULT 'unknown' CHECK ("customer_kind" IN ('unknown', 'owner', 'test', 'external')),
-  "expected_amount_cents" integer NOT NULL DEFAULT 3900 CHECK ("expected_amount_cents" >= 0),
+  "expected_amount_cents" integer NOT NULL DEFAULT 9900 CHECK ("expected_amount_cents" >= 0),
   "paid_amount_cents" integer NOT NULL DEFAULT 0 CHECK ("paid_amount_cents" >= 0),
   "refunded_amount_cents" integer NOT NULL DEFAULT 0 CHECK ("refunded_amount_cents" >= 0),
   "currency" text NOT NULL DEFAULT 'USD' CHECK ("currency" = 'USD'),
   "failure_type" text,
-  "qualification_status" text NOT NULL DEFAULT 'unverified',
+  "qualification_status" text NOT NULL DEFAULT 'unverified' CHECK ("qualification_status" IN ('unverified', 'qualified', 'excluded_owner', 'excluded_test', 'excluded_friend', 'excluded_refund', 'excluded_dispute', 'excluded_incomplete_delivery')),
   "qualification_reason" text,
   "deliverable_ready_at" timestamp,
   "full_result_viewed_at" timestamp,
@@ -82,7 +84,7 @@ CREATE TABLE IF NOT EXISTS "rejection_review_funnel_events" (
   "metadata" jsonb NOT NULL DEFAULT '{}'::jsonb,
   "dedupe_key" text UNIQUE,
   "created_at" timestamp NOT NULL DEFAULT now(),
-  CONSTRAINT "chk_rejection_review_funnel_event_name" CHECK ("event_name" IN ('review_landing_view', 'review_upload_started', 'review_upload_completed', 'review_analysis_started', 'review_free_result_viewed', 'review_checkout_started', 'review_purchase_completed', 'review_full_result_viewed', 'review_export_downloaded', 'review_refund_requested'))
+  CONSTRAINT "chk_rejection_review_funnel_event_name" CHECK ("event_name" IN ('qualified_landing_view', 'review_upload_started', 'review_upload_completed', 'review_free_result_viewed', 'review_checkout_started', 'review_purchase_completed', 'review_full_result_viewed', 'review_delivered', 'review_refund_requested', 'review_repeat_purchase'))
 );
 CREATE INDEX IF NOT EXISTS "idx_rejection_review_funnel_event_created" ON "rejection_review_funnel_events" ("event_name", "created_at" DESC);
 CREATE INDEX IF NOT EXISTS "idx_rejection_review_funnel_actor_created" ON "rejection_review_funnel_events" ("actor_kind", "created_at" DESC);

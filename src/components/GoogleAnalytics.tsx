@@ -1,9 +1,14 @@
+"use client";
+
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { isSensitiveAnalyticsPath } from "@/lib/sensitive-analytics";
 
 export function GoogleAnalytics() {
+  const pathname = usePathname();
   const measurementId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
-  if (!measurementId) return null;
+  if (!measurementId || isSensitiveAnalyticsPath(pathname)) return null;
 
   return (
     <>
@@ -18,7 +23,7 @@ export function GoogleAnalytics() {
           window.gtag = gtag;
           gtag('js', new Date());
           gtag('config', '${measurementId}', {
-            page_path: window.location.pathname
+            page_path: ${JSON.stringify(pathname)}
           });
         `}
       </Script>

@@ -4,7 +4,12 @@ import { and, count, eq, gt, gte } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { rejectionReviewTasks } from "@/lib/db/schema";
 import { runDeterministicRejectionReview } from "@/lib/rejection-review/rules";
-import { toFreeRejectionRiskPreview, type FreeRejectionRiskPreview, type RejectionRiskReview } from "@/lib/rejection-review/schema";
+import {
+  toFreeRejectionRiskPreview,
+  type ConciergeReviewDeliverable,
+  type FreeRejectionRiskPreview,
+  type RejectionRiskReview,
+} from "@/lib/rejection-review/schema";
 import { normalizeReviewTrafficSource } from "@/lib/rejection-review/event-policy";
 
 const REVIEW_TOKEN_TTL_MS = 30 * 24 * 60 * 60 * 1000;
@@ -87,6 +92,7 @@ export async function getRejectionReviewTaskByToken(token: string) {
     status: rejectionReviewTasks.status,
     freeResultJson: rejectionReviewTasks.freeResultJson,
     fullResultJson: rejectionReviewTasks.fullResultJson,
+    deliveryResultJson: rejectionReviewTasks.deliveryResultJson,
     expiresAt: rejectionReviewTasks.expiresAt,
     createdAt: rejectionReviewTasks.createdAt,
   }).from(rejectionReviewTasks).where(and(
@@ -98,5 +104,6 @@ export async function getRejectionReviewTaskByToken(token: string) {
     ...task,
     freeResultJson: task.freeResultJson as FreeRejectionRiskPreview,
     fullResultJson: task.fullResultJson as RejectionRiskReview,
+    deliveryResultJson: task.deliveryResultJson as ConciergeReviewDeliverable | null,
   };
 }

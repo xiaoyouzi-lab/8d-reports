@@ -1,14 +1,14 @@
 export const REJECTION_REVIEW_FUNNEL_EVENTS = [
-  "review_landing_view",
+  "qualified_landing_view",
   "review_upload_started",
   "review_upload_completed",
-  "review_analysis_started",
   "review_free_result_viewed",
   "review_checkout_started",
   "review_purchase_completed",
   "review_full_result_viewed",
-  "review_export_downloaded",
+  "review_delivered",
   "review_refund_requested",
+  "review_repeat_purchase",
 ] as const;
 
 export type RejectionReviewFunnelEvent = (typeof REJECTION_REVIEW_FUNNEL_EVENTS)[number];

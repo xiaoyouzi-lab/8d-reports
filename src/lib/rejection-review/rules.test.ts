@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { runDeterministicRejectionReview } from "@/lib/rejection-review/rules";
-import { toFreeRejectionRiskPreview } from "@/lib/rejection-review/schema";
+import { parseConciergeReviewDeliverable, toFreeRejectionRiskPreview } from "@/lib/rejection-review/schema";
 
 const base = `
 D1 Team
@@ -64,5 +64,24 @@ assert.equal(highQuality.status, "submittable_with_risk");
 const free = toFreeRejectionRiskPreview(incomplete);
 assert.ok(free.topRejectionRisks.length <= 3);
 assert.equal(free.fullReviewExample.redacted, true);
+
+const delivery = parseConciergeReviewDeliverable({
+  schemaVersion: "concierge-review-delivery-v1",
+  review: highQuality,
+  rewrites: [{
+    section: "D2",
+    sourceExcerpt: "Part PN-104, lot L2408, had 12 solder bridges in 600 units.",
+    suggestedEnglish: "Customer inspection identified 12 solder bridges among 600 units from lot L2408.",
+    requiredPlaceholders: [],
+  }],
+  reviewerNotes: "Human review confirmed that every statement above is traceable to supplied text.",
+  reviewerAttestation: "I verified that every claim and rewrite is grounded in the supplied report or marked as missing.",
+  reviewedAt: "2026-08-02T00:00:00.000Z",
+});
+assert.ok(delivery, "accepts a fact-traceable human-reviewed deliverable");
+assert.equal(parseConciergeReviewDeliverable({
+  ...delivery,
+  review: { ...highQuality, evidencePolicy: { ...highQuality.evidencePolicy, inventedFactsAllowed: true } },
+}), null, "rejects a deliverable that permits invented facts");
 
 console.log("8D Reject Check deterministic acceptance cases passed.");

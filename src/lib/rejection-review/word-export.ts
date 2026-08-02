@@ -6,20 +6,13 @@ import {
   TextRun,
 } from "docx";
 import type {
+  CustomerReadableRewrite,
   RejectionRiskFinding,
   RejectionRiskReview,
-  ReviewSection,
 } from "@/lib/rejection-review/schema";
 
 const BRAND_BLUE = "1E40AF";
 const TEXT_MUTED = "64748B";
-
-export interface CustomerReadableRewrite {
-  section: ReviewSection;
-  sourceExcerpt: string;
-  suggestedEnglish: string;
-  requiredPlaceholders: string[];
-}
 
 export interface RejectionReviewWordPackage {
   reviewId: string;

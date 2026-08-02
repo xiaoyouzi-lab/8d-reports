@@ -15,12 +15,12 @@ export default function RefundPolicyPage() {
         <CardContent className="prose prose-sm max-w-none space-y-4 pt-6">
           <p><strong>Last updated:</strong> August 2, 2026</p>
 
-          <h2>Complete Rejection Risk Review</h2>
+          <h2>24-hour Deep Review</h2>
           <p>
             This is a one-time digital purchase for one review task, not a subscription. You may request a refund within seven calendar days of payment by emailing 19857345237@163.com with the order ID and the reason the review did not meet the stated scope.
           </p>
           <p>
-            A full refund is available when a paid review cannot be opened or downloaded, or when a service failure materially prevents delivery of the promised section-by-section analysis. Other timely requests are reviewed fairly based on the delivered result and the stated product scope.
+            A full refund is available when the reviewed package is not delivered within 24 hours of confirmed payment, cannot be opened or downloaded, or a service failure materially prevents delivery of the promised section-by-section analysis. Other timely requests are reviewed fairly based on the delivered result and the stated product scope.
           </p>
 
           <h2>What happens after a refund</h2>

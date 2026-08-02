@@ -35,7 +35,7 @@ export default function ReportReviewServicePage() {
               Paste or upload the 8D, SCAR, or corrective-action response you plan to send in the next 24–72 hours. The free check shows whether it is ready to submit and the three biggest rejection risks.
             </p>
             <div className="mt-8 space-y-3 text-sm text-slate-700">
-              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" /> Deterministic checks run before AI explanation or rewriting</div>
+              <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" /> Automated checks run before internal review and rewriting</div>
               <div className="flex gap-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" /> Every finding points to supplied text or a named missing fact</div>
               <div className="flex gap-3"><ShieldCheck className="mt-0.5 size-4 shrink-0 text-indigo-600" /> No invented dates, quantities, evidence, results, approvals, or root causes</div>
             </div>
@@ -46,7 +46,7 @@ export default function ReportReviewServicePage() {
 
       <section className="py-16">
         <div className="mx-auto max-w-4xl px-4 sm:px-6">
-          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">What the complete review challenges</h2>
+          <h2 className="text-2xl font-semibold tracking-tight text-slate-950">What the 24-hour Deep Review challenges</h2>
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {checks.map((item) => (
               <li key={item} className="flex gap-3 rounded-lg border border-slate-200 p-4 text-sm leading-6 text-slate-700">
@@ -56,9 +56,10 @@ export default function ReportReviewServicePage() {
             ))}
           </ul>
           <div className="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm leading-6 text-slate-700">
-            <span className="font-semibold text-slate-950">Complete Rejection Risk Review: $39 once.</span>{" "}
-            It includes all section findings, evidence gaps, likely follow-up questions, fact-safe English rewrites, and a downloadable review package. It does not guarantee customer acceptance, certify compliance, confirm root cause, or prove effectiveness.
+            <span className="font-semibold text-slate-950">24-hour Deep Review: $99 once.</span>{" "}
+            Automated initial checks are reviewed by a person before release. Delivery includes section findings, evidence gaps, likely follow-up questions, fact-safe English rewrites, and a downloadable DOCX package. It does not guarantee customer acceptance, certify compliance, confirm root cause, or prove effectiveness.
           </div>
+          <p className="mt-5 text-center text-sm"><Link href="/8d-report-review-service/sample" className="font-medium text-indigo-600 hover:text-indigo-700">See the free and paid result sample</Link></p>
           <p className="mt-6 text-center text-sm text-slate-600">
             <Link href="/zh/8d-report-review-service" className="font-medium text-indigo-600 hover:text-indigo-700">查看中文页面</Link>
           </p>

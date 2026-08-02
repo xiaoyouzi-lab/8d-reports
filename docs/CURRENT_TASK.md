@@ -2,71 +2,52 @@
 
 ## Task Name
 
-Revenue GEO Content Batch 1.
+Concierge-first 8D Reject Check revenue validation.
 
-## Context
+## Objective
 
-Revenue Evidence Sprint v1 is deployed, and the operating/query/content planning
-work defines the first high-intent content topics. The next step is a small,
-reviewable runtime page batch that connects revenue-near searches to practical
-8D guidance, demo assets, Template Setup, Assisted First 8D / SCAR, Signup, and
-Knowledge reuse.
+Obtain at least one paid, delivered order within 30 days from a buyer who is
+not the project owner, a test account, a friend, or a support payment. Test and
+owner payments remain visible in the ledger but never count as qualified
+revenue.
 
-## Goal
+## Offer under test
 
-Publish the first batch of high-intent `/resources/*` pages without creating a
-thin SEO batch, changing product entitlements, or touching auth, payment, export,
-database schema, AI backend, or Knowledge Base permissions/search logic.
+- Free rejection-risk scan: pasted text, TXT, or DOCX; submit-readiness status,
+  the one to three most serious risks, and an illustrative complete result.
+- Paid pilot: **24-hour Deep Review, USD 99, one report, no subscription**.
+- Delivery combines automated initial checks with internal human review before
+  release. It includes section logic, cause/action linkage, evidence and
+  validation gaps, likely customer questions, fact-safe English rewrites, and
+  a DOCX package.
+- The USD 39 instant paid scan is paused. Current competitor evidence does not
+  establish enough incremental value over low-cost automated alternatives.
 
-## Scope
+## Allowed work before purchase evidence
 
-- Add 10 runtime pages under `/resources/[slug]` from a shared content source:
-  - `/resources/how-to-write-8d-report-customer-complaint`
-  - `/resources/supplier-corrective-action-request-template`
-  - `/resources/8d-vs-scar`
-  - `/resources/excel-8d-template-vs-8d-software`
-  - `/resources/custom-8d-template-setup-guide`
-  - `/resources/ai-8d-report-checker`
-  - `/resources/8d-root-cause-d4-guide`
-  - `/resources/8d-corrective-action-d5-guide`
-  - `/resources/8d-validation-d6-guide`
-  - `/resources/8d-lessons-learned-d8-guide`
-- Give every page unique metadata, canonical URL, answer-first introduction,
-  structured sections, practical checklist, common mistakes, comparison/example
-  table, related internal links, CTAs, and visible FAQ with FAQPage JSON-LD.
-- Add the pages to `/resources`, sitemap generation, SEO URL checks, and
-  governance tests.
-- Update `docs/DEV_LOG.md`.
+Text/DOCX intake, privacy and samples, limited free preview, one-time checkout,
+payment idempotency, task/order binding, human delivery, refund/revocation,
+privacy-safe funnel measurement, reproducible revenue reporting, competitor
+PoCs, and Preview verification.
 
-## Non-Goals
+## Paused work
 
-- No broad public marketing redesign.
-- No more than this first 10-page batch.
-- No fake statistics, fake customer stories, fake logos, guaranteed customer
-  acceptance, certification claims, or unsupported full-QMS claims.
-- No payment, checkout, subscription, auth, password reset, Resend, real report
-  export entitlement, ZIP behavior, AI backend, Knowledge Base search,
-  Knowledge permissions, production configuration, or database schema changes.
-- No production data writes or production test leads.
+AI-overlay automation, PDF parsing, a larger rules engine, Supplier Portal,
+generic QMS, additional roles or workflow states, mobile work, image/video
+recognition, template libraries, new subscription tiers, and unrelated UI or
+architecture changes.
 
-## Acceptance Criteria
+## Revenue gates
 
-- All 10 `/resources/*` pages render and are included in sitemap.
-- `/resources` exposes the new pages and a Revenue Guides filter.
-- Each page includes answer-first copy, practical checklist, common mistakes,
-  table, relevant CTA, internal links, and visible FAQ.
-- FAQPage JSON-LD only reflects visible FAQ content.
-- CTAs use existing safe analytics events and bounded metadata.
-- `npm run check:seo` passes.
-- Required checks pass: `git diff --check`, `npx tsc --noEmit`, `npm run lint`,
-  `npm run build`, `npm run test:governance`, and local public smoke for the new
-  pages.
+- 20 qualified uploads and no checkout: change the promise or free/paid line.
+- 8 checkout starts and no payment: investigate price, payment, and trust.
+- 3 payments with poor delivery satisfaction: pause acquisition and fix delivery.
+- 100 qualified visits and no valid purchase signal: stop this direction and
+  return to market research.
 
-## Risks
+## Acceptance boundary
 
-- Adding too many pages at once can become thin content. This batch is capped at
-  10 pages and uses a shared renderer for consistency.
-- Public page CTAs must not imply guaranteed customer acceptance or certified
-  approval.
-- Analytics must stay limited to safe enum-like metadata and must not capture
-  customer/product/report/root-cause/corrective-action details.
+Code completion, test checkout, owner payment, or an undelivered order is not
+success. A qualifying payment must be production-mode, external, manually
+classified as qualified, non-refunded, and have a delivered result that the
+customer viewed or downloaded.
