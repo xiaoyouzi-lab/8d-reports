@@ -22,6 +22,8 @@
     "test:rejection-review": "tsx src/lib/rejection-review/rules.test.ts",
     "test:rejection-review-files": "tsx src/lib/rejection-review/files.test.ts",
     "test:rejection-review-events": "tsx src/lib/rejection-review/event-policy.test.ts",
+    "test:rejection-review-export": "tsx src/lib/rejection-review/word-export.test.ts",
+    "test:safe-callback-url": "tsx src/lib/safe-callback-url.test.ts",
     "test:auth-signup-otp": "tsx src/lib/auth-signup-otp.test.ts",
     "test:governance": "tsx scripts/team-governance.test.ts",
     "test:production-smoke": "tsx scripts/production-smoke.test.ts",

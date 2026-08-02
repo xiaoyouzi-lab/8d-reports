@@ -17,6 +17,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { trackEvent } from "@/lib/analytics"
+import { authPathWithCallback, safeCallbackUrl } from "@/lib/safe-callback-url"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -30,9 +31,7 @@ export default function LoginPage() {
       : plan === "team" && billing === "monthly"
         ? "/pricing?checkout=team_monthly"
       : null
-  const callbackUrl = rawCallback && rawCallback.startsWith("/")
-    ? rawCallback
-    : legacyPlanCallback ?? "/dashboard"
+  const callbackUrl = safeCallbackUrl(rawCallback, legacyPlanCallback ?? "/dashboard")
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -138,7 +137,7 @@ export default function LoginPage() {
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link
-            href="/signup"
+            href={authPathWithCallback("/signup", callbackUrl)}
             className="font-medium text-indigo-600 hover:text-indigo-700"
           >
             Sign up
