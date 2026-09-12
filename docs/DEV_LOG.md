@@ -1,5 +1,20 @@
 # Development Log
 
+## Completed: Private/Auth Page Index Hygiene (2026-09-12)
+
+- Some private pages inherited the root layout's robots: index, follow because
+  client component pages cannot export metadata. This made /login, /signup,
+  /reset-password, and tokenized /share/[token] report pages indexable, and
+  parameterized auth URLs could appear as duplicate/alternate pages in Search
+  Console.
+- Added robots: { index: false, follow: false } to src/app/(auth)/layout.tsx
+  (covers login and signup) and new colocated server layouts for
+  src/app/reset-password/layout.tsx and src/app/share/[token]/layout.tsx.
+- Added scripts/index-hygiene.test.ts (npm run test:index-hygiene) plus an npm
+  script.
+- No public/SEO page content, sitemap, redirect, auth logic, payment, database
+  schema, export logic, environment variable, or production configuration change.
+
 ## Latest Task
 
 P0+ PR5 E2E smoke, hardening, and Preview environment validation checklist.
