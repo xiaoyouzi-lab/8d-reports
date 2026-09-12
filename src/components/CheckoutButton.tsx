@@ -13,6 +13,7 @@ import type { CheckoutType } from "@/lib/plans"
 export function CheckoutButton({
   planType,
   reportId,
+  previewToken,
   className,
   children,
   variant = "default",
@@ -20,6 +21,7 @@ export function CheckoutButton({
 }: {
   planType: CheckoutType
   reportId?: string
+  previewToken?: string
   className?: string
   children: React.ReactNode
   variant?: "default" | "outline" | "secondary" | "ghost" | "destructive" | "link"
@@ -34,9 +36,11 @@ export function CheckoutButton({
 
     if (!session?.user) {
       trackEvent("upgrade_clicked", { source: "pricing", planType })
-      const checkoutUrl = reportId
-        ? `/pricing?checkout=${planType}&reportId=${encodeURIComponent(reportId)}`
-        : `/pricing?checkout=${planType}`
+      const checkoutUrl = planType === "founding_case" && previewToken
+        ? `/p0-plus/preview/${encodeURIComponent(previewToken)}`
+        : reportId
+          ? `/pricing?checkout=${planType}&reportId=${encodeURIComponent(reportId)}`
+          : `/pricing?checkout=${planType}`
       router.push(`/login?callbackUrl=${encodeURIComponent(checkoutUrl)}`)
       return
     }
@@ -47,7 +51,7 @@ export function CheckoutButton({
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planType, reportId }),
+        body: JSON.stringify({ planType, reportId, previewToken }),
       })
 
       const session_data = await res.json().catch(() => null)
@@ -58,6 +62,10 @@ export function CheckoutButton({
 
       if (session_data?.checkout_url) {
         window.location.href = session_data.checkout_url
+        return
+      }
+      if (session_data?.continue_url) {
+        window.location.href = session_data.continue_url
         return
       }
       throw new Error("Checkout URL missing")

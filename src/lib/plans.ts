@@ -3,8 +3,9 @@ export const FREE_REPORT_LIMIT = 3;
 export const PLAN_KEYS = ["free", "pro", "team"] as const;
 export type PlanKey = (typeof PLAN_KEYS)[number];
 
-export const CHECKOUT_TYPES = ["pro_monthly", "team_monthly", "single_report_export"] as const;
+export const CHECKOUT_TYPES = ["pro_monthly", "team_monthly", "single_report_export", "founding_case"] as const;
 export type CheckoutType = (typeof CHECKOUT_TYPES)[number];
+export const FOUNDING_CASE_PRICE_CENTS = 2900;
 
 export interface PlanEntitlements {
   plan: PlanKey;
@@ -85,6 +86,8 @@ export function getPlanProductEnvKey(type: CheckoutType) {
       return ["CREEM_PRODUCT_TEAM_MONTHLY"];
     case "single_report_export":
       return ["CREEM_PRODUCT_SINGLE_REPORT_EXPORT"];
+    case "founding_case":
+      return ["CREEM_PRODUCT_FOUNDING_CASE"];
   }
 }
 
@@ -104,5 +107,7 @@ export function getCheckoutLabel(type: CheckoutType) {
       return "Team monthly";
     case "single_report_export":
       return "Single report export";
+    case "founding_case":
+      return "Founding Case";
   }
 }

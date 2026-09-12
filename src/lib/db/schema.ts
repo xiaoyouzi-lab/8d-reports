@@ -374,6 +374,76 @@ export const qualityCaseOutputs = pgTable("quality_case_outputs", {
   index("idx_quality_case_outputs_report_id").on(table.reportId),
 ]);
 
+/**
+ * One-time Founding Case purchases are isolated from subscriptions and legacy
+ * single-report exports so the existing Pro/Team entitlement paths stay intact.
+ */
+export const qualityCasePurchases = pgTable("quality_case_purchases", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  previewId: uuid("preview_id").notNull().references(() => p0PlusPreviews.id, { onDelete: "restrict" }).unique(),
+  caseId: uuid("case_id").references(() => qualityCases.id, { onDelete: "set null" }).unique(),
+  providerCheckoutId: text("provider_checkout_id").unique(),
+  providerTransactionId: text("provider_transaction_id").unique(),
+  providerRequestId: text("provider_request_id").notNull().unique(),
+  providerProductId: text("provider_product_id"),
+  providerMode: text("provider_mode").notNull().default("test"),
+  checkoutUrl: text("checkout_url"),
+  status: text("status").notNull().default("pending"),
+  customerKind: text("customer_kind").notNull().default("external"),
+  amountSubtotalCents: integer("amount_subtotal_cents").notNull().default(2900),
+  amountPaidCents: integer("amount_paid_cents").notNull().default(0),
+  refundedAmountCents: integer("refunded_amount_cents").notNull().default(0),
+  currency: text("currency").notNull().default("USD"),
+  failureCode: text("failure_code"),
+  caseCreationClaimToken: text("case_creation_claim_token"),
+  caseCreationClaimExpiresAt: timestamp("case_creation_claim_expires_at"),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  paidAt: timestamp("paid_at"),
+  revokedAt: timestamp("revoked_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_purchases_user").on(table.userId),
+  index("idx_quality_case_purchases_status_created").on(table.status, table.createdAt.desc()),
+]);
+
+export const qualityCaseEntitlements = pgTable("quality_case_entitlements", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  purchaseId: uuid("purchase_id").notNull().references(() => qualityCasePurchases.id, { onDelete: "cascade" }).unique(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  previewId: uuid("preview_id").notNull().references(() => p0PlusPreviews.id, { onDelete: "restrict" }).unique(),
+  caseId: uuid("case_id").references(() => qualityCases.id, { onDelete: "set null" }).unique(),
+  status: text("status").notNull().default("active"),
+  grantedAt: timestamp("granted_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+  revokeReason: text("revoke_reason"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_quality_case_entitlements_user_status").on(table.userId, table.status),
+]);
+
+export const revenueFunnelEvents = pgTable("revenue_funnel_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  eventName: text("event_name").notNull(),
+  funnelId: text("funnel_id").notNull(),
+  userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+  previewId: uuid("preview_id").references(() => p0PlusPreviews.id, { onDelete: "set null" }),
+  purchaseId: uuid("purchase_id").references(() => qualityCasePurchases.id, { onDelete: "set null" }),
+  caseId: uuid("case_id").references(() => qualityCases.id, { onDelete: "set null" }),
+  actorKind: text("actor_kind").notNull().default("anonymous"),
+  failureCode: text("failure_code"),
+  durationMs: integer("duration_ms"),
+  metadata: jsonb("metadata").notNull().default("{}"),
+  dedupeKey: text("dedupe_key").unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => [
+  index("idx_revenue_funnel_event_created").on(table.eventName, table.createdAt.desc()),
+  index("idx_revenue_funnel_kind_created").on(table.actorKind, table.createdAt.desc()),
+  index("idx_revenue_funnel_funnel_created").on(table.funnelId, table.createdAt),
+]);
+
 export const qualityCaseVersions = pgTable("quality_case_versions", {
   id: uuid("id").defaultRandom().primaryKey(),
   caseId: uuid("case_id").notNull().references(() => qualityCases.id, { onDelete: "cascade" }),

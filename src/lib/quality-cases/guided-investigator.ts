@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
 import { and, eq } from "drizzle-orm";
+import {
+  getDeepSeekApiUrl,
+  getDeepSeekJsonRequestDefaults,
+  getDeepSeekModel,
+} from "@/lib/ai/provider-config";
 import { db } from "@/lib/db";
 import {
   qualityCaseGuidanceAiRuns,
@@ -24,7 +29,6 @@ import {
 export const GUIDED_INVESTIGATOR_PROMPT_ID = "guided-investigator";
 export const GUIDED_INVESTIGATOR_PROMPT_VERSION = "v3";
 export const GUIDED_INVESTIGATOR_SCHEMA_VERSION = "guided-investigator-v1";
-export const GUIDED_INVESTIGATOR_MODEL_IDENTIFIER = "deepseek-chat";
 
 export type GuidedInvestigationState =
   | "collecting_problem"
@@ -222,11 +226,16 @@ export class DeepSeekGuidedInvestigatorAiClient implements GuidedInvestigatorAiC
       console.error("[GUIDED INVESTIGATOR] provider is not configured");
       throw new GuidedInvestigatorError("AI Quality Investigator is not configured", 503);
     }
-    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+    const response = await fetch(getDeepSeekApiUrl(), {
       method: "POST",
       headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       signal: AbortSignal.timeout(25_000),
-      body: JSON.stringify({ model: "deepseek-chat", messages: [{ role: "user", content: input.prompt }], max_tokens: 900, temperature: 0.1, response_format: { type: "json_object" } }),
+      body: JSON.stringify({
+        ...getDeepSeekJsonRequestDefaults(),
+        messages: [{ role: "user", content: input.prompt }],
+        max_tokens: 900,
+        temperature: 0.1,
+      }),
     }).catch((error: unknown) => {
       console.error("[GUIDED INVESTIGATOR] provider request failed", {
         errorName: error instanceof Error ? error.name : "UnknownError",
@@ -273,7 +282,7 @@ export async function runGuidedInvestigator(input: {
   const promptInputHash = createHash("sha256").update(prompt).digest("hex");
   failureStage = "ai_run_create";
   errorCategory = "persistence_error";
-  const [run] = await db.insert(qualityCaseGuidanceAiRuns).values({ caseId: input.caseId, sessionId: input.sessionId, agentType: "investigator", sourceType: "deepseek", promptIdentifier: GUIDED_INVESTIGATOR_PROMPT_ID, promptVersion: GUIDED_INVESTIGATOR_PROMPT_VERSION, promptInputHash, modelIdentifier: GUIDED_INVESTIGATOR_MODEL_IDENTIFIER, response: {}, confidence: "low", requestMetadata: { answerId: input.answerId }, policyOutcome: "pending" }).returning();
+  const [run] = await db.insert(qualityCaseGuidanceAiRuns).values({ caseId: input.caseId, sessionId: input.sessionId, agentType: "investigator", sourceType: "deepseek", promptIdentifier: GUIDED_INVESTIGATOR_PROMPT_ID, promptVersion: GUIDED_INVESTIGATOR_PROMPT_VERSION, promptInputHash, modelIdentifier: getDeepSeekModel(), response: {}, confidence: "low", requestMetadata: { answerId: input.answerId }, policyOutcome: "pending" }).returning();
   const requiredFollowUps = getGuidedFollowUps({
     category,
     originalAnswer: answer.originalText,
@@ -345,7 +354,7 @@ export async function runGuidedInvestigator(input: {
       failureStage,
       errorCategory,
       statusCode: error instanceof GuidedInvestigatorError ? error.status : 500,
-      modelIdentifier: GUIDED_INVESTIGATOR_MODEL_IDENTIFIER,
+      modelIdentifier: getDeepSeekModel(),
       contractVersion: GUIDED_INVESTIGATOR_SCHEMA_VERSION,
       durationMs: Date.now() - startedAt,
     });

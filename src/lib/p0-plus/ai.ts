@@ -1,8 +1,10 @@
 import { P0_PLUS_AI_CONTRACT_PROMPT } from "@/lib/p0-plus/prompts";
 import { validateP0PlusPreviewResponse, type P0PlusPreviewResponse } from "@/lib/p0-plus/schema";
-
-const PREVIEW_AI_URL = "https://api.deepseek.com/v1/chat/completions";
-const PREVIEW_AI_MODEL = "deepseek-chat";
+import {
+  getDeepSeekApiUrl,
+  getDeepSeekJsonRequestDefaults,
+  getDeepSeekModel,
+} from "@/lib/ai/provider-config";
 
 export interface P0PlusPreviewAiInput {
   rawInput: string;
@@ -40,7 +42,7 @@ export class DeepSeekP0PlusPreviewAiClient implements P0PlusPreviewAiClient {
 
     let response: Response;
     try {
-      response = await fetch(PREVIEW_AI_URL, {
+      response = await fetch(getDeepSeekApiUrl(), {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiKey}`,
@@ -48,24 +50,23 @@ export class DeepSeekP0PlusPreviewAiClient implements P0PlusPreviewAiClient {
         },
         signal: AbortSignal.timeout(25_000),
         body: JSON.stringify({
-          model: PREVIEW_AI_MODEL,
+          ...getDeepSeekJsonRequestDefaults(),
           messages: [
             { role: "system", content: P0_PLUS_AI_CONTRACT_PROMPT },
             { role: "user", content: buildPreviewUserPrompt(input) },
           ],
           max_tokens: 4_000,
           temperature: 0.2,
-          response_format: { type: "json_object" },
         }),
       });
     } catch (error) {
-      console.error("P0+ preview AI request failed", { error });
+      console.error("P0+ preview AI request failed", { model: getDeepSeekModel(), error });
       throw new P0PlusPreviewAiError();
     }
 
     if (!response.ok) {
       const detail = await response.text().catch(() => "");
-      console.error("P0+ preview AI returned an error", { status: response.status, detail: detail.slice(0, 300) });
+      console.error("P0+ preview AI returned an error", { model: getDeepSeekModel(), status: response.status, detail: detail.slice(0, 300) });
       throw new P0PlusPreviewAiError();
     }
 

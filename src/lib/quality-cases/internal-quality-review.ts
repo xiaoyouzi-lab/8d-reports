@@ -1,5 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
 import { and, desc, eq, sql } from "drizzle-orm";
+import {
+  getDeepSeekApiUrl,
+  getDeepSeekJsonRequestDefaults,
+  getDeepSeekModel,
+} from "@/lib/ai/provider-config";
 import { db } from "@/lib/db";
 import {
   qualityCaseActivities,
@@ -329,7 +334,7 @@ export class DeepSeekQualityReviewerAiClient
         "AI Quality Reviewer is not configured.",
         503,
       );
-    const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
+    const response = await fetch(getDeepSeekApiUrl(), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -337,11 +342,10 @@ export class DeepSeekQualityReviewerAiClient
       },
       signal: AbortSignal.timeout(25_000),
       body: JSON.stringify({
-        model: "deepseek-chat",
+        ...getDeepSeekJsonRequestDefaults(),
         messages: [{ role: "user", content: input.prompt }],
         temperature: 0.1,
         max_tokens: 1400,
-        response_format: { type: "json_object" },
       }),
     }).catch(() => {
       throw new InternalQualityReviewError(
@@ -895,7 +899,7 @@ export async function runInternalQualityReview(input: {
   const shouldCallProvider = Boolean(input.client || process.env.DEEPSEEK_API_KEY);
   if (shouldCallProvider) {
     sourceType = input.client ? "injected_quality_reviewer" : "deepseek";
-    modelIdentifier = input.client ? "injected-reviewer" : "deepseek-chat";
+    modelIdentifier = input.client ? "injected-reviewer" : getDeepSeekModel();
     try {
       providerResponse = await (
         input.client || new DeepSeekQualityReviewerAiClient()

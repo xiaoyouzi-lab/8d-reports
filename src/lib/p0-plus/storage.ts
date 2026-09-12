@@ -15,6 +15,7 @@ export interface P0PlusPreviewRecord {
   browserTokenHash: string | null;
   expiresAt: Date;
   convertedReportId: string | null;
+  convertedCaseId?: string | null;
   conversionClaimToken: string | null;
   conversionClaimedAt: Date | null;
   conversionClaimExpiresAt: Date | null;

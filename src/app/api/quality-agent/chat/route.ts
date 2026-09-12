@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-
-const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions"
-const DEEPSEEK_MODEL = "deepseek-chat"
+import { getDeepSeekApiUrl, getDeepSeekModel } from "@/lib/ai/provider-config"
 
 const SYSTEM_PROMPTS: Record<string, string> = {
   "zh-CN": `你是8D Reports的质量专家顾问。你拥有20年以上全球质量管理经验，精通以下领域：
@@ -112,7 +110,7 @@ export async function POST(request: NextRequest) {
       { role: "user" as const, content: query.trim() },
     ]
 
-    const res = await fetch(DEEPSEEK_API_URL, {
+    const res = await fetch(getDeepSeekApiUrl(), {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${apiKey}`,
@@ -120,7 +118,8 @@ export async function POST(request: NextRequest) {
       },
       signal: AbortSignal.timeout(25_000),
       body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
+        model: getDeepSeekModel(),
+        thinking: { type: "disabled" },
         messages,
         max_tokens: 800,
         temperature: 0.3,

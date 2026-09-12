@@ -1,5 +1,8 @@
-const DEEPSEEK_API_URL = "https://api.deepseek.com/v1/chat/completions";
-const DEEPSEEK_MODEL = "deepseek-chat";
+import {
+  getDeepSeekApiUrl,
+  getDeepSeekJsonRequestDefaults,
+  getDeepSeekModel,
+} from "@/lib/ai/provider-config";
 
 export type AiTaskType = "report_review" | "draft_generation" | "template_evaluation";
 
@@ -104,7 +107,7 @@ export async function callDeepSeekJson<T>(taskType: AiTaskType, input: string): 
 
   let res: Response;
   try {
-    res = await fetch(DEEPSEEK_API_URL, {
+    res = await fetch(getDeepSeekApiUrl(), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -112,24 +115,23 @@ export async function callDeepSeekJson<T>(taskType: AiTaskType, input: string): 
       },
       signal: AbortSignal.timeout(25_000),
       body: JSON.stringify({
-        model: DEEPSEEK_MODEL,
+        ...getDeepSeekJsonRequestDefaults(),
         messages: [
           { role: "system", content: AI_PROMPTS[taskType] },
           { role: "user", content: input },
         ],
         max_tokens: 2200,
         temperature: 0.2,
-        response_format: { type: "json_object" },
       }),
     });
   } catch (error) {
-    console.error("DeepSeek request failed", { taskType, error });
+    console.error("DeepSeek request failed", { taskType, model: getDeepSeekModel(), error });
     throw new Error(unavailableMessage);
   }
 
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    console.error("DeepSeek returned an error", { taskType, status: res.status, detail: errText.slice(0, 300) });
+    console.error("DeepSeek returned an error", { taskType, model: getDeepSeekModel(), status: res.status, detail: errText.slice(0, 300) });
     throw new Error(unavailableMessage);
   }
 
