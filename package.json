@@ -22,6 +22,7 @@
     "smoke:db:reset": "tsx scripts/smoke/reset-smoke-schema.ts",
     "smoke:seed-auth": "tsx scripts/smoke/seed-auth-smoke.ts",
     "smoke:auth": "tsx scripts/smoke/authenticated-smoke.ts",
+    "smoke:team-isolation": "tsx scripts/smoke/team-isolation-smoke.ts",
     "smoke:auth:local": "SMOKE_DB=true SMOKE_BASE_URL=http://127.0.0.1:3028 tsx scripts/smoke/authenticated-smoke.ts",
     "check:seo": "tsx scripts/check-seo-urls.ts",
     "marketing:gsc": "tsx scripts/marketing/gsc-export.ts",
