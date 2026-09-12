@@ -40,9 +40,15 @@ interface Report {
 
 interface TeamMember {
   id: string
-  email: string
-  name: string
+  email?: string | null
+  name?: string | null
   role: string
+  status?: string
+  invitedEmail?: string | null
+}
+
+function teamMemberLabel(member: TeamMember) {
+  return member.name || member.email || member.invitedEmail || "Invited member"
 }
 
 interface TeamActivity {
@@ -267,8 +273,8 @@ export default function DashboardPage() {
     }
   }
 
-  async function removeTeamMember(memberId: string, label: string) {
-    if (!confirm(`Remove ${label} from this Team workspace?`)) return
+  async function removeTeamMember(memberId: string, label: string, pending = false) {
+    if (!confirm(pending ? `Revoke the invitation for ${label}?` : `Remove ${label} from this Team workspace?`)) return
     setTeamMemberSavingId(memberId)
     try {
       const res = await fetch(`/api/team?memberId=${encodeURIComponent(memberId)}`, {
@@ -452,7 +458,10 @@ export default function DashboardPage() {
               <div className="mt-3 flex flex-wrap gap-2">
                 {(teamState?.team?.members ?? []).map((member) => (
                   <div key={member.id} className="flex items-center gap-2 rounded-full bg-slate-100 px-2.5 py-1 text-xs text-slate-700">
-                    <span>{member.name || member.email}</span>
+                    <span>{teamMemberLabel(member)}</span>
+                    {member.status === "pending" && (
+                      <span className="rounded-full bg-amber-100 px-1.5 text-[10px] font-medium text-amber-700">Pending</span>
+                    )}
                     {teamState?.team?.role === "owner" && member.role !== "owner" ? (
                       <>
                         <select
@@ -466,9 +475,9 @@ export default function DashboardPage() {
                         </select>
                         <button
                           type="button"
-                          aria-label={`Remove ${member.name || member.email}`}
+                          aria-label={`${member.status === "pending" ? "Revoke invitation for" : "Remove"} ${teamMemberLabel(member)}`}
                           disabled={teamMemberSavingId === member.id}
-                          onClick={() => void removeTeamMember(member.id, member.name || member.email)}
+                          onClick={() => void removeTeamMember(member.id, teamMemberLabel(member), member.status === "pending")}
                           className="rounded-full p-0.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 disabled:pointer-events-none disabled:opacity-50"
                         >
                           <Trash2 className="size-3.5" />
@@ -492,7 +501,7 @@ export default function DashboardPage() {
                   <option value="viewer">Viewer</option>
                 </select>
                 <Button size="sm" disabled={teamSaving} onClick={addTeamMember}>
-                  {teamSaving ? "Adding..." : "Add"}
+                  {teamSaving ? "Inviting..." : "Invite"}
                 </Button>
               </div>
             )}

@@ -4,6 +4,7 @@ import { reports, userQuotas } from "@/lib/db/schema";
 import { FREE_REPORT_LIMIT } from "@/lib/plans";
 import type { ReportData } from "@/lib/report-steps";
 import { getUserEntitlements } from "@/lib/subscription";
+import { getPrimaryTeamId } from "@/lib/report-access";
 import { getUserWorkspaceRole, logReportActivity } from "@/lib/report-workflow";
 
 export const REPORT_TYPES = new Set(["customer_8d", "internal_8d"]);
@@ -64,6 +65,10 @@ export async function createReportFromData(input: CreateReportFromDataInput): Pr
     };
   }
 
+  // Option A strict separation: reports created inside an active Team workspace
+  // are team-scoped; everyone else creates personal reports (teamId null).
+  const teamId = entitlements.plan === "team" ? await getPrimaryTeamId(input.user.id) : null;
+
   const [quota] = await db
     .select()
     .from(userQuotas)
@@ -109,6 +114,7 @@ export async function createReportFromData(input: CreateReportFromDataInput): Pr
     .insert(reports)
     .values({
       userId: input.user.id,
+      teamId,
       title: normalizeReportTitle(input.title),
       reportType,
       priority,

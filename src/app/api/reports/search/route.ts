@@ -3,8 +3,8 @@ import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
 import { getUserEntitlements } from "@/lib/subscription";
-import { getAccessibleUserIds } from "@/lib/report-access";
-import { desc, inArray } from "drizzle-orm";
+import { getAccessibleReportScope, accessibleReportsWhere } from "@/lib/report-access";
+import { desc } from "drizzle-orm";
 
 const SEARCH_FIELDS: Array<{ key: string; label: string }> = [
   { key: "problemDescription", label: "Problem Description" },
@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([]);
   }
 
-  const accessibleUserIds = await getAccessibleUserIds(user.id);
+  const scope = await getAccessibleReportScope(user.id);
   const rows = await db
     .select({
       id: reports.id,
@@ -87,7 +87,7 @@ export async function GET(req: NextRequest) {
       updatedAt: reports.updatedAt,
     })
     .from(reports)
-    .where(inArray(reports.userId, accessibleUserIds))
+    .where(accessibleReportsWhere(scope))
     .orderBy(desc(reports.updatedAt));
 
   const results = rows

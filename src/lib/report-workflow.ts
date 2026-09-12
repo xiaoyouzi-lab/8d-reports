@@ -46,7 +46,11 @@ function isActiveTeamSubscription(row: { status?: string | null; planName?: stri
 export async function getReportAccess(reportId: string, userId: string) {
   const accessible = await getAccessibleReport(reportId, userId);
   if (!accessible) return null;
-  const workspaceRole = await getUserWorkspaceRoleForReportOwner(userId, accessible.userId);
+  // Team-scoped reports resolve the role from the report's team; personal reports
+  // are only reachable by their author, who owns them.
+  const workspaceRole = accessible.teamId
+    ? await getUserWorkspaceRoleForTeam(accessible.teamId, userId)
+    : null;
   if (accessible.userId === userId) return buildAccess(accessible, workspaceRole || "owner");
   return buildAccess(accessible, workspaceRole || "viewer");
 }
@@ -66,7 +70,7 @@ export async function getUserWorkspaceRole(userId: string): Promise<TeamRole | n
     .innerJoin(teamWorkspaces, eq(teamMembers.teamId, teamWorkspaces.id))
     .innerJoin(subscriptions, eq(subscriptions.userId, teamWorkspaces.ownerId))
     .leftJoin(plans, eq(subscriptions.planId, plans.id))
-    .where(eq(teamMembers.userId, userId));
+    .where(and(eq(teamMembers.userId, userId), eq(teamMembers.status, "accepted")));
   const activeMembership = memberships.find(isActiveTeamSubscription);
   return activeMembership ? normalizeTeamRole(activeMembership.role) : null;
 }
@@ -85,7 +89,7 @@ export async function getUserWorkspaceRoleForReportOwner(userId: string, reportO
     const [membership] = await db
       .select({ role: teamMembers.role })
       .from(teamMembers)
-      .where(and(eq(teamMembers.teamId, activeOwnerTeam.id), eq(teamMembers.userId, userId)))
+      .where(and(eq(teamMembers.teamId, activeOwnerTeam.id), eq(teamMembers.userId, userId), eq(teamMembers.status, "accepted")))
       .limit(1);
     return membership ? normalizeTeamRole(membership.role) : null;
   }
@@ -101,7 +105,7 @@ export async function getUserWorkspaceRoleForReportOwner(userId: string, reportO
     .innerJoin(teamWorkspaces, eq(teamMembers.teamId, teamWorkspaces.id))
     .innerJoin(subscriptions, eq(subscriptions.userId, teamWorkspaces.ownerId))
     .leftJoin(plans, eq(subscriptions.planId, plans.id))
-    .where(eq(teamMembers.userId, reportOwnerId))
+    .where(and(eq(teamMembers.userId, reportOwnerId), eq(teamMembers.status, "accepted")))
   const reportOwnerMembership = reportOwnerMemberships.find(isActiveTeamSubscription);
 
   if (!reportOwnerMembership) return null;
@@ -110,7 +114,26 @@ export async function getUserWorkspaceRoleForReportOwner(userId: string, reportO
   const [membership] = await db
     .select({ role: teamMembers.role })
     .from(teamMembers)
-    .where(and(eq(teamMembers.teamId, reportOwnerMembership.teamId), eq(teamMembers.userId, userId)))
+    .where(and(eq(teamMembers.teamId, reportOwnerMembership.teamId), eq(teamMembers.userId, userId), eq(teamMembers.status, "accepted")))
+    .limit(1);
+  return membership ? normalizeTeamRole(membership.role) : null;
+}
+
+export async function getUserWorkspaceRoleForTeam(teamId: string, userId: string): Promise<TeamRole | null> {
+  const [team] = await db
+    .select({ ownerId: teamWorkspaces.ownerId, status: subscriptions.status, planName: plans.name })
+    .from(teamWorkspaces)
+    .innerJoin(subscriptions, eq(subscriptions.userId, teamWorkspaces.ownerId))
+    .leftJoin(plans, eq(subscriptions.planId, plans.id))
+    .where(eq(teamWorkspaces.id, teamId))
+    .limit(1);
+  if (!team || !isActiveTeamSubscription(team)) return null;
+  if (team.ownerId === userId) return "owner";
+
+  const [membership] = await db
+    .select({ role: teamMembers.role })
+    .from(teamMembers)
+    .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId), eq(teamMembers.status, "accepted")))
     .limit(1);
   return membership ? normalizeTeamRole(membership.role) : null;
 }

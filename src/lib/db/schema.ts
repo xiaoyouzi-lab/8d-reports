@@ -102,12 +102,21 @@ export const teamWorkspaces = pgTable("team_workspaces", {
 export const teamMembers = pgTable("team_members", {
   id: uuid("id").defaultRandom().primaryKey(),
   teamId: uuid("team_id").notNull().references(() => teamWorkspaces.id, { onDelete: "cascade" }),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Nullable so an invitation for an unregistered email can stay pending until acceptance.
+  userId: text("user_id").references(() => users.id, { onDelete: "cascade" }),
+  invitedEmail: text("invited_email"),
   role: text("role").notNull().default("member"),
+  // "pending" | "accepted". Existing rows backfill to "accepted" so nothing currently shared is lost.
+  status: text("status").notNull().default("accepted"),
+  acceptedAt: timestamp("accepted_at"),
+  // Additive token storage for email invitations (no new table).
+  inviteTokenHash: text("invite_token_hash"),
+  inviteExpiresAt: timestamp("invite_expires_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_team_members_team_id").on(table.teamId),
   index("idx_team_members_user_id").on(table.userId),
+  index("idx_team_members_invite_token_hash").on(table.inviteTokenHash),
 ]);
 
 export const templates = pgTable("templates", {
@@ -129,6 +138,8 @@ export const templates = pgTable("templates", {
 export const reports = pgTable("reports", {
   id: uuid("id").defaultRandom().primaryKey(),
   userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Team scope. Null means the report is personal and only the author can reach it.
+  teamId: uuid("team_id").references(() => teamWorkspaces.id, { onDelete: "set null" }),
   templateId: uuid("template_id").references(() => templates.id),
   title: text("title").notNull(),
   status: text("status").notNull().default("draft"),
@@ -148,6 +159,7 @@ export const reports = pgTable("reports", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => [
   index("idx_reports_user_id").on(table.userId),
+  index("idx_reports_team_id").on(table.teamId),
   index("idx_reports_status").on(table.status),
   index("idx_reports_created_at").on(table.createdAt.desc()),
 ]);

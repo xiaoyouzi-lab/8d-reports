@@ -99,16 +99,19 @@ assert.equal(
   true,
 );
 
+// Build the unsafe patch as a loose record first so the fixture can carry
+// unknown/private keys without fighting the typed report-data shape.
+const unsafeReportDataPatch: Record<string, unknown> = {
+  ...injectionMoldingFlashFixture.response.conversion.reportDataPatch,
+  preparedSignatureUrl: "/api/attachments/private-signature/file",
+  approverName: "Unverified Approver",
+  privateUserId: "user_123",
+};
 const unsafeMapperFixture: P0PlusPreviewResponse = {
   ...injectionMoldingFlashFixture.response,
   conversion: {
     ...injectionMoldingFlashFixture.response.conversion,
-    reportDataPatch: {
-      ...injectionMoldingFlashFixture.response.conversion.reportDataPatch,
-      preparedSignatureUrl: "/api/attachments/private-signature/file",
-      approverName: "Unverified Approver",
-      privateUserId: "user_123",
-    },
+    reportDataPatch: unsafeReportDataPatch as P0PlusPreviewResponse["conversion"]["reportDataPatch"],
   },
 };
 const mapped = mapP0PlusPreviewToReportDataPatch(unsafeMapperFixture);

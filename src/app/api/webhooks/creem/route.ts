@@ -236,6 +236,8 @@ async function ensureTeamWorkspace(userId: string) {
     teamId: team.id,
     userId,
     role: "owner",
+    status: "accepted",
+    acceptedAt: new Date(),
   }).catch(() => {});
 
   return team;
