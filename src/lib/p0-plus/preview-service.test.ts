@@ -96,7 +96,7 @@ function deepSeekCompletion(content: string) {
 
 function requestBody(init?: RequestInit) {
   assert.equal(typeof init?.body, "string", "DeepSeek request should have a JSON body");
-  return JSON.parse(init.body as string) as {
+  return JSON.parse(init?.body as string) as {
     model: string;
     max_tokens: number;
     messages: Array<{ role: string; content: string }>;
