@@ -275,7 +275,8 @@ assert.match(reportEditorPage, /onOpenKnowledgeReuse=\{openKnowledgeReuse\}/, "R
 assert.match(reportEditorPage, /getKnowledgeReadinessSummary/, "Report editor should calculate Knowledge readiness from current report data");
 assert.match(reportEditorPage, /<KnowledgeReadinessPanel reportData=\{reportData\} reportId=\{reportId\} plan=\{plan\} \/>/, "Report editor should show the Knowledge readiness panel");
 assert.match(reportEditorPage, /knowledgeReadiness=\{knowledgeReadiness\}/, "Report editor should pass readiness summary into workflow controls");
-assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*try \{\s*await saveToServer/, "Report editor should not silently save when a Viewer only changes steps");
+assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*const saved = await ensureSaved\(\)/, "Report editor should only run the save barrier when the user can edit, so a Viewer changing steps does not save");
+assert.match(reportEditorPage, /if \(saved === null\) return/, "Report editor should abort the step transition when the save barrier fails");
 assert.doesNotMatch(reportEditorPage, /pointer-events-none opacity-75/, "Read-only reports should still allow attachment preview and navigation");
 
 const stepForm = read("src/components/report/StepForm.tsx");

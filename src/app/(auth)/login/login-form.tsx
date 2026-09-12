@@ -100,8 +100,8 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
               >
                 {showPassword ? (
                   <EyeOff className="size-4" />
@@ -138,7 +138,7 @@ export default function LoginPage() {
         <p className="text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link
-            href="/signup"
+            href={`/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
             className="font-medium text-indigo-600 hover:text-indigo-700"
           >
             Sign up

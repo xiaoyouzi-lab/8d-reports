@@ -1,5 +1,112 @@
 # Development Log
 
+## Completed: Team Authorization Fix Spec (2026-09-12)
+
+- Added docs/TEAM_AUTHORIZATION_FIX_SPEC.md, a decision-ready specification for
+  the confirmed P1 Team defect (owner adds members without acceptance; every
+  member report, including pre-join personal history, is visible to the team).
+- Documents the two policy options, recommends strict separation, defines the
+  additive schema (team_members.status/acceptedAt and reports.teamId), the
+  invite/accept flow, the backfill choice, every code touch point from the audit,
+  required DB-backed tests, rollout safety, and the open owner questions.
+- Documentation only. No runtime, schema, auth, payment, export, or production
+  configuration change.
+
+## Completed: P2 Correctness Batch — D0 Persistence, Workflow Progression, Privacy Copy (2026-09-12)
+
+- Fixed the D0 revert defect. `reportType` and `priority` are D0 select fields
+  stored inside `ReportData`, but `PUT /api/reports/[id]` only synced the
+  dedicated `reports.report_type` / `reports.priority` columns from top-level
+  body fields the editor never sends. The reader prefers the columns, so a
+  saved D0 change reverted after refresh. The route now mirrors valid
+  `data.reportType` / `data.priority` values into the columns.
+- Fixed approval progression. The workflow route already allows
+  locked -> locked transitions (`approved -> submitted -> closed`), but the panel
+  hid the status control once locked and only offered "Unlock for revision".
+  Locked reports now expose the backend-allowed next step (Submit to customer,
+  then Close report) alongside the unlock form.
+- Fixed the privacy disclosure. The page said "We do not use tracking or
+  advertising cookies" while Google Analytics loads whenever it is configured.
+  The copy now discloses analytics cookies when analytics is enabled and still
+  states that advertising/cross-site tracking cookies are not used.
+- Fixed login/signup task continuity and OTP recovery. The login -> signup and
+  signup -> login links now forward `callbackUrl`, the proxy keeps the query
+  string in its login redirect, and signup switches to the verification step
+  before sending the code so a failed send still reaches the OTP screen with
+  "Resend code". The password visibility toggle is now keyboard reachable and
+  labelled.
+- Fixed duplicate signup analytics. `signup_success` and `signup_completed`
+  both mapped to the GA4 `sign_up` funnel event and both fired at account
+  creation. Now `signup_success` is reported as `signup_account_created`, and
+  `signup_completed` (GA4 `sign_up`) fires only after email verification.
+- Added `scripts/p2-correctness.test.ts` (`npm run test:p2-correctness`) as a
+  source-level regression guard and an npm script.
+- No auth, payment, database schema, environment variable, export-logic, or
+  production-config change. Residual risk: the workflow and D0 fixes need a real
+  authenticated browser pass; the privacy sentence is a factual copy alignment,
+  not a legal review or a consent-gating change.
+## Completed: P1 Save/Version Consistency Hardening (2026-09-12)
+
+- Fixed the confirmed P1 defect where PDF export rendered the live, unsaved
+  client state while Word/Excel/ZIP, AI review/draft, and workflow approval read
+  the last persisted row, so actions could silently use different versions.
+- The report editor now tracks a saved snapshot (`lastSavedData` /
+  `lastSavedTitle`), derives `isDirty`, and exposes one `ensureSaved()`
+  barrier. `handleNext` no longer swallows save failures: it aborts the step
+  transition and shows the error instead of pretending the step was saved.
+- `ExportMenu`, `AiReportTools`, and `ReportWorkflowPanel` now await the
+  barrier before acting and abort when the save fails. PDF is rendered from the
+  returned saved version, so PDF/Word/Excel/ZIP/AI/approval all agree. Read-only
+  users are unaffected because the server row is already authoritative.
+- The AI entry is no longer hidden on mobile (`hidden md:inline-flex` became
+  `inline-flex` with an icon-only trigger on narrow screens), so mobile users can
+  reach AI Quality Check.
+- Removed the duplicate `export_clicked` analytics events. `export_attempted`
+  and `export_clicked` both mapped to the same GA4 funnel event, so every export
+  was counted twice; `export_attempted` now fires once and `export_succeeded`
+  remains the completion signal.
+- Added `scripts/version-consistency.test.ts`
+  (`npm run test:version-consistency`) as a wiring regression guard, plus an npm
+  script.
+- Also fixed a pre-existing `tsc --noEmit` error on `main` in
+  `src/lib/p0-plus/p0-plus.test.ts` (the unsafe-key fixture now builds a
+  `Record<string, unknown>` before casting), so the typecheck gate is green.
+- No auth, payment, database schema, environment variable, export-template, or
+  production-config change. Residual risk: real browser acceptance of the
+  save-first flow (unsaved edit -> export/AI/approve) still needs a manual pass;
+  a concurrent writer between save and action can still diverge until a revision
+  token (baseRevision/409) is added.
+## Completed: Pull Request CI (2026-09-12)
+
+- Added .github/workflows/ci.yml to run on pull_request and on push to main:
+  npm ci, npx tsc --noEmit, npm run lint, the offline test suite
+  (test:p0-plus, test:p0-plus-preview, test:p0-plus-ui, test:p0-plus-smoke,
+  test:governance), npm run check:seo, and npm run build.
+- Deliberately excludes test:production-smoke, test:auth-smoke, and
+  smoke:auth because they hit production or require database/secrets that are
+  not available to pull request runs.
+- Also fixed the pre-existing npx tsc --noEmit failure on main in
+  src/lib/p0-plus/p0-plus.test.ts (build the unsafe fixture patch as a
+  Record<string, unknown> before casting), so the new typecheck gate is green.
+- The offline test step discovers every test:* script in package.json
+  (excluding the production/secrets-bound ones), so tests added by later PRs
+  run automatically.
+
+## Completed: Private/Auth Page Index Hygiene (2026-09-12)
+
+- Some private pages inherited the root layout's robots: index, follow because
+  client component pages cannot export metadata. This made /login, /signup,
+  /reset-password, and tokenized /share/[token] report pages indexable, and
+  parameterized auth URLs could appear as duplicate/alternate pages in Search
+  Console.
+- Added robots: { index: false, follow: false } to src/app/(auth)/layout.tsx
+  (covers login and signup) and new colocated server layouts for
+  src/app/reset-password/layout.tsx and src/app/share/[token]/layout.tsx.
+- Added scripts/index-hygiene.test.ts (npm run test:index-hygiene) plus an npm
+  script.
+- No public/SEO page content, sitemap, redirect, auth logic, payment, database
+  schema, export logic, environment variable, or production configuration change.
+
 ## Latest Task
 
 P1 Team Authorization: Option A strict separation + backfill A1 (proposal PR).
