@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Typecheck, lint, tests, SEO, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit and governance tests
+        run: |
+          npm run test:p0-plus
+          npm run test:p0-plus-preview
+          npm run test:p0-plus-ui
+          npm run test:p0-plus-smoke
+          npm run test:governance
+
+      - name: SEO URL check
+        run: npm run check:seo
+
+      - name: Build
+        run: npm run build
