@@ -3,7 +3,7 @@ import { and, desc, inArray, or, eq, ne, type SQL } from "drizzle-orm";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
-import { getAccessibleUserIds } from "@/lib/report-access";
+import { getAccessibleReportScope, accessibleReportsWhere } from "@/lib/report-access";
 import {
   KNOWLEDGE_SCAN_LIMIT,
   KNOWLEDGE_WORKFLOW_STATUSES,
@@ -25,9 +25,9 @@ export async function POST(req: NextRequest) {
   const reportType = normalizeKnowledgeReportTypeFilter(body.reportType);
   const priority = normalizeKnowledgePriorityFilter(body.priority);
   const limit = normalizeKnowledgeLimit(body.limit);
-  const accessibleUserIds = await getAccessibleUserIds(user.id);
+  const scope = await getAccessibleReportScope(user.id);
   const whereConditions: SQL[] = [
-    inArray(reports.userId, accessibleUserIds),
+    accessibleReportsWhere(scope),
     ne(reports.workflowStatus, "internal_review"),
     or(
       eq(reports.status, "completed"),

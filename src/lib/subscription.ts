@@ -24,7 +24,7 @@ export async function getUserPlan(userId: string): Promise<PlanKey> {
     .select({ ownerId: teamWorkspaces.ownerId })
     .from(teamMembers)
     .innerJoin(teamWorkspaces, eq(teamMembers.teamId, teamWorkspaces.id))
-    .where(eq(teamMembers.userId, userId));
+    .where(and(eq(teamMembers.userId, userId), eq(teamMembers.status, "accepted")));
 
   const ownerIds = memberships.map((membership) => membership.ownerId);
   if (ownerIds.length === 0) return "free";

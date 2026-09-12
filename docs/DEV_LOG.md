@@ -109,6 +109,115 @@
 
 ## Latest Task
 
+P1 Team Authorization: Option A strict separation + backfill A1 (proposal PR).
+
+## Changed Files
+
+- `src/lib/db/schema.ts`
+- `drizzle/0008_team_authorization.sql`
+- `src/lib/report-access.ts`
+- `src/lib/team-invitations.ts`
+- `src/lib/report-workflow.ts`
+- `src/lib/subscription.ts`
+- `src/lib/report-creation.ts`
+- `src/lib/email.ts`
+- `src/lib/ai/knowledge-context.ts`
+- `src/app/api/team/route.ts`
+- `src/app/api/team/accept/route.ts`
+- `src/app/api/reports/route.ts`
+- `src/app/api/reports/search/route.ts`
+- `src/app/api/knowledge/search/route.ts`
+- `src/app/api/webhooks/creem/route.ts`
+- `src/app/team/accept/page.tsx`
+- `src/app/team/accept/accept-invite-form.tsx`
+- `src/app/(app)/dashboard/page.tsx`
+- `scripts/team-authorization.test.ts`
+- `scripts/team-governance.test.ts`
+- `scripts/smoke/seed-auth-smoke.ts`
+- `src/lib/p0-plus/p0-plus.test.ts`
+- `package.json`
+- `docs/DEV_LOG.md`
+
+## Implementation Summary
+
+- Implemented Option A ("strict separation") with backfill A1. A report is
+  reachable only when the caller authored it OR the report's `teamId` is one of
+  the caller's ACCEPTED teams. Personal reports never become team-visible by
+  joining; existing reports are NOT backfilled and become personal.
+- Additive schema: `team_members.status` (default `accepted`), `acceptedAt`,
+  `invitedEmail`, `inviteTokenHash`, `inviteExpiresAt`, and a nullable
+  `user_id` so unregistered emails can stay pending; `reports.team_id` with
+  `on delete set null`. Migration `drizzle/0008_team_authorization.sql` is
+  additive only (no drops/rewrites).
+- Central scope in `src/lib/report-access.ts`: `getAccessibleReportScope`,
+  `getAccessibleTeamIds` (accepted memberships + owned teams with an active Team
+  subscription), `accessibleReportsWhere`, `reportMatchesScope`, and
+  `getAccessibleReport`. `getAccessibleUserIds` is kept for compatibility and
+  now returns only the caller (own personal reports).
+- Membership/access sites filtered to accepted: `report-access.ts`,
+  `report-workflow.ts` (all role/membership reads + new
+  `getUserWorkspaceRoleForTeam`), `subscription.ts` team entitlement,
+  `app/api/team/route.ts` member lookup, and the webhook owner membership is
+  explicitly inserted as accepted. Report list, deep search, Knowledge search,
+  and AI Knowledge Context all use the shared scope condition.
+- Invites: owner POST /api/team now creates a PENDING membership for registered
+  or unregistered emails (no 404) and sends a tokenized email via the shared
+  `sendEmail` utility. Added POST /api/team/accept (hash lookup + invited-email
+  match + acceptedAt) and a minimal `/team/accept` page. Resend reuses POST for
+  an existing pending row; DELETE revokes/removes and therefore removes access.
+- Report ownership: `createReportFromData` sets `reports.teamId` to the
+  creator's primary active team, otherwise null; quota/activity behavior is
+  unchanged. Dashboard shows pending vs accepted and an accessible revoke label.
+- Quality Case access/service: these files do not exist on `origin/main`
+  (`src/lib/quality-cases/**` is absent), so there was nothing to filter on this
+  base. If the quality-case branch lands later it must route through
+  `getAccessibleReport` / `accessibleReportsWhere`.
+- Fixed the pre-existing tsc error in `src/lib/p0-plus/p0-plus.test.ts` by
+  building the unsafe fixture patch as `Record<string, unknown>` before casting
+  (PR #39 fix).
+
+## Tests / Verification
+
+- `npm ci --no-audit --no-fund` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed (0 errors, 11 pre-existing warnings).
+- `npm run test:governance` passed (updated `getAccessibleUserIds` and
+  dashboard-label assertions, added strict-separation source checks).
+- `npm run test:p0-plus` passed.
+- `npm run test:team-auth` (new) passed: pure token/scope logic plus
+  source-level checks for every membership site.
+- `npm run check:seo` passed (124 sitemap URLs, 11 redirects).
+- `npm run build` passed.
+- Quality-case tests listed in `package.json`: none exist on this base.
+
+## Risks
+
+- A1 is a visible behavior change: any existing report that was only reachable
+  through team membership becomes personal. Per the spec this is acceptable
+  because operating metrics show no external team members.
+- `team_members.user_id` is now nullable; all in-repo readers were updated, but
+  any out-of-tree reader must handle null (pending unregistered invites).
+- Invitation email send is best-effort; a failed send leaves a pending row that
+  the owner can resend.
+- The disposable-DB behavioral smoke has not been run (no offline database).
+
+## Unfinished / Needs Human Review
+
+- Run the disposable-DB smoke documented in `scripts/smoke/seed-auth-smoke.ts`
+  and this spec: pre-join member report invisible to owner; team-scoped report
+  visible to all accepted members; two-team cross-isolation; pending invite has
+  no access until accept; revoke removes access; Quality Case scope.
+- Owner decision on the "member new report defaults to team-scoped vs personal
+  with explicit share" open question should be confirmed before rollout.
+
+## Suggested Next Task
+
+Wire the seed/pending-invite fixtures into `scripts/smoke/authenticated-smoke.ts`
+behind the disposable Neon branch workflow and run it, then add Quality Case
+access coverage if/when `src/lib/quality-cases/**` lands.
+
+## Previous Task
+
 P0+ PR5 E2E smoke, hardening, and Preview environment validation checklist.
 
 ## Changed Files
