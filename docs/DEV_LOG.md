@@ -1,5 +1,17 @@
 # Development Log
 
+## Completed: Team Authorization Fix Spec (2026-09-12)
+
+- Added docs/TEAM_AUTHORIZATION_FIX_SPEC.md, a decision-ready specification for
+  the confirmed P1 Team defect (owner adds members without acceptance; every
+  member report, including pre-join personal history, is visible to the team).
+- Documents the two policy options, recommends strict separation, defines the
+  additive schema (team_members.status/acceptedAt and reports.teamId), the
+  invite/accept flow, the backfill choice, every code touch point from the audit,
+  required DB-backed tests, rollout safety, and the open owner questions.
+- Documentation only. No runtime, schema, auth, payment, export, or production
+  configuration change.
+
 ## Completed: P2 Correctness Batch — D0 Persistence, Workflow Progression, Privacy Copy (2026-09-12)
 
 - Fixed the D0 revert defect. `reportType` and `priority` are D0 select fields
