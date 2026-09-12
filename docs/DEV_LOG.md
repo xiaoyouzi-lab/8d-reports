@@ -1,5 +1,21 @@
 # Development Log
 
+## Completed: Pull Request CI (2026-09-12)
+
+- Added .github/workflows/ci.yml to run on pull_request and on push to main:
+  npm ci, npx tsc --noEmit, npm run lint, the offline test suite
+  (test:p0-plus, test:p0-plus-preview, test:p0-plus-ui, test:p0-plus-smoke,
+  test:governance), npm run check:seo, and npm run build.
+- Deliberately excludes test:production-smoke, test:auth-smoke, and
+  smoke:auth because they hit production or require database/secrets that are
+  not available to pull request runs.
+- Also fixed the pre-existing npx tsc --noEmit failure on main in
+  src/lib/p0-plus/p0-plus.test.ts (build the unsafe fixture patch as a
+  Record<string, unknown> before casting), so the new typecheck gate is green.
+- The offline test step discovers every test:* script in package.json
+  (excluding the production/secrets-bound ones), so tests added by later PRs
+  run automatically.
+
 ## Completed: Private/Auth Page Index Hygiene (2026-09-12)
 
 - Some private pages inherited the root layout's robots: index, follow because
