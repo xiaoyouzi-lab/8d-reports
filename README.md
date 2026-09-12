@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 8D Reports
 
-## Getting Started
+面向质量工程师、供应商质量工程师和制造团队的轻量质量报告 SaaS，用于创建、审核、管理和导出结构化 8D 报告。
 
-First, run the development server:
+正式站：[www.8d-reports.com](https://www.8d-reports.com/)
+
+> 文档整理日期：**2026-09-12**。以下产品状态来自 **2026-09-08** 的综合检查，时间窗口也以该次检查为准。本次仅整理和同步文档，没有重新执行线上验收；后续部署或修复需补充新的验证记录。
+
+## 整体结论
+
+正式站在线，核心 8D 功能已成形，但权限隔离、保存与交付版本一致性、审批可用性仍有重要问题，尚不能认定为稳定完成商业化验收。Quality Case、中文页面及运营自动化需与正式站现有能力分开看待。
+
+产品不是完整 QMS；AI 只提供辅助意见，不批准报告、不创造证据，也不保证客户接受。
+
+## 产品与功能状态
+
+| 方面 | 检查结果与能力边界 |
+| --- | --- |
+| D0–D8 报告 | 已有结构化编辑、标准模板、根因分析、纠正措施、验证、预防、结案等字段。字段填全不等于证据或质量审核通过。 |
+| 保存与附件 | 已有 Save/Next 持久化、按步骤管理附件；仍有保存失败反馈和字段一致性问题。 |
+| 导出 | 支持标准 PDF、Word、Excel；有附件时可打包 ZIP。客户特定模板和特殊格式属于另行确认的服务范围。 |
+| 分享与团队 | 已有 view/edit 分享、撤销、Owner/Editor/Viewer、审批、锁定与活动记录；团队授权边界尚需修复。 |
+| 历史记录 | 普通 8D 有 revision 计数与变更摘要，不等于完整历史快照恢复。Quality Case 使用独立版本模型。 |
+| 知识复用 | 已有可访问完成报告的搜索、筛选、打开和复制；搜索候选限最近 250 条，最多返回 50 条。 |
+| AI Quality Check | 白名单 Beta，存在权限与锁定检查、保守提示；本轮未验证真实模型效果。普通审查并不读取附件正文，JSON 可解析也不等于业务内容正确。 |
+| Quality Case | 本地／RC 已有供应商提交、内部审核、客户确认、有效性验证、关闭／重开等实现；正式站 `/cases` 在检查时返回 404。 |
+| 中文页面 | 本地已有相关改动；正式站 `/zh`、`/zh/pricing` 在检查时均返回 404。 |
+| 可用性 | 注册恢复、任务继续、移动端 AI 入口存在源码层面的缺口；本轮没有完成真实桌面／移动端全流程验收。 |
+
+检查时的套餐边界：Free 为 3 份终身报告、查看分享和水印 PDF；Pro 增加无限个人报告、无水印 PDF、Word/Excel、Logo 和可编辑分享；Team 增加 5 席位及团队流程控制。购买入口存在不代表付款、退款或服务履约已验收。
+
+## 已知问题与处理顺序
+
+以下为检查时发现的待处理项，不代表已修复。P1 优先于新功能发布；P2 随后集中处理。
+
+| 优先级 | 问题与影响 | 最小处理方向 |
+| --- | --- | --- |
+| P1 | Team 成员授权缺少受邀者接受环节，个人历史报告与团队访问范围的边界不足。 | 先建立成员接受与报告归属边界，再验证跨团队隔离；不能只补前端确认。 |
+| P1 | 编辑后直接导出、AI 审查或批准可能使用不同版本：PDF 使用页面当前内容，Word/Excel、审查与审批依赖已保存内容。 | 统一“保存成功 → 使用同一服务器版本 → 执行动作”，保存失败不得继续。 |
+| P2 | D0 报告类型、优先级保存后可能在刷新时回退。 | 统一字段来源及读写路径。 |
+| P2 | Next 保存失败被忽略，仍切换步骤，用户可能误以为已保存。 | 明确保存状态、失败提示和重试入口。 |
+| P2 | Approved 后界面只提供解锁修订，正常 Submitted/Closed 推进不顺畅。 | 保留后端允许的后续状态操作。 |
+| P2 | 登录／注册切换丢失原任务；验证码发送失败后缺恢复入口。 | 保留安全的站内继续地址，并提供已有账户的验证重试。是否强制邮箱验证需单独明确产品规则。 |
+| P2 | 手机端 AI 入口隐藏，部分登录控件缺少键盘／可访问性支持。 | 提供移动端入口并完成键盘与窄屏验收。 |
+| P2 | 注册及导出关键事件重复映射到同名 GA4 事件；注册事件发生在 OTP 验证前。 | 区分尝试、账户创建、验证完成和成功交付，每个关键事件只发送一次。 |
+| P2 | 隐私页称不使用追踪 Cookie，但线上加载 GA。 | 对齐实际分析行为与公开说明；这是产品说明一致性问题，不是法律判定。 |
+| P2 | Contact 反馈缺明确通知、处理状态和跟进队列。 | 建立待处理入口、负责人及处理状态。 |
+| P2 | 状态文档、运营报表和自动任务与实际运行情况脱节。 | 统一当前状态记录，恢复真实巡检与数据更新。 |
+
+Team 授权、版本一致性、D0 保存、Next 保存和审批问题的相关源码，在检查时已与生产提交比对一致；本轮没有使用真实账户写入或利用漏洞来复现。源码证据、已有测试、HTTP 检查和真实界面验收不能互相替代。
+
+## 部署与工程状态
+
+以下均是 **2026-09-08 的快照**，不是对文档更新后部署状态的声明：
+
+- 正式站生产提交为 `dfe3c59a52014a082907cdb841c096b5c3451159`，当时与 GitHub `main` 一致；Vercel 显示 Ready，部署时间为 7 月 15 日。
+- 审查使用的本地分支为 `codex/rc2-preview-hardening`，HEAD 为 `98a86b7`，另有未提交改动；不等于正式站版本。
+- 首页返回 200，裸域跳转 www，Dashboard 跳转登录；`/cases` 和两个中文页面返回 404。
+- 远端可见 Authenticated Smoke、Quality Case Canary Gate 两个 workflow；本地新增的五个日／周／月 workflow 尚未上线，schedule 运行列表与 Vercel cron 定义为空。
+- 当时最近的 7 月 21 日 Canary 运行在输入保护检查失败，后续生命周期测试跳过，不能解释为已运行且产品流程失败。
+- 最近 24 小时生产 5xx 查询返回零条，但受查询范围、留存和流量限制，不能据此宣称 SLA 或持续稳定。
+- 尚未验证生产备份恢复、恢复时间、告警和性能表现；隔离数据库迁移回滚记录不能替代生产恢复演练。
+
+## 运营与商业情况
+
+已有获客内容、示例下载、服务咨询入口和运营文档，但没有形成可验证的持续获客、客户交付、留存与付费闭环。
+
+**数据口径限制：**下表来自 2026-09-08 22:58–23:00（北京时间）对本地配置数据库的只读聚合查询。该库尚未确认就是当时生产运行数据库，不能把这些数字称为生产收入或真实客户数量。账户指标已排除仓库已知测试规则，但不能保证剩余账户都是外部客户。
+
+| 指标 | 查询结果 |
+| --- | --- |
+| 近 30 天新增账户 | 3，其中 2 个邮箱已验证 |
+| 近 30 天创建报告 | 2，来自 2 位作者 |
+| 近 30 天完成报告／附件／成功导出事件 | 均为 0 |
+| 近 7 天新增账户／创建报告 | 均为 0 |
+| 排除已知测试后的有效订阅 | 0；订阅状态也不直接等于实收 |
+| 单份导出购买／checkout_completed | 此库全历史记录均为 0 |
+| 服务咨询 | 共 2 条，均对应 6 月 5 日测试记录，不能计为真实客户线索 |
+| SEO 页面浏览事件 | 7 天 24，30 天 65 |
+| 示例下载事件 | 7 天 6，30 天 21 |
+
+页面浏览不是独立访客，示例下载事件不是成功交付；匿名内部访问、机器人及检查流量未排除。
+
+运营证据的主要缺口：
+
+- GA4/GSC 本地输入停在 6 月 22 日；7 月 1 日周报读取旧输入，不能说明 9 月增长。
+- 7 天收入日志只填了 Day 1；渠道账号和站外发布仍有待办／草稿，缺实际发布地址与效果记录。
+- 定时巡检尚未形成远端运行与失败通知闭环。
+- 真实支付、退款、取消订阅、邮件送达、服务交付和售后响应时效未验收；取消订阅目前需要联系支持。
+
+## 验证记录与未完成项
+
+9 月 8 日已通过的检查：
+
+| 检查 | 结果及范围 |
+| --- | --- |
+| `git diff --check` | 通过 |
+| TypeScript | `npx tsc --noEmit` 通过 |
+| ESLint | 0 错误、11 警告 |
+| 构建 | `npm run build` 通过 |
+| SEO | 124 个 URL、11 个重定向检查通过 |
+| 现有测试 | 19 个脚本通过，包含审查工作区的 P0+、Quality Case 和 governance；不表示 main 单独具有全部这些测试 |
+| 公共生产 smoke | 31 次 GET 通过：19 个 HTML 页面、12 个示例导出响应；不验证真实账户文件或 Office 视觉效果 |
+
+本轮浏览器因 Computer Use URL 限制停止，未获得可接受的真实页面验收证据。仍需完成：
+
+1. 注册、验证码收信、失败恢复，以及登录后继续原任务。
+2. Owner/Editor/Viewer 完整操作与跨团队权限隔离。
+3. 编辑、刷新、审查、审批和 PDF/Word/Excel/附件交付的一致性。
+4. 桌面、手机、键盘及可访问性检查。
+5. 真实 AI 的保守性、异常恢复与 Guided 流程。
+6. 支付、webhook、取消／退款、服务交付与支持跟进。
+7. 生产数据库身份、可信运营指标、巡检告警与备份恢复。
+
+此前 7 月 21 日的本地 RC 记录报告三角色功能流程通过，但新手可用性及 Guided Provider 合约验证仍存在问题，Named User Canary 保持 NO-GO。该历史记录不代替本轮或未来的真实验收。
+
+建议顺序：**Team 隔离 → 保存和版本一致性 → D0／审批／注册体验 → 真实用户与文件验收 → 可信运营数据和自动巡检 → 再评估新功能上线与扩大获客。**
+
+## 项目开发
+
+开发前先读：
+
+- [产品背景](docs/PRODUCT_CONTEXT.md)
+- [当前任务](docs/CURRENT_TASK.md)（检查时仍是较早的内容发布任务，不能作为所有功能已完成的依据）
+- [产品决策](docs/DECISIONS.md)
+- [验收清单](docs/ACCEPTANCE_CHECKLIST.md)
+- [开发日志](docs/DEV_LOG.md)
+- [隔离环境验收](docs/AUTHENTICATED_SMOKE_TESTING.md)
+
+主要技术栈：Next.js、React、TypeScript、Better Auth、Neon/PostgreSQL、Drizzle、Cloudflare R2。使用本地已安全配置的开发环境；不要使用生产数据库进行 seed/reset/smoke 写入。
 
 ```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+常用检查：
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npx tsc --noEmit
+npm run lint
+npm run check:seo
+npm run test:governance
+npm run build
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js 的具体 API 和项目约定以安装版本及 `node_modules/next/dist/docs/` 为准。文档同步、代码发布、数据库变更和生产验收应分别记录结果。

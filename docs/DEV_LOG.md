@@ -1692,3 +1692,24 @@ Marketing Data Pipeline v1 for 8d-reports.com.
 - Added `marketing:gsc`, `marketing:ga4`, and `marketing:report` package scripts.
 - Established data reliability grades and conservative operating rules.
 - This work intentionally excludes live CSV exports, real weekly reports, and Google credentials from Git.
+
+
+# 2026-09-12 — README Product Status Summary
+
+- Replaced the starter README with the product overview, feature boundaries,
+  prioritized findings, deployment differences, operating evidence, verification
+  results and remaining acceptance work from the September 8 audit.
+- Explicitly separates the September 12 documentation update from September 8
+  observations; database metrics are not claimed to be verified production
+  business data. Historical checks are not presented as new test runs.
+- Only README.md and this new log entry are included in the GitHub update.
+  Existing local application changes and earlier uncommitted log entries are
+  preserved and are not part of this documentation commit.
+- Validation: documentation diff/whitespace, local relative link targets,
+  staged file scope and remote commit/content verification. No application
+  tests were rerun because this change only updates documentation.
+- Remaining risk: recorded product defects and unverified GUI, payment, real AI,
+  production data identity and recovery gates remain open. No fixes or
+  production configuration changes are included.
+- Suggested next task: isolate and repair Team authorization, then the shared
+  save/version boundary before end-to-end user and actual-file acceptance.
