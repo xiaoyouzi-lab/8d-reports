@@ -28,6 +28,7 @@ const ALLOWED_EVENTS = new Set([
   "upgrade_clicked",
   "signup_started",
   "signup_completed",
+  "signup_account_created",
   "export_attempted",
   "single_export_clicked",
   "checkout_started",

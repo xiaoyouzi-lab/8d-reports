@@ -76,7 +76,18 @@ export async function PUT(
 
   const updates: ReportUpdate = {};
   if (typeof body.title === "string") updates.title = body.title.trim() || "Untitled Report";
-  if (isPlainObject(body.data)) updates.data = body.data;
+  if (isPlainObject(body.data)) {
+    updates.data = body.data;
+    // Report type and priority are edited as D0 fields inside `data`, but the
+    // reader prefers the dedicated columns. Keep them in sync or the value
+    // reverts to the pre-edit column after a refresh.
+    if (["customer_8d", "internal_8d"].includes(body.data.reportType as string)) {
+      updates.reportType = body.data.reportType as string;
+    }
+    if (["low", "medium", "high"].includes(body.data.priority as string)) {
+      updates.priority = body.data.priority as string;
+    }
+  }
   if (isPlainObject(body.stepStatus)) updates.stepStatus = body.stepStatus;
   if (["draft", "in_progress", "completed"].includes(body.status)) updates.status = body.status;
   if (["low", "medium", "high"].includes(body.priority)) updates.priority = body.priority;

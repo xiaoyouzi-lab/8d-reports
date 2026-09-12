@@ -210,8 +210,18 @@ export function ReportWorkflowPanel({
           )}
           {canManageWorkflow && locked && (
             <div className="mt-3 grid gap-2">
+              {workflowStatus === "approved" && (
+                <Button disabled={saving} onClick={() => void updateWorkflow({ workflowStatus: "submitted" })}>
+                  Submit to customer
+                </Button>
+              )}
+              {workflowStatus === "submitted" && (
+                <Button disabled={saving} onClick={() => void updateWorkflow({ workflowStatus: "closed" })}>
+                  Close report
+                </Button>
+              )}
               <Textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason for unlocking this report for revision" rows={3} />
-              <Button disabled={saving || !reason.trim()} onClick={() => void updateWorkflow({ action: "unlock", reason })}>
+              <Button variant="outline" disabled={saving || !reason.trim()} onClick={() => void updateWorkflow({ action: "unlock", reason })}>
                 <Unlock className="size-3.5" /> Unlock for revision
               </Button>
             </div>

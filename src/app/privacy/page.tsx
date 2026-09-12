@@ -11,7 +11,7 @@ export default function PrivacyPage() {
       <h1 className="text-3xl font-bold mb-8">Privacy Policy</h1>
       <Card>
         <CardContent className="prose prose-sm max-w-none pt-6 space-y-4">
-          <p><strong>Last updated:</strong> May 20, 2026</p>
+          <p><strong>Last updated:</strong> September 12, 2026</p>
           
           <h2>1. Information We Collect</h2>
           <p>When you create an account, we collect your name, email address, and authentication credentials. When you create 8D reports, we store the report data you provide including text, dates, and file attachments.</p>
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
           <p>Your data is stored on Neon (PostgreSQL) and Cloudflare R2 (file storage). All data is encrypted in transit (TLS 1.3) and at rest. Authentication uses industry-standard JWT tokens with HttpOnly, Secure, and SameSite cookies.</p>
           
           <h2>4. Cookies</h2>
-          <p>We use essential cookies for authentication (session tokens) and language preferences. We do not use tracking or advertising cookies.</p>
+          <p>We use essential cookies for authentication (session tokens) and language preferences. When analytics is enabled for a deployment, we also use Google Analytics to understand aggregate product usage, and Google Analytics may set analytics cookies. We do not use advertising or cross-site tracking cookies, and we do not sell your data.</p>
           
           <h2>5. Your Rights</h2>
           <p>You can export your report data at any time (PDF/Word export). You can request account deletion by contacting support. Under GDPR, you have the right to access, rectify, and erase your personal data.</p>

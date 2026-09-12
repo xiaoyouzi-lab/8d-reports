@@ -1,5 +1,38 @@
 # Development Log
 
+## Completed: P2 Correctness Batch — D0 Persistence, Workflow Progression, Privacy Copy (2026-09-12)
+
+- Fixed the D0 revert defect. `reportType` and `priority` are D0 select fields
+  stored inside `ReportData`, but `PUT /api/reports/[id]` only synced the
+  dedicated `reports.report_type` / `reports.priority` columns from top-level
+  body fields the editor never sends. The reader prefers the columns, so a
+  saved D0 change reverted after refresh. The route now mirrors valid
+  `data.reportType` / `data.priority` values into the columns.
+- Fixed approval progression. The workflow route already allows
+  locked -> locked transitions (`approved -> submitted -> closed`), but the panel
+  hid the status control once locked and only offered "Unlock for revision".
+  Locked reports now expose the backend-allowed next step (Submit to customer,
+  then Close report) alongside the unlock form.
+- Fixed the privacy disclosure. The page said "We do not use tracking or
+  advertising cookies" while Google Analytics loads whenever it is configured.
+  The copy now discloses analytics cookies when analytics is enabled and still
+  states that advertising/cross-site tracking cookies are not used.
+- Fixed login/signup task continuity and OTP recovery. The login -> signup and
+  signup -> login links now forward `callbackUrl`, the proxy keeps the query
+  string in its login redirect, and signup switches to the verification step
+  before sending the code so a failed send still reaches the OTP screen with
+  "Resend code". The password visibility toggle is now keyboard reachable and
+  labelled.
+- Fixed duplicate signup analytics. `signup_success` and `signup_completed`
+  both mapped to the GA4 `sign_up` funnel event and both fired at account
+  creation. Now `signup_success` is reported as `signup_account_created`, and
+  `signup_completed` (GA4 `sign_up`) fires only after email verification.
+- Added `scripts/p2-correctness.test.ts` (`npm run test:p2-correctness`) as a
+  source-level regression guard and an npm script.
+- No auth, payment, database schema, environment variable, export-logic, or
+  production-config change. Residual risk: the workflow and D0 fixes need a real
+  authenticated browser pass; the privacy sentence is a factual copy alignment,
+  not a legal review or a consent-gating change.
 ## Completed: P1 Save/Version Consistency Hardening (2026-09-12)
 
 - Fixed the confirmed P1 defect where PDF export rendered the live, unsaved
