@@ -1,4 +1,11 @@
 import Link from "next/link"
+import type { Metadata } from "next"
+
+// Login and signup are thin, private pages with parameterized URLs. Keep them
+// out of search results so they cannot be indexed as duplicate/alternate pages.
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default function AuthLayout({
   children,

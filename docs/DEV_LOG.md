@@ -33,6 +33,67 @@
   production-config change. Residual risk: the workflow and D0 fixes need a real
   authenticated browser pass; the privacy sentence is a factual copy alignment,
   not a legal review or a consent-gating change.
+## Completed: P1 Save/Version Consistency Hardening (2026-09-12)
+
+- Fixed the confirmed P1 defect where PDF export rendered the live, unsaved
+  client state while Word/Excel/ZIP, AI review/draft, and workflow approval read
+  the last persisted row, so actions could silently use different versions.
+- The report editor now tracks a saved snapshot (`lastSavedData` /
+  `lastSavedTitle`), derives `isDirty`, and exposes one `ensureSaved()`
+  barrier. `handleNext` no longer swallows save failures: it aborts the step
+  transition and shows the error instead of pretending the step was saved.
+- `ExportMenu`, `AiReportTools`, and `ReportWorkflowPanel` now await the
+  barrier before acting and abort when the save fails. PDF is rendered from the
+  returned saved version, so PDF/Word/Excel/ZIP/AI/approval all agree. Read-only
+  users are unaffected because the server row is already authoritative.
+- The AI entry is no longer hidden on mobile (`hidden md:inline-flex` became
+  `inline-flex` with an icon-only trigger on narrow screens), so mobile users can
+  reach AI Quality Check.
+- Removed the duplicate `export_clicked` analytics events. `export_attempted`
+  and `export_clicked` both mapped to the same GA4 funnel event, so every export
+  was counted twice; `export_attempted` now fires once and `export_succeeded`
+  remains the completion signal.
+- Added `scripts/version-consistency.test.ts`
+  (`npm run test:version-consistency`) as a wiring regression guard, plus an npm
+  script.
+- Also fixed a pre-existing `tsc --noEmit` error on `main` in
+  `src/lib/p0-plus/p0-plus.test.ts` (the unsafe-key fixture now builds a
+  `Record<string, unknown>` before casting), so the typecheck gate is green.
+- No auth, payment, database schema, environment variable, export-template, or
+  production-config change. Residual risk: real browser acceptance of the
+  save-first flow (unsaved edit -> export/AI/approve) still needs a manual pass;
+  a concurrent writer between save and action can still diverge until a revision
+  token (baseRevision/409) is added.
+## Completed: Pull Request CI (2026-09-12)
+
+- Added .github/workflows/ci.yml to run on pull_request and on push to main:
+  npm ci, npx tsc --noEmit, npm run lint, the offline test suite
+  (test:p0-plus, test:p0-plus-preview, test:p0-plus-ui, test:p0-plus-smoke,
+  test:governance), npm run check:seo, and npm run build.
+- Deliberately excludes test:production-smoke, test:auth-smoke, and
+  smoke:auth because they hit production or require database/secrets that are
+  not available to pull request runs.
+- Also fixed the pre-existing npx tsc --noEmit failure on main in
+  src/lib/p0-plus/p0-plus.test.ts (build the unsafe fixture patch as a
+  Record<string, unknown> before casting), so the new typecheck gate is green.
+- The offline test step discovers every test:* script in package.json
+  (excluding the production/secrets-bound ones), so tests added by later PRs
+  run automatically.
+
+## Completed: Private/Auth Page Index Hygiene (2026-09-12)
+
+- Some private pages inherited the root layout's robots: index, follow because
+  client component pages cannot export metadata. This made /login, /signup,
+  /reset-password, and tokenized /share/[token] report pages indexable, and
+  parameterized auth URLs could appear as duplicate/alternate pages in Search
+  Console.
+- Added robots: { index: false, follow: false } to src/app/(auth)/layout.tsx
+  (covers login and signup) and new colocated server layouts for
+  src/app/reset-password/layout.tsx and src/app/share/[token]/layout.tsx.
+- Added scripts/index-hygiene.test.ts (npm run test:index-hygiene) plus an npm
+  script.
+- No public/SEO page content, sitemap, redirect, auth logic, payment, database
+  schema, export logic, environment variable, or production configuration change.
 
 ## Latest Task
 
