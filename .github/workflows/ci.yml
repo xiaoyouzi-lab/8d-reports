@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Typecheck, lint, tests, SEO, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Offline test suite
+        run: |
+          # Discover every offline test:* script so newly added tests are covered
+          # automatically. Exclude the ones that hit production or need secrets.
+          scripts=$(node -e "const s=require('./package.json').scripts||{};const skip=new Set(['test:production-smoke','test:auth-smoke']);console.log(Object.keys(s).filter((k)=>k.startsWith('test:')&&!skip.has(k)).join(' '))")
+          echo "Running: $scripts"
+          for script in $scripts; do
+            echo "::group::$script"
+            npm run "$script"
+            echo "::endgroup::"
+          done
+
+      - name: SEO URL check
+        run: npm run check:seo
+
+      - name: Build
+        run: npm run build
