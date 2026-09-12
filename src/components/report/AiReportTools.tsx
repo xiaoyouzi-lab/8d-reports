@@ -295,11 +295,11 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm" variant="outline" className="hidden md:inline-flex" />
+          <Button size="sm" variant="outline" className="inline-flex" />
         }
       >
           <Sparkles className="size-3.5" />
-          AI
+          <span className="hidden sm:inline">AI</span>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>

@@ -13,6 +13,9 @@
   barrier before acting and abort when the save fails. PDF is rendered from the
   returned saved version, so PDF/Word/Excel/ZIP/AI/approval all agree. Read-only
   users are unaffected because the server row is already authoritative.
+- The AI entry is no longer hidden on mobile (`hidden md:inline-flex` became
+  `inline-flex` with an icon-only trigger on narrow screens), so mobile users can
+  reach AI Quality Check.
 - Added `scripts/version-consistency.test.ts`
   (`npm run test:version-consistency`) as a wiring regression guard, plus an npm
   script.

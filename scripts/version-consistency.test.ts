@@ -33,6 +33,7 @@ assert.equal(exportMenu.includes("warnIfReportNeedsWork()"), false, "warn helper
 
 // AI review and draft both wait for the saved version.
 assert.ok(aiTools.includes("onBeforeAction?: () => Promise<ReportData | null>"), "AiReportTools must accept onBeforeAction");
+assert.equal(aiTools.includes('className="hidden md:inline-flex"'), false, "AI entry must be reachable on mobile");
 assert.ok(count(aiTools, "onBeforeAction ? await onBeforeAction() : reportData") >= 2, "AI review and draft must wait for a save");
 assert.ok(count(aiTools, "if (!fresh) return") >= 2, "AI actions must abort on save failure");
 
