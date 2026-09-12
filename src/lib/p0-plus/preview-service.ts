@@ -7,7 +7,12 @@ import {
   P0_PLUS_PREVIEW_RAW_INPUT_STORAGE_CHARS,
   P0_PLUS_PREVIEW_TTL_MS,
 } from "@/lib/p0-plus/config";
-import { p0PlusPreviewAiClient, P0PlusPreviewAiError, type P0PlusPreviewAiClient } from "@/lib/p0-plus/ai";
+import {
+  p0PlusPreviewAiClient,
+  P0PlusPreviewAiError,
+  P0PlusPreviewAiSchemaError,
+  type P0PlusPreviewAiClient,
+} from "@/lib/p0-plus/ai";
 import { p0PlusRateLimiter, type P0PlusRateLimiter } from "@/lib/p0-plus/rate-limit";
 import {
   p0PlusPreviewStorage,
@@ -135,6 +140,7 @@ export async function createP0PlusPreview(
   try {
     preview = await aiClient.generatePreview({ rawInput, outputLanguage });
   } catch (error) {
+    const schemaInvalid = error instanceof P0PlusPreviewAiSchemaError;
     if (!(error instanceof P0PlusPreviewAiError)) {
       console.error("Unexpected P0+ preview AI error", { error });
     }
@@ -142,7 +148,7 @@ export async function createP0PlusPreview(
       status: 502,
       body: {
         error: "Preview could not be generated",
-        code: "preview_generation_failed",
+        code: schemaInvalid ? "preview_schema_invalid" : "preview_generation_failed",
       },
     };
   }
