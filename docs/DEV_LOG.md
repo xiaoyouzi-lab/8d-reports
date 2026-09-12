@@ -1,5 +1,30 @@
 # Development Log
 
+## Completed: P1 Save/Version Consistency Hardening (2026-09-12)
+
+- Fixed the confirmed P1 defect where PDF export rendered the live, unsaved
+  client state while Word/Excel/ZIP, AI review/draft, and workflow approval read
+  the last persisted row, so actions could silently use different versions.
+- The report editor now tracks a saved snapshot (`lastSavedData` /
+  `lastSavedTitle`), derives `isDirty`, and exposes one `ensureSaved()`
+  barrier. `handleNext` no longer swallows save failures: it aborts the step
+  transition and shows the error instead of pretending the step was saved.
+- `ExportMenu`, `AiReportTools`, and `ReportWorkflowPanel` now await the
+  barrier before acting and abort when the save fails. PDF is rendered from the
+  returned saved version, so PDF/Word/Excel/ZIP/AI/approval all agree. Read-only
+  users are unaffected because the server row is already authoritative.
+- Added `scripts/version-consistency.test.ts`
+  (`npm run test:version-consistency`) as a wiring regression guard, plus an npm
+  script.
+- Also fixed a pre-existing `tsc --noEmit` error on `main` in
+  `src/lib/p0-plus/p0-plus.test.ts` (the unsafe-key fixture now builds a
+  `Record<string, unknown>` before casting), so the typecheck gate is green.
+- No auth, payment, database schema, environment variable, export-template, or
+  production-config change. Residual risk: real browser acceptance of the
+  save-first flow (unsaved edit -> export/AI/approve) still needs a manual pass;
+  a concurrent writer between save and action can still diverge until a revision
+  token (baseRevision/409) is added.
+
 ## Latest Task
 
 P0+ PR5 E2E smoke, hardening, and Preview environment validation checklist.

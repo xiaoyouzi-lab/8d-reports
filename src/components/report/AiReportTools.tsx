@@ -14,6 +14,12 @@ interface AiReportToolsProps {
   reportData: ReportData
   plan?: "free" | "pro" | "team"
   onApplyDraft: (fields: Partial<ReportData>) => void
+  /**
+   * Persists pending edits and returns the saved version. Returns null when
+   * saving failed, so AI actions never run against a different version than
+   * the one the user is editing.
+   */
+  onBeforeAction?: () => Promise<ReportData | null>
 }
 
 type AiOutput = Record<string, unknown>
@@ -196,7 +202,7 @@ function AiDraftResult({ draftFields, onApply }: { draftFields: Partial<ReportDa
   )
 }
 
-export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraft }: AiReportToolsProps) {
+export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraft, onBeforeAction }: AiReportToolsProps) {
   const [open, setOpen] = useState(false)
   const [materials, setMaterials] = useState("")
   const [review, setReview] = useState<AiOutput | null>(null)
@@ -210,6 +216,8 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
     setLoading("review")
     setReviewKnowledgeContext(null)
     try {
+      const fresh = onBeforeAction ? await onBeforeAction() : reportData
+      if (!fresh) return
       trackEvent("ai_report_review_clicked", {}, reportId)
       const res = await fetch("/api/ai/report-review", {
         method: "POST",
@@ -255,11 +263,13 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
     }
     setLoading("draft")
     try {
+      const fresh = onBeforeAction ? await onBeforeAction() : reportData
+      if (!fresh) return
       trackEvent("ai_draft_generate_clicked", {}, reportId)
       const res = await fetch("/api/ai/draft-report", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportId, materials, currentReportData: reportData }),
+        body: JSON.stringify({ reportId, materials, currentReportData: fresh }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) throw new Error(data?.error || "AI draft failed")
