@@ -93,10 +93,16 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
         setLoading(false)
         return
       }
-      await requestVerificationCode()
+      // Land on the verification step before sending so a failed send still
+      // reaches the OTP screen, where "Resend code" is available.
+      setStep("otp")
+      try {
+        await requestVerificationCode()
+      } catch (error) {
+        setError(error instanceof Error ? error.message : "We could not send the verification code. Use Resend code below.")
+      }
       trackEvent("signup_success", { method: "email" })
       trackEvent("signup_completed", { method: "email" })
-      setStep("otp")
       setLoading(false)
     } catch (error) {
       setError(error instanceof Error ? error.message : "An unexpected error occurred")
@@ -251,7 +257,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
       </CardContent>
       <CardFooter className="justify-center border-t bg-muted/50 p-4">
         <p className="text-sm text-muted-foreground">
-          Already have an account? <Link href="/login" className="font-medium text-indigo-600 hover:text-indigo-700">Sign in</Link>
+          Already have an account? <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-medium text-indigo-600 hover:text-indigo-700">Sign in</Link>
         </p>
       </CardFooter>
     </Card>

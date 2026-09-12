@@ -99,16 +99,18 @@ assert.equal(
   true,
 );
 
+const unsafeReportDataPatch: Record<string, unknown> = {
+  ...injectionMoldingFlashFixture.response.conversion.reportDataPatch,
+  preparedSignatureUrl: "/api/attachments/private-signature/file",
+  approverName: "Unverified Approver",
+  privateUserId: "user_123",
+};
+
 const unsafeMapperFixture: P0PlusPreviewResponse = {
   ...injectionMoldingFlashFixture.response,
   conversion: {
     ...injectionMoldingFlashFixture.response.conversion,
-    reportDataPatch: {
-      ...injectionMoldingFlashFixture.response.conversion.reportDataPatch,
-      preparedSignatureUrl: "/api/attachments/private-signature/file",
-      approverName: "Unverified Approver",
-      privateUserId: "user_123",
-    },
+    reportDataPatch: unsafeReportDataPatch as P0PlusPreviewResponse["conversion"]["reportDataPatch"],
   },
 };
 const mapped = mapP0PlusPreviewToReportDataPatch(unsafeMapperFixture);
