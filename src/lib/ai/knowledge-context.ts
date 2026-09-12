@@ -1,7 +1,7 @@
-import { and, desc, inArray, ne } from "drizzle-orm";
+import { and, desc, ne } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
-import { getAccessibleUserIds } from "@/lib/report-access";
+import { getAccessibleReportScope, accessibleReportsWhere } from "@/lib/report-access";
 import {
   KNOWLEDGE_SCAN_LIMIT,
   normalizeKnowledgeQuery,
@@ -138,7 +138,7 @@ export async function buildKnowledgeContextForQualityCheck(
   report: ReportRow,
   user: { id: string },
 ): Promise<QualityCheckKnowledgeContextItem[]> {
-  const accessibleUserIds = await getAccessibleUserIds(user.id);
+  const scope = await getAccessibleReportScope(user.id);
   const candidateRows = await db
     .select({
       id: reports.id,
@@ -156,7 +156,7 @@ export async function buildKnowledgeContextForQualityCheck(
       updatedAt: reports.updatedAt,
     })
     .from(reports)
-    .where(and(inArray(reports.userId, accessibleUserIds), ne(reports.id, report.id)))
+    .where(and(accessibleReportsWhere(scope), ne(reports.id, report.id)))
     .orderBy(desc(reports.updatedAt))
     .limit(KNOWLEDGE_SCAN_LIMIT);
 

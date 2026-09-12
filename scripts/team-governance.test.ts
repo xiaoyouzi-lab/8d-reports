@@ -275,7 +275,8 @@ assert.match(reportEditorPage, /onOpenKnowledgeReuse=\{openKnowledgeReuse\}/, "R
 assert.match(reportEditorPage, /getKnowledgeReadinessSummary/, "Report editor should calculate Knowledge readiness from current report data");
 assert.match(reportEditorPage, /<KnowledgeReadinessPanel reportData=\{reportData\} reportId=\{reportId\} plan=\{plan\} \/>/, "Report editor should show the Knowledge readiness panel");
 assert.match(reportEditorPage, /knowledgeReadiness=\{knowledgeReadiness\}/, "Report editor should pass readiness summary into workflow controls");
-assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*try \{\s*await saveToServer/, "Report editor should not silently save when a Viewer only changes steps");
+assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*const saved = await ensureSaved\(\)/, "Report editor should only run the save barrier when the user can edit, so a Viewer changing steps does not save");
+assert.match(reportEditorPage, /if \(saved === null\) return/, "Report editor should abort the step transition when the save barrier fails");
 assert.doesNotMatch(reportEditorPage, /pointer-events-none opacity-75/, "Read-only reports should still allow attachment preview and navigation");
 
 const stepForm = read("src/components/report/StepForm.tsx");
@@ -329,7 +330,8 @@ const knowledgeRoute = read("src/app/api/knowledge/search/route.ts");
 assert.match(knowledgeRoute, /export async function POST/, "Knowledge search API must be POST-only");
 assert.doesNotMatch(knowledgeRoute, /export async function GET/, "Knowledge search API must not expose GET");
 assert.match(knowledgeRoute, /getSessionUser/, "Knowledge search must require an authenticated user");
-assert.match(knowledgeRoute, /getAccessibleUserIds/, "Knowledge search must reuse Team report access scope");
+assert.match(knowledgeRoute, /getAccessibleReportScope/, "Knowledge search must reuse the central report access scope");
+assert.match(knowledgeRoute, /accessibleReportsWhere/, "Knowledge search must scope by own reports plus accepted-team reports");
 assert.match(knowledgeRoute, /normalizeKnowledgeQuery/, "Knowledge search must safely normalize query text");
 assert.match(knowledgeRoute, /body\.query \?\? body\.q/, "Knowledge search must support the documented query field while keeping q compatibility");
 assert.match(knowledgeRoute, /eq\(reports\.status, "completed"\)/, "Knowledge search must include completed reports");
@@ -352,6 +354,36 @@ assert.match(teamRoute, /team_member_added/, "Team member additions must be logg
 assert.match(teamRoute, /team_member_role_changed/, "Team member role changes must be logged");
 assert.match(teamRoute, /team_member_removed/, "Team member removals must be logged");
 assert.match(teamRoute, /getTeamActivities/, "Team API should return recent team activity for the dashboard");
+
+const reportAccessSource = read("src/lib/report-access.ts");
+assert.match(reportAccessSource, /getAccessibleReportScope/, "Central report scope must expose user plus accepted-team scope");
+assert.match(reportAccessSource, /getAccessibleTeamIds/, "Central report scope must expose accepted team ids");
+assert.match(reportAccessSource, /eq\(teamMembers\.status, "accepted"\)/, "Central report scope must only count accepted memberships");
+assert.match(reportAccessSource, /reports\.teamId/, "Central report scope must include team-scoped reports");
+assert.match(reportAccessSource, /eq\(reports\.id, reportId\), accessibleReportsWhere\(scope\)/, "Single-report access must reuse the central scope condition");
+
+assert.match(teamRoute, /status: "pending"/, "Team invites must create pending memberships");
+assert.match(teamRoute, /inviteTokenHash/, "Team invites must store a hashed invitation token");
+assert.match(teamRoute, /sendTeamInvitationEmail/, "Team invites must send a tokenized invitation email");
+assert.doesNotMatch(teamRoute, /not registered yet/, "Team invites must not 404 unregistered emails");
+
+const teamAcceptRoute = read("src/app/api/team/accept/route.ts");
+assert.match(teamAcceptRoute, /hashInviteToken/, "Team accept route must validate hashed invitation tokens");
+assert.match(teamAcceptRoute, /status: "accepted"/, "Team accept route must flip the membership to accepted");
+assert.match(teamAcceptRoute, /acceptedAt: new Date\(\)/, "Team accept route must record acceptedAt");
+
+const reportCreationSource = read("src/lib/report-creation.ts");
+assert.match(reportCreationSource, /getPrimaryTeamId/, "Report creation must resolve the creator's team scope");
+assert.match(reportCreationSource, /teamId,/, "Report creation must persist the resolved teamId");
+
+const schemaSource = read("src/lib/db/schema.ts");
+assert.match(schemaSource, /"status"\)\.notNull\(\)\.default\("accepted"\)/, "team_members.status must default to accepted so existing rows keep sharing");
+assert.match(schemaSource, /"team_id"\)\.references\(\(\) => teamWorkspaces\.id/, "reports.teamId must reference team_workspaces");
+
+const teamAuthorizationMigration = read("drizzle/0008_team_authorization.sql");
+assert.match(teamAuthorizationMigration, /ADD COLUMN IF NOT EXISTS "team_id"/, "Migration must add reports.team_id additively");
+assert.match(teamAuthorizationMigration, /DROP NOT NULL/, "Migration must relax team_members.user_id for unregistered invites");
+assert.doesNotMatch(teamAuthorizationMigration, /DROP TABLE|DROP COLUMN|DELETE FROM|TRUNCATE/i, "Team authorization migration must be additive only");
 
 assert.equal(packageJson.scripts?.["test:auth-smoke"], "tsx scripts/authenticated-production-smoke.test.ts", "Package scripts should expose authenticated production smoke checks");
 const authenticatedSmoke = read("scripts/authenticated-production-smoke.test.ts");
@@ -597,7 +629,9 @@ assert.match(dashboardPage, /Excludes closed reports/, "Dashboard approved/submi
 assert.doesNotMatch(dashboardPage, /<CheckCircle2[\s\S]{0,260}Complete and close/, "Dashboard activeWorkflow metric card must not be titled as if the count is completed reports");
 assert.match(dashboardPage, /removeTeamMember/, "Dashboard Team workspace should let Owners remove members");
 assert.match(dashboardPage, /method: "DELETE"/, "Dashboard member removal should call the Team DELETE API");
-assert.match(dashboardPage, /Remove \$\{member\.name \|\| member\.email\}/, "Dashboard member removal should expose an accessible remove label");
+assert.match(dashboardPage, /Revoke invitation for/, "Dashboard member removal should expose an accessible revoke label for pending invites");
+assert.match(dashboardPage, /teamMemberLabel\(member\)/, "Dashboard member rows should use the shared member label");
+assert.match(dashboardPage, /member\.status === "pending"/, "Dashboard Team workspace should distinguish pending invites from accepted members");
 assert.match(dashboardPage, /Team activity/, "Dashboard Team workspace should show recent Team activity");
 assert.match(dashboardPage, /activity\.message/, "Dashboard Team activity should render human-readable audit messages");
 
@@ -1353,7 +1387,8 @@ assert.doesNotMatch(reportReviewRoute, /getAccessibleReport|getAccessibleUserIds
 
 const aiKnowledgeContext = read("src/lib/ai/knowledge-context.ts");
 assert.match(aiKnowledgeContext, /export async function buildKnowledgeContextForQualityCheck/, "AI Knowledge Context helper should exist");
-assert.match(aiKnowledgeContext, /getAccessibleUserIds\(user\.id\)/, "AI Knowledge Context helper must reuse Team workspace access scope");
+assert.match(aiKnowledgeContext, /getAccessibleReportScope\(user\.id\)/, "AI Knowledge Context helper must reuse the central report access scope");
+assert.match(aiKnowledgeContext, /accessibleReportsWhere\(scope\)/, "AI Knowledge Context helper must scope by own reports plus accepted-team reports");
 assert.match(aiKnowledgeContext, /searchKnowledgeEntries/, "AI Knowledge Context helper must reuse Knowledge Base eligibility and search behavior");
 assert.match(aiKnowledgeContext, /QUALITY_CHECK_KNOWLEDGE_CONTEXT_LIMIT = 3/, "AI Knowledge Context helper should limit context to at most 3 reports");
 assert.match(aiKnowledgeContext, /ne\(reports\.id, report\.id\)/, "AI Knowledge Context helper should exclude the current report from candidate rows");

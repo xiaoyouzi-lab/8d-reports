@@ -229,3 +229,49 @@ export async function sendWelcomeEmail(to: string, name: string) {
     purpose: "welcome",
   });
 }
+
+export async function sendTeamInvitationEmail({
+  to,
+  teamName,
+  inviterName,
+  acceptUrl,
+  expiresInDays,
+}: {
+  to: string;
+  teamName: string;
+  inviterName: string;
+  acceptUrl: string;
+  expiresInDays: number;
+}) {
+  const safeTeam = escapeHtml(teamName);
+  const safeInviter = escapeHtml(inviterName);
+  const safeUrl = escapeHtml(acceptUrl);
+  const text = [
+    `${inviterName} invited you to join the "${teamName}" team workspace on 8D Reports.`,
+    "",
+    "Accept the invitation:",
+    acceptUrl,
+    "",
+    `This invitation expires in ${expiresInDays} days.`,
+    "If you were not expecting this invitation, you can ignore this email.",
+    "",
+    "8D Reports",
+  ].join("\n");
+
+  return sendEmail({
+    to,
+    subject: `${inviterName} invited you to join ${teamName} on 8D Reports`,
+    text,
+    html: `
+      <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
+        <h1 style="font-size:20px;margin:0 0 12px">Team invitation</h1>
+        <p style="margin:0 0 16px"><strong>${safeInviter}</strong> invited you to join the <strong>${safeTeam}</strong> team workspace on 8D Reports.</p>
+        <p style="margin:0 0 16px"><a href="${safeUrl}">Accept the invitation</a></p>
+        <p style="margin:0 0 16px">This invitation expires in ${expiresInDays} days.</p>
+        <p style="margin:0;color:#6b7280">If you were not expecting this invitation, you can ignore this email.</p>
+        <p style="margin:24px 0 0;color:#6b7280">8D Reports</p>
+      </div>
+    `,
+    purpose: "team-invitation",
+  });
+}

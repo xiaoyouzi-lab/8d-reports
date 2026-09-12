@@ -1,5 +1,112 @@
 # Development Log
 
+## Completed: Team Authorization Fix Spec (2026-09-12)
+
+- Added docs/TEAM_AUTHORIZATION_FIX_SPEC.md, a decision-ready specification for
+  the confirmed P1 Team defect (owner adds members without acceptance; every
+  member report, including pre-join personal history, is visible to the team).
+- Documents the two policy options, recommends strict separation, defines the
+  additive schema (team_members.status/acceptedAt and reports.teamId), the
+  invite/accept flow, the backfill choice, every code touch point from the audit,
+  required DB-backed tests, rollout safety, and the open owner questions.
+- Documentation only. No runtime, schema, auth, payment, export, or production
+  configuration change.
+
+## Completed: P2 Correctness Batch — D0 Persistence, Workflow Progression, Privacy Copy (2026-09-12)
+
+- Fixed the D0 revert defect. `reportType` and `priority` are D0 select fields
+  stored inside `ReportData`, but `PUT /api/reports/[id]` only synced the
+  dedicated `reports.report_type` / `reports.priority` columns from top-level
+  body fields the editor never sends. The reader prefers the columns, so a
+  saved D0 change reverted after refresh. The route now mirrors valid
+  `data.reportType` / `data.priority` values into the columns.
+- Fixed approval progression. The workflow route already allows
+  locked -> locked transitions (`approved -> submitted -> closed`), but the panel
+  hid the status control once locked and only offered "Unlock for revision".
+  Locked reports now expose the backend-allowed next step (Submit to customer,
+  then Close report) alongside the unlock form.
+- Fixed the privacy disclosure. The page said "We do not use tracking or
+  advertising cookies" while Google Analytics loads whenever it is configured.
+  The copy now discloses analytics cookies when analytics is enabled and still
+  states that advertising/cross-site tracking cookies are not used.
+- Fixed login/signup task continuity and OTP recovery. The login -> signup and
+  signup -> login links now forward `callbackUrl`, the proxy keeps the query
+  string in its login redirect, and signup switches to the verification step
+  before sending the code so a failed send still reaches the OTP screen with
+  "Resend code". The password visibility toggle is now keyboard reachable and
+  labelled.
+- Fixed duplicate signup analytics. `signup_success` and `signup_completed`
+  both mapped to the GA4 `sign_up` funnel event and both fired at account
+  creation. Now `signup_success` is reported as `signup_account_created`, and
+  `signup_completed` (GA4 `sign_up`) fires only after email verification.
+- Added `scripts/p2-correctness.test.ts` (`npm run test:p2-correctness`) as a
+  source-level regression guard and an npm script.
+- No auth, payment, database schema, environment variable, export-logic, or
+  production-config change. Residual risk: the workflow and D0 fixes need a real
+  authenticated browser pass; the privacy sentence is a factual copy alignment,
+  not a legal review or a consent-gating change.
+## Completed: P1 Save/Version Consistency Hardening (2026-09-12)
+
+- Fixed the confirmed P1 defect where PDF export rendered the live, unsaved
+  client state while Word/Excel/ZIP, AI review/draft, and workflow approval read
+  the last persisted row, so actions could silently use different versions.
+- The report editor now tracks a saved snapshot (`lastSavedData` /
+  `lastSavedTitle`), derives `isDirty`, and exposes one `ensureSaved()`
+  barrier. `handleNext` no longer swallows save failures: it aborts the step
+  transition and shows the error instead of pretending the step was saved.
+- `ExportMenu`, `AiReportTools`, and `ReportWorkflowPanel` now await the
+  barrier before acting and abort when the save fails. PDF is rendered from the
+  returned saved version, so PDF/Word/Excel/ZIP/AI/approval all agree. Read-only
+  users are unaffected because the server row is already authoritative.
+- The AI entry is no longer hidden on mobile (`hidden md:inline-flex` became
+  `inline-flex` with an icon-only trigger on narrow screens), so mobile users can
+  reach AI Quality Check.
+- Removed the duplicate `export_clicked` analytics events. `export_attempted`
+  and `export_clicked` both mapped to the same GA4 funnel event, so every export
+  was counted twice; `export_attempted` now fires once and `export_succeeded`
+  remains the completion signal.
+- Added `scripts/version-consistency.test.ts`
+  (`npm run test:version-consistency`) as a wiring regression guard, plus an npm
+  script.
+- Also fixed a pre-existing `tsc --noEmit` error on `main` in
+  `src/lib/p0-plus/p0-plus.test.ts` (the unsafe-key fixture now builds a
+  `Record<string, unknown>` before casting), so the typecheck gate is green.
+- No auth, payment, database schema, environment variable, export-template, or
+  production-config change. Residual risk: real browser acceptance of the
+  save-first flow (unsaved edit -> export/AI/approve) still needs a manual pass;
+  a concurrent writer between save and action can still diverge until a revision
+  token (baseRevision/409) is added.
+## Completed: Pull Request CI (2026-09-12)
+
+- Added .github/workflows/ci.yml to run on pull_request and on push to main:
+  npm ci, npx tsc --noEmit, npm run lint, the offline test suite
+  (test:p0-plus, test:p0-plus-preview, test:p0-plus-ui, test:p0-plus-smoke,
+  test:governance), npm run check:seo, and npm run build.
+- Deliberately excludes test:production-smoke, test:auth-smoke, and
+  smoke:auth because they hit production or require database/secrets that are
+  not available to pull request runs.
+- Also fixed the pre-existing npx tsc --noEmit failure on main in
+  src/lib/p0-plus/p0-plus.test.ts (build the unsafe fixture patch as a
+  Record<string, unknown> before casting), so the new typecheck gate is green.
+- The offline test step discovers every test:* script in package.json
+  (excluding the production/secrets-bound ones), so tests added by later PRs
+  run automatically.
+
+## Completed: Private/Auth Page Index Hygiene (2026-09-12)
+
+- Some private pages inherited the root layout's robots: index, follow because
+  client component pages cannot export metadata. This made /login, /signup,
+  /reset-password, and tokenized /share/[token] report pages indexable, and
+  parameterized auth URLs could appear as duplicate/alternate pages in Search
+  Console.
+- Added robots: { index: false, follow: false } to src/app/(auth)/layout.tsx
+  (covers login and signup) and new colocated server layouts for
+  src/app/reset-password/layout.tsx and src/app/share/[token]/layout.tsx.
+- Added scripts/index-hygiene.test.ts (npm run test:index-hygiene) plus an npm
+  script.
+- No public/SEO page content, sitemap, redirect, auth logic, payment, database
+  schema, export logic, environment variable, or production configuration change.
+
 ## Latest Task
 
 P0+ DeepSeek JSON contract enforcement bugfix.
@@ -13,6 +120,33 @@ P0+ DeepSeek JSON contract enforcement bugfix.
 - `src/lib/p0-plus/p0-plus.test.ts`
 - `src/lib/p0-plus/preview-service.test.ts`
 - `src/lib/p0-plus/preview-ui.test.tsx`
+P1 Team Authorization: Option A strict separation + backfill A1 (proposal PR).
+
+## Changed Files
+
+- `src/lib/db/schema.ts`
+- `drizzle/0008_team_authorization.sql`
+- `src/lib/report-access.ts`
+- `src/lib/team-invitations.ts`
+- `src/lib/report-workflow.ts`
+- `src/lib/subscription.ts`
+- `src/lib/report-creation.ts`
+- `src/lib/email.ts`
+- `src/lib/ai/knowledge-context.ts`
+- `src/app/api/team/route.ts`
+- `src/app/api/team/accept/route.ts`
+- `src/app/api/reports/route.ts`
+- `src/app/api/reports/search/route.ts`
+- `src/app/api/knowledge/search/route.ts`
+- `src/app/api/webhooks/creem/route.ts`
+- `src/app/team/accept/page.tsx`
+- `src/app/team/accept/accept-invite-form.tsx`
+- `src/app/(app)/dashboard/page.tsx`
+- `scripts/team-authorization.test.ts`
+- `scripts/team-governance.test.ts`
+- `scripts/smoke/seed-auth-smoke.ts`
+- `src/lib/p0-plus/p0-plus.test.ts`
+- `package.json`
 - `docs/DEV_LOG.md`
 
 ## Implementation Summary
@@ -61,6 +195,81 @@ P0+ DeepSeek JSON contract enforcement bugfix.
 
 After merge, deploy this bugfix to a controlled validation Preview and re-run the injection molding, unclear-role SCAR,
 and SMT/PCBA cases. Keep production P0+ disabled until those results are reviewed.
+- Implemented Option A ("strict separation") with backfill A1. A report is
+  reachable only when the caller authored it OR the report's `teamId` is one of
+  the caller's ACCEPTED teams. Personal reports never become team-visible by
+  joining; existing reports are NOT backfilled and become personal.
+- Additive schema: `team_members.status` (default `accepted`), `acceptedAt`,
+  `invitedEmail`, `inviteTokenHash`, `inviteExpiresAt`, and a nullable
+  `user_id` so unregistered emails can stay pending; `reports.team_id` with
+  `on delete set null`. Migration `drizzle/0008_team_authorization.sql` is
+  additive only (no drops/rewrites).
+- Central scope in `src/lib/report-access.ts`: `getAccessibleReportScope`,
+  `getAccessibleTeamIds` (accepted memberships + owned teams with an active Team
+  subscription), `accessibleReportsWhere`, `reportMatchesScope`, and
+  `getAccessibleReport`. `getAccessibleUserIds` is kept for compatibility and
+  now returns only the caller (own personal reports).
+- Membership/access sites filtered to accepted: `report-access.ts`,
+  `report-workflow.ts` (all role/membership reads + new
+  `getUserWorkspaceRoleForTeam`), `subscription.ts` team entitlement,
+  `app/api/team/route.ts` member lookup, and the webhook owner membership is
+  explicitly inserted as accepted. Report list, deep search, Knowledge search,
+  and AI Knowledge Context all use the shared scope condition.
+- Invites: owner POST /api/team now creates a PENDING membership for registered
+  or unregistered emails (no 404) and sends a tokenized email via the shared
+  `sendEmail` utility. Added POST /api/team/accept (hash lookup + invited-email
+  match + acceptedAt) and a minimal `/team/accept` page. Resend reuses POST for
+  an existing pending row; DELETE revokes/removes and therefore removes access.
+- Report ownership: `createReportFromData` sets `reports.teamId` to the
+  creator's primary active team, otherwise null; quota/activity behavior is
+  unchanged. Dashboard shows pending vs accepted and an accessible revoke label.
+- Quality Case access/service: these files do not exist on `origin/main`
+  (`src/lib/quality-cases/**` is absent), so there was nothing to filter on this
+  base. If the quality-case branch lands later it must route through
+  `getAccessibleReport` / `accessibleReportsWhere`.
+- Fixed the pre-existing tsc error in `src/lib/p0-plus/p0-plus.test.ts` by
+  building the unsafe fixture patch as `Record<string, unknown>` before casting
+  (PR #39 fix).
+
+## Tests / Verification
+
+- `npm ci --no-audit --no-fund` passed.
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed (0 errors, 11 pre-existing warnings).
+- `npm run test:governance` passed (updated `getAccessibleUserIds` and
+  dashboard-label assertions, added strict-separation source checks).
+- `npm run test:p0-plus` passed.
+- `npm run test:team-auth` (new) passed: pure token/scope logic plus
+  source-level checks for every membership site.
+- `npm run check:seo` passed (124 sitemap URLs, 11 redirects).
+- `npm run build` passed.
+- Quality-case tests listed in `package.json`: none exist on this base.
+
+## Risks
+
+- A1 is a visible behavior change: any existing report that was only reachable
+  through team membership becomes personal. Per the spec this is acceptable
+  because operating metrics show no external team members.
+- `team_members.user_id` is now nullable; all in-repo readers were updated, but
+  any out-of-tree reader must handle null (pending unregistered invites).
+- Invitation email send is best-effort; a failed send leaves a pending row that
+  the owner can resend.
+- The disposable-DB behavioral smoke has not been run (no offline database).
+
+## Unfinished / Needs Human Review
+
+- Run the disposable-DB smoke documented in `scripts/smoke/seed-auth-smoke.ts`
+  and this spec: pre-join member report invisible to owner; team-scoped report
+  visible to all accepted members; two-team cross-isolation; pending invite has
+  no access until accept; revoke removes access; Quality Case scope.
+- Owner decision on the "member new report defaults to team-scoped vs personal
+  with explicit share" open question should be confirmed before rollout.
+
+## Suggested Next Task
+
+Wire the seed/pending-invite fixtures into `scripts/smoke/authenticated-smoke.ts`
+behind the disposable Neon branch workflow and run it, then add Quality Case
+access coverage if/when `src/lib/quality-cases/**` lands.
 
 ## Previous Task
 
@@ -1754,3 +1963,24 @@ Marketing Data Pipeline v1 for 8d-reports.com.
 - Added `marketing:gsc`, `marketing:ga4`, and `marketing:report` package scripts.
 - Established data reliability grades and conservative operating rules.
 - This work intentionally excludes live CSV exports, real weekly reports, and Google credentials from Git.
+
+
+# 2026-09-12 — README Product Status Summary
+
+- Replaced the starter README with the product overview, feature boundaries,
+  prioritized findings, deployment differences, operating evidence, verification
+  results and remaining acceptance work from the September 8 audit.
+- Explicitly separates the September 12 documentation update from September 8
+  observations; database metrics are not claimed to be verified production
+  business data. Historical checks are not presented as new test runs.
+- Only README.md and this new log entry are included in the GitHub update.
+  Existing local application changes and earlier uncommitted log entries are
+  preserved and are not part of this documentation commit.
+- Validation: documentation diff/whitespace, local relative link targets,
+  staged file scope and remote commit/content verification. No application
+  tests were rerun because this change only updates documentation.
+- Remaining risk: recorded product defects and unverified GUI, payment, real AI,
+  production data identity and recovery gates remain open. No fixes or
+  production configuration changes are included.
+- Suggested next task: isolate and repair Team authorization, then the shared
+  save/version boundary before end-to-end user and actual-file acceptance.

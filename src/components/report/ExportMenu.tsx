@@ -35,9 +35,15 @@ interface ExportMenuProps {
   withWatermark: boolean
   canExportWord?: boolean
   logoUrl?: string | null
+  /**
+   * Ensures the report is persisted and returns the version that will be exported.
+   * Returns null when saving failed, so the export is aborted and every output
+   * (PDF, Word, Excel, package) uses the same saved server version.
+   */
+  onBeforeExport?: () => Promise<ReportData | null>
 }
 
-export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, canExportWord = false, logoUrl }: ExportMenuProps) {
+export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, canExportWord = false, logoUrl, onBeforeExport }: ExportMenuProps) {
   const t = useTranslations("export")
   const editorT = useTranslations("editor")
   const [loading, setLoading] = useState<string | null>(null)
@@ -132,8 +138,8 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     }
   }
 
-  const warnIfReportNeedsWork = () => {
-    const issues = getReportCompletionIssues(reportData)
+  const warnIfReportNeedsWork = (data: ReportData) => {
+    const issues = getReportCompletionIssues(data)
     if (issues.length === 0) return
 
     toast.warning("This report may need more detail before delivery", {
@@ -143,14 +149,17 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
 
   const handleExportPdf = async () => {
     setOpen(false)
-    warnIfReportNeedsWork()
     setLoading("pdf")
     try {
+      const fresh = onBeforeExport ? await onBeforeExport() : reportData
+      if (!fresh) return
+      warnIfReportNeedsWork(fresh)
+      // Fire the attempt once. A second "click" event mapped to the same GA4
+      // funnel event would double-count the export.
       trackEvent("export_attempted", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
-      trackEvent("export_clicked", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
       const allAttachments = await fetchAttachments()
       const pdf = await exportReportToPdf({
-        reportData,
+        reportData: fresh,
         reportTitle,
         reportId,
         withWatermark,
@@ -185,7 +194,6 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
 
   const handleExportDocx = async () => {
     setOpen(false)
-    warnIfReportNeedsWork()
     if (withWatermark) {
       trackEvent("word_export_gate_clicked", { plan: "free" }, reportId)
       toast("Word export requires Pro, Team, or a single-report export", {
@@ -206,8 +214,10 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     }
     setLoading("docx")
     try {
+      const fresh = onBeforeExport ? await onBeforeExport() : reportData
+      if (!fresh) return
+      warnIfReportNeedsWork(fresh)
       trackEvent("export_attempted", { format: "docx", plan: "pro" }, reportId)
-      trackEvent("export_clicked", { format: "docx", plan: "pro" }, reportId)
       const res = await fetch(`/api/reports/${reportId}/export/docx`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -236,7 +246,6 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
 
   const handleExportXlsx = async () => {
     setOpen(false)
-    warnIfReportNeedsWork()
     if (withWatermark) {
       trackEvent("excel_export_gate_clicked", { plan: "free" }, reportId)
       toast("Excel export requires Pro, Team, or a single-report export", {
@@ -257,8 +266,10 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     }
     setLoading("xlsx")
     try {
+      const fresh = onBeforeExport ? await onBeforeExport() : reportData
+      if (!fresh) return
+      warnIfReportNeedsWork(fresh)
       trackEvent("export_attempted", { format: "xlsx", plan: "pro" }, reportId)
-      trackEvent("export_clicked", { format: "xlsx", plan: "pro" }, reportId)
       const res = await fetch(`/api/reports/${reportId}/export/xlsx`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

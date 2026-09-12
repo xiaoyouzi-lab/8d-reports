@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser, unauthorizedResponse } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { reports } from "@/lib/db/schema";
-import { desc, inArray } from "drizzle-orm";
-import { getAccessibleUserIds } from "@/lib/report-access";
+import { desc } from "drizzle-orm";
+import { getAccessibleReportScope, accessibleReportsWhere } from "@/lib/report-access";
 import { createReportFromData } from "@/lib/report-creation";
 
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return unauthorizedResponse();
-  const accessibleUserIds = await getAccessibleUserIds(user.id);
+  const scope = await getAccessibleReportScope(user.id);
 
   const rows = await db
     .select({
@@ -27,7 +27,7 @@ export async function GET() {
       updatedAt: reports.updatedAt,
     })
     .from(reports)
-    .where(inArray(reports.userId, accessibleUserIds))
+    .where(accessibleReportsWhere(scope))
     .orderBy(desc(reports.updatedAt));
 
   return NextResponse.json(rows.map((report) => {

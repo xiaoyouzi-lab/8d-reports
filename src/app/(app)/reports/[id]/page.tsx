@@ -86,6 +86,8 @@ export default function ReportEditorPage({
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [lastSavedData, setLastSavedData] = useState<ReportData | null>(null)
+  const [lastSavedTitle, setLastSavedTitle] = useState("")
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [knowledgeReuseOpen, setKnowledgeReuseOpen] = useState(false)
   const [knowledgeReuseLocation, setKnowledgeReuseLocation] = useState<KnowledgeReuseLocation>("editor_top")
@@ -143,15 +145,20 @@ export default function ReportEditorPage({
         setWorkflowStatus(row.workflowStatus || "draft")
         setRevision(Number(row.revision) || 0)
         setReportTitle(row.title || "Untitled Report")
+        setLastSavedTitle(row.title || "Untitled Report")
         if (row.data && typeof row.data === "object") {
           const rowData = row.data as Partial<ReportData>
-          setReportData((prev) => ({
-            ...prev,
+          const loadedData: ReportData = {
+            ...DEFAULT_REPORT_DATA,
             ...rowData,
             reportNumber: normalizeReportNumber(rowData.reportNumber, row.createdAt, row.reportNumber),
-            reportType: row.reportType || prev.reportType,
-            priority: row.priority || prev.priority,
-          }))
+            reportType: row.reportType || DEFAULT_REPORT_DATA.reportType,
+            priority: row.priority || DEFAULT_REPORT_DATA.priority,
+          }
+          setReportData(loadedData)
+          setLastSavedData(loadedData)
+        } else {
+          setLastSavedData({ ...DEFAULT_REPORT_DATA })
         }
       } catch {
         setLoadError("We could not load this report. Please check your connection and try again.")
@@ -201,6 +208,34 @@ export default function ReportEditorPage({
     return res.json()
   }, [reportId])
 
+  const isDirty = reportPermissions.canEdit && (
+    lastSavedData === null ||
+    reportTitle !== lastSavedTitle ||
+    JSON.stringify(reportData) !== JSON.stringify(lastSavedData)
+  )
+
+  // Single save barrier used before PDF/Word/Excel export, AI review/draft, and
+  // workflow approval so every action runs against the saved server version.
+  // Returns null when the save failed, which must abort the action.
+  const ensureSaved = useCallback(async (): Promise<ReportData | null> => {
+    if (!reportPermissions.canEdit) return reportData
+    if (!isDirty) return reportData
+    const steps = new Set(getCompletedStepIds(reportData))
+    setSaving(true)
+    try {
+      await saveToServer(reportData, steps, reportTitle)
+      setLastSavedData(reportData)
+      setLastSavedTitle(reportTitle)
+      trackEvent("report_saved", { plan, completedSteps: steps.size, auto: true }, reportId)
+      return reportData
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save the report. Please retry before continuing.")
+      return null
+    } finally {
+      setSaving(false)
+    }
+  }, [reportPermissions.canEdit, isDirty, reportData, reportTitle, saveToServer, plan, reportId])
+
   const handleSave = async () => {
     if (!reportPermissions.canEdit) {
       toast.error(reportPermissions.locked ? "This report is locked" : "You do not have permission to edit this report")
@@ -210,6 +245,8 @@ export default function ReportEditorPage({
     setSaving(true)
     try {
       await saveToServer(reportData, currentCompletedSteps, reportTitle)
+      setLastSavedData(reportData)
+      setLastSavedTitle(reportTitle)
       trackEvent("report_saved", { plan, completedSteps: currentCompletedSteps.size }, reportId)
       toast.success("Report saved")
     } catch (err) {
@@ -220,13 +257,12 @@ export default function ReportEditorPage({
   }
 
   const handleNext = async () => {
-    const next = new Set(getCompletedStepIds(reportData))
     trackEvent("step_changed", { from: currentStep.id, direction: "next", plan }, reportId)
     if (reportPermissions.canEdit) {
-      try {
-        await saveToServer(reportData, next, reportTitle)
-        trackEvent("report_saved", { plan, completedSteps: next.size, auto: true }, reportId)
-      } catch { /* silently fail — explicit save handles errors */ }
+      const saved = await ensureSaved()
+      // Do not advance when the save failed: the user must not believe the step
+      // was persisted, and later exports/AI would otherwise use a stale version.
+      if (saved === null) return
     }
     if (activeStepIndex < STEPS.length - 1) {
       setActiveStepIndex(activeStepIndex + 1)
@@ -386,6 +422,7 @@ export default function ReportEditorPage({
                 reportId={reportId}
                 reportData={reportData}
                 plan={plan}
+                onBeforeAction={ensureSaved}
                 onApplyDraft={(fields) => {
                   if (!reportPermissions.canEdit) {
                     toast.error(readOnlyReason)
@@ -412,6 +449,7 @@ export default function ReportEditorPage({
               canManageWorkflow={reportPermissions.canManageWorkflow}
               knowledgeReadiness={knowledgeReadiness}
               plan={plan}
+              onBeforeAction={ensureSaved}
               onUpdated={(report) => {
                 setWorkflowStatus(report.workflowStatus)
                 setRevision(report.revision)
@@ -461,6 +499,7 @@ export default function ReportEditorPage({
                 withWatermark={!reportPermissions.canExportWithoutWatermark}
                 canExportWord={reportPermissions.canExportWord}
                 logoUrl={logoUrl}
+                onBeforeExport={ensureSaved}
               />
             )}
 
@@ -570,6 +609,8 @@ export default function ReportEditorPage({
                       setSaving(true)
                       try {
                         await saveToServer(reportData, next, reportTitle)
+                        setLastSavedData(reportData)
+                        setLastSavedTitle(reportTitle)
                         trackEvent("report_saved", { plan, completedSteps: next.size, completed: true }, reportId)
                         toast.success(te("reportSaved"))
                       } catch (err) {
