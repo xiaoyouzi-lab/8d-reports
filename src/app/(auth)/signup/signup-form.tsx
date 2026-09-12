@@ -101,8 +101,8 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
       } catch (error) {
         setError(error instanceof Error ? error.message : "We could not send the verification code. Use Resend code below.")
       }
+      // Account created. GA4 sign_up fires after verification in handleVerifyOtp.
       trackEvent("signup_success", { method: "email" })
-      trackEvent("signup_completed", { method: "email" })
       setLoading(false)
     } catch (error) {
       setError(error instanceof Error ? error.message : "An unexpected error occurred")
@@ -137,6 +137,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
         return
       }
       fetch("/api/notify/welcome", { method: "POST" }).catch(() => {})
+      trackEvent("signup_completed", { method: "email" })
       router.push(callbackUrl)
       router.refresh()
     } catch {

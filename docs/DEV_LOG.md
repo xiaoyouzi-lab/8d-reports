@@ -23,6 +23,10 @@
   before sending the code so a failed send still reaches the OTP screen with
   "Resend code". The password visibility toggle is now keyboard reachable and
   labelled.
+- Fixed duplicate signup analytics. `signup_success` and `signup_completed`
+  both mapped to the GA4 `sign_up` funnel event and both fired at account
+  creation. Now `signup_success` is reported as `signup_account_created`, and
+  `signup_completed` (GA4 `sign_up`) fires only after email verification.
 - Added `scripts/p2-correctness.test.ts` (`npm run test:p2-correctness`) as a
   source-level regression guard and an npm script.
 - No auth, payment, database schema, environment variable, export-logic, or
