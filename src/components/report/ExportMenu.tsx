@@ -154,8 +154,9 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       const fresh = onBeforeExport ? await onBeforeExport() : reportData
       if (!fresh) return
       warnIfReportNeedsWork(fresh)
+      // Fire the attempt once. A second "click" event mapped to the same GA4
+      // funnel event would double-count the export.
       trackEvent("export_attempted", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
-      trackEvent("export_clicked", { format: "pdf", plan: withWatermark ? "free" : "pro" }, reportId)
       const allAttachments = await fetchAttachments()
       const pdf = await exportReportToPdf({
         reportData: fresh,
@@ -217,7 +218,6 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       if (!fresh) return
       warnIfReportNeedsWork(fresh)
       trackEvent("export_attempted", { format: "docx", plan: "pro" }, reportId)
-      trackEvent("export_clicked", { format: "docx", plan: "pro" }, reportId)
       const res = await fetch(`/api/reports/${reportId}/export/docx`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -270,7 +270,6 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       if (!fresh) return
       warnIfReportNeedsWork(fresh)
       trackEvent("export_attempted", { format: "xlsx", plan: "pro" }, reportId)
-      trackEvent("export_clicked", { format: "xlsx", plan: "pro" }, reportId)
       const res = await fetch(`/api/reports/${reportId}/export/xlsx`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

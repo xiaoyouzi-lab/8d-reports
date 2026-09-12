@@ -16,6 +16,10 @@
 - The AI entry is no longer hidden on mobile (`hidden md:inline-flex` became
   `inline-flex` with an icon-only trigger on narrow screens), so mobile users can
   reach AI Quality Check.
+- Removed the duplicate `export_clicked` analytics events. `export_attempted`
+  and `export_clicked` both mapped to the same GA4 funnel event, so every export
+  was counted twice; `export_attempted` now fires once and `export_succeeded`
+  remains the completion signal.
 - Added `scripts/version-consistency.test.ts`
   (`npm run test:version-consistency`) as a wiring regression guard, plus an npm
   script.

@@ -30,6 +30,7 @@ assert.ok(count(exportMenu, "onBeforeExport ? await onBeforeExport() : reportDat
 assert.ok(count(exportMenu, "if (!fresh) return") >= 3, "every export must abort on save failure");
 assert.ok(exportMenu.includes("reportData: fresh"), "PDF export must render from the saved version");
 assert.equal(exportMenu.includes("warnIfReportNeedsWork()"), false, "warn helper must use the exported version");
+assert.equal(exportMenu.includes('trackEvent("export_clicked"'), false, "export must fire one attempt event, not a duplicate click event");
 
 // AI review and draft both wait for the saved version.
 assert.ok(aiTools.includes("onBeforeAction?: () => Promise<ReportData | null>"), "AiReportTools must accept onBeforeAction");
