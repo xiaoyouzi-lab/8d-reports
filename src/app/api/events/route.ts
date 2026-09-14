@@ -74,6 +74,7 @@ const ALLOWED_EVENTS = new Set([
   "knowledge_reuse_corrective_action_copied",
   "knowledge_reuse_lesson_copied",
   "knowledge_readiness_viewed",
+  "billing_portal_clicked",
   "knowledge_readiness_warning_shown",
 ]);
 

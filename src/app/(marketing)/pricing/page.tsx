@@ -112,7 +112,7 @@ const billingFaqs = [
   {
     question: "Can I cancel a subscription?",
     answer:
-      "Contact support for cancellation or billing changes. Subscription status is updated through the billing provider and reflected in the product after the billing event is processed.",
+      "Yes. Open Manage subscription in your dashboard to cancel or change billing through the secure Creem customer portal. Your plan status updates automatically after the billing event is processed.",
   },
   {
     question: "Does Team include enterprise procurement features?",
