@@ -80,8 +80,7 @@ export function CustomTemplateRequestForm({ initialRequestType = "template_setup
           Request received.
         </h2>
         <p className="mt-2 text-sm leading-6 text-emerald-800">
-          We received your template setup request. We will review your current
-          format and follow up with setup options.
+          We received your request. We will review the details you provided.
         </p>
         {uploadWarning ? (
           <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-900">
@@ -107,18 +106,12 @@ export function CustomTemplateRequestForm({ initialRequestType = "template_setup
     <form onSubmit={submit} onFocusCapture={startForm} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div>
         <h2 className="text-xl font-semibold text-slate-950">
-          {requestType === "team_launch"
-            ? "Request Team Launch"
-            : requestType === "assisted_8d"
-              ? "Request assisted first 8D / SCAR delivery"
-              : "Submit your template for setup"}
+          Submit your 8D template details
         </h2>
         <p className="mt-2 text-sm leading-6 text-slate-600">
-          {requestType === "team_launch"
-            ? "Upload the template you use today. We will review the format, confirm scope, and outline the 7-day launch steps."
-            : requestType === "assisted_8d"
-              ? "Share the format and deadline for the first customer-ready 8D or SCAR you need to deliver."
-            : "Upload the Word, Excel, PDF, screenshots, or customer instructions you use today. We will review the structure and confirm the setup scope."}
+          Upload the Word, Excel, PDF, screenshots, or customer instructions you
+          use today. Include the fields, evidence, and export format your
+          reports need.
         </p>
       </div>
       <input type="hidden" name="requestType" value={requestType} />
@@ -223,11 +216,7 @@ export function CustomTemplateRequestForm({ initialRequestType = "template_setup
       )}
       <Button type="submit" className="mt-5 bg-indigo-600 hover:bg-indigo-700" disabled={loading}>
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {requestType === "team_launch"
-          ? "Submit Team Launch request"
-          : requestType === "assisted_8d"
-            ? "Submit assisted delivery request"
-            : "Submit setup request"}
+        Submit request
       </Button>
     </form>
   )

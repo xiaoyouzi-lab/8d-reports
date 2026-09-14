@@ -290,7 +290,16 @@ async function sendLeadEmails(input: {
   }
 }
 
+const SERVICE_REQUEST_INTAKE_ENABLED: boolean = false;
+
 export async function POST(req: NextRequest) {
+  if (!SERVICE_REQUEST_INTAKE_ENABLED) {
+    return NextResponse.json(
+      { error: "Custom service requests are no longer accepted. Use the self-service product instead." },
+      { status: 410 },
+    );
+  }
+
   const user = await getSessionUser();
   const form = await req.formData().catch(() => null);
   if (!form) return NextResponse.json({ error: "Expected multipart form data" }, { status: 400 });

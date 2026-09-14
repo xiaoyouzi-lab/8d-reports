@@ -1019,7 +1019,15 @@ for (const resource of revenueGeoResources) {
   assert.ok(resource.checklist.length >= 5, `${resource.slug} should include a practical checklist`);
   assert.ok(resource.mistakes.length >= 4, `${resource.slug} should include common mistakes`);
   assert.ok(resource.table.rows.length >= 5, `${resource.slug} should include an example/comparison table`);
-  assert.ok(resource.sections.some((section) => /Template Setup|Assisted First 8D/.test(section.body)), `${resource.slug} should explain when to use service CTAs`);
+  assert.ok(
+    resource.sections.some((section) => /start a free report|see a sample report|compare plans/i.test(section.body)),
+    `${resource.slug} should explain the tool-oriented next step`,
+  );
+  assert.doesNotMatch(
+    JSON.stringify(resource),
+    /Template Setup|Assisted First 8D|Team Launch|\/custom-8d-template-setup|\/team-launch|\/8d-report-review-service/,
+    `${resource.slug} should not reference removed manual services`,
+  );
   assert.ok(resource.relatedLinks.length >= 3, `${resource.slug} should include internal links`);
   assert.ok(resource.faq.length >= 2, `${resource.slug} should include visible FAQ content`);
 }
@@ -1035,7 +1043,6 @@ for (const forbiddenRevenueGeoClaim of [
 assert.match(revenueGeoContent, /not a full QMS/i, "Revenue GEO content should preserve the not-a-full-QMS boundary");
 for (const safeRevenueGeoEvent of [
   "marketing_cta_clicked",
-  "pricing_service_cta_clicked",
   "demo_report_downloaded",
   "knowledge_search_used",
 ]) {
@@ -1338,9 +1345,11 @@ assert.match(revenueEvidenceOperatingSystem, /Use production data only as observ
 assert.doesNotMatch(revenueEvidenceOperatingSystem, /guaranteed approval|certified QMS|best in the world/i, "Revenue operating system should avoid unsupported commercial claims");
 
 const pricingPage = read("src/app/(marketing)/pricing/page.tsx");
-assert.match(pricingPage, /From \$499/, "Template Setup price should be From $499");
-assert.match(pricingPage, /From \$999/, "Team Launch price should be From $999");
-assert.doesNotMatch(pricingPage, /\$299/, "Current pricing page should not show old $299 template setup price");
+assert.match(pricingPage, /Free/, "Pricing should keep the Free plan");
+assert.match(pricingPage, /Pro/, "Pricing should keep the Pro plan");
+assert.match(pricingPage, /Team/, "Pricing should keep the Team plan");
+assert.match(pricingPage, /\$4\.99/, "Pricing should keep the single-report export price");
+assert.doesNotMatch(pricingPage, /Template Setup|Team Launch|Assisted First 8D|Professional Services/, "Pricing should not advertise manual services");
 assert.match(pricingPage, /Owner \/ Editor \/ Viewer roles/, "Pricing must describe implemented Team roles");
 assert.match(pricingPage, /Approval status, report locking, and revisions/, "Pricing must describe implemented Team governance");
 assert.match(pricingPage, /Unlimited personal reports/, "Pro copy should frame unlimited reports as individual/personal use");
@@ -1435,14 +1444,10 @@ assert.match(authConfig, /ENABLE_SOCIAL_LOGIN !== "true"/, "Social auth provider
 assert.match(authConfig, /socialProviders: getEnabledSocialProviders\(\)/, "Better Auth should use the gated social provider config");
 assert.doesNotMatch(authConfig, /socialProviders:\s*\{\s*google:/, "Google auth must not be configured unconditionally");
 
-assert.ok(SERVICE_REQUEST_TYPES.includes("assisted_8d"), "Service requests should include Assisted First 8D / SCAR Delivery as inquiry-only");
-assert.match(pricingPage, /8D Template Setup[\s\S]*From \$499/, "Pricing should show Template Setup from $499");
-assert.match(pricingPage, /Team Launch[\s\S]*From \$999/, "Pricing should show Team Launch from $999");
-assert.match(pricingPage, /Assisted First 8D \/ SCAR Delivery[\s\S]*From \$799/, "Pricing should show Assisted First 8D / SCAR Delivery from $799");
-assert.match(pricingPage, /pricing_service_cta_clicked/, "Pricing service CTA clicks should be tracked");
+assert.ok(SERVICE_REQUEST_TYPES.includes("assisted_8d"), "Historical service request rows should keep their type labels for admin display");
 assert.match(homepage, /Need to submit a customer-ready 8D or SCAR this week\?/, "Homepage should speak to urgent customer-ready 8D/SCAR delivery");
-assert.match(homepage, /Turn your Word \/ Excel 8D template into a reusable online workflow\./, "Homepage should promote template setup value");
-assert.match(homepage, /For teams that need customer-ready 8D\/SCAR delivery before a full\s*QMS rollout\./, "Homepage should position services before full QMS rollout");
+assert.doesNotMatch(homepage, /Template Setup|Team Launch|Assisted First 8D|custom-8d-template-setup/, "Homepage should not advertise manual services");
+assert.match(pricingPage, /\$4\.99/, "Pricing should keep the single-report export price");
 
 for (const revenueEvent of [
   "pricing_service_cta_clicked",
@@ -1466,6 +1471,7 @@ assert.match(analyticsClient, /utm_source[\s\S]*utm_medium[\s\S]*utm_campaign/, 
 assert.doesNotMatch(analyticsClient, /window\.location\.search[\s\S]*metadata:\s*window\.location\.search/, "Analytics should not store the full URL query string");
 
 assert.match(templateRequestRoute, /sendEmail/, "Template Setup API should send admin and user email notifications");
+assert.match(templateRequestRoute, /status: 410/, "Template Setup API should return 410 for new public submissions");
 assert.match(templateRequestRoute, /Service request admin email failed/, "Admin email failures should be logged without blocking lead save");
 assert.match(templateRequestRoute, /Service request auto-reply email failed/, "User auto-reply failures should be logged without blocking lead save");
 assert.match(templateRequestRoute, /storage_unavailable/, "Template Setup API should preserve leads when storage is unavailable");
@@ -1522,9 +1528,8 @@ const demoReportsPage = read("src/app/(marketing)/demo-reports/page.tsx");
 const demoReportPage = read("src/app/(marketing)/demo-reports/[type]/page.tsx");
 assert.match(demoReportsPage, /Download Excel/, "Demo reports index should expose Excel downloads");
 assert.match(demoReportPage, /Excel/, "Demo detail should expose Excel downloads");
-assert.match(demoReportsPage, /Want this in your company format\?/, "Demo reports index should include company-format CTA");
-assert.match(demoReportPage, /Want this in your company format\?/, "Demo detail should include company-format CTA");
-assert.match(demoReportPage, /Upload your current Word \/ Excel \/ PDF 8D template/, "Demo detail should ask users to upload their template");
+assert.doesNotMatch(demoReportsPage, /company format|custom-8d-template-setup|template setup/i, "Demo reports index should not advertise manual services");
+assert.doesNotMatch(demoReportPage, /company format|custom-8d-template-setup|template setup/i, "Demo detail should not advertise manual services");
 
 const contactForm = read("src/components/marketing/ContactLeadForm.tsx");
 assert.match(contactForm, /contact_form_submitted/, "Contact form should track submitted events");
@@ -1532,7 +1537,8 @@ assert.match(contactForm, /\/api\/feedback/, "Contact form should reuse existing
 
 const productionSmoke = read("scripts/production-smoke.test.ts");
 assert.match(productionSmoke, /expectXlsx/, "Production smoke should verify demo Excel downloads");
-assert.match(productionSmoke, /Want this in your company format\?/, "Production smoke should verify demo service CTA copy");
+assert.match(productionSmoke, /AI 8D report check/, "Production smoke should verify the automated AI report check page");
+assert.doesNotMatch(productionSmoke, /Want this in your company format\?/, "Production smoke should not verify removed service CTA copy");
 
 assert.match(authenticatedBrowserSmoke, /template setup lead capture/, "Authenticated smoke should cover Template Setup lead capture");
 assert.match(authenticatedBrowserSmoke, /template_setup_form_started/, "Authenticated smoke should verify Template Setup started analytics");

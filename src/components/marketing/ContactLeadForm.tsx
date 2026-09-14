@@ -98,11 +98,10 @@ export function ContactLeadForm() {
       <div className="space-y-1.5">
         <Label htmlFor="contact-topic">Topic</Label>
         <select id="contact-topic" name="topic" className="h-10 w-full rounded-md border border-input bg-transparent px-3 text-sm">
-          <option value="template_setup">Template setup</option>
-          <option value="team_launch">Team launch</option>
-          <option value="assisted_8d">Assisted 8D / SCAR delivery</option>
           <option value="product_question">Product question</option>
-          <option value="support">Support</option>
+          <option value="billing">Billing or account</option>
+          <option value="support">Technical support</option>
+          <option value="feedback">Product feedback</option>
         </select>
       </div>
       <div className="space-y-1.5">

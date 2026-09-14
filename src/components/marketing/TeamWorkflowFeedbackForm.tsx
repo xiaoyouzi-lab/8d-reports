@@ -10,7 +10,7 @@ import { trackEvent } from "@/lib/analytics"
 
 const roles = ["Quality Manager", "SQE / Supplier Quality", "Quality Engineer", "Consultant", "Owner / Operations", "Other"]
 const tools = ["Word / Excel", "Email and shared files", "Existing QMS", "Other"]
-const values = ["Approval and report locking", "Revision history and Activity Log", "Customer-ready exports", "Role-based team access", "Template Setup service"]
+const values = ["Approval and report locking", "Revision history and Activity Log", "Customer-ready exports", "Role-based team access", "Reusable report history"]
 
 export function TeamWorkflowFeedbackForm({ demoType }: { demoType: string }) {
   const [role, setRole] = useState("")

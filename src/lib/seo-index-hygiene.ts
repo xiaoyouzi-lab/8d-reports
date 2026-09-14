@@ -5,13 +5,11 @@ export const INDEXABLE_STATIC_PATHS = [
   "/sample-report",
   "/resources",
   "/pricing",
-  "/custom-8d-template-setup",
-  "/team-launch",
   "/demo-reports",
   "/demo-reports/automotive",
   "/demo-reports/molding",
   "/demo-reports/electronics",
-  "/8d-report-review-service",
+  "/ai-8d-report-check",
   "/security",
   "/faq",
   "/help",
@@ -44,6 +42,11 @@ export const LEGACY_SEO_REDIRECTS = [
   { source: "/demo-report/:type", destination: "/demo-reports/:type" },
   { source: "/8d-report-sample", destination: "/sample-report" },
   { source: "/sample-8d-report", destination: "/sample-report" },
+  { source: "/custom-8d-template-setup", destination: "/pricing" },
+  { source: "/team-launch", destination: "/pricing" },
+  { source: "/8d-report-review-service", destination: "/ai-8d-report-check" },
+  { source: "/help/template-setup", destination: "/help/export-pdf-word-excel-zip" },
+  { source: "/help/team-launch", destination: "/help/team-workspace" },
 ] as const;
 
 export function canonicalUrl(path: string) {

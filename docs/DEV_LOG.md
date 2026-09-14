@@ -1,5 +1,57 @@
 # Development Log
 
+## Completed: Tool-Only Subscription Positioning (2026-09-14)
+
+- Removed every public manual/custom service offering so the marketing site
+  reflects the fully automated, tool-only subscription product.
+- Pricing: deleted the `professionalServices` array and its "Professional
+  Services" section ($499 / $999 / $799 cards). Free, Pro, Team, and the $4.99
+  single-report export remain.
+- Homepage, demo report index/detail, and contact: removed template-upload and
+  company-format CTAs and service copy. Contact topics are now product, billing,
+  support, and feedback.
+- `src/content/revenue-geo-resources.ts`: replaced all Template Setup, Assisted
+  First 8D, and Team Launch sections, CTAs, related links, and FAQ mentions with
+  tool-oriented CTAs (`/signup`, `/sample-report`, `/pricing`). The
+  `custom-8d-template-setup-guide` resource was rewritten as a custom report
+  format guide while keeping its URL.
+- Added permanent redirects via `LEGACY_SEO_REDIRECTS`:
+  `/custom-8d-template-setup` and `/team-launch` -> `/pricing`;
+  `/8d-report-review-service` -> `/ai-8d-report-check`;
+  `/help/template-setup` -> `/help/export-pdf-word-excel-zip`;
+  `/help/team-launch` -> `/help/team-workspace`.
+- Added `src/app/(marketing)/ai-8d-report-check/page.tsx` describing the in-app
+  automated AI Quality Check (no human review claim, no price) and deleted the
+  old `8d-report-review-service`, `custom-8d-template-setup`, and
+  `team-launch` pages. `INDEXABLE_STATIC_PATHS` lists
+  `/ai-8d-report-check` instead of the removed service pages.
+- Disabled the manual request API: `POST /api/custom-template-requests`
+  returns 410; the request form is unreachable and its service-specific copy was
+  removed. Admin GET/PATCH and historical service-request rows are unchanged.
+- Removed `content/help/template-setup.md` and `content/help/team-launch.md`
+  from the published Help library and scrubbed the remaining help/learn links.
+- Added `scripts/tool-only-positioning.test.ts`
+  (`npm run test:tool-only-positioning`) to fail if `Template Setup`,
+  `Assisted First 8D`, `Team Launch`, or their old routes reappear in
+  `src/app/(marketing)`, `src/components/marketing`, `src/content`,
+  `content/help`, or `content/learn`.
+- Updated `scripts/team-governance.test.ts` and
+  `scripts/production-smoke.test.ts` expectations that asserted the removed
+  services.
+- No auth, payment/billing, database schema, export logic, environment variable,
+  or production configuration change. No removed URL 404s: every removed route
+  redirects to a live page.
+
+## Verification
+
+- `npm ci --no-audit --no-fund`: installed cleanly.
+- `npx tsc --noEmit`: passed.
+- `npm run lint`: passed with 0 errors (11 pre-existing warnings).
+- `npm run test:governance`, `npm run test:title-hygiene`,
+  `npm run test:tool-only-positioning`: passed.
+- `npm run check:seo`: passed (120 sitemap URLs, 16 redirects).
+- `npm run build`: passed (162 static pages; `/ai-8d-report-check` static).
+
 ## Completed: Duplicate Brand in Page Titles (2026-09-12)
 
 - The root layout sets title.template = "%s | 8D Reports", but the programmatic

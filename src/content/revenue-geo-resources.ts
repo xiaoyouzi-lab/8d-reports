@@ -96,16 +96,16 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "Containment is temporary protection. Corrective action changes the process or system that created the issue. Mixing them makes the report look fast but weak.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Put the response in a shared workspace",
         body:
-          "Use Template Setup when the customer requires a specific Excel or Word format. Use Assisted First 8D when the response is due soon and the team needs help structuring the first customer-ready package.",
+          "Use one D0-D8 structure for every complaint so reviewers compare evidence instead of reformatting documents. Start a free report and add evidence as the team works through containment, cause, action, and validation.",
       },
     ],
     primaryCta: {
-      label: "Get assisted first 8D help",
-      href: "/custom-8d-template-setup?service=assisted_8d#request",
-      eventName: "pricing_service_cta_clicked",
-      eventData: { service: "assisted_8d" },
+      label: "Start a free report",
+      href: "/signup",
+      eventName: "marketing_cta_clicked",
+      eventData: { cta: "signup" },
     },
     secondaryCta: { label: "View sample report", href: "/sample-report" },
     relatedLinks: [
@@ -180,22 +180,22 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "Quality teams should define what counts as acceptable containment, root cause, validation, and closure. That avoids back-and-forth after the supplier submits a weak response.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Track the SCAR response in one place",
         body:
-          "Use Template Setup when your customer or company already has a SCAR form. Use Assisted First 8D when a customer SCAR response is due and the team needs a structured first package.",
+          "Keep the request, containment, root cause, action, validation, and closure evidence tied to one record instead of a reply-all email chain. Compare plans when shared review or repeat SCAR volume matters.",
       },
     ],
     primaryCta: {
-      label: "Request template setup",
-      href: "/custom-8d-template-setup#request",
-      eventName: "pricing_service_cta_clicked",
-      eventData: { service: "template_setup" },
+      label: "Compare plans",
+      href: "/pricing",
+      eventName: "marketing_cta_clicked",
+      eventData: { cta: "pricing" },
     },
     secondaryCta: { label: "Download demo report", href: "/demo-reports/automotive" },
     relatedLinks: [
       { label: "Supplier 8D report", href: "/supplier-8d-report" },
       { label: "Automotive demo report", href: "/demo-reports/automotive" },
-      { label: "Team Launch", href: "/team-launch" },
+      { label: "Pricing and plans", href: "/pricing" },
     ],
     faq: [
       {
@@ -215,7 +215,7 @@ export const revenueGeoResources: RevenueGeoResource[] = [
     title: "8D vs SCAR: When to Use Each Corrective Action Format",
     metaTitle: "8D vs SCAR | Corrective Action and Supplier Response",
     metaDescription:
-      "Compare 8D and SCAR workflows, when to use each format, what evidence belongs in the response, and when assisted 8D support helps.",
+      "Compare 8D and SCAR workflows, when to use each format, and what evidence belongs in the response before customer submission.",
     h1: "8D vs SCAR: when a supplier request becomes a full 8D response",
     targetQuery: "8D vs SCAR",
     intent: "comparison",
@@ -263,16 +263,16 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "A full 8D is useful when the issue has customer impact, repeat risk, unclear root cause, or required validation. Simpler issues may only need a targeted corrective action response.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Choose a workflow, then export the response",
         body:
-          "Use Template Setup for a customer-specific SCAR/8D form. Use Assisted First 8D when the team needs a first response package for a customer deadline.",
+          "The request format and the response format are separate decisions. Build the response in the structured editor and see a sample report to confirm the expected detail before you start.",
       },
     ],
     primaryCta: {
-      label: "Get SCAR response help",
-      href: "/custom-8d-template-setup?service=assisted_8d#request",
-      eventName: "pricing_service_cta_clicked",
-      eventData: { service: "assisted_8d" },
+      label: "See a sample report",
+      href: "/sample-report",
+      eventName: "marketing_cta_clicked",
+      eventData: { cta: "sample_report" },
     },
     secondaryCta: { label: "View supplier 8D", href: "/supplier-8d-report" },
     relatedLinks: [
@@ -315,7 +315,7 @@ export const revenueGeoResources: RevenueGeoResource[] = [
       "Move online when attachments, versions, and customer-ready exports matter.",
       "Move online when multiple people review or update the report.",
       "Move online when similar problems repeat and past actions should be searchable.",
-      "Use Template Setup if your customer still requires a specific Excel output.",
+      "Export PDF, Word, or Excel from the completed report instead of rebuilding the layout.",
     ],
     mistakes: [
       "Emailing multiple spreadsheet copies and losing the source of truth.",
@@ -346,16 +346,16 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "When a report is completed, its root cause, corrective action, validation, prevention, and lessons learned can help the next team avoid starting from zero.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Move from static files to a controlled workflow",
         body:
-          "Use Template Setup when your Excel format is required by a customer. Use Assisted First 8D when the team needs help completing the first response, not only converting a file.",
+          "Use the online editor when attachments, revisions, review, and exports matter. Compare plans to see which level includes Word and Excel export for regular delivery.",
       },
     ],
     primaryCta: {
-      label: "Request template setup",
-      href: "/custom-8d-template-setup#request",
-      eventName: "pricing_service_cta_clicked",
-      eventData: { service: "template_setup" },
+      label: "Compare plans",
+      href: "/pricing",
+      eventName: "marketing_cta_clicked",
+      eventData: { cta: "pricing" },
     },
     secondaryCta: { label: "Compare plans", href: "/pricing" },
     relatedLinks: [
@@ -370,93 +370,93 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "Yes. Demo reports include Excel downloads, and paid report export can include Excel for real user reports according to plan entitlements.",
       },
       {
-        question: "Can a company-specific Excel template be supported?",
+        question: "Can a company-specific Excel layout be supported?",
         answer:
-          "Template Setup is intended for teams that need help mapping their current Word or Excel format into a reusable workflow or output plan.",
+          "Map the required fields into the D0-D8 structure and export Excel from the completed report. Standard Word and Excel output is available by plan.",
       },
     ],
   },
   {
     slug: "custom-8d-template-setup-guide",
-    title: "Custom 8D Template Setup Guide",
-    metaTitle: "Custom 8D Template Setup Guide | Word and Excel 8D Formats",
+    title: "Custom 8D Report Format Guide",
+    metaTitle: "Custom 8D Report Format Guide | Word, Excel, and PDF Outputs",
     metaDescription:
-      "Prepare for custom 8D template setup by gathering your current Word, Excel, or PowerPoint format, required export, fields, workflow, and examples.",
-    h1: "Custom 8D template setup guide",
-    targetQuery: "custom 8D report template setup",
-    intent: "service",
-    category: "Service",
+      "Plan a custom 8D report format using the built-in D0-D8 structure, per-step attachments, and PDF, Word, or Excel export options.",
+    h1: "Custom 8D report format guide",
+    targetQuery: "custom 8D report format",
+    intent: "template",
+    category: "Formats",
     answer:
-      "Custom 8D template setup starts by collecting your current Word, Excel, PowerPoint, or customer form, identifying required fields and export format, mapping those fields to D0-D8, and deciding which workflow, evidence, review, and reuse steps matter for your team.",
+      "A custom 8D report format starts with the fields your customer expects, the evidence each step needs, and the file type you deliver. Use the built-in D0-D8 editor for structure, attach evidence to the relevant step, and export PDF, Word, or Excel from the completed report.",
     proofElements: [
-      "Current template file and required customer output",
-      "Field map from current format to D0-D8",
-      "Workflow owners, reviewers, export needs, and first sample report",
+      "Required fields and approval wording your customer expects",
+      "Evidence expected at each D0-D8 step",
+      "Delivery format: PDF, Word, Excel, or a ZIP package",
     ],
     checklist: [
-      "Gather the current form or screenshot of the customer-required format.",
-      "Mark required fields, optional fields, signatures, and approval blocks.",
-      "List required outputs: PDF, Word, Excel, ZIP, or customer file.",
-      "Identify who creates, reviews, approves, and exports the report.",
-      "Choose one real past issue as the setup sample.",
-      "Decide whether completed reports should feed Knowledge Base reuse.",
+      "List the fields, signatures, and approval wording your customer requires.",
+      "Map each required field to the matching D0-D8 section.",
+      "Decide which evidence belongs at D3, D4, D6, and D7.",
+      "Choose the delivery format: PDF, Word, Excel, or ZIP with attachments.",
+      "Use one real past issue to check that the structure reads well.",
+      "Keep completed reports searchable so the format stays consistent over time.",
     ],
     mistakes: [
-      "Starting setup without the actual customer-required format.",
-      "Mapping fields but ignoring evidence attachments and export workflow.",
-      "Trying to automate a broken internal process before clarifying ownership.",
-      "Promising a custom output before confirming the required file behavior.",
+      "Copying a customer form without checking that every required field is covered.",
+      "Leaving evidence in separate folders instead of attaching it to the step it supports.",
+      "Formatting the export before the D0-D8 content is complete.",
+      "Assuming a generic export matches every customer layout without review.",
     ],
     table: {
-      title: "What to prepare for setup",
+      title: "Planning a report format",
       columns: ["Input", "Why it matters", "Example"],
       rows: [
-        ["Current template", "Shows required sections and output shape", "Excel SCAR form"],
-        ["Required export", "Determines delivery path", "Customer PDF plus Excel action table"],
-        ["Workflow owners", "Defines review and approval", "Owner, editor, viewer"],
-        ["Sample issue", "Tests the mapped workflow", "Recent customer complaint"],
-        ["Evidence needs", "Controls attachment and ZIP expectations", "Photos, inspection records"],
+        ["Customer fields", "Shows required sections and wording", "SCAR header and approval block"],
+        ["Evidence by step", "Keeps attachments traceable", "Photos at D3, test data at D6"],
+        ["Delivery format", "Determines the export path", "Customer PDF plus Excel action table"],
+        ["Workflow roles", "Defines who reviews and exports", "Owner, editor, viewer"],
+        ["Sample issue", "Tests the structure against real content", "Recent customer complaint"],
       ],
     },
     sections: [
       {
-        title: "Template setup is not just formatting",
+        title: "Structure first, formatting second",
         body:
-          "The goal is a reusable workflow that can produce the customer-ready output. Field mapping, evidence handling, ownership, and export expectations all matter.",
+          "A readable 8D needs complete D0-D8 content before any layout decision. Fill the structured fields, then choose the export format that matches what the customer expects.",
       },
       {
-        title: "Start with one real report",
+        title: "Keep evidence with the step it supports",
         body:
-          "A real past issue helps reveal missing fields, ambiguous owners, awkward export requirements, and places where the team still relies on email.",
+          "Attachments are easier to review when they sit at the D-step they support rather than in a separate folder. The ZIP delivery package keeps the report and its attachments together.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Compare plans for export access",
         body:
-          "Use Template Setup for format/workflow conversion. Use Assisted First 8D when the immediate problem is completing the first customer response.",
+          "Standard PDF, Word, and Excel output depends on your plan. Compare plans to see which level includes the delivery format your customer requires, or start a free report to review the workflow first.",
       },
     ],
     primaryCta: {
-      label: "Upload your template",
-      href: "/custom-8d-template-setup#request",
-      eventName: "pricing_service_cta_clicked",
-      eventData: { service: "template_setup" },
+      label: "Start a free report",
+      href: "/signup",
+      eventName: "marketing_cta_clicked",
+      eventData: { cta: "signup" },
     },
-    secondaryCta: { label: "See service pricing", href: "/pricing" },
+    secondaryCta: { label: "Compare plans", href: "/pricing" },
     relatedLinks: [
-      { label: "Template Setup page", href: "/custom-8d-template-setup" },
-      { label: "Team Launch", href: "/team-launch" },
-      { label: "Excel vs software", href: "/resources/excel-8d-template-vs-8d-software" },
+      { label: "Export help", href: "/help/export-pdf-word-excel-zip" },
+      { label: "Excel vs online software", href: "/resources/excel-8d-template-vs-8d-software" },
+      { label: "Sample report", href: "/sample-report" },
     ],
     faq: [
       {
-        question: "Do I need to upload a file before asking about setup?",
+        question: "Can I use the format my customer requires?",
         answer:
-          "No. A file helps, but the request can start with your process, required export, timeline, and message.",
+          "Map the required customer fields into the D0-D8 sections, attach the expected evidence, and export the completed report as PDF, Word, or Excel according to your plan.",
       },
       {
-        question: "Does setup guarantee customer acceptance?",
+        question: "Do I need to upload a file to get started?",
         answer:
-          "No. Setup can help create a clearer workflow and output, but the customer still reviews the evidence and engineering logic.",
+          "No. Start with the built-in D0-D8 structure and add your required fields and evidence as you work through a real report.",
       },
     ],
   },
@@ -514,9 +514,9 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "Historical completed reports can show repeated patterns and prevention ideas, but they are reference context only. The current report still needs its own evidence.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Run the check inside the report editor",
         body:
-          "Use Template Setup when AI review reveals a recurring format/workflow problem. Use Assisted First 8D when the current customer response needs structured human review.",
+          "The AI Quality Check reviews the saved report content for missing evidence, weak cause/action links, and unclear validation. Start a free report to run a check on a draft.",
       },
     ],
     primaryCta: {
@@ -525,9 +525,9 @@ export const revenueGeoResources: RevenueGeoResource[] = [
       eventName: "marketing_cta_clicked",
       eventData: { cta: "signup" },
     },
-    secondaryCta: { label: "View report review service", href: "/8d-report-review-service" },
+    secondaryCta: { label: "View the AI report check", href: "/ai-8d-report-check" },
     relatedLinks: [
-      { label: "AI Quality Check service", href: "/8d-report-review-service" },
+      { label: "AI 8D report check", href: "/ai-8d-report-check" },
       { label: "Knowledge Base", href: "/knowledge" },
       { label: "Sample report", href: "/sample-report" },
     ],
@@ -598,9 +598,9 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "A short cause with real process evidence is stronger than a long narrative with no verification. Keep the reasoning traceable.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Verify cause before writing the action",
         body:
-          "Use Assisted First 8D if the team is stuck proving D4 before a deadline. Use Template Setup if the company format does not clearly separate occurrence and escape cause.",
+          "A D4 section is stronger when each cause links to evidence. See a sample report to compare how occurrence cause, escape cause, and confirmation are presented.",
       },
     ],
     primaryCta: {
@@ -682,16 +682,16 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "If the team cannot explain how the action will be validated, the action may be too vague or disconnected from the cause.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Trace every action to a verified cause",
         body:
-          "Use Assisted First 8D when cause/action logic is weak before customer submission. Use Template Setup if your standard form does not force action traceability.",
+          "Keep D5 actions tied to the confirmed cause, owner, and due date, then plan D6 validation before the report moves to review. Start a free report to structure the action and validation fields.",
       },
     ],
     primaryCta: {
-      label: "Get first 8D review help",
-      href: "/custom-8d-template-setup?service=assisted_8d#request",
-      eventName: "pricing_service_cta_clicked",
-      eventData: { service: "assisted_8d" },
+      label: "Start a free report",
+      href: "/signup",
+      eventName: "marketing_cta_clicked",
+      eventData: { cta: "signup" },
     },
     secondaryCta: { label: "View D4 guide", href: "/resources/8d-root-cause-d4-guide" },
     relatedLinks: [
@@ -766,9 +766,9 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "A training action may need observation and audit. A process change may need defect-rate trend or capability evidence. Match the proof to the risk.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Show evidence, not just completion",
         body:
-          "Use Assisted First 8D if validation evidence is weak before a customer deadline. Use Template Setup if your form does not capture method, sample, and result clearly.",
+          "Record the method, sample or period, and actual result for each action so a reviewer can judge effectiveness. See a sample report for an example of concise D6 evidence.",
       },
     ],
     primaryCta: {
@@ -850,9 +850,9 @@ export const revenueGeoResources: RevenueGeoResource[] = [
           "Prevention changes in D7 give D8 something concrete to preserve. Without system changes, lessons learned often become vague reminders.",
       },
       {
-        title: "When to use Template Setup or Assisted First 8D",
+        title: "Make the lesson reusable",
         body:
-          "Use Template Setup if your current format has no place for lessons learned. Use Assisted First 8D if closure is blocked by weak prevention or validation evidence.",
+          "Capture prevention and lessons learned so the next similar issue starts from evidence instead of memory. See a sample report to compare a closed report with reusable D7/D8 content.",
       },
     ],
     primaryCta: {

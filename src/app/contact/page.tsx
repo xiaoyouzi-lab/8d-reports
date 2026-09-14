@@ -61,8 +61,8 @@ export default function ContactPage() {
             Send a message
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Use this form for product questions, Template Setup, Team Launch,
-            Assisted 8D / SCAR delivery, or support. You can also reach us at{" "}
+            Use this form for product questions, billing, account support, or
+            feedback. You can also reach us at{" "}
             <a
               href={`mailto:${supportEmail}`}
               className="font-medium text-indigo-600 underline underline-offset-4 hover:text-indigo-700"

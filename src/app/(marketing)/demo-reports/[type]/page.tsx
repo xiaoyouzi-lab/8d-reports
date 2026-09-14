@@ -137,33 +137,6 @@ export default async function DemoReportPage({ params }: { params: Promise<{ typ
         </div>
       </section>
 
-      <section className="border-t border-slate-200 bg-slate-950 py-16 text-white">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-semibold">Want this in your company format?</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-slate-300">
-            Upload your current Word / Excel / PDF 8D template. Request a
-            customer-ready 8D workflow setup.
-          </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <TrackedLink
-              href="/custom-8d-template-setup#request"
-              eventName="marketing_cta_clicked"
-              eventData={{ page: "demo_report", location: "company_format_cta", demoType: type, service: "template_setup" }}
-              className={cn(buttonVariants({ size: "lg" }), "bg-white text-slate-950 hover:bg-slate-100")}
-            >
-              Request this format
-            </TrackedLink>
-            <TrackedLink
-              href="/custom-8d-template-setup?service=assisted_8d#request"
-              eventName="marketing_cta_clicked"
-              eventData={{ page: "demo_report", location: "assisted_delivery_cta", demoType: type, service: "assisted_8d" }}
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "border-slate-600 bg-transparent text-white hover:bg-slate-900 hover:text-white")}
-            >
-              Request assisted delivery
-            </TrackedLink>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }
