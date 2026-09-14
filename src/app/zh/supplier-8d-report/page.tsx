@@ -1,14 +1,14 @@
 import type { Metadata } from "next"
 import { SeoLandingPage } from "@/components/marketing/SeoLandingPage"
-import { getSeoPage } from "@/lib/seo-pages"
+import { getSeoPageZh } from "@/lib/seo-pages-zh"
 
-const page = getSeoPage("supplier-8d-report")
+const page = getSeoPageZh("supplier-8d-report")
 
 export const metadata: Metadata = {
   title: page?.title,
   description: page?.description,
   alternates: {
-    canonical: "https://www.8d-reports.com/supplier-8d-report",
+    canonical: "https://www.8d-reports.com/zh/supplier-8d-report",
     languages: {
       en: "https://www.8d-reports.com/supplier-8d-report",
       "zh-CN": "https://www.8d-reports.com/zh/supplier-8d-report",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default function SupplierEightDReportPage() {
+export default function ChineseSupplierEightDReportPage() {
   if (!page) return null
-  return <SeoLandingPage page={page} />
+  return <SeoLandingPage page={page} locale="zh" />
 }

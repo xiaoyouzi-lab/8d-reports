@@ -29,7 +29,13 @@ export const metadata: Metadata = {
   title: "8D Report Template | D0-D8 Online Form and Copyable Template",
   description:
     "Use an action-first 8D report template with a copyable blank structure, D0-D8 guidance, common mistakes, Word Excel PDF comparison, and FAQ.",
-  alternates: { canonical: `${siteUrl}/8d-report-template` },
+  alternates: {
+    canonical: `${siteUrl}/8d-report-template`,
+    languages: {
+      en: `${siteUrl}/8d-report-template`,
+      "zh-CN": `${siteUrl}/zh/8d-report-template`,
+    },
+  },
   openGraph: {
     title: "8D Report Template",
     description:

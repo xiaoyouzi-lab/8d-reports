@@ -1,14 +1,14 @@
 import type { Metadata } from "next"
 import { SeoLandingPage } from "@/components/marketing/SeoLandingPage"
-import { getSeoPage } from "@/lib/seo-pages"
+import { getSeoPageZh } from "@/lib/seo-pages-zh"
 
-const page = getSeoPage("5-why-root-cause-template")
+const page = getSeoPageZh("5-why-root-cause-template")
 
 export const metadata: Metadata = {
   title: page?.title,
   description: page?.description,
   alternates: {
-    canonical: "https://www.8d-reports.com/5-why-root-cause-template",
+    canonical: "https://www.8d-reports.com/zh/5-why-root-cause-template",
     languages: {
       en: "https://www.8d-reports.com/5-why-root-cause-template",
       "zh-CN": "https://www.8d-reports.com/zh/5-why-root-cause-template",
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default function FiveWhyRootCauseTemplatePage() {
+export default function ChineseFiveWhyRootCauseTemplatePage() {
   if (!page) return null
-  return <SeoLandingPage page={page} />
+  return <SeoLandingPage page={page} locale="zh" />
 }

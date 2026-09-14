@@ -157,7 +157,7 @@ assert.deepEqual(
 assert.ok(dynamicZhRoutes.length > 0, "expected at least one dynamic zh collection");
 for (const route of dynamicZhRoutes) {
   const collection = ZH_DYNAMIC_COLLECTIONS.find(
-    (candidate) => route === `${candidate.zhPrefix}/[slug]`,
+    (candidate) => route === `${candidate.zhPrefix}/[${candidate.param ?? "slug"}]`,
   );
   assert.ok(collection, `${route} must be registered in ZH_DYNAMIC_COLLECTIONS`);
   const pageFile = path.join(root, "src/app", `${route.replace(/^\//, "")}/page.tsx`);
@@ -165,7 +165,9 @@ for (const route of dynamicZhRoutes) {
 }
 for (const collection of ZH_DYNAMIC_COLLECTIONS) {
   assert.ok(
-    dynamicZhRoutes.includes(`${collection.zhPrefix}/[slug]`),
+    dynamicZhRoutes.includes(
+      `${collection.zhPrefix}/[${collection.param ?? "slug"}]`,
+    ),
     `${collection.zhPrefix} is registered but has no dynamic zh page`,
   );
 }

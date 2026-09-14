@@ -2,7 +2,13 @@ import type { Metadata } from "next"
 import { Card, CardContent } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  alternates: { canonical: "https://www.8d-reports.com/terms" },
+  alternates: {
+    canonical: "https://www.8d-reports.com/terms",
+    languages: {
+      en: "https://www.8d-reports.com/terms",
+      "zh-CN": "https://www.8d-reports.com/zh/terms",
+    },
+  },
 }
 
 export default function TermsPage() {

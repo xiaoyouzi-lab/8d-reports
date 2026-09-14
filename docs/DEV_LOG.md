@@ -1,5 +1,89 @@
 # Development Log
 
+## Completed: Remaining Public Pages Simplified Chinese (Batch 4, 2026-09-17)
+
+- Added the **11 remaining Simplified Chinese public routes** so the whole
+  public surface is bilingual: `/zh/privacy`, `/zh/terms`,
+  `/zh/8d-report-template`, `/zh/8d-report-example`,
+  `/zh/supplier-8d-report`, `/zh/corrective-action-report-template`,
+  `/zh/5-why-root-cause-template`, `/zh/demo-reports`, and
+  `/zh/demo-reports/{automotive,molding,electronics}`.
+- Added `src/lib/seo-pages-zh.ts`, a Simplified Chinese mirror of the 4 live
+  legacy landing pages in `src/lib/seo-pages.ts` (`8d-report-example`,
+  `supplier-8d-report`, `corrective-action-report-template`,
+  `5-why-root-cause-template`) with the same slugs and
+  section/checklist/FAQ structure. The legacy `8d-report-template` data entry
+  is unused in English (the live page is bespoke), so it is not mirrored.
+- Made `src/components/marketing/SeoLandingPage.tsx` locale-aware with an
+  optional `locale="en" | "zh"` prop. The default stays `en` so existing
+  English pages keep identical copy; the zh pages reuse the same renderer with
+  Chinese page chrome and a `/zh/sample-report` internal link.
+- Added `src/app/zh/8d-report-template/page.tsx`, a full Chinese translation of
+  the bespoke D0-D8 landing page (copyable blank outline, D0-D8 accordion, common
+  mistakes, Word/Excel/PDF guidance, FAQ, and FAQ JSON-LD).
+- Added `src/lib/demo-reports-zh.ts` with Chinese page metadata and the D0-D8
+  report fields shown by `src/app/zh/demo-reports/[type]/page.tsx`. The English
+  `src/lib/demo-reports.ts` remains the source for the `/api/sample-reports/*`
+  PDF / Word / Excel / ZIP assets, which stay English format files; the zh pages
+  keep the same endpoints and label the downloads in Chinese (`下载 PDF`,
+  `下载 Word`, `下载 Excel`, `下载交付 ZIP`).
+- Extended `src/lib/i18n-routes.ts`: added the 8 static pairs to
+  `ZH_ROUTE_MAP`, added `ZH_DEMO_REPORT_SLUGS`, assigned the
+  `/demo-reports <-> /zh/demo-reports` dynamic collection a `param: "type"`
+  segment, and taught the collection type about non-`slug` params. The language
+  switcher now swaps these URLs instead of reloading.
+- Moved the English `/privacy` and `/terms` pages into
+  `src/app/(marketing)/` so they render inside the marketing layout and actually
+  expose the header/footer language switcher. Routes, canonical URLs, and page
+  copy are unchanged; only the shared site chrome is added.
+- Added `en` + `zh-CN` hreflang alternates to the English
+  `/privacy`, `/terms`, `/8d-report-template`, `/8d-report-example`,
+  `/supplier-8d-report`, `/corrective-action-report-template`,
+  `/5-why-root-cause-template`, `/demo-reports`, and
+  `/demo-reports/[type]` metadata.
+- Extended `src/app/sitemap.ts` so the legacy SEO entries and the
+  `/demo-reports/[type]` entries carry two-way `xhtml:link` alternates and the
+  3 `/zh/demo-reports/*` URLs are emitted.
+- Updated `scripts/check-seo-urls.ts` to know the zh demo content paths and
+  `scripts/i18n-core.test.ts` to resolve dynamic collections by their declared
+  param segment.
+- Added `scripts/i18n-remaining.test.ts` (`npm run test:i18n-remaining`)
+  asserting: the 11 zh routes exist; the route map resolves both directions and
+  localizes; the legacy mirror keeps slug/structure parity; the zh demo detail
+  route uses `dynamicParams = false`, `generateStaticParams`, and
+  `notFound()`; the download endpoints and `rel="nofollow"` are preserved;
+  canonical/hreflang are correct on both sides; the sitemap carries both
+  directions for all 11 pairs; and the forbidden Quality Case / complaint
+  workbench / supplier collaboration platform / manual or expert review /
+  custom-service positioning and removed routes never appear.
+- Copy is tool-only and sells only live features: D0-D8 editing,
+  evidence/attachments, PDF/Word/Excel + ZIP export, share links, Team
+  roles/approval/lock/activity, Knowledge Base reuse, and the automated AI
+  Quality Check.
+- No auth, payment, database schema, export logic, environment variable, or
+  production configuration change.
+
+### Verification (Batch 4)
+
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed with the pre-existing warnings and 0 errors.
+- `npm run test:governance`, `test:title-hygiene`,
+  `test:tool-only-positioning`, `test:i18n-core`, `test:i18n-resources`,
+  `test:i18n-learn-help`, `test:i18n-docs`, `test:i18n-seo`, and
+  `test:i18n-remaining` passed.
+- `npm run check:seo` passed with 240 sitemap URLs and 16 redirects.
+- `npm run build` passed with all 11 new zh routes prerendered.
+
+### Residual risk (Batch 4)
+
+- The Chinese copy is a first professional translation pass and should get a
+  native quality-engineering review before a dedicated zh marketing push.
+- The demo pages display translated report copy on the zh pages, but the
+  downloadable PDF / Word / Excel / ZIP assets remain the English format files.
+- The legal pages keep the same factual commitments and support email as the
+  English versions; any future legal review should update both languages
+  together.
+
 ## Completed: Programmatic SEO Pages Simplified Chinese (Batch 3, 2026-09-16)
 
 - Added **all 50 programmatic SEO pages in Simplified Chinese** across the 6
