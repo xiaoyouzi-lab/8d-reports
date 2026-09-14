@@ -27,7 +27,7 @@ A photo or test result is easier to review when it is attached to the D-step it 
 
 ## When Excel still matters
 
-Some customers require Excel. 8D Reports supports Excel export for eligible reports, and Template Setup can be reviewed when customer-specific formats matter.
+Some customers require Excel. 8D Reports supports Excel export for eligible reports, and the structured D0-D8 fields keep the exported file consistent with the report content.
 
 ## Related product next step
 

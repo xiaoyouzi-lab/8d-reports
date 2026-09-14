@@ -10,7 +10,7 @@ order: 15
 target_keywords: ["Team Workspace","8D Reports help","8D report workflow"]
 screenshots: ["/help-assets/team-workspace/team.png"]
 videos: []
-related: ["/help/permissions","/help/review-workflow","/help/team-launch"]
+related: ["/help/permissions","/help/review-workflow","/help/lock-unlock-revision"]
 last_reviewed: 2026-07-01
 ---
 
@@ -52,4 +52,4 @@ Owner manages approval, editors prepare D0-D8 and attachments, and viewers inspe
 
 - [/help/permissions](/help/permissions)
 - [/help/review-workflow](/help/review-workflow)
-- [/help/team-launch](/help/team-launch)
+- [/help/lock-unlock-revision](/help/lock-unlock-revision)

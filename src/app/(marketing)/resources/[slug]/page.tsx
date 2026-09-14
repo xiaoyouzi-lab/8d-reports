@@ -235,7 +235,7 @@ export default async function RevenueGeoResourcePage({
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionHeader
             title="Related resources"
-            description="Move from the article into an example, service path, or product workflow when the issue becomes urgent."
+            description="Move from the article into an example, product workflow, or pricing detail when the issue becomes urgent."
           />
           <div className="grid gap-3 sm:grid-cols-2">
             {resource.relatedLinks.map((link) => (

@@ -8,7 +8,7 @@ const revenueResourcePages = [
   ["/resources/supplier-corrective-action-request-template", "Supplier corrective action request template"],
   ["/resources/8d-vs-scar", "8D vs SCAR"],
   ["/resources/excel-8d-template-vs-8d-software", "Excel 8D template vs online 8D software"],
-  ["/resources/custom-8d-template-setup-guide", "Custom 8D template setup guide"],
+  ["/resources/custom-8d-template-setup-guide", "Custom 8D report format guide"],
   ["/resources/ai-8d-report-checker", "AI 8D report checker"],
   ["/resources/8d-root-cause-d4-guide", "D4 root cause guide"],
   ["/resources/8d-corrective-action-d5-guide", "D5 corrective action guide"],
@@ -77,18 +77,20 @@ async function expectZip(type: string) {
 }
 
 async function main() {
-  await expectHtml("/", ["Need to submit a customer-ready 8D or SCAR this week?", "Upload your 8D template", "Turn your Word / Excel 8D template into a reusable online workflow."]);
-  await expectHtml("/pricing", ["8D Template Setup", "From $499", "Assisted First 8D / SCAR Delivery", "From $799"]);
-  await expectHtml("/team-launch", ["Launch your online 8D workflow in 7 days", "From $999"]);
-  await expectHtml("/custom-8d-template-setup", ["reusable online workflow", "Current process", "Required export"]);
-  await expectHtml("/demo-reports", ["Team workflow demos", "Download Excel", "Want this in your company format?"]);
+  await expectHtml("/", ["From complaint to deliverable", "Plans for evaluation, delivery, and team control"]);
+  await expectHtml("/pricing", ["Free", "Pro", "Team", "$4.99"]);
+  await expectHtml("/ai-8d-report-check", ["AI 8D report check", "Start a free report"]);
+  await expectHtml("/custom-8d-template-setup", ["Start with 3 free reports"]);
+  await expectHtml("/team-launch", ["Start with 3 free reports"]);
+  await expectHtml("/8d-report-review-service", ["AI 8D report check"]);
+  await expectHtml("/demo-reports", ["Team workflow demos", "Download Excel"]);
   for (const [path, heading] of revenueResourcePages) {
     await expectHtml(path, [heading, "Practical checklist", "Common mistakes", "FAQ"]);
   }
   await expectHtml("/security", ["Security", "not used to train"]);
 
   for (const type of demoTypes) {
-    await expectHtml(`/demo-reports/${type}`, ["Complete D0-D8 report content", "Workflow activity", "Evidence package", "Want this in your company format?"]);
+    await expectHtml(`/demo-reports/${type}`, ["Complete D0-D8 report content", "Workflow activity", "Evidence package"]);
     await expectPdf(type);
     await expectDocx(type);
     await expectXlsx(type);

@@ -10,7 +10,7 @@ order: 18
 target_keywords: ["Export PDF / Word / Excel / ZIP","8D Reports help","8D report workflow"]
 screenshots: ["/help-assets/export-pdf-word-excel-zip/export-menu.png"]
 videos: []
-related: ["/help/pricing-usage-limits","/help/template-setup","/learn/how-to-export-professional-8d-reports-in-pdf-word-and-excel"]
+related: ["/help/pricing-usage-limits","/help/team-workspace","/learn/how-to-export-professional-8d-reports-in-pdf-word-and-excel"]
 last_reviewed: 2026-07-01
 ---
 
@@ -45,11 +45,11 @@ A Pro user exports no-watermark PDF and Excel for a customer package; the app do
 ## Common mistakes
 
 - Exporting before missing evidence is resolved.
-- Expecting custom customer Excel templates unless Template Setup has handled that need.
+- Expecting the standard export to reproduce a customer-specific layout exactly.
 - Clicking export gates without understanding plan limits.
 
 ## Related links / next step CTA
 
 - [/help/pricing-usage-limits](/help/pricing-usage-limits)
-- [/help/template-setup](/help/template-setup)
+- [/help/team-workspace](/help/team-workspace)
 - [/learn/how-to-export-professional-8d-reports-in-pdf-word-and-excel](/learn/how-to-export-professional-8d-reports-in-pdf-word-and-excel)

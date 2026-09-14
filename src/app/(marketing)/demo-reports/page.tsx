@@ -63,23 +63,6 @@ export default function DemoReportsPage() {
           ))}
         </div>
       </section>
-      <section className="border-t border-slate-200 bg-slate-950 py-16 text-white">
-        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-          <h2 className="text-3xl font-semibold">Want this in your company format?</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-slate-300">
-            Upload your current Word / Excel / PDF 8D template. Request a
-            customer-ready 8D workflow setup.
-          </p>
-          <TrackedLink
-            href="/custom-8d-template-setup#request"
-            eventName="marketing_cta_clicked"
-            eventData={{ page: "demo_reports", location: "company_format_cta", service: "template_setup" }}
-            className={cn(buttonVariants({ size: "lg" }), "mt-7 bg-white text-slate-950 hover:bg-slate-100")}
-          >
-            Request this format
-          </TrackedLink>
-        </div>
-      </section>
     </div>
   )
 }
