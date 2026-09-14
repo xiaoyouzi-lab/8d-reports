@@ -3,8 +3,9 @@
 import { use } from "react"
 import { ShareViewer } from "@/components/share/ShareViewer"
 
-// The token is arbitrary, so this route stays dynamic (no generateStaticParams).
-export default function SharePage({
+// Chinese URL for the same tokenized viewer. The token is arbitrary, so this
+// route stays dynamic and renders the shared component used by /share/[token].
+export default function ZhSharePage({
   params,
 }: {
   params: Promise<{ token: string }>

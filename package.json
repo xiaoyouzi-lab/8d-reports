@@ -22,6 +22,7 @@
     "test:i18n-seo": "tsx scripts/i18n-seo.test.ts",
     "test:i18n-remaining": "tsx scripts/i18n-remaining.test.ts",
     "test:i18n-auth": "tsx scripts/i18n-auth.test.ts",
+    "test:i18n-share": "tsx scripts/i18n-share.test.ts",
     "test:i18n-cta": "tsx scripts/i18n-cta.test.tsx",
     "test:team-auth": "tsx scripts/team-authorization.test.ts",
     "test:p2-correctness": "tsx scripts/p2-correctness.test.ts",
