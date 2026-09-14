@@ -46,6 +46,29 @@ export async function generateBillingPortalLink(customerId: string): Promise<str
   return url;
 }
 
+type CreemCustomerLike = { id?: string; email?: string };
+type CreemCustomerResponse =
+  | CreemCustomerLike
+  | { items?: CreemCustomerLike[] }
+  | CreemCustomerLike[]
+  | null;
+
+/**
+ * Creem exposes two customer reads with two different shapes:
+ *   GET /v1/customers?email=...  -> a SINGLE CustomerEntity (the documented
+ *                                   "Retrieve a customer" response)
+ *   GET /v1/customers/list       -> { items: CustomerEntity[], pagination }
+ * Accept both (plus a bare array) so the email fallback cannot silently return
+ * null merely because the response was not a list.
+ */
+function creemCustomerCandidates(data: CreemCustomerResponse): CreemCustomerLike[] {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  const items = (data as { items?: unknown }).items;
+  if (Array.isArray(items)) return items as CreemCustomerLike[];
+  return [data as CreemCustomerLike];
+}
+
 export async function findCreemCustomerByEmail(email: string): Promise<string | null> {
   const key = process.env.CREEM_API_KEY;
   if (!key || !email) return null;
@@ -54,18 +77,11 @@ export async function findCreemCustomerByEmail(email: string): Promise<string | 
     headers: { "x-api-key": key },
   });
   if (!res.ok) return null;
-  const data = await res.json().catch(() => null) as { items?: Array<{ id?: string; email?: string }> } | Array<{ id?: string; email?: string }> | null;
-  const items = Array.isArray(data) ? data : Array.isArray(data?.items) ? data.items : [];
+  const data = (await res.json().catch(() => null)) as CreemCustomerResponse;
   const normalized = email.toLowerCase();
-  const match = items.find((item) => String(item?.email ?? "").toLowerCase() === normalized) ?? items[0];
+  const candidates = creemCustomerCandidates(data);
+  const match =
+    candidates.find((item) => String(item?.email ?? "").toLowerCase() === normalized) ??
+    candidates[0];
   return match?.id ? String(match.id) : null;
-}
-
-export function verifyWebhookSignature(
-  payload: string,
-  signature: string
-): boolean {
-  const secret = process.env.CREEM_WEBHOOK_SECRET;
-  if (!secret) return false;
-  return signature.length > 0;
 }

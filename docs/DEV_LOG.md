@@ -1,5 +1,48 @@
 # Development Log
 
+## Fixed: Creem customer lookup returned null (paid-loop, 2026-09-18)
+
+- **Bug:** `findCreemCustomerByEmail` in `src/lib/creem.ts` only understood a
+  list response (`{ items: [...] }` or a bare array). Creem's documented
+  "Retrieve a customer" endpoint is `GET /v1/customers?email=` and returns a
+  **single `CustomerEntity`**, so the parser produced `[]` and returned
+  `null` every time. The list shape belongs to the separate
+  `GET /v1/customers/list` endpoint.
+- **Impact:** `POST /api/billing/portal` falls back to this lookup whenever
+  `subscriptions.creemCustomerId` is null. For those paying users the endpoint
+  answered 404 "No billing account found for this email yet." and **self-serve
+  cancellation could not be opened** — the exact path the automated-subscription
+  goal depends on. Stored `creemCustomerId` values still worked, so the failure
+  was silent and partial.
+- **Fix:** accept the single-entity shape, the `{ items }` list shape, and a
+  bare array. The email match still wins and an email mismatch still falls back
+  to the returned customer, so behaviour for working rows is unchanged.
+- Also backfilled `creemCustomerId` on the existing-subscription branch of the
+  Creem webhook (`src/app/api/webhooks/creem/route.ts`); previously only the
+  insert path stored it, so early events without a customer id left the row null
+  forever and pushed users onto the broken fallback.
+- Removed the dead `verifyWebhookSignature` export from `src/lib/creem.ts`. It
+  was never imported and its body was a stub (`return signature.length > 0`),
+  i.e. it would accept any non-empty signature. The live webhook route has its
+  own real HMAC verifier, which is untouched.
+- **Why the existing test missed it:** `scripts/billing-portal.test.ts` only did
+  `includes()` string matching. Added behavioural coverage that stubs `fetch`
+  and asserts the single-entity, `{ items }`, bare-array, email-mismatch and
+  non-ok responses. Verified the new test **fails against the old parser**
+  (`actual: null, expected: 'cust_single'`) and passes after the fix.
+- Contract confirmed against the official Creem docs
+  (`docs.creem.io/api-reference/endpoint/get-customer`, `/list-customers`), not
+  inferred.
+- Changed files: `src/lib/creem.ts`, `src/app/api/webhooks/creem/route.ts`,
+  `scripts/billing-portal.test.ts`, `docs/DEV_LOG.md`.
+- Scope guard: no schema, env var, checkout, signature-verification, auth or
+  export logic changed.
+- Residual risk: still not exercised against the live Creem API with a real
+  paying customer; the fix is verified against the documented response shape and
+  stubbed fetch only.
+- Suggested next task: run one real sandbox checkout end-to-end and open the
+  billing portal from the dashboard to close the paid-loop acceptance gate.
+
 ## Completed: Remaining Public Pages Simplified Chinese (Batch 4, 2026-09-17)
 
 - Added the **11 remaining Simplified Chinese public routes** so the whole
