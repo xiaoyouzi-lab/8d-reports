@@ -1,5 +1,57 @@
 # Development Log
 
+## Completed: Revenue GEO Resources Simplified Chinese (Batch 2a, 2026-09-14)
+
+- Stacked the work on the Batch 1 i18n core. The worktree was created on
+  `origin/main`, which does not contain `src/lib/i18n-routes.ts`, `src/app/zh/*`,
+  or `scripts/i18n-core.test.ts`; the branch was fast-forwarded onto
+  `origin/feat/i18n-core` (no new commit, no push) so Batch 2a has a real base.
+- Added `src/content/revenue-geo-resources-zh.ts`: Simplified Chinese versions of
+  all 10 `/resources/*` pages, keyed by slug with the same
+  `RevenueGeoResource` shape and the same structural length as the English
+  source (proof elements, checklist, mistakes, 3-column table with 5 rows,
+  3 sections, 3 related links, 2 FAQs). Exports
+  `revenueGeoResourcesZhBySlug`, `revenueGeoResourcesZh`,
+  `revenueGeoResourceZhSlugs`, and `getRevenueGeoResourceZh(slug)`.
+  `targetQuery` stays English; CTA/related hrefs use the Chinese route when one
+  exists (`/zh/pricing`, `/zh/sample-report`, `/zh/ai-8d-report-check`,
+  `/zh/resources/<slug>`) and the English product route otherwise (`/signup`,
+  `/knowledge`, `/demo-reports`, `/8d-report-template`, ...).
+- Created `src/app/zh/resources/page.tsx` (localized index listing the 10 zh
+  resources) and `src/app/zh/resources/[slug]/page.tsx` (same layout as the
+  English renderer with Chinese section labels; `dynamicParams = false`,
+  `generateStaticParams`, and `notFound()` for untranslated slugs). Both set a
+  canonical `https://www.8d-reports.com/zh/resources/...` and
+  `alternates.languages` for `en` + `zh-CN`.
+- Extended `src/lib/i18n-routes.ts`: added `/resources -> /zh/resources` to the
+  static `ZH_ROUTE_MAP` and added `ZH_RESOURCE_SLUGS` plus
+  `ZH_DYNAMIC_COLLECTIONS`. `zhPathFor`, `enPathFor`, `hasZhVersion`, and
+  `localizedHref` now resolve `/resources/<slug> <-> /zh/resources/<slug>` for
+  translated slugs only and return undefined for unknown slugs. The static map
+  API is unchanged so the switcher/header/footer keep working.
+- Added hreflang alternates to the English resources index and
+  `/resources/[slug]` (zh-CN only when a zh translation exists), and to the
+  sitemap. `src/app/sitemap.ts` now emits the 10 zh resource URLs with
+  `alternates.languages` and gives the English resource entries the matching
+  alternates; `/zh/resources` rides the existing static zh sitemap pattern.
+- Localized the "Resources" links: the header already routes through
+  `localizedHref`; the footer resources column now links `/resources`
+  (mapped to `/zh/resources` in zh), and the two `/resources` links in the zh
+  sample-report page point at `/zh/resources`.
+- `scripts/check-seo-urls.ts` now knows about the zh resource content paths so
+  every sitemap URL still maps to real content.
+- Added `scripts/i18n-resources.test.ts` (`npm run test:i18n-resources`)
+  asserting slug parity with the English source and `ZH_RESOURCE_SLUGS`,
+  non-empty required fields, structural parity, both-way dynamic route mapping,
+  canonical / hreflang / sitemap alternates, and the absence of the removed
+  Quality Case / complaint-workbench / supplier-collaboration-platform / manual
+  review positioning in the zh copy. Updated `scripts/i18n-core.test.ts` to
+  allow the `/zh/resources/[slug]` dynamic collection (and verify it is
+  registered), and updated the governance guard for the new hreflang.
+- No auth, payment, database schema, export logic, environment variable, or
+  production configuration change.
+
+
 ## Completed: Chinese/English i18n Core (Batch 1, 2026-09-14)
 
 - Added the i18n foundation: `src/components/LocaleProvider.tsx` wraps the app

@@ -15,7 +15,13 @@ export const metadata: Metadata = {
   title: "8D Templates, Examples, and Root-Cause Tools",
   description:
     "Browse practical 8D templates, complete examples, 5 Why examples, fishbone examples, corrective actions, and preventive action resources.",
-  alternates: { canonical: `${siteUrl}/resources` },
+  alternates: {
+    canonical: `${siteUrl}/resources`,
+    languages: {
+      en: `${siteUrl}/resources`,
+      "zh-CN": `${siteUrl}/zh/resources`,
+    },
+  },
   openGraph: {
     title: "8D Templates, Examples, and Root-Cause Tools",
     description:

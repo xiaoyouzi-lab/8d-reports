@@ -16,6 +16,7 @@ const columns = [
   {
     titleKey: "resources",
     links: [
+      { labelKey: "resources", href: "/resources" },
       { labelKey: "8dTemplate", href: "/8d-report-template" },
       { labelKey: "8dExamples", href: "/8d-report-example" },
       { labelKey: "learn", href: "/learn" },

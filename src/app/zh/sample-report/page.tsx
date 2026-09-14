@@ -158,7 +158,7 @@ export default function ChineseSampleReportPage() {
               <Download className="h-4 w-4" />
             </TrackedLink>
             <PrimaryCTA
-              href="/resources"
+              href="/zh/resources"
               page="sample_report"
               location="zh_hero"
               variant="ghost"
@@ -262,7 +262,7 @@ export default function ChineseSampleReportPage() {
             description="当问题类型或客户背景更接近你的报告时，可以参考这些示例。"
           />
           <Link
-            href="/resources"
+            href="/zh/resources"
             className="text-sm font-semibold text-indigo-700 hover:text-indigo-800"
           >
             浏览全部资源

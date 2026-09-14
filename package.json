@@ -16,6 +16,7 @@
     "test:billing-portal": "tsx scripts/billing-portal.test.ts",
     "test:tool-only-positioning": "tsx scripts/tool-only-positioning.test.ts",
     "test:i18n-core": "tsx scripts/i18n-core.test.ts",
+    "test:i18n-resources": "tsx scripts/i18n-resources.test.ts",
     "test:team-auth": "tsx scripts/team-authorization.test.ts",
     "test:p2-correctness": "tsx scripts/p2-correctness.test.ts",
     "test:version-consistency": "tsx scripts/version-consistency.test.ts",
