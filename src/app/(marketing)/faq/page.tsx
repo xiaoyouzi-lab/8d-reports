@@ -15,7 +15,13 @@ export const metadata: Metadata = {
   title: "FAQ: Plans, Exports, Sharing, Security, and AI",
   description:
     "Answers about free reports, billing, PDF Word Excel export, attachments, sharing, Team workflow, security, and AI Quality Check.",
-  alternates: { canonical: `${siteUrl}/faq` },
+  alternates: {
+    canonical: `${siteUrl}/faq`,
+    languages: {
+      en: `${siteUrl}/faq`,
+      "zh-CN": `${siteUrl}/zh/faq`,
+    },
+  },
   openGraph: {
     title: "FAQ: Plans, Exports, Sharing, Security, and AI",
     description:

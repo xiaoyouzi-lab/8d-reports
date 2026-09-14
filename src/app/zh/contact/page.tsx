@@ -1,33 +1,33 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { Mail, MessageSquare, ShieldCheck } from "lucide-react"
-import { Card, CardContent } from "@/components/ui/card"
-import { ContactLeadForm } from "@/components/marketing/ContactLeadForm"
-import { LangSwitcher } from "@/components/LangSwitcher"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Mail, MessageSquare, ShieldCheck } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { ContactLeadForm } from "@/components/marketing/ContactLeadForm";
 
-const supportEmail = "19857345237@163.com"
+const supportEmail = "19857345237@163.com";
 
 export const metadata: Metadata = {
+  title: "联系我们",
+  description:
+    "就产品问题、账单、账号支持、隐私请求或 8D 工作流反馈联系 8D Reports。",
   alternates: {
-    canonical: "https://www.8d-reports.com/contact",
+    canonical: "https://www.8d-reports.com/zh/contact",
     languages: {
       en: "https://www.8d-reports.com/contact",
       "zh-CN": "https://www.8d-reports.com/zh/contact",
     },
   },
-}
+};
 
-export default function ContactPage() {
+export default function ChineseContactPage() {
   return (
-    <div className="relative mx-auto max-w-3xl px-4 py-16">
-      <LangSwitcher className="absolute right-4 top-4" />
+    <div className="mx-auto max-w-3xl px-4 py-16">
       <div className="mb-10">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Contact 8D Reports
+          联系 8D Reports
         </h1>
         <p className="mt-3 text-muted-foreground">
-          For product questions, billing, account support, privacy requests, or
-          feedback about your 8D workflow.
+          产品问题、账单、账号支持、隐私请求，或关于你的 8D 工作流的反馈。
         </p>
       </div>
 
@@ -35,18 +35,18 @@ export default function ContactPage() {
         {[
           {
             icon: Mail,
-            title: "Email",
+            title: "邮件",
             text: supportEmail,
           },
           {
             icon: MessageSquare,
-            title: "Feedback",
-            text: "Send product feedback from the in-app feedback button.",
+            title: "反馈",
+            text: "使用应用内的反馈按钮提交产品反馈。",
           },
           {
             icon: ShieldCheck,
-            title: "Privacy",
-            text: "Use the same address for data or account deletion requests.",
+            title: "隐私",
+            text: "数据或账号删除请求也请发送到同一邮箱。",
           },
         ].map((item) => (
           <Card key={item.title}>
@@ -66,32 +66,31 @@ export default function ContactPage() {
       <Card className="mt-6">
         <CardContent className="pt-6">
           <h2 className="text-lg font-semibold text-foreground">
-            Send a message
+            发送消息
           </h2>
           <p className="mt-2 text-sm leading-6 text-muted-foreground">
-            Use this form for product questions, billing, account support, or
-            feedback. You can also reach us at{" "}
+            使用此表单提交产品问题、账单、账号支持或反馈。你也可以直接发送邮件到{" "}
             <a
               href={`mailto:${supportEmail}`}
               className="font-medium text-indigo-600 underline underline-offset-4 hover:text-indigo-700"
             >
               {supportEmail}
             </a>
-            .
+            。
           </p>
           <div className="mt-6">
             <ContactLeadForm />
           </div>
           <div className="mt-6 border-t pt-4">
             <Link
-              href="/"
+              href="/zh"
               className="text-sm font-medium text-muted-foreground underline underline-offset-4 hover:text-foreground"
             >
-              Back to home
+              返回首页
             </Link>
           </div>
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

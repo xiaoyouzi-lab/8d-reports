@@ -1,9 +1,12 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { Suspense } from "react"
-import { FileDown } from "lucide-react"
-import { AutoCheckout } from "@/components/AutoCheckout"
-import { PrimaryCTA, TrackedCheckoutButton } from "@/components/marketing/MarketingActions"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Suspense } from "react";
+import { FileDown } from "lucide-react";
+import { AutoCheckout } from "@/components/AutoCheckout";
+import {
+  PrimaryCTA,
+  TrackedCheckoutButton,
+} from "@/components/marketing/MarketingActions";
 import {
   Breadcrumbs,
   JsonLd,
@@ -11,115 +14,109 @@ import {
   Section,
   SectionHeader,
   breadcrumbJsonLd,
-} from "@/components/marketing/MarketingPrimitives"
-import { PlanCard } from "@/components/marketing/PlanCard"
-import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
+} from "@/components/marketing/MarketingPrimitives";
+import { PlanCard } from "@/components/marketing/PlanCard";
+import { socialOpenGraphImage } from "@/lib/marketing-content";
 
 export const metadata: Metadata = {
-  title: "Pricing: Free, Pro, Team, and Single Export",
+  title: "定价：免费、Pro、Team 与单份导出",
   description:
-    "Start with 3 free reports. Upgrade to Pro for formal personal delivery, Team for shared control, or unlock one selected report with single export.",
+    "先用 3 份免费报告评估流程。需要正式交付时升级 Pro，需要共享控制时选择 Team，也可以只解锁一份选定报告。",
   alternates: {
-    canonical: `${siteUrl}/pricing`,
+    canonical: "https://www.8d-reports.com/zh/pricing",
     languages: {
-      en: `${siteUrl}/pricing`,
-      "zh-CN": `${siteUrl}/zh/pricing`,
+      en: "https://www.8d-reports.com/pricing",
+      "zh-CN": "https://www.8d-reports.com/zh/pricing",
     },
   },
   openGraph: {
-    title: "Pricing: Free, Pro, Team, and Single Export",
+    title: "定价：免费、Pro、Team 与单份导出",
     description:
-      "Free, Pro, Team, and single report export options for customer-ready 8D reports.",
-    url: `${siteUrl}/pricing`,
+      "适合质量工程师、供应商质量与制造团队的 8D 交付和协作定价。",
+    url: "https://www.8d-reports.com/zh/pricing",
     type: "website",
     images: [socialOpenGraphImage],
   },
-}
+};
 
 const breadcrumbItems = [
-  { label: "Home", href: siteUrl },
-  { label: "Pricing", href: `${siteUrl}/pricing` },
-]
+  { label: "首页", href: "https://www.8d-reports.com/zh" },
+  { label: "定价", href: "https://www.8d-reports.com/zh/pricing" },
+];
 
 const plans = [
   {
     name: "Free",
     price: "$0",
-    period: "forever",
-    description: "Evaluate the workflow and complete up to 3 lifetime reports.",
-    features: [
-      "3 lifetime reports",
-      "D0-D8 editor",
-      "Attachments",
-      "View-only sharing",
-      "Watermarked PDF",
-    ],
+    period: "永久",
+    description: "用于评估流程，最多创建 3 份终身报告。",
+    features: ["3 份终身报告", "D0-D8 编辑器", "附件", "仅查看分享", "带水印 PDF"],
   },
   {
     name: "Pro",
     price: "$19",
-    period: "month",
-    description: "For individual quality engineers who deliver reports regularly.",
+    period: "月",
+    description: "适合需要持续交付报告的个人质量工程师。",
     recommended: true,
     features: [
-      "Unlimited personal reports",
-      "PDF without watermark",
-      "Word and Excel export",
-      "Company logo",
-      "Editable sharing",
-      "Deep historical search",
+      "个人无限报告",
+      "无水印 PDF",
+      "Word 与 Excel 导出",
+      "公司 Logo",
+      "可编辑分享",
+      "深度历史检索",
     ],
   },
   {
     name: "Team",
     price: "$99",
-    period: "month",
-    description: "For small teams that need shared report control.",
+    period: "月",
+    description: "适合需要共享报告控制的小型质量团队。",
     features: [
-      "Everything in Pro",
-      "5 seats",
-      "Shared workspace",
-      "Owner / Editor / Viewer roles",
-      "Approval status, report locking, and revisions",
-      "Activity log",
+      "包含 Pro 全部能力",
+      "5 个席位",
+      "共享工作区",
+      "负责人 / 编辑 / 只读角色",
+      "审批状态、报告锁定与修订",
+      "活动日志",
     ],
   },
-]
+];
 
 const comparisonRows = [
-  ["Reports", "3 lifetime", "Unlimited personal", "Shared workspace"],
-  ["PDF export", "Watermarked", "No watermark", "No watermark"],
-  ["Word and Excel", "Single export only", "Included", "Included"],
-  ["Sharing", "View-only", "Editable", "Editable with roles"],
-  ["Team controls", "—", "—", "Roles, approval, locking"],
-]
+  ["报告", "3 份终身", "个人无限报告", "共享工作区"],
+  ["PDF 导出", "带水印", "无水印", "无水印"],
+  ["Word 与 Excel", "仅单份解锁", "已包含", "已包含"],
+  ["分享", "仅查看", "可编辑", "按角色协作"],
+  ["团队控制", "—", "—", "角色、审批、锁定"],
+];
 
 const billingFaqs = [
   {
-    question: "Do I need a credit card for Free?",
-    answer: "No. Free starts with 3 lifetime reports and no credit card requirement.",
+    question: "免费方案需要信用卡吗？",
+    answer: "不需要。免费方案包含 3 份终身报告，无需信用卡。",
   },
   {
-    question: "What happens after I use 3 reports?",
+    question: "用完 3 份报告后会怎样？",
     answer:
-      "Existing reports remain accessible. Creating more reports requires Pro or Team, while one selected report can be unlocked with single export.",
+      "现有报告仍可访问。继续创建报告需要 Pro 或 Team；也可以只对一份选定报告使用单份导出。",
   },
   {
-    question: "What does single export unlock?",
+    question: "单份导出能解锁什么？",
     answer:
-      "Single export is $4.99 for one selected report and unlocks no-watermark PDF, Word, and Excel for that report.",
+      "单份导出为 4.99 美元，解锁一份选定报告的无水印 PDF、Word 和 Excel 导出。",
   },
   {
-    question: "Can I cancel a subscription?",
+    question: "可以取消订阅吗？",
     answer:
-      "Yes. Open Manage subscription in your dashboard to cancel or change billing through the secure Creem customer portal. Your plan status updates automatically after the billing event is processed.",
+      "取消或调整账单请联系支持。订阅状态由账单服务商更新，并在账单事件处理完成后反映到产品中。",
   },
   {
-    question: "Does Team include enterprise procurement features?",
+    question: "Team 是否包含企业采购能力？",
     answer:
-      "Team is a lightweight shared 8D workspace. Review Security or contact us before broader enterprise rollout requirements.",
+      "Team 是一个轻量级的共享 8D 工作区。若需要更广泛的企业级部署要求，请先查看安全页面或联系我们。",
   },
-]
+];
 
 const faqJsonLd = {
   "@context": "https://schema.org",
@@ -132,9 +129,9 @@ const faqJsonLd = {
       text: faq.answer,
     },
   })),
-}
+};
 
-export default function PricingPage() {
+export default function ChinesePricingPage() {
   return (
     <PageShell>
       <JsonLd data={breadcrumbJsonLd(breadcrumbItems)} />
@@ -144,11 +141,10 @@ export default function PricingPage() {
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
           <div className="max-w-3xl">
             <h1 className="text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-              Start with 3 free reports. Pay when you need formal delivery or team control.
+              先用 3 份免费报告评估。需要正式交付或团队控制时再付费。
             </h1>
             <p className="mt-5 text-lg leading-8 text-slate-600">
-              Free is for evaluation, Pro is for regular personal delivery, and
-              Team is for a shared quality workspace with review controls.
+              Free 用于评估，Pro 用于个人持续交付，Team 用于带评审控制的共享质量工作区。
             </p>
           </div>
 
@@ -166,18 +162,19 @@ export default function PricingPage() {
                 description={plan.description}
                 features={plan.features}
                 recommended={plan.recommended}
+                recommendedLabel="推荐"
               >
                 {plan.name === "Free" ? (
                   <PrimaryCTA
                     href="/signup"
                     page="pricing"
-                    location="free_plan"
+                    location="zh_free_plan"
                     variant="secondary"
                     className="w-full"
                     eventName="pricing_plan_clicked"
                     eventData={{ plan: "free" }}
                   >
-                    Start free
+                    免费开始
                   </PrimaryCTA>
                 ) : plan.name === "Pro" ? (
                   <TrackedCheckoutButton
@@ -185,7 +182,7 @@ export default function PricingPage() {
                     planType="pro_monthly"
                     className="h-11 w-full bg-indigo-600 hover:bg-indigo-700"
                   >
-                    Start Pro monthly
+                    开始 Pro 月度订阅
                   </TrackedCheckoutButton>
                 ) : (
                   <TrackedCheckoutButton
@@ -193,7 +190,7 @@ export default function PricingPage() {
                     planType="team_monthly"
                     className="h-11 w-full bg-slate-950 text-white hover:bg-slate-800"
                   >
-                    Start Team monthly
+                    开始 Team 月度订阅
                   </TrackedCheckoutButton>
                 )}
               </PlanCard>
@@ -205,48 +202,47 @@ export default function PricingPage() {
       <Section>
         <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <SectionHeader
-            title="Single report export"
-            description="Use this when you only need one formal deliverable and do not need ongoing Pro or Team features."
+            title="单份报告导出"
+            description="只需一份正式交付件、无需持续使用 Pro 或 Team 功能时，可在该报告的导出流程中选择单份解锁。"
           />
           <div className="rounded-lg border border-indigo-100 bg-indigo-50 p-5">
             <div className="flex gap-3">
               <FileDown className="mt-0.5 h-5 w-5 shrink-0 text-indigo-700" />
               <div>
                 <h2 className="text-lg font-semibold text-indigo-950">
-                  $4.99 unlocks one selected report
+                  4.99 美元解锁一份选定报告
                 </h2>
                 <ul className="mt-4 grid gap-2 text-sm text-indigo-900 sm:grid-cols-3">
-                  <li>no-watermark PDF</li>
+                  <li>无水印 PDF</li>
                   <li>Word</li>
                   <li>Excel</li>
                 </ul>
                 <p className="mt-4 text-sm leading-6 text-indigo-900">
-                  Single export is started from a report export flow so the
-                  selected report is clear.
+                  单份导出从报告导出流程发起，确保所选报告清晰明确。
                 </p>
               </div>
             </div>
           </div>
         </div>
         <p className="mt-6 text-sm leading-6 text-slate-600">
-          For security, data, and rollout questions, review{" "}
-          <Link href="/security" className="font-semibold text-indigo-700 hover:text-indigo-800">
-            Security
+          关于安全、数据和推广问题，请查看{" "}
+          <Link href="/zh/security" className="font-semibold text-indigo-700 hover:text-indigo-800">
+            安全与隐私
           </Link>
-          .
+          。
         </p>
       </Section>
 
       <Section className="border-y border-slate-200 bg-slate-50">
         <SectionHeader
-          title="Compact comparison"
-          description="The main difference is when you need formal exports, reusable history, or team control."
+          title="能力对比"
+          description="主要差别在于何时需要正式导出、可复用历史记录或团队控制。"
         />
         <div className="mt-8 overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <table className="min-w-[720px] w-full border-collapse text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 text-left">
-                <th className="px-4 py-3 font-semibold text-slate-950">Feature</th>
+                <th className="px-4 py-3 font-semibold text-slate-950">能力</th>
                 <th className="px-4 py-3 font-semibold text-slate-950">Free</th>
                 <th className="px-4 py-3 font-semibold text-slate-950">Pro</th>
                 <th className="px-4 py-3 font-semibold text-slate-950">Team</th>
@@ -268,7 +264,7 @@ export default function PricingPage() {
       </Section>
 
       <Section className="border-t border-slate-200 bg-slate-50">
-        <SectionHeader title="Billing FAQ" />
+        <SectionHeader title="账单常见问题" />
         <div className="mt-8 grid gap-4 md:grid-cols-2">
           {billingFaqs.map((faq) => (
             <article key={faq.question} className="rounded-lg border border-slate-200 bg-white p-5">
@@ -279,5 +275,5 @@ export default function PricingPage() {
         </div>
       </Section>
     </PageShell>
-  )
+  );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link"
 import type { Metadata } from "next"
+import { LangSwitcher } from "@/components/LangSwitcher"
 
 // Login and signup are thin, private pages with parameterized URLs. Keep them
 // out of search results so they cannot be indexed as duplicate/alternate pages.
@@ -13,7 +14,8 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-[#F8F9FB] px-4 py-8">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F8F9FB] px-4 py-8">
+      <LangSwitcher className="absolute right-4 top-4" />
       <Link href="/" className="mb-8 flex items-center gap-2.5">
         <div className="flex size-10 items-center justify-center rounded-xl bg-indigo-600 text-base font-bold text-white">
           8D

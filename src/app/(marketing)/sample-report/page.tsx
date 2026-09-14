@@ -20,7 +20,13 @@ export const metadata: Metadata = {
   title: "Complete 8D Example Report",
   description:
     "See a complete 8D example from containment to verified corrective action, with evidence, export package, and related industry examples.",
-  alternates: { canonical: `${siteUrl}/sample-report` },
+  alternates: {
+    canonical: `${siteUrl}/sample-report`,
+    languages: {
+      en: `${siteUrl}/sample-report`,
+      "zh-CN": `${siteUrl}/zh/sample-report`,
+    },
+  },
   openGraph: {
     title: "Complete 8D Example Report",
     description:

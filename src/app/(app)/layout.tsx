@@ -9,6 +9,7 @@ import { authClient } from "@/lib/auth-client"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { QualityAgentFab } from "@/components/quality-agent/QualityAgentFab"
+import { LangSwitcher } from "@/components/LangSwitcher"
 import { trackEvent } from "@/lib/analytics"
 import { usePlan } from "@/lib/use-plan"
 
@@ -139,6 +140,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <LangSwitcher className="hidden sm:inline-flex" />
             <Badge
               variant={plan === "pro" || plan === "team" ? "default" : "outline"}
               className="hidden sm:inline-flex"

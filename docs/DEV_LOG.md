@@ -1,5 +1,43 @@
 # Development Log
 
+## Completed: Chinese/English i18n Core (Batch 1, 2026-09-14)
+
+- Added the i18n foundation: `src/components/LocaleProvider.tsx` wraps the app
+  in `NextIntlClientProvider` with en + zh-CN catalogs, and
+  `src/app/layout.tsx` now feeds both message sets. The active locale follows
+  the URL (`/zh/*` = `zh-CN`, otherwise `en`) so English URLs never render a
+  half-translated page. The root layout owns the provider.
+- `src/proxy.ts` now reads/validates the `NEXT_LOCALE` cookie
+  (`en` | `zh-CN`) and forwards it as `x-locale`; it still does not overwrite a
+  user's explicit choice.
+- Added `src/lib/i18n-routes.ts`: the single source of truth mapping the seven
+  core English pages to their `/zh` equivalents, plus `localizedHref` /
+  `zhPathFor` / `enPathFor` helpers.
+- Rewrote `src/components/LangSwitcher.tsx` to switch URLs only for routes that
+  have a zh page; on every other route it sets the cookie and reloads the same
+  URL. Added the switcher to the marketing header/footer, the app header, and the
+  auth layout.
+- Localized the shared marketing header/footer labels through next-intl
+  (`nav.*`, added to both catalogs) and localized the contact form. Also
+  merged the main-worktree auth message additions.
+- Created zh pages mirroring the live product: `/zh`, `/zh/pricing`,
+  `/zh/sample-report`, `/zh/ai-8d-report-check`, `/zh/faq`, `/zh/security`,
+  `/zh/contact`. Each has a canonical `https://www.8d-reports.com/zh/<path>`
+  and `alternates.languages` for `en` + `zh-CN`. The English core pages gained
+  the matching hreflang alternates.
+- Copy is limited to the live tool: structured D0-D8 editing, evidence and
+  attachments, PDF / Word / Excel export (ZIP with attachments when present),
+  share links, Team roles/approval/lock/activity, Knowledge Base reuse, and the
+  automated AI Quality Check. Removed every Quality Case / customer-complaint
+  workbench / supplier-collaboration-platform / manual expert review claim that
+  was in the uncommitted main-worktree zh draft (`/cases` is still 404).
+- `src/app/sitemap.ts` now emits the zh routes with `alternates.languages`
+  and adds the same alternates to the English core entries.
+- Added `scripts/i18n-core.test.ts` (`npm run test:i18n-core`) asserting the nav
+  catalogs, the switcher route map vs. the zh pages that exist, the canonical /
+  hreflang metadata, and the absence of the removed positioning.
+- No auth, payment, database schema, export logic, environment variable, or
+  production configuration change.
 ## Completed: Self-Serve Billing Portal (2026-09-14)
 
 - Added POST /api/billing/portal: authenticated, looks up the stored
