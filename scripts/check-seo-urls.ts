@@ -7,6 +7,7 @@ import { revenueGeoResourcesZh } from "../src/content/revenue-geo-resources-zh";
 import { seoPages as legacySeoPages } from "../src/lib/seo-pages";
 import { seoPages as programmaticSeoPages } from "../src/content/seo-pages";
 import { getHelpArticles, getLearnArticles } from "../src/lib/content-library";
+import { docsTopicsZh } from "../src/lib/marketing-content-zh";
 import { INDEXABLE_STATIC_PATHS, LEGACY_SEO_REDIRECTS, SITE_URL } from "../src/lib/seo-index-hygiene";
 
 const requiredGscExamplePaths = [
@@ -112,6 +113,7 @@ const contentPaths = new Set([
   ...getLearnArticles().map((page) => `/learn/${page.slug}`),
   ...getHelpArticles("zh").map((page) => `/zh/help/${page.slug}`),
   ...getLearnArticles("zh").map((page) => `/zh/learn/${page.slug}`),
+  ...docsTopicsZh.map((page) => `/zh/docs/${page.slug}`),
   ...demoReportPaths,
 ]);
 
