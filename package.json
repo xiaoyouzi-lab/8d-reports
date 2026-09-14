@@ -13,6 +13,7 @@
     "test:p0-plus-smoke": "tsx scripts/p0-plus-smoke.test.ts",
     "test:governance": "tsx scripts/team-governance.test.ts",
     "test:title-hygiene": "tsx scripts/title-hygiene.test.ts",
+    "test:billing-portal": "tsx scripts/billing-portal.test.ts",
     "test:tool-only-positioning": "tsx scripts/tool-only-positioning.test.ts",
     "test:team-auth": "tsx scripts/team-authorization.test.ts",
     "test:p2-correctness": "tsx scripts/p2-correctness.test.ts",
