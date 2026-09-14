@@ -210,6 +210,9 @@ type ZhDynamicCollection = {
   slugs: readonly string[];
   // Dynamic segment name used by the route folder (defaults to "slug").
   param?: string;
+  // Token-style route (e.g. /share/<token>): any single path segment matches, so
+  // `slugs` is documentation only and is ignored for matching.
+  arbitrary?: boolean;
 };
 
 export const ZH_DYNAMIC_COLLECTIONS: readonly ZhDynamicCollection[] = [
@@ -269,13 +272,34 @@ export const ZH_DYNAMIC_COLLECTIONS: readonly ZhDynamicCollection[] = [
     slugs: ZH_DEMO_REPORT_SLUGS,
     param: "type",
   },
+  {
+    // /share/<token> is a private tokenized viewer. The token is arbitrary, so
+    // matching accepts any single segment instead of a fixed slug list. This is
+    // only used by the language switcher; share URLs are never added to the
+    // sitemap.
+    enPrefix: "/share",
+    zhPrefix: "/zh/share",
+    slugs: [],
+    param: "token",
+    arbitrary: true,
+  },
 ];
+
+function isSingleSegment(slug: string): boolean {
+  return slug.length > 0 && !slug.includes("/");
+}
 
 function matchDynamicZh(enPath: string): string | undefined {
   for (const collection of ZH_DYNAMIC_COLLECTIONS) {
     const prefix = `${collection.enPrefix}/`;
     if (!enPath.startsWith(prefix)) continue;
     const slug = enPath.slice(prefix.length);
+    if (collection.arbitrary) {
+      if (isSingleSegment(slug)) {
+        return `${collection.zhPrefix}/${slug}`;
+      }
+      continue;
+    }
     if (collection.slugs.includes(slug)) {
       return `${collection.zhPrefix}/${slug}`;
     }
@@ -288,6 +312,12 @@ function matchDynamicEn(zhPath: string): string | undefined {
     const prefix = `${collection.zhPrefix}/`;
     if (!zhPath.startsWith(prefix)) continue;
     const slug = zhPath.slice(prefix.length);
+    if (collection.arbitrary) {
+      if (isSingleSegment(slug)) {
+        return `${collection.enPrefix}/${slug}`;
+      }
+      continue;
+    }
     if (collection.slugs.includes(slug)) {
       return `${collection.enPrefix}/${slug}`;
     }

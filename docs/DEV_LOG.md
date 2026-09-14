@@ -1,5 +1,80 @@
 # Development Log
 
+## Completed: Chinese Share Viewer + zh Auth Metadata (Batch 5c, 2026-09-18)
+
+### Chinese share viewer at /zh/share/<token>
+- Extracted the tokenized viewer into one shared client component,
+  `src/components/share/ShareViewer.tsx`, consumed by BOTH
+  `src/app/share/[token]/page.tsx` (English) and the new
+  `src/app/zh/share/[token]/page.tsx` (Chinese). The viewer is not forked.
+- The viewer's user-visible chrome now renders from `useTranslations("share")`.
+  Added 14 keys to BOTH catalogs (en + zh-CN), all in sync: `loading`,
+  `editable`, `editNotice`, `saving`, `saved`, `saveChanges`,
+  `attachments`, `approval`, `signatureDisclaimer`, `preparedBy`,
+  `reviewedBy`, `approvedBy`, `signatureLine`, `signatureAlt`. The share
+  namespace now has 36 keys and they are exactly equal in both catalogs. English
+  copy is byte-identical to the previous hardcoded strings.
+- `LangSwitcher` is now in the share chrome, so a recipient can switch language.
+- D0-D8 step titles are reused from the existing `docs.step.<D>.name` keys
+  (`useTranslations("docs.step")`), which already hold the exact English labels
+  from `src/lib/report-steps.ts` and the established Chinese translations. No
+  new 8D terminology was invented. `step.description` stays English because no
+  translation exists for it.
+- Added a guard in `scripts/i18n-share.test.ts` pinning `docs.step.<D>.name` to
+  the canonical `STEPS[].label` values and asserting the namespace covers exactly
+  the D0-D8 steps, so an English label edit cannot silently diverge from what the
+  viewer renders. Verified the guard fails on a deliberately drifted label.
+- Route map: `ZH_DYNAMIC_COLLECTIONS` gained a `/share` -> `/zh/share` entry
+  with `param: "token"` and a new minimal `arbitrary?: boolean` flag; the
+  arbitrary match accepts any single path segment and leaves every existing
+  slug-list collection unchanged. `zhPathFor("/share/<token>")` ->
+  `/zh/share/<token>` and the reverse both resolve.
+- The new `src/app/zh/share/[token]/layout.tsx` repeats
+  `robots: { index: false, follow: false }`, so the Chinese rendering is
+  noindex exactly like the English one. No share path was added to
+  `INDEXABLE_STATIC_PATHS`, `ZH_ROUTE_MAP`, or the sitemap.
+- Share link generation, the share API, tokens, permissions, and where share
+  URLs are produced are untouched.
+
+### Chinese metadata for the zh auth pages
+- `/zh/login`, `/zh/signup`, and `/zh/reset-password` now export Chinese
+  `metadata` (title + description). They remain noindex via the `(auth)`
+  layout; per the Batch 5a decision these private pages are intentionally NOT a
+  canonical/hreflang pair, so no `alternates` were added and nothing entered
+  the sitemap.
+
+### Tests
+- Added `scripts/i18n-share.test.ts` and `npm run test:i18n-share` (picked up
+  by CI's `test:*` discovery). It asserts the zh share route exists and reuses
+  the shared viewer, the zh layout is noindex, arbitrary-token resolution works
+  both ways, the share catalogs are identical and translated, the three zh auth
+  pages export Chinese metadata, and both `/share/*` and `/zh/share/*` are
+  absent from the generated sitemap (which still has exactly 240 URLs).
+
+### Verification
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed (11 pre-existing warnings, 0 errors).
+- All discovered `test:*` scripts (21, excluding the two smoke scripts) passed.
+- `npm run check:seo` passed: 240 sitemap URLs, 16 redirects.
+- `npm run build` passed.
+- `git diff --check` passed.
+
+### Risks
+- The share viewer now reads step titles from the `docs.step` namespace; if that
+  namespace is ever renamed the viewer must move with it. A follow-up could add
+  dedicated `share.step*` keys if that coupling is unwanted.
+- `step.description` and the report body remain English on the zh viewer; only
+  titles and chrome are localized.
+- `docs.step.D0.name` ("D0: Prepare") matches the English `STEPS` label
+  exactly, so English rendering is unchanged, but this parity is not asserted by
+  a test.
+
+### Suggested Next Task
+- Localize the report field labels/placeholders and step descriptions on the
+  viewer (reusing `editor.*` field labels) if a fully Chinese report body is
+  desired, and add a build-time assertion that `docs.step.<D>.name` equals the
+  English `STEPS[].label`.
+
 ## Fixed: Creem customer lookup returned null (paid-loop, 2026-09-18)
 
 - **Bug:** `findCreemCustomerByEmail` in `src/lib/creem.ts` only understood a

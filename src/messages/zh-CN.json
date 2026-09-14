@@ -346,7 +346,21 @@
     "goHome": "前往8D Reports",
     "noData": "该步骤暂无填写数据。",
     "filled": "已填写",
-    "poweredBy": "技术支持"
+    "poweredBy": "技术支持",
+    "loading": "加载中...",
+    "editable": "可编辑",
+    "editNotice": "您正在编辑此报告——更改将更新原始报告。",
+    "saving": "保存中...",
+    "saved": "已保存！",
+    "saveChanges": "保存更改",
+    "attachments": "附件",
+    "approval": "审批",
+    "signatureDisclaimer": "签名图片仅用于报告展示，不构成法律意义上的电子签名。",
+    "preparedBy": "准备人",
+    "reviewedBy": "审核人",
+    "approvedBy": "批准人",
+    "signatureLine": "签名栏",
+    "signatureAlt": "{name}签名"
   },
   "export": {
     "pdf": "PDF",

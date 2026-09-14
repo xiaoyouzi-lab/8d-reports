@@ -347,7 +347,21 @@
     "goHome": "Go to 8D Reports",
     "noData": "No data filled for this step.",
     "filled": "Filled",
-    "poweredBy": "Powered by"
+    "poweredBy": "Powered by",
+    "loading": "Loading...",
+    "editable": "Editable",
+    "editNotice": "You are editing this report — changes will update the original.",
+    "saving": "Saving...",
+    "saved": "Saved!",
+    "saveChanges": "Save Changes",
+    "attachments": "Attachments",
+    "approval": "Approval",
+    "signatureDisclaimer": "Signature images are used for report presentation and are not a legal electronic signature.",
+    "preparedBy": "Prepared by",
+    "reviewedBy": "Reviewed by",
+    "approvedBy": "Approved by",
+    "signatureLine": "Signature line",
+    "signatureAlt": "{name} signature"
   },
   "export": {
     "pdf": "PDF",
