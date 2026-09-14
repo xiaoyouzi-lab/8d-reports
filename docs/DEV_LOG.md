@@ -1,5 +1,23 @@
 # Development Log
 
+## Completed: Self-Serve Billing Portal (2026-09-14)
+
+- Added POST /api/billing/portal: authenticated, looks up the stored
+  subscriptions.creemCustomerId (falling back to a Creem customer lookup by
+  account email), and returns a Creem-hosted Customer Portal link.
+- Added generateBillingPortalLink() and findCreemCustomerByEmail() to
+  src/lib/creem.ts using the documented Creem REST endpoints
+  (POST /customers/billing, GET /customers?email=).
+- Added a "Manage subscription" control on the dashboard plan card
+  (QuotaIndicator) for Pro/Team users, plus the billing_portal_clicked analytics
+  event in the events allowlist.
+- Updated the pricing FAQ: cancellation is self-serve through the Creem customer
+  portal instead of "contact support".
+- Added scripts/billing-portal.test.ts (npm run test:billing-portal).
+- No auth-provider, export, database schema, or production-config change.
+  Residual: the live portal call needs a real Creem customer to verify end to
+  end (cannot be exercised offline).
+
 ## Completed: Tool-Only Subscription Positioning (2026-09-14)
 
 - Removed every public manual/custom service offering so the marketing site

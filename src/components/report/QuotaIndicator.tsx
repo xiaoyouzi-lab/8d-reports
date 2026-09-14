@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { trackEvent } from "@/lib/analytics"
 import { cn } from "@/lib/utils"
 import { FREE_REPORT_LIMIT, type PlanKey } from "@/lib/plans"
+import { ManageSubscriptionButton } from "@/components/billing/ManageSubscriptionButton"
 
 const DEFAULT_QUOTA_TOTAL = FREE_REPORT_LIMIT
 
@@ -58,6 +59,9 @@ export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
             ? "Unlimited reports, team workspace, and premium export features."
             : "You have unlimited personal reports and premium individual features."}
         </p>
+        <div className="mt-3">
+          <ManageSubscriptionButton />
+        </div>
       </div>
     )
   }
