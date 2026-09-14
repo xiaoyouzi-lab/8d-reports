@@ -6,6 +6,7 @@ import {
 } from "@/content/revenue-geo-resources-zh"
 import { seoPages as legacySeoPages } from "@/lib/seo-pages"
 import { seoPages as programmaticSeoPages } from "@/content/seo-pages"
+import { seoPagesZh as programmaticSeoPagesZh } from "@/content/seo-pages-zh"
 import {
   getHelpArticle,
   getHelpArticles,
@@ -96,7 +97,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const programmaticEntries = programmaticSeoPages
-    .map((page) => entry(`/${page.slug}`, "weekly", 0.82))
+    .map((page) =>
+      entry(
+        `/${page.slug}`,
+        "weekly",
+        0.82,
+        languageAlternates(`/${page.slug}`, `/zh/${page.slug}`),
+      ),
+    )
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
+  const programmaticZhEntries = programmaticSeoPagesZh
+    .map((page) =>
+      entry(
+        `/zh/${page.slug}`,
+        "weekly",
+        0.82,
+        languageAlternates(`/${page.slug}`, `/zh/${page.slug}`),
+      ),
+    )
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const revenueResourceEntries = revenueGeoResources
@@ -181,6 +200,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...chineseEntries,
     ...legacyEntries,
     ...programmaticEntries,
+    ...programmaticZhEntries,
     ...revenueResourceEntries,
     ...revenueResourceZhEntries,
     ...helpEntries,

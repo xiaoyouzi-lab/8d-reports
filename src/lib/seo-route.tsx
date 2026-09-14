@@ -7,6 +7,7 @@ import {
   getSeoPathPrefix,
   type SeoPageType,
 } from "@/content/seo-pages";
+import { getSeoPageZh } from "@/content/seo-pages-zh";
 
 const baseUrl = "https://www.8d-reports.com";
 
@@ -26,12 +27,18 @@ export async function generateSeoMetadata(
   if (!page) return {};
 
   const canonical = `${baseUrl}/${page.slug}`;
+  // Every programmatic page has a Simplified Chinese equivalent, so the English
+  // page advertises the translated pair for search engines.
+  const zhUrl = getSeoPageZh(page.slug)
+    ? `${baseUrl}/zh/${page.slug}`
+    : undefined;
 
   return {
     title: page.metaTitle,
     description: page.metaDescription,
     alternates: {
       canonical,
+      languages: zhUrl ? { en: canonical, "zh-CN": zhUrl } : { en: canonical },
     },
     openGraph: {
       title: page.metaTitle,

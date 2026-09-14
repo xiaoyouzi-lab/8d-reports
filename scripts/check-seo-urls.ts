@@ -6,6 +6,7 @@ import { revenueGeoResources } from "../src/content/revenue-geo-resources";
 import { revenueGeoResourcesZh } from "../src/content/revenue-geo-resources-zh";
 import { seoPages as legacySeoPages } from "../src/lib/seo-pages";
 import { seoPages as programmaticSeoPages } from "../src/content/seo-pages";
+import { seoPagesZh as programmaticSeoPagesZh } from "../src/content/seo-pages-zh";
 import { getHelpArticles, getLearnArticles } from "../src/lib/content-library";
 import { docsTopicsZh } from "../src/lib/marketing-content-zh";
 import { INDEXABLE_STATIC_PATHS, LEGACY_SEO_REDIRECTS, SITE_URL } from "../src/lib/seo-index-hygiene";
@@ -107,6 +108,7 @@ const contentPaths = new Set([
   ...INDEXABLE_STATIC_PATHS,
   ...legacySeoPages.map((page) => `/${page.slug}`),
   ...programmaticSeoPages.map((page) => `/${page.slug}`),
+  ...programmaticSeoPagesZh.map((page) => `/zh/${page.slug}`),
   ...revenueGeoResources.map((page) => `/resources/${page.slug}`),
   ...revenueGeoResourcesZh.map((page) => `/zh/resources/${page.slug}`),
   ...getHelpArticles().map((page) => `/help/${page.slug}`),
