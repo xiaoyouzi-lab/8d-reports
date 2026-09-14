@@ -1,15 +1,8 @@
 import Link from "next/link"
 import type { ReactNode } from "react"
 import { ExternalLink, Image as ImageIcon, Video } from "lucide-react"
+import { slugify } from "@/lib/slugify"
 import { cn } from "@/lib/utils"
-
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-}
 
 function renderInline(text: string): ReactNode[] {
   const parts = text.split(/(\[[^\]]+\]\([^)]+\))/g)

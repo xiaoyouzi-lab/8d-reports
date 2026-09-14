@@ -1,6 +1,8 @@
 import fs from "node:fs"
 import path from "node:path"
 
+import { slugify } from "./slugify"
+
 export type ContentSection = {
   id: string
   title: string
@@ -25,14 +27,15 @@ export type ContentArticle = {
   sourcePath: string
 }
 
+// English remains the default locale so every existing caller keeps its
+// behavior. Simplified Chinese articles live in sibling "-zh" directories.
+export type ContentLocale = "en" | "zh"
+
 const contentRoot = path.join(process.cwd(), "content")
 
-function slugify(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+const collectionDirectories: Record<"help" | "learn", Record<ContentLocale, string>> = {
+  help: { en: "help", zh: "help-zh" },
+  learn: { en: "learn", zh: "learn-zh" },
 }
 
 function parseValue(raw: string): string | string[] | number {
@@ -79,9 +82,10 @@ function extractSections(body: string): ContentSection[] {
     })
 }
 
-function readCollection(collection: "help" | "learn") {
-  const dir = path.join(contentRoot, collection)
+function readCollection(collection: "help" | "learn", locale: ContentLocale) {
+  const dir = path.join(contentRoot, collectionDirectories[collection][locale])
   if (!fs.existsSync(dir)) return []
+  const prefix = locale === "zh" ? "zh/" : ""
 
   return fs
     .readdirSync(dir)
@@ -99,7 +103,7 @@ function readCollection(collection: "help" | "learn") {
         description: String(data.description || ""),
         type: String(data.type || collection),
         status: String(data.status || "draft"),
-        canonicalUrl: String(data.canonical_url || `/${collection}/${slug}`),
+        canonicalUrl: String(data.canonical_url || `/${prefix}${collection}/${slug}`),
         targetKeywords: toStringArray(data.target_keywords),
         screenshots: toStringArray(data.screenshots),
         videos: toStringArray(data.videos),
@@ -115,25 +119,25 @@ function readCollection(collection: "help" | "learn") {
     .sort((a, b) => (a.order ?? 999) - (b.order ?? 999) || a.title.localeCompare(b.title))
 }
 
-export function getHelpArticles() {
-  return readCollection("help")
+export function getHelpArticles(locale: ContentLocale = "en") {
+  return readCollection("help", locale)
 }
 
-export function getHelpArticle(slug: string) {
-  return getHelpArticles().find((article) => article.slug === slug)
+export function getHelpArticle(slug: string, locale: ContentLocale = "en") {
+  return getHelpArticles(locale).find((article) => article.slug === slug)
 }
 
-export function getLearnArticles() {
-  return readCollection("learn")
+export function getLearnArticles(locale: ContentLocale = "en") {
+  return readCollection("learn", locale)
 }
 
-export function getLearnArticle(slug: string) {
-  return getLearnArticles().find((article) => article.slug === slug)
+export function getLearnArticle(slug: string, locale: ContentLocale = "en") {
+  return getLearnArticles(locale).find((article) => article.slug === slug)
 }
 
-export function getArticleByPath(pathname: string) {
+export function getArticleByPath(pathname: string, locale: ContentLocale = "en") {
   const [collection, slug] = pathname.replace(/^\//, "").split("/")
-  if (collection === "help") return getHelpArticle(slug)
-  if (collection === "learn") return getLearnArticle(slug)
+  if (collection === "help") return getHelpArticle(slug, locale)
+  if (collection === "learn") return getLearnArticle(slug, locale)
   return undefined
 }

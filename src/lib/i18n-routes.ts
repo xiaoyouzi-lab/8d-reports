@@ -8,6 +8,8 @@
 export const ZH_ROUTE_MAP: Record<string, string> = {
   "/": "/zh",
   "/resources": "/zh/resources",
+  "/learn": "/zh/learn",
+  "/help": "/zh/help",
   "/pricing": "/zh/pricing",
   "/sample-report": "/zh/sample-report",
   "/ai-8d-report-check": "/zh/ai-8d-report-check",
@@ -25,14 +27,15 @@ export const ZH_PATHS: string[] = Object.values(ZH_ROUTE_MAP);
 export const EN_CORE_PATHS: string[] = Object.keys(ZH_ROUTE_MAP);
 
 // Dynamic zh routes cannot live in ZH_ROUTE_MAP (one entry maps one exact
-// English URL to one exact zh URL). The /resources/* collection is registered
-// here instead: an English path maps to /zh/resources/<slug> only when that
-// slug has a translation, so the switcher never navigates to a missing page.
+// English URL to one exact zh URL). The /resources/*, /learn/*, and /help/*
+// collections are registered here instead: an English path maps to its zh
+// counterpart only when that slug has a translation, so the switcher never
+// navigates to a missing page.
 //
-// This list is kept dependency-free on purpose (i18n-routes is bundled into
-// client components). scripts/i18n-resources.test.ts asserts it matches the
-// slugs exported by src/content/revenue-geo-resources-zh.ts and the English
-// source of truth.
+// These lists are kept dependency-free on purpose (i18n-routes is bundled into
+// client components). scripts/i18n-resources.test.ts and
+// scripts/i18n-learn-help.test.ts assert they match the translated content and
+// the English source of truth.
 export const ZH_RESOURCE_SLUGS = [
   "how-to-write-8d-report-customer-complaint",
   "supplier-corrective-action-request-template",
@@ -46,6 +49,40 @@ export const ZH_RESOURCE_SLUGS = [
   "8d-lessons-learned-d8-guide",
 ] as const;
 
+export const ZH_LEARN_SLUGS = [
+  "what-is-8d-reports",
+  "how-to-write-an-8d-report-customers-will-accept",
+  "8d-report-vs-scar",
+  "why-not-manage-8d-reports-in-excel",
+  "how-ai-helps-draft-but-not-approve-8d-reports",
+  "how-supplier-quality-teams-handle-customer-complaints-faster",
+  "how-team-review-approval-locking-and-revision-history-work",
+  "how-to-export-professional-8d-reports-in-pdf-word-and-excel",
+] as const;
+
+export const ZH_HELP_SLUGS = [
+  "5-why",
+  "ai-draft",
+  "ai-quality-check",
+  "containment-action",
+  "corrective-action",
+  "create-new-report",
+  "d0-d8-editor",
+  "dashboard",
+  "evidence-attachments",
+  "export-pdf-word-excel-zip",
+  "fishbone",
+  "lock-unlock-revision",
+  "permissions",
+  "preventive-action",
+  "pricing-usage-limits",
+  "review-workflow",
+  "root-cause",
+  "share-link",
+  "team-workspace",
+  "troubleshooting",
+] as const;
+
 type ZhDynamicCollection = {
   enPrefix: string;
   zhPrefix: string;
@@ -57,6 +94,16 @@ export const ZH_DYNAMIC_COLLECTIONS: readonly ZhDynamicCollection[] = [
     enPrefix: "/resources",
     zhPrefix: "/zh/resources",
     slugs: ZH_RESOURCE_SLUGS,
+  },
+  {
+    enPrefix: "/learn",
+    zhPrefix: "/zh/learn",
+    slugs: ZH_LEARN_SLUGS,
+  },
+  {
+    enPrefix: "/help",
+    zhPrefix: "/zh/help",
+    slugs: ZH_HELP_SLUGS,
   },
 ];
 

@@ -1,5 +1,59 @@
 # Development Log
 
+## Completed: Learn and Help Center Simplified Chinese (Batch 2b, 2026-09-14)
+
+- Added markdown translations for the whole content library: 8
+  `content/learn-zh/<slug>.md` articles and 20 `content/help-zh/<slug>.md`
+  articles. Frontmatter mirrors the English source (title, slug, description,
+  type, status, category, order, target keywords, screenshot, last_reviewed)
+  and each `canonical_url` points at `https://www.8d-reports.com/zh/learn/<slug>`
+  or `/zh/help/<slug>`. Bodies keep the same section counts so the shared
+  renderer never drops guidance, and every internal link stays on a real route
+  (`/zh/help/<slug>`, `/zh/learn/<slug>`, `/zh/pricing`, `/zh/contact`,
+  `/signup`).
+- Extended `src/lib/content-library.ts` with locale-aware loaders:
+  `getLearnArticles(locale)`, `getHelpArticles(locale)`,
+  `getLearnArticle(slug, locale)`, `getHelpArticle(slug, locale)`, and
+  `getArticleByPath(path, locale)`. The default locale stays `en` so every
+  existing caller is unchanged; `zh` reads `content/learn-zh` / `content/help-zh`
+  and falls back to a `/zh/...` canonical prefix.
+- Moved the heading slug into `src/lib/slugify.ts` and made it Unicode-aware
+  (`\p{L}\p{N}`). English anchor ids are byte-for-byte unchanged, while Chinese
+  section titles now produce stable, unique, non-empty ids for the
+  "On this page" navigation instead of collapsing to `""`.
+- Created `src/app/zh/learn/page.tsx`, `src/app/zh/learn/[slug]/page.tsx`,
+  `src/app/zh/help/page.tsx`, and `src/app/zh/help/[slug]/page.tsx`. The
+  article routes reuse `MarkdownArticleBody`, `ArticleMediaReferences`,
+  `Breadcrumbs`, `JsonLd`, `PageShell`, and `PrimaryCTA` with Chinese labels,
+  set `dynamicParams = false`, `generateStaticParams`, and `notFound()`.
+- Extended `src/lib/i18n-routes.ts`: added `/learn -> /zh/learn` and
+  `/help -> /zh/help` to `ZH_ROUTE_MAP`, plus `ZH_LEARN_SLUGS`,
+  `ZH_HELP_SLUGS`, and two new `ZH_DYNAMIC_COLLECTIONS` entries. The switcher,
+  header, and footer (which already call `localizedHref`) now resolve
+  `/learn/<slug> <-> /zh/learn/<slug>` and `/help/<slug> <-> /zh/help/<slug>` only
+  for translated slugs.
+- Added zh-CN hreflang alternates to the English learn/help indexes and
+  `[slug]` pages (emitted only when a translation exists), and to the zh pages
+  in both directions. `src/app/sitemap.ts` now emits the zh learn/help indexes
+  and all 28 zh article URLs with `alternates.languages`, and gives the English
+  entries the matching alternates.
+- `scripts/check-seo-urls.ts` now knows the zh learn/help content paths so every
+  sitemap URL still maps to real content.
+- Added `scripts/i18n-learn-help.test.ts` (`npm run test:i18n-learn-help`)
+  asserting slug parity with the English source and `ZH_LEARN_SLUGS` /
+  `ZH_HELP_SLUGS`, non-empty required frontmatter, structural parity, non-empty
+  and unique section ids, the four zh routes, both-way dynamic mapping,
+  canonical / hreflang / sitemap alternates, valid internal links, and the
+  absence of Quality Case, complaint-workbench, supplier-collaboration-platform,
+  manual/expert review, or removed-service positioning in the zh copy.
+- Installed the worktree's own `node_modules` (`npm ci`) before running
+  `npm run build`: the fresh worktree had no dependencies, so Turbopack could not
+  resolve `next/package.json` from the configured `turbopack.root`. No
+  `package-lock.json` or dependency version changed.
+- No auth, payment, database schema, export logic, environment variable, or
+  production configuration change.
+
+
 ## Completed: Revenue GEO Resources Simplified Chinese (Batch 2a, 2026-09-14)
 
 - Stacked the work on the Batch 1 i18n core. The worktree was created on
