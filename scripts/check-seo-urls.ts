@@ -110,6 +110,8 @@ const contentPaths = new Set([
   ...revenueGeoResourcesZh.map((page) => `/zh/resources/${page.slug}`),
   ...getHelpArticles().map((page) => `/help/${page.slug}`),
   ...getLearnArticles().map((page) => `/learn/${page.slug}`),
+  ...getHelpArticles("zh").map((page) => `/zh/help/${page.slug}`),
+  ...getLearnArticles("zh").map((page) => `/zh/learn/${page.slug}`),
   ...demoReportPaths,
 ]);
 

@@ -6,7 +6,12 @@ import {
 } from "@/content/revenue-geo-resources-zh"
 import { seoPages as legacySeoPages } from "@/lib/seo-pages"
 import { seoPages as programmaticSeoPages } from "@/content/seo-pages"
-import { getHelpArticles, getLearnArticles } from "@/lib/content-library"
+import {
+  getHelpArticle,
+  getHelpArticles,
+  getLearnArticle,
+  getLearnArticles,
+} from "@/lib/content-library"
 import { ZH_ROUTE_MAP } from "@/lib/i18n-routes"
 import { INDEXABLE_STATIC_PATHS, SITE_URL } from "@/lib/seo-index-hygiene"
 
@@ -103,11 +108,47 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const helpEntries = getHelpArticles()
-    .map((page) => entry(`/help/${page.slug}`, "monthly", 0.75))
+    .map((page) => {
+      const enPath = `/help/${page.slug}`
+      const zhPath = `/zh/help/${page.slug}`
+      const alternates = getHelpArticle(page.slug, "zh")
+        ? languageAlternates(enPath, zhPath)
+        : undefined
+      return entry(enPath, "monthly", 0.75, alternates)
+    })
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
+  const helpZhEntries = getHelpArticles("zh")
+    .map((page) =>
+      entry(
+        `/zh/help/${page.slug}`,
+        "monthly",
+        0.75,
+        languageAlternates(`/help/${page.slug}`, `/zh/help/${page.slug}`),
+      ),
+    )
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const learnEntries = getLearnArticles()
-    .map((page) => entry(`/learn/${page.slug}`, "weekly", 0.8))
+    .map((page) => {
+      const enPath = `/learn/${page.slug}`
+      const zhPath = `/zh/learn/${page.slug}`
+      const alternates = getLearnArticle(page.slug, "zh")
+        ? languageAlternates(enPath, zhPath)
+        : undefined
+      return entry(enPath, "weekly", 0.8, alternates)
+    })
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
+  const learnZhEntries = getLearnArticles("zh")
+    .map((page) =>
+      entry(
+        `/zh/learn/${page.slug}`,
+        "weekly",
+        0.8,
+        languageAlternates(`/learn/${page.slug}`, `/zh/learn/${page.slug}`),
+      ),
+    )
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   return [
@@ -118,6 +159,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...revenueResourceEntries,
     ...revenueResourceZhEntries,
     ...helpEntries,
+    ...helpZhEntries,
     ...learnEntries,
+    ...learnZhEntries,
   ]
 }

@@ -1,71 +1,70 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight, CheckCircle2 } from "lucide-react";
 import {
   ArticleMediaReferences,
   MarkdownArticleBody,
-} from "@/components/marketing/ContentArticle"
-import { PrimaryCTA } from "@/components/marketing/MarketingActions"
+} from "@/components/marketing/ContentArticle";
+import { PrimaryCTA } from "@/components/marketing/MarketingActions";
 import {
   Breadcrumbs,
   JsonLd,
   PageShell,
   breadcrumbJsonLd,
-} from "@/components/marketing/MarketingPrimitives"
-import { getHelpArticle, getHelpArticles } from "@/lib/content-library"
-import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
+} from "@/components/marketing/MarketingPrimitives";
+import { getHelpArticle, getHelpArticles } from "@/lib/content-library";
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content";
 
-export const dynamicParams = false
+export const dynamicParams = false;
 
 type Props = {
-  params: Promise<{ slug: string }>
-}
+  params: Promise<{ slug: string }>;
+};
 
 export function generateStaticParams() {
-  return getHelpArticles().map((article) => ({ slug: article.slug }))
+  return getHelpArticles("zh").map((article) => ({ slug: article.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
-  const article = getHelpArticle(slug)
-  if (!article) return {}
+  const { slug } = await params;
+  const article = getHelpArticle(slug, "zh");
+  if (!article) return {};
 
-  const zhUrl = `${siteUrl}/zh/help/${article.slug}`
-  const hasZhTranslation = Boolean(getHelpArticle(article.slug, "zh"))
+  const url = `${siteUrl}/zh/help/${article.slug}`;
+  const enUrl = `${siteUrl}/help/${article.slug}`;
   return {
-    title: `${article.title} | Help Center`,
+    title: `${article.title} | 帮助中心`,
     description: article.description,
     alternates: {
-      canonical: article.canonicalUrl,
-      languages: hasZhTranslation
-        ? { en: article.canonicalUrl, "zh-CN": zhUrl }
-        : { en: article.canonicalUrl },
+      canonical: url,
+      languages: { en: enUrl, "zh-CN": url },
     },
     openGraph: {
-      title: `${article.title} | Help Center`,
+      title: `${article.title} | 帮助中心`,
       description: article.description,
-      url: article.canonicalUrl,
+      url,
       type: "article",
       images: [socialOpenGraphImage],
     },
-  }
+  };
 }
 
-export default async function HelpArticlePage({ params }: Props) {
-  const { slug } = await params
-  const article = getHelpArticle(slug)
-  if (!article) notFound()
+export default async function ChineseHelpArticlePage({ params }: Props) {
+  const { slug } = await params;
+  const article = getHelpArticle(slug, "zh");
+  if (!article) notFound();
 
-  const articles = getHelpArticles()
-  const index = articles.findIndex((item) => item.slug === article.slug)
-  const previous = articles[index - 1]
-  const next = articles[index + 1]
+  const articles = getHelpArticles("zh");
+  const index = articles.findIndex((item) => item.slug === article.slug);
+  const previous = articles[index - 1];
+  const next = articles[index + 1];
+  const url = `${siteUrl}/zh/help/${article.slug}`;
   const breadcrumbItems = [
-    { label: "Home", href: siteUrl },
-    { label: "Help", href: `${siteUrl}/help` },
-    { label: article.title, href: article.canonicalUrl },
-  ]
+    { label: "首页", href: siteUrl },
+    { label: "帮助", href: `${siteUrl}/zh/help` },
+    { label: article.title, href: url },
+  ];
 
   return (
     <PageShell>
@@ -74,7 +73,7 @@ export default async function HelpArticlePage({ params }: Props) {
       <section className="border-b border-slate-200">
         <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">
-            {article.category || "Help"}
+            {article.category || "帮助"}
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
             {article.title}
@@ -90,13 +89,13 @@ export default async function HelpArticlePage({ params }: Props) {
           <aside className="hidden lg:block">
             <div className="sticky top-20 rounded-lg border border-slate-200 bg-white p-3">
               <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                Help Center
+                帮助中心
               </p>
               <nav className="max-h-[70vh] space-y-1 overflow-y-auto pr-1">
                 {articles.map((item) => (
                   <Link
                     key={item.slug}
-                    href={`/help/${item.slug}`}
+                    href={`/zh/help/${item.slug}`}
                     className={
                       item.slug === article.slug
                         ? "block rounded-md bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-700"
@@ -121,12 +120,12 @@ export default async function HelpArticlePage({ params }: Props) {
             <div className="mt-10 grid gap-4 sm:grid-cols-2">
               {previous ? (
                 <Link
-                  href={`/help/${previous.slug}`}
+                  href={`/zh/help/${previous.slug}`}
                   className="rounded-lg border border-slate-200 p-5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
                 >
                   <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                     <ArrowLeft className="h-3.5 w-3.5" />
-                    Previous
+                    上一篇
                   </span>
                   <p className="mt-2 font-semibold text-slate-950">{previous.title}</p>
                 </Link>
@@ -135,11 +134,11 @@ export default async function HelpArticlePage({ params }: Props) {
               )}
               {next ? (
                 <Link
-                  href={`/help/${next.slug}`}
+                  href={`/zh/help/${next.slug}`}
                   className="rounded-lg border border-slate-200 p-5 text-right transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
                 >
                   <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                    Next
+                    下一篇
                     <ArrowRight className="h-3.5 w-3.5" />
                   </span>
                   <p className="mt-2 font-semibold text-slate-950">{next.title}</p>
@@ -148,22 +147,21 @@ export default async function HelpArticlePage({ params }: Props) {
             </div>
 
             <div className="mt-10 rounded-lg border border-slate-200 bg-slate-50 p-5">
-              <h2 className="text-lg font-semibold text-slate-950">Next step</h2>
+              <h2 className="text-lg font-semibold text-slate-950">下一步</h2>
               <p className="mt-2 text-sm leading-6 text-slate-600">
-                Review the related help topics, then create a test report or
-                contact support if you are preparing a team rollout.
+                先查看相关帮助主题，然后创建一份测试报告；如果你正在准备团队推广，也可以联系支持。
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                 <PrimaryCTA href="/signup" page="help" location={`article_${article.slug}`}>
-                  Start a report
+                  开始创建报告
                 </PrimaryCTA>
                 <PrimaryCTA
-                  href="/contact"
+                  href="/zh/contact"
                   page="help"
                   location={`article_${article.slug}_contact`}
                   variant="secondary"
                 >
-                  Contact support
+                  联系支持
                 </PrimaryCTA>
               </div>
             </div>
@@ -173,7 +171,7 @@ export default async function HelpArticlePage({ params }: Props) {
             <div className="sticky top-20 space-y-5">
               <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  On this page
+                  本页目录
                 </p>
                 <nav className="mt-3 space-y-2">
                   {article.sections.map((section) => (
@@ -191,8 +189,7 @@ export default async function HelpArticlePage({ params }: Props) {
                 <div className="flex gap-2">
                   <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-indigo-700" />
                   <p className="text-sm leading-6 text-indigo-950">
-                    Final customer submission and external publishing remain
-                    manual review steps.
+                    最终客户提交和对外发布仍需由责任人确认。
                   </p>
                 </div>
               </div>
@@ -201,5 +198,5 @@ export default async function HelpArticlePage({ params }: Props) {
         </div>
       </section>
     </PageShell>
-  )
+  );
 }

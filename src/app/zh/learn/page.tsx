@@ -1,44 +1,43 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { ArrowRight, BookOpen } from "lucide-react"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight, BookOpen } from "lucide-react";
 import {
   Breadcrumbs,
   JsonLd,
   PageShell,
   Section,
   breadcrumbJsonLd,
-} from "@/components/marketing/MarketingPrimitives"
-import { getLearnArticles } from "@/lib/content-library"
-import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
+} from "@/components/marketing/MarketingPrimitives";
+import { getLearnArticles } from "@/lib/content-library";
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content";
 
 export const metadata: Metadata = {
-  title: "8D Report Guides and Education",
+  title: "8D 报告学习与教育",
   description:
-    "Educational articles about 8D reports, SCAR, Excel alternatives, AI-assisted drafting, supplier quality workflows, export, review, locking, and revision history.",
+    "关于 8D 报告、SCAR、Excel 替代方案、AI 辅助起草、供应商质量流程、导出、复核、锁定与修订历史的教育文章。",
   alternates: {
-    canonical: `${siteUrl}/learn`,
+    canonical: `${siteUrl}/zh/learn`,
     languages: {
       en: `${siteUrl}/learn`,
       "zh-CN": `${siteUrl}/zh/learn`,
     },
   },
   openGraph: {
-    title: "8D Report Guides and Education",
-    description:
-      "Practical 8D and supplier quality education for quality engineers and manufacturing teams.",
-    url: `${siteUrl}/learn`,
+    title: "8D 报告学习与教育",
+    description: "面向质量工程师和制造团队的实用 8D 与供应商质量教育内容。",
+    url: `${siteUrl}/zh/learn`,
     type: "website",
     images: [socialOpenGraphImage],
   },
-}
+};
 
 const breadcrumbItems = [
-  { label: "Home", href: siteUrl },
-  { label: "Learn", href: `${siteUrl}/learn` },
-]
+  { label: "首页", href: siteUrl },
+  { label: "学习", href: `${siteUrl}/zh/learn` },
+];
 
-export default function LearnPage() {
-  const articles = getLearnArticles()
+export default function ChineseLearnPage() {
+  const articles = getLearnArticles("zh");
 
   return (
     <PageShell>
@@ -46,13 +45,15 @@ export default function LearnPage() {
       <Breadcrumbs items={breadcrumbItems} />
       <section className="border-b border-slate-200">
         <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
-          <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
-            Learn practical 8D report workflows.
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-indigo-600">
+            学习
+          </p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            学习实用的 8D 报告工作方法。
           </h1>
           <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-            SEO and product education articles for quality engineers, SQEs, and
-            manufacturing teams. These articles support manual review and
-            publishing workflows; they do not automate external posting.
+            面向质量工程师、SQE 和制造团队的 SEO 与产品教育文章。这些文章支持人工复核与发布
+            流程，不自动对外发布内容。
           </p>
         </div>
       </section>
@@ -62,12 +63,12 @@ export default function LearnPage() {
           {articles.map((article) => (
             <Link
               key={article.slug}
-              href={`/learn/${article.slug}`}
+              href={`/zh/learn/${article.slug}`}
               className="rounded-lg border border-slate-200 p-5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
             >
               <div className="flex items-center gap-2 text-sm font-semibold text-indigo-700">
                 <BookOpen className="h-4 w-4" />
-                Learn article
+                学习文章
               </div>
               <h2 className="mt-3 text-xl font-semibold tracking-tight text-slate-950">
                 {article.title}
@@ -76,7 +77,7 @@ export default function LearnPage() {
                 {article.description}
               </p>
               <span className="mt-5 inline-flex items-center gap-1 text-sm font-semibold text-indigo-700">
-                Read article
+                阅读文章
                 <ArrowRight className="h-4 w-4" />
               </span>
             </Link>
@@ -84,5 +85,5 @@ export default function LearnPage() {
         </div>
       </Section>
     </PageShell>
-  )
+  );
 }
