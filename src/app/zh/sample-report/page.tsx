@@ -141,7 +141,7 @@ export default function ChineseSampleReportPage() {
         description="用这份示例了解一份完成的报告如何把客户问题、证据、D0-D8 推理、评审状态和导出包串联起来。"
         actions={
           <>
-            <PrimaryCTA href="/signup" page="sample_report" location="zh_hero">
+            <PrimaryCTA href="/zh/signup" page="sample_report" location="zh_hero">
               免费创建一份 8D 报告
             </PrimaryCTA>
             <TrackedLink
@@ -300,7 +300,7 @@ export default function ChineseSampleReportPage() {
             </p>
           </div>
           <PrimaryCTA
-            href="/signup"
+            href="/zh/signup"
             page="sample_report"
             location="zh_final_cta"
             className="bg-white text-slate-950 hover:bg-slate-100"

@@ -30,7 +30,7 @@ const COPY = {
     faqTitle: "Questions quality teams ask",
   },
   zh: {
-    signupHref: "/signup",
+    signupHref: "/zh/signup",
     sampleHref: "/zh/sample-report",
     primaryCta: "免费创建 8D 报告",
     sampleCta: "查看示例报告",

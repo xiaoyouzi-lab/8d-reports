@@ -187,7 +187,7 @@ export default function ChineseEightDReportTemplatePage() {
         description="在线使用结构化的 D0-D8 工作流，需要时复制空白大纲，并按照客户要求的格式导出完成的回复。"
         actions={
           <>
-            <PrimaryCTA href="/signup" page="8d_report_template_zh" location="hero">
+            <PrimaryCTA href="/zh/signup" page="8d_report_template_zh" location="hero">
               在线使用模板
             </PrimaryCTA>
             <CopyTemplateButton
@@ -312,7 +312,7 @@ export default function ChineseEightDReportTemplatePage() {
             </p>
           </div>
           <PrimaryCTA
-            href="/signup"
+            href="/zh/signup"
             page="8d_report_template_zh"
             location="final_cta"
             className="bg-white text-slate-950 hover:bg-slate-100"

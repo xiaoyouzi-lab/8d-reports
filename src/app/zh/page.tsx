@@ -208,7 +208,7 @@ export default function ChineseLandingPage() {
         description="记录问题、收集证据、按 D0-D8 推进、评审变更，并导出 PDF、Word 或 Excel；存在附件时，与所选格式一起打包为 ZIP 下载。"
         actions={
           <>
-            <PrimaryCTA href="/signup" page="home" location="zh_hero">
+            <PrimaryCTA href="/zh/signup" page="home" location="zh_hero">
               免费开始，含 3 份报告
             </PrimaryCTA>
             <PrimaryCTA
@@ -367,7 +367,7 @@ export default function ChineseLandingPage() {
             </p>
             <div className="mt-7">
               <PrimaryCTA
-                href="/signup"
+                href="/zh/signup"
                 page="home"
                 location="zh_final_cta"
                 className="bg-white text-slate-950 hover:bg-slate-100"

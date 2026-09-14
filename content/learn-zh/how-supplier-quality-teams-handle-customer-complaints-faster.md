@@ -32,4 +32,4 @@ last_reviewed: 2026-07-01
 
 - [打开帮助中心](/zh/help)
 - [查看定价与用量限制](/zh/pricing)
-- [开始创建报告](/signup)
+- [开始创建报告](/zh/signup)

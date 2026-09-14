@@ -171,7 +171,7 @@ export function MarketingHeader() {
           ) : (
             <>
               <Link
-                href="/login"
+                href={localizedHref("/login", locale)}
                 className={cn(
                   buttonVariants({ variant: "ghost", size: "sm" })
                 )}
@@ -179,7 +179,7 @@ export function MarketingHeader() {
                 {t("login")}
               </Link>
               <TrackedLink
-                href="/signup"
+                href={localizedHref("/signup", locale)}
                 eventData={{
                   page: "global_header",
                   location: "header",

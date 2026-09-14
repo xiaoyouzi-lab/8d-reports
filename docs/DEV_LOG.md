@@ -42,6 +42,135 @@
   stubbed fetch only.
 - Suggested next task: run one real sandbox checkout end-to-end and open the
   billing portal from the dashboard to close the paid-loop acceptance gate.
+## Completed: Chinese Public CTA Localization (Batch 5b, 2026-09-18)
+
+- Fixed `localizedHref` in `src/lib/i18n-routes.ts`: it now splits an
+  optional `?query` and `#hash` off the href, localizes only the path via
+  `zhPathFor(path) ?? path`, and re-appends query then hash. Signature strings
+  such as `/signup?intent=create-report&source=seo&slug=x` now become
+  `/zh/signup?...` with the query byte-for-byte intact. Added an exported
+  `localeFromPathname` helper (and `AppLocale`) that mirrors
+  `components/LocaleProvider.tsx`.
+- `src/components/marketing/MarketingActions.tsx`: `TrackedLink` and
+  `PrimaryCTA` localize their href by default via the URL-derived locale, with
+  an opt-out `localize?: boolean` prop (default `true`). This fixes every
+  `<PrimaryCTA href="/signup">` on the zh pages in one place. The locale comes
+  from `localeFromPathname(usePathname())` rather than `useLocale()`:
+  `useLocale()` throws outside `NextIntlClientProvider`, and the existing
+  `test:p0-plus-ui` renders the English landing page (which uses `PrimaryCTA`)
+  without a provider. The URL is the app's real locale source, so the result is
+  identical in production.
+- `src/components/marketing/MarketingHeader.tsx`: the `/login` and
+  `/signup` header CTAs now pass through `localizedHref(..., locale)`.
+- `src/components/marketing/SeoLandingPage.tsx`: the zh copy block's
+  `signupHref` is now `/zh/signup` (en stays `/signup`; zh
+  `sampleHref` already pointed at `/zh/sample-report`).
+- `src/components/seo/SeoTracking.tsx`: both SEO signup CTAs localize with
+  `localizedHref`, preserving `?intent=...&source=seo&slug=...` exactly.
+- Every raw `href="/signup"` under `src/app/zh/**` (9 files, 12 links) now
+  points at `/zh/signup`: help, faq, learn, ai-8d-report-check,
+  8d-report-template (x2), sample-report (x2), demo-reports/[type], page (x2),
+  and pricing.
+- The zh learn articles keep their CTA list in markdown (`content/learn-zh/*.md`,
+  8 files); their `[开始创建报告](/signup)` links now point at `/zh/signup`. The
+  English `content/learn/*.md` links are untouched.
+- Purchase path: `src/components/CheckoutButton.tsx` and
+  `src/components/AutoCheckout.tsx` now redirect to `/zh/login` on zh pages
+  while keeping `?callbackUrl=` intact. `src/app/(app)/**` and
+  `src/app/team/**` were intentionally left alone.
+- Added `scripts/i18n-cta.test.tsx` (`npm run test:i18n-cta`) covering the
+  `localizedHref` query/hash/external/mailto cases, the URL locale resolver, a
+  recursive scan proving no zh page links to the English `/signup` or
+  `/login`, zh/en `SeoLandingPage` rendering, the default/opted-out CTA
+  behaviour, and source guards for the header, SEO, and checkout plumbing.
+
+### Verification (Batch 5b)
+
+- `npx tsc --noEmit` passed; `npm run lint` passed (0 errors, pre-existing
+  warnings).
+- CI discovery loop passed: all 20 `test:*` scripts (including
+  `test:i18n-cta`) exited 0.
+- `npm run check:seo` passed (240 sitemap URLs, 16 redirects);
+  `npm run build` passed.
+- Prerendered proof from `.next/server/app/zh`:
+  `grep -rl 'href="/signup"' .next/server/app/zh | wc -l` = 0 and
+  `grep -rl 'href="/zh/signup"' .next/server/app/zh | wc -l` > 0; the English
+  prerendered pages still emit `href="/signup"`.
+
+### Residual risk (Batch 5b)
+
+- The purchase-path redirects in `CheckoutButton`/`AutoCheckout` are client-side
+  `router.push` targets, so `/zh/login?callbackUrl=...` is not visible in the
+  static HTML; it is covered by the source/unit assertions in
+  `scripts/i18n-cta.test.tsx`. Every zh prerendered page that renders a CTA did
+  prove its links (no build-time loading shells: the smallest zh HTML is ~66 KB).
+- `docs/DEV_LOG.md` is appended at the top; no commit/push is performed and
+  the Batch 5a uncommitted work is preserved.
+
+## Completed: Auth Pages Simplified Chinese (Batch 5a, 2026-09-18)
+
+- Routed the login, signup, and reset-password UI through the existing `auth`
+  message namespace. `src/app/(auth)/login/login-form.tsx` and
+  `src/app/(auth)/signup/signup-form.tsx` now call `useTranslations("auth")`;
+  the reset form moved to `src/app/reset-password/reset-password-form.tsx` (a
+  named `ResetPasswordForm` client component) so the English `/reset-password`
+  page and the new `/zh/reset-password` page reuse one form. DOM, behaviour,
+  API calls, better-auth usage, and analytics events are unchanged.
+- Added the missing `auth` keys to **both** `src/messages/en.json` and
+  `src/messages/zh-CN.json` (password-toggle aria-labels, password-rule
+  sentences, reset-code / OTP labels, debug headers, and error fallbacks). The
+  two namespaces now have the identical 69-key set.
+- Added `src/app/(auth)/zh/login/page.tsx`, `.../zh/signup/page.tsx`, and
+  `.../zh/reset-password/page.tsx`. They live under the existing `(auth)` route
+  group, so they inherit the auth layout (language switcher + `index: false`)
+  and render the same form components as the English routes.
+- Added `ZH_PRIVATE_ROUTE_MAP` (plus `ZH_PRIVATE_EN_PATHS` /
+  `ZH_PRIVATE_PATHS`) to `src/lib/i18n-routes.ts` and merged it into
+  `ZH_ROUTE_MAP`, so `/login <-> /zh/login`, `/signup <-> /zh/signup`, and
+  `/reset-password <-> /zh/reset-password` resolve both ways in the language
+  switcher.
+- Kept the auth pages out of search: `src/app/sitemap.ts` filters the private
+  routes out of `chineseEntries`, and `scripts/check-seo-urls.ts` fails if a
+  private auth route ever reaches the sitemap.
+- Locale-correct auth links: the forms read `useLocale()` and prefix the
+  login/signup/reset links with `/zh` on the Chinese URLs while keeping
+  `?callbackUrl=${encodeURIComponent(callbackUrl)}` unchanged.
+- `src/proxy.ts` redirects protected routes to `/zh/login` when the
+  NEXT_LOCALE cookie is `zh-CN`, otherwise `/login`; the protected-path list,
+  session-cookie logic, and `${pathname}${request.nextUrl.search}` callbackUrl
+  are unchanged.
+- Added `scripts/i18n-auth.test.ts` (`npm run test:i18n-auth`) asserting the 3
+  zh routes exist, both-direction route resolution, sitemap exclusion, noindex
+  inheritance, en/zh `auth` key parity, Chinese values for every catalog key the
+  forms use, and that the forms no longer hardcode the English copy.
+- Updated `scripts/p2-correctness.test.ts` (translated password-toggle
+  aria-label, plus new guards for the `/zh/login` proxy target and localized
+  callbackUrl links) and `scripts/i18n-core.test.ts` (exclude private auth
+  routes from the public marketing route set). `scripts/index-hygiene.test.ts`
+  and `scripts/team-governance.test.ts` continue to pass unchanged.
+
+### Verification (Batch 5a)
+
+- `npx tsc --noEmit`, `npm run lint` (0 errors, pre-existing warnings),
+  `npm run check:seo` (240 sitemap URLs, 16 redirects), and `git diff --check`
+  passed.
+- All discovery `test:*` scripts passed, including the new
+  `test:i18n-auth`.
+- `npm run build` passed and prerendered `/login`, `/signup`,
+  `/reset-password`, `/zh/login`, `/zh/signup`, and `/zh/reset-password`.
+- Built artifacts: `sitemap.xml` contains no auth URL; the prerendered zh auth
+  HTML contains `noindex` and the Chinese catalog copy.
+
+### Residual risk (Batch 5a)
+
+- Switching language with the header `LangSwitcher` still drops query strings
+  (so `/login?callbackUrl=...` becomes `/zh/login`); the proxy re-adds a safe
+  fallback and the login/signup cross-links keep the exact callbackUrl, but the
+  switcher itself does not carry it.
+- `billing`/`plan` on `/login` continue to be folded into `callbackUrl`;
+  `source`/`intent` are still only read by `/signup`, exactly as before.
+- Chinese auth copy is a first professional pass and should get a native
+  quality-engineering review before a dedicated zh push.
 
 ## Completed: Remaining Public Pages Simplified Chinese (Batch 4, 2026-09-17)
 

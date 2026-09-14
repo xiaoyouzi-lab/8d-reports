@@ -158,7 +158,7 @@ export default function ChineseFaqPage() {
             关于免费开始、导出正式交付件、分享报告、团队工作流、数据处理和 AI 质量检查的实用解答。
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <PrimaryCTA href="/signup" page="faq" location="zh_hero">
+            <PrimaryCTA href="/zh/signup" page="faq" location="zh_hero">
               免费开始，含 3 份报告
             </PrimaryCTA>
             <PrimaryCTA href="/docs" page="faq" location="zh_hero" variant="secondary">

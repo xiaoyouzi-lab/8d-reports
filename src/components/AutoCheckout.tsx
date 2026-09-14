@@ -1,14 +1,16 @@
 "use client"
 
 import { useEffect, useRef } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
 import { trackEvent } from "@/lib/analytics"
+import { localizedHref, localeFromPathname } from "@/lib/i18n-routes"
 import { isCheckoutType } from "@/lib/plans"
 
 export function AutoCheckout() {
   const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const planType = searchParams.get("checkout")
   const reportId = searchParams.get("reportId")
@@ -22,7 +24,8 @@ export function AutoCheckout() {
       const checkoutPath = reportId
         ? `/pricing?checkout=${planType}&reportId=${encodeURIComponent(reportId)}`
         : `/pricing?checkout=${planType}`
-      router.replace(`/login?callbackUrl=${encodeURIComponent(checkoutPath)}`)
+      const loginPath = localizedHref("/login", localeFromPathname(pathname))
+      router.replace(`${loginPath}?callbackUrl=${encodeURIComponent(checkoutPath)}`)
       return
     }
 
@@ -52,7 +55,7 @@ export function AutoCheckout() {
     }
 
     void startCheckout()
-  }, [isPending, planType, reportId, router, session?.user])
+  }, [isPending, pathname, planType, reportId, router, session?.user])
 
   if (!isCheckoutType(planType)) return null
 

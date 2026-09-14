@@ -5,6 +5,24 @@
 // actually exists. Everything else keeps its URL (and English content) and only
 // records the NEXT_LOCALE preference.
 
+// Private auth routes also have a Chinese URL so the language switcher can move
+// between /login and /zh/login. Unlike the public routes below they are noindex
+// utility pages: they must stay out of the sitemap and must never be treated as
+// a canonical/hreflang pair.
+export const ZH_PRIVATE_ROUTE_MAP: Record<string, string> = {
+  "/login": "/zh/login",
+  "/signup": "/zh/signup",
+  "/reset-password": "/zh/reset-password",
+};
+
+export const ZH_PRIVATE_EN_PATHS: ReadonlySet<string> = new Set(
+  Object.keys(ZH_PRIVATE_ROUTE_MAP),
+);
+
+export const ZH_PRIVATE_PATHS: ReadonlySet<string> = new Set(
+  Object.values(ZH_PRIVATE_ROUTE_MAP),
+);
+
 export const ZH_ROUTE_MAP: Record<string, string> = {
   "/": "/zh",
   "/resources": "/zh/resources",
@@ -26,6 +44,7 @@ export const ZH_ROUTE_MAP: Record<string, string> = {
   "/corrective-action-report-template": "/zh/corrective-action-report-template",
   "/5-why-root-cause-template": "/zh/5-why-root-cause-template",
   "/demo-reports": "/zh/demo-reports",
+  ...ZH_PRIVATE_ROUTE_MAP,
 };
 
 const EN_BY_ZH: Record<string, string> = Object.fromEntries(
@@ -280,6 +299,20 @@ export function isZhPath(pathname: string): boolean {
   return pathname === "/zh" || pathname.startsWith("/zh/");
 }
 
+export type AppLocale = "en" | "zh-CN";
+
+// Resolve the active locale from the URL, mirroring components/LocaleProvider.tsx:
+// /zh/* renders Chinese and every other route renders English until a Chinese
+// version exists there. Client components use this instead of next-intl's
+// useLocale so link localization keeps working when a component is rendered
+// outside the intl provider (e.g. the unit-test harness) and never depends on
+// cookie state.
+export function localeFromPathname(
+  pathname: string | null | undefined,
+): AppLocale {
+  return pathname && isZhPath(pathname) ? "zh-CN" : "en";
+}
+
 export function zhPathFor(pathname: string): string | undefined {
   return ZH_ROUTE_MAP[pathname] ?? matchDynamicZh(pathname);
 }
@@ -293,10 +326,21 @@ export function hasZhVersion(pathname: string): boolean {
 }
 
 // Map a shared (English) href to its Chinese equivalent when one exists.
-// Hash fragments such as "/#workflow" are preserved.
+// Only the path is localized: an optional "?query" and "#hash" are split off
+// first and re-appended intact, in that order, so signed query strings such as
+// "/signup?intent=create-report&source=seo&slug=x" survive the swap. External
+// URLs, "mailto:" links, and paths without a zh version are returned unchanged
+// (byte for byte), and non-zh locales are always a no-op.
 export function localizedHref(href: string, locale: string): string {
   if (locale !== "zh-CN") return href;
-  const [path, hash] = href.split("#");
-  const zhPath = zhPathFor(path) ?? path;
-  return hash ? `${zhPath}#${hash}` : zhPath;
+
+  const hashIndex = href.indexOf("#");
+  const hash = hashIndex === -1 ? "" : href.slice(hashIndex);
+  const withoutHash = hashIndex === -1 ? href : href.slice(0, hashIndex);
+
+  const queryIndex = withoutHash.indexOf("?");
+  const query = queryIndex === -1 ? "" : withoutHash.slice(queryIndex);
+  const path = queryIndex === -1 ? withoutHash : withoutHash.slice(0, queryIndex);
+
+  return `${zhPathFor(path) ?? path}${query}${hash}`;
 }
