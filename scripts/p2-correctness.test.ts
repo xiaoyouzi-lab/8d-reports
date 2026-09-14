@@ -7,7 +7,7 @@ const read = (rel: string) => readFileSync(path.join(root, rel), "utf8");
 
 const reportRoute = read("src/app/api/reports/[id]/route.ts");
 const workflowPanel = read("src/components/report/ReportWorkflowPanel.tsx");
-const privacyPage = read("src/app/privacy/page.tsx");
+const privacyPage = read("src/app/(marketing)/privacy/page.tsx");
 const loginForm = read("src/app/(auth)/login/login-form.tsx");
 const signupForm = read("src/app/(auth)/signup/signup-form.tsx");
 const proxy = read("src/proxy.ts");
