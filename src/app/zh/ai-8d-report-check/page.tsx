@@ -44,7 +44,7 @@ export default function ChineseAi8dReportCheckPage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/signup"
+                href="/zh/signup"
                 className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 hover:bg-indigo-700")}
               >
                 免费创建报告

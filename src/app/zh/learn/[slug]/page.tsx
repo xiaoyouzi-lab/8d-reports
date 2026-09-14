@@ -185,7 +185,7 @@ export default async function ChineseLearnArticlePage({ params }: Props) {
                 使用产品流程完成复核、证据和导出准备。
               </p>
               <div className="mt-4">
-                <PrimaryCTA href="/signup" page="learn" location={`article_${article.slug}`}>
+                <PrimaryCTA href="/zh/signup" page="learn" location={`article_${article.slug}`}>
                   免费开始
                 </PrimaryCTA>
               </div>

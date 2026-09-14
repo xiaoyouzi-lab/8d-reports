@@ -13,7 +13,12 @@ import {
   getLearnArticle,
   getLearnArticles,
 } from "@/lib/content-library"
-import { ZH_DEMO_REPORT_SLUGS, ZH_ROUTE_MAP, zhPathFor } from "@/lib/i18n-routes"
+import {
+  ZH_DEMO_REPORT_SLUGS,
+  ZH_PRIVATE_EN_PATHS,
+  ZH_ROUTE_MAP,
+  zhPathFor,
+} from "@/lib/i18n-routes"
 import { docsTopicZhSlugs, docsTopicsZh } from "@/lib/marketing-content-zh"
 import { INDEXABLE_STATIC_PATHS, SITE_URL } from "@/lib/seo-index-hygiene"
 
@@ -93,7 +98,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
+  // Private auth routes resolve through the same map so the language switcher
+  // can move between them, but they are noindex utility pages and must never
+  // be listed in the sitemap.
   const chineseEntries = Object.entries(ZH_ROUTE_MAP)
+    .filter(([enPath]) => !ZH_PRIVATE_EN_PATHS.has(enPath))
     .map(([enPath, zhPath]) =>
       entry(
         zhPath,

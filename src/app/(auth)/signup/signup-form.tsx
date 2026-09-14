@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { useLocale, useTranslations } from "next-intl"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -31,6 +32,10 @@ type SignupVerificationResponse = {
 }
 
 export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDebug }) {
+  const t = useTranslations("auth")
+  const locale = useLocale()
+  // Keep signup <-> login links in the language of the current URL.
+  const zhPrefix = locale === "zh-CN" ? "/zh" : ""
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawCallback = searchParams.get("callbackUrl")
@@ -63,7 +68,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
     const data = await response.json().catch(() => null) as SignupVerificationResponse | null
 
     if (!response.ok) {
-      throw new Error(data?.error || "Failed to send verification code")
+      throw new Error(data?.error || t("verificationSendFailed"))
     }
     setOtpDebug(data?.debug || null)
   }
@@ -73,11 +78,11 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
     setError("")
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match")
+      setError(t("passwordMismatch"))
       return
     }
     if (password.length < 8) {
-      setError("Password must be at least 8 characters")
+      setError(t("passwordLength"))
       return
     }
 
@@ -89,7 +94,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
         name,
       })
       if (result.error) {
-        setError(result.error.message || "Registration failed")
+        setError(result.error.message || t("registrationFailed"))
         setLoading(false)
         return
       }
@@ -99,13 +104,13 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
       try {
         await requestVerificationCode()
       } catch (error) {
-        setError(error instanceof Error ? error.message : "We could not send the verification code. Use Resend code below.")
+        setError(error instanceof Error ? error.message : t("verificationSendFailedHint"))
       }
       // Account created. GA4 sign_up fires after verification in handleVerifyOtp.
       trackEvent("signup_success", { method: "email" })
       setLoading(false)
     } catch (error) {
-      setError(error instanceof Error ? error.message : "An unexpected error occurred")
+      setError(error instanceof Error ? error.message : t("unexpectedError"))
       setLoading(false)
     }
   }
@@ -116,7 +121,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
     try {
       await requestVerificationCode()
     } catch (error) {
-      setError(error instanceof Error ? error.message : "Failed to resend verification code")
+      setError(error instanceof Error ? error.message : t("resendFailed"))
     } finally {
       setLoading(false)
     }
@@ -132,7 +137,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
         otp,
       })
       if (result.error) {
-        setError(result.error.message || "Invalid verification code")
+        setError(result.error.message || t("invalidCode"))
         setLoading(false)
         return
       }
@@ -141,7 +146,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
       router.push(callbackUrl)
       router.refresh()
     } catch {
-      setError("An unexpected error occurred")
+      setError(t("unexpectedError"))
       setLoading(false)
     }
   }
@@ -150,40 +155,40 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
     return (
       <Card className="shadow-sm">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-xl font-semibold tracking-tight">Verify your email</CardTitle>
+          <CardTitle className="text-xl font-semibold tracking-tight">{t("verifyEmail")}</CardTitle>
           <CardDescription className="text-sm">
-            We sent a verification code to {email}
+            {t("verificationSent", { email })}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
-              <Label htmlFor="otp">Verification code</Label>
+              <Label htmlFor="otp">{t("verificationCode")}</Label>
               <Input
                 id="otp"
                 type="text"
                 inputMode="numeric"
                 maxLength={6}
-                placeholder="000000"
+                placeholder={t("codePlaceholder")}
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
                 required
                 className="h-12 text-center text-2xl tracking-[0.5em] font-mono"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                Enter the 6-digit code from your inbox. It expires in 5 minutes.
+                {t("verificationHint")}
               </p>
             </div>
             {error && <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">{error}</p>}
             <Button type="submit" disabled={loading || otp.length < 6} className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700">
-              {loading ? "Verifying..." : "Verify & Continue"}
+              {loading ? t("verifying") : t("verifyContinue")}
             </Button>
             <button
               type="button"
               onClick={() => setStep("signup")}
               className="text-center text-sm text-muted-foreground hover:text-foreground"
             >
-              Back to sign up
+              {t("backToSignUp")}
             </button>
             <button
               type="button"
@@ -191,11 +196,11 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
               disabled={loading}
               className="text-center text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
             >
-              {loading ? "Sending..." : "Resend code"}
+              {loading ? t("sending") : t("resendCode")}
             </button>
             {otpDebug && (
               <div className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                <p className="font-medium text-foreground/80">Signup email debug</p>
+                <p className="font-medium text-foreground/80">{t("signupEmailDebug")}</p>
                 <dl className="mt-1 grid gap-1">
                   {Object.entries(otpDebug).map(([key, value]) => (
                     <div key={key} className="flex justify-between gap-4">
@@ -208,7 +213,7 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
             )}
             {previewDebug && (
               <p className="text-center text-xs text-muted-foreground">
-                Preview build: <span className="font-mono">{previewDebug.commitSha}</span>
+                {t("previewBuild")} <span className="font-mono">{previewDebug.commitSha}</span>
               </p>
             )}
           </form>
@@ -220,26 +225,26 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
   return (
     <Card className="shadow-sm">
       <CardHeader className="space-y-1 text-center">
-        <CardTitle className="text-xl font-semibold tracking-tight">Create an account</CardTitle>
-        <CardDescription className="text-sm">Get started with 3 free 8D reports</CardDescription>
+        <CardTitle className="text-xl font-semibold tracking-tight">{t("createAccount")}</CardTitle>
+        <CardDescription className="text-sm">{t("getStarted")}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" placeholder="John Smith" value={name} onChange={(e) => setName(e.target.value)} required className="h-9" />
+            <Label htmlFor="name">{t("name")}</Label>
+            <Input id="name" placeholder={t("namePlaceholder")} value={name} onChange={(e) => setName(e.target.value)} required className="h-9" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="name@company.com" value={email} onChange={(e) => setEmail(e.target.value)} required className="h-9" />
+            <Label htmlFor="email">{t("email")}</Label>
+            <Input id="email" type="email" placeholder={t("emailPlaceholder")} value={email} onChange={(e) => setEmail(e.target.value)} required className="h-9" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" placeholder="8+ chars, upper, lower, digit, special" value={password} onChange={(e) => setPassword(e.target.value)} required className="h-9" />
+            <Label htmlFor="password">{t("password")}</Label>
+            <Input id="password" type="password" placeholder={t("passwordPlaceholder")} value={password} onChange={(e) => setPassword(e.target.value)} required className="h-9" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input id="confirmPassword" type="password" placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="h-9" />
+            <Label htmlFor="confirmPassword">{t("confirmPassword")}</Label>
+            <Input id="confirmPassword" type="password" placeholder={t("confirmPlaceholder")} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required className="h-9" />
           </div>
           {error && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive">
@@ -247,18 +252,18 @@ export default function SignupPage({ previewDebug }: { previewDebug?: PreviewDeb
             </p>
           )}
           <Button type="submit" disabled={loading} className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700">
-            {loading ? "Creating account..." : "Create account"}
+            {loading ? t("creating") : t("createBtn")}
           </Button>
           {previewDebug && (
             <p className="text-center text-xs text-muted-foreground">
-              Preview build: <span className="font-mono">{previewDebug.commitSha}</span>
+              {t("previewBuild")} <span className="font-mono">{previewDebug.commitSha}</span>
             </p>
           )}
         </form>
       </CardContent>
       <CardFooter className="justify-center border-t bg-muted/50 p-4">
         <p className="text-sm text-muted-foreground">
-          Already have an account? <Link href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-medium text-indigo-600 hover:text-indigo-700">Sign in</Link>
+          {t("hasAccount")} <Link href={`${zhPrefix}/login?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-medium text-indigo-600 hover:text-indigo-700">{t("signInBtn")}</Link>
         </p>
       </CardFooter>
     </Card>

@@ -166,7 +166,7 @@ export default function ChinesePricingPage() {
               >
                 {plan.name === "Free" ? (
                   <PrimaryCTA
-                    href="/signup"
+                    href="/zh/signup"
                     page="pricing"
                     location="zh_free_plan"
                     variant="secondary"

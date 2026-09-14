@@ -152,7 +152,7 @@ export default async function ChineseHelpArticlePage({ params }: Props) {
                 先查看相关帮助主题，然后创建一份测试报告；如果你正在准备团队推广，也可以联系支持。
               </p>
               <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-                <PrimaryCTA href="/signup" page="help" location={`article_${article.slug}`}>
+                <PrimaryCTA href="/zh/signup" page="help" location={`article_${article.slug}`}>
                   开始创建报告
                 </PrimaryCTA>
                 <PrimaryCTA

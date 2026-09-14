@@ -40,7 +40,10 @@ export default function proxy(request: NextRequest) {
     request.cookies.get("better-auth.session_token")
 
   if (!sessionCookie?.value) {
-    const loginUrl = new URL("/login", request.url)
+    // Send Chinese visitors to the Chinese login so the whole auth flow stays
+    // in one language. The callbackUrl contract is unchanged.
+    const loginPath = locale === "zh-CN" ? "/zh/login" : "/login"
+    const loginUrl = new URL(loginPath, request.url)
     loginUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`)
     const response = NextResponse.redirect(loginUrl)
     if (!requestedLocale) {

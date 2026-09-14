@@ -1,11 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { trackEvent } from "@/lib/analytics";
+import { localizedHref, localeFromPathname } from "@/lib/i18n-routes";
 import { cn } from "@/lib/utils";
 import type { SeoPage } from "@/content/seo-pages";
 
@@ -32,11 +34,15 @@ export function SeoPageViewTracker({ page }: SeoTrackingProps) {
 }
 
 export function SeoPrimaryCta({ page, label = "Create Free 8D Report" }: SeoTrackingProps & { label?: string }) {
+  const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const encodedSlug = encodeURIComponent(page.slug);
   const href = session?.user
     ? `/reports/new?template=${encodedSlug}&source=seo&slug=${encodedSlug}`
-    : `/signup?intent=create-report&source=seo&slug=${encodedSlug}`;
+    : localizedHref(
+        `/signup?intent=create-report&source=seo&slug=${encodedSlug}`,
+        localeFromPathname(pathname),
+      );
 
   return (
     <Link
@@ -59,11 +65,15 @@ export function SeoPrimaryCta({ page, label = "Create Free 8D Report" }: SeoTrac
 }
 
 export function SeoTemplateCta({ page, label = "Use This Template" }: SeoTrackingProps & { label?: string }) {
+  const pathname = usePathname();
   const { data: session } = authClient.useSession();
   const encodedSlug = encodeURIComponent(page.slug);
   const href = session?.user
     ? `/reports/new?template=${encodedSlug}&source=seo&slug=${encodedSlug}`
-    : `/signup?intent=use-template&source=seo&slug=${encodedSlug}`;
+    : localizedHref(
+        `/signup?intent=use-template&source=seo&slug=${encodedSlug}`,
+        localeFromPathname(pathname),
+      );
 
   return (
     <Link

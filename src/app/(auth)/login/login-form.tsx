@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
+import { useLocale, useTranslations } from "next-intl"
 import { Eye, EyeOff } from "lucide-react"
 import { authClient } from "@/lib/auth-client"
 import { Button } from "@/components/ui/button"
@@ -19,6 +20,10 @@ import {
 import { trackEvent } from "@/lib/analytics"
 
 export default function LoginPage() {
+  const t = useTranslations("auth")
+  const locale = useLocale()
+  // Keep login <-> signup <-> reset links in the language of the current URL.
+  const zhPrefix = locale === "zh-CN" ? "/zh" : ""
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawCallback = searchParams.get("callbackUrl")
@@ -48,7 +53,7 @@ export default function LoginPage() {
     try {
       const result = await authClient.signIn.email({ email, password })
       if (result.error) {
-        setError(result.error.message || "Invalid email or password")
+        setError(result.error.message || t("invalidCredentials"))
         setLoading(false)
         return
       }
@@ -56,7 +61,7 @@ export default function LoginPage() {
       router.push(callbackUrl)
       router.refresh()
     } catch {
-      setError("An unexpected error occurred. Please try again.")
+      setError(t("unexpectedErrorRetry"))
       setLoading(false)
     }
   }
@@ -65,20 +70,20 @@ export default function LoginPage() {
     <Card className="shadow-sm">
       <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-xl font-semibold tracking-tight">
-          Welcome back
+          {t("welcomeBack")}
         </CardTitle>
         <CardDescription className="text-sm">
-          Sign in to your 8D Reports account
+          {t("signInDesc")}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("email")}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="name@company.com"
+              placeholder={t("emailPlaceholder")}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -86,12 +91,12 @@ export default function LoginPage() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("password")}</Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="••••••••"
+                placeholder={t("passwordMask")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -100,7 +105,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? t("hidePassword") : t("showPassword")}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 {showPassword ? (
@@ -112,10 +117,10 @@ export default function LoginPage() {
             </div>
             <div className="flex justify-end">
               <Link
-                href="/reset-password"
+                href={`${zhPrefix}/reset-password`}
                 className="text-xs text-muted-foreground hover:text-indigo-600"
               >
-                Forgot password?
+                {t("forgotPassword")}
               </Link>
             </div>
           </div>
@@ -129,19 +134,19 @@ export default function LoginPage() {
             disabled={loading}
             className="h-9 w-full bg-indigo-600 text-white hover:bg-indigo-700"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? t("signingIn") : t("signInBtn")}
           </Button>
         </form>
 
       </CardContent>
       <CardFooter className="justify-center border-t bg-muted/50 p-4">
         <p className="text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          {t("noAccount")}{" "}
           <Link
-            href={`/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+            href={`${zhPrefix}/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`}
             className="font-medium text-indigo-600 hover:text-indigo-700"
           >
-            Sign up
+            {t("signUp")}
           </Link>
         </p>
       </CardFooter>

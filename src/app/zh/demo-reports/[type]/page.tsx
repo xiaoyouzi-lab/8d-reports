@@ -144,7 +144,7 @@ export default async function ChineseDemoReportPage({
           <h2 className="text-2xl font-semibold tracking-tight text-slate-950">准备好创建自己的 8D 报告了吗？</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">免费开始，使用完整的 D0-D8 编辑器、附件、分享和带水印 PDF 导出。</p>
           <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
-            <Link href="/signup" className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>免费创建 8D 报告</Link>
+            <Link href="/zh/signup" className={cn(buttonVariants({ size: "lg" }), "bg-indigo-600 text-white hover:bg-indigo-700")}>免费创建 8D 报告</Link>
             <Link href="/zh/8d-report-template" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "bg-white")}>查看 8D 模板</Link>
           </div>
         </div>

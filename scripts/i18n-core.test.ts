@@ -4,6 +4,8 @@ import path from "node:path";
 import {
   ZH_DYNAMIC_COLLECTIONS,
   ZH_PATHS,
+  ZH_PRIVATE_EN_PATHS,
+  ZH_PRIVATE_PATHS,
   ZH_ROUTE_MAP,
 } from "../src/lib/i18n-routes";
 
@@ -143,7 +145,12 @@ function collectZhPageRoutes(dir: string, prefix = "/zh"): string[] {
 const allZhRoutes = collectZhPageRoutes(zhAppDir);
 const dynamicZhRoutes = allZhRoutes.filter((route) => route.includes("[")).sort();
 const existingZhRoutes = allZhRoutes.filter((route) => !route.includes("[")).sort();
-const mappedZhRoutes = [...ZH_PATHS].sort();
+// Private auth routes live under the (auth) group rather than src/app/zh and are
+// asserted separately by scripts/i18n-auth.test.ts, so they are not part of the
+// public marketing route set validated here.
+const mappedZhRoutes = [...ZH_PATHS]
+  .filter((route) => !ZH_PRIVATE_PATHS.has(route))
+  .sort();
 
 assert.deepEqual(
   mappedZhRoutes,
@@ -172,7 +179,9 @@ for (const collection of ZH_DYNAMIC_COLLECTIONS) {
   );
 }
 
-for (const enPath of Object.keys(ZH_ROUTE_MAP)) {
+for (const enPath of Object.keys(ZH_ROUTE_MAP).filter(
+  (path) => !ZH_PRIVATE_EN_PATHS.has(path),
+)) {
   const zhPath = ZH_ROUTE_MAP[enPath];
   assert.notEqual(zhPath, enPath, `zh route for ${enPath} must differ from the English route`);
   const pageFile = path.join(root, "src/app", `${zhPath.replace(/^\//, "")}/page.tsx`);
@@ -194,7 +203,9 @@ function resolveEnglishPage(enPath: string) {
   return candidates.find((candidate) => existsSync(candidate));
 }
 
-for (const enPath of Object.keys(ZH_ROUTE_MAP)) {
+for (const enPath of Object.keys(ZH_ROUTE_MAP).filter(
+  (path) => !ZH_PRIVATE_EN_PATHS.has(path),
+)) {
   const pageFile = resolveEnglishPage(enPath);
   assert.ok(pageFile, `English core page for ${enPath} is missing`);
   const source = readFileSync(pageFile, "utf8");

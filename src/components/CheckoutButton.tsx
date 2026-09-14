@@ -1,12 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { authClient } from "@/lib/auth-client"
 import { buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { trackEvent } from "@/lib/analytics"
+import { localizedHref, localeFromPathname } from "@/lib/i18n-routes"
 import { Loader2 } from "lucide-react"
 import type { CheckoutType } from "@/lib/plans"
 
@@ -28,6 +29,7 @@ export function CheckoutButton({
   const [loading, setLoading] = useState(false)
   const { data: session, isPending } = authClient.useSession()
   const router = useRouter()
+  const pathname = usePathname()
 
   const handleClick = async () => {
     if (loading || isPending) return
@@ -37,7 +39,8 @@ export function CheckoutButton({
       const checkoutUrl = reportId
         ? `/pricing?checkout=${planType}&reportId=${encodeURIComponent(reportId)}`
         : `/pricing?checkout=${planType}`
-      router.push(`/login?callbackUrl=${encodeURIComponent(checkoutUrl)}`)
+      const loginPath = localizedHref("/login", localeFromPathname(pathname))
+      router.push(`${loginPath}?callbackUrl=${encodeURIComponent(checkoutUrl)}`)
       return
     }
 

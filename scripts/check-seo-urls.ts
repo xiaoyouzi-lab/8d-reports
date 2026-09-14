@@ -10,7 +10,11 @@ import { seoPagesZh as programmaticSeoPagesZh } from "../src/content/seo-pages-z
 import { getHelpArticles, getLearnArticles } from "../src/lib/content-library";
 import { docsTopicsZh } from "../src/lib/marketing-content-zh";
 import { INDEXABLE_STATIC_PATHS, LEGACY_SEO_REDIRECTS, SITE_URL } from "../src/lib/seo-index-hygiene";
-import { ZH_DEMO_REPORT_SLUGS } from "../src/lib/i18n-routes";
+import {
+  ZH_DEMO_REPORT_SLUGS,
+  ZH_PRIVATE_EN_PATHS,
+  ZH_PRIVATE_PATHS,
+} from "../src/lib/i18n-routes";
 
 const requiredGscExamplePaths = [
   "/8d-report-example/automotive",
@@ -133,6 +137,9 @@ for (const pathName of requiredGscExamplePaths) {
 for (const entry of sitemap()) {
   const pathName = normalizePath(entry.url);
   if (!entry.url.startsWith(SITE_URL)) fail(`sitemap URL is not canonical www HTTPS: ${entry.url}`);
+  if (ZH_PRIVATE_PATHS.has(pathName) || ZH_PRIVATE_EN_PATHS.has(pathName)) {
+    fail(`private auth route must not be listed in the sitemap: ${pathName}`);
+  }
   if (!existingPaths.has(pathName)) fail(`sitemap URL has no matching route/content: ${pathName}`);
   if (isRobotsBlocked(pathName, disallowPrefixes)) fail(`sitemap URL is blocked by robots.txt: ${pathName}`);
   if (redirectSources.has(pathName)) fail(`sitemap URL is a redirect source, not final canonical URL: ${pathName}`);

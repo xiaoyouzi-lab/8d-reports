@@ -1,12 +1,14 @@
 "use client"
 
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
 import { ArrowRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { CheckoutButton } from "@/components/CheckoutButton"
 import { buttonVariants } from "@/components/ui/button"
 import { trackEvent } from "@/lib/analytics"
+import { localizedHref, localeFromPathname } from "@/lib/i18n-routes"
 import type { CheckoutType } from "@/lib/plans"
 import { cn } from "@/lib/utils"
 
@@ -21,6 +23,7 @@ export function TrackedLink({
   rel,
   target,
   download,
+  localize = true,
 }: {
   href: string
   children: ReactNode
@@ -30,10 +33,16 @@ export function TrackedLink({
   rel?: string
   target?: string
   download?: boolean
+  localize?: boolean
 }) {
+  const pathname = usePathname()
+  const resolvedHref = localize
+    ? localizedHref(href, localeFromPathname(pathname))
+    : href
+
   return (
     <Link
-      href={href}
+      href={resolvedHref}
       className={className}
       rel={rel}
       target={target}
@@ -60,6 +69,7 @@ export function PrimaryCTA({
   showArrow = true,
   eventName = "marketing_cta_clicked",
   eventData = {},
+  localize = true,
 }: {
   href: string
   children: ReactNode
@@ -70,6 +80,7 @@ export function PrimaryCTA({
   showArrow?: boolean
   eventName?: string
   eventData?: EventMetadata
+  localize?: boolean
 }) {
   const styles = {
     primary:
@@ -85,6 +96,7 @@ export function PrimaryCTA({
       href={href}
       eventName={eventName}
       eventData={{ page, location, ...eventData }}
+      localize={localize}
       className={cn(
         buttonVariants({
           variant: variant === "primary" ? "default" : variant === "secondary" ? "outline" : "ghost",
