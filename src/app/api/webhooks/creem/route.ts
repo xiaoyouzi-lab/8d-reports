@@ -333,11 +333,16 @@ export async function POST(req: NextRequest) {
         .limit(1);
 
       if (existing) {
+        // Backfill the Creem customer id: earlier events for this subscription
+        // may not have carried it, and the billing portal needs it to open
+        // self-serve cancellation.
+        const creemCustomerId = getCreemCustomerId(event, sub) || existing.creemCustomerId;
         await db
           .update(subscriptions)
           .set({
             status,
             planId: planRow?.id ?? existing.planId,
+            creemCustomerId,
             currentPeriodStart: periodStart
               ? new Date(periodStart)
               : undefined,
