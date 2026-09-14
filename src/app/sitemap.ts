@@ -1,5 +1,9 @@
 import type { MetadataRoute } from "next"
 import { revenueGeoResources } from "@/content/revenue-geo-resources"
+import {
+  getRevenueGeoResourceZh,
+  revenueGeoResourcesZh,
+} from "@/content/revenue-geo-resources-zh"
 import { seoPages as legacySeoPages } from "@/lib/seo-pages"
 import { seoPages as programmaticSeoPages } from "@/content/seo-pages"
 import { getHelpArticles, getLearnArticles } from "@/lib/content-library"
@@ -77,7 +81,25 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const revenueResourceEntries = revenueGeoResources
-    .map((page) => entry(`/resources/${page.slug}`, "weekly", 0.82))
+    .map((page) => {
+      const enPath = `/resources/${page.slug}`
+      const zhPath = `/zh/resources/${page.slug}`
+      const alternates = getRevenueGeoResourceZh(page.slug)
+        ? languageAlternates(enPath, zhPath)
+        : undefined
+      return entry(enPath, "weekly", 0.82, alternates)
+    })
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
+  const revenueResourceZhEntries = revenueGeoResourcesZh
+    .map((page) =>
+      entry(
+        `/zh/resources/${page.slug}`,
+        "weekly",
+        0.82,
+        languageAlternates(`/resources/${page.slug}`, `/zh/resources/${page.slug}`),
+      ),
+    )
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const helpEntries = getHelpArticles()
@@ -94,6 +116,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...legacyEntries,
     ...programmaticEntries,
     ...revenueResourceEntries,
+    ...revenueResourceZhEntries,
     ...helpEntries,
     ...learnEntries,
   ]

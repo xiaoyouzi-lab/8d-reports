@@ -3,6 +3,7 @@ import path from "node:path";
 import sitemap from "../src/app/sitemap";
 import robots from "../src/app/robots";
 import { revenueGeoResources } from "../src/content/revenue-geo-resources";
+import { revenueGeoResourcesZh } from "../src/content/revenue-geo-resources-zh";
 import { seoPages as legacySeoPages } from "../src/lib/seo-pages";
 import { seoPages as programmaticSeoPages } from "../src/content/seo-pages";
 import { getHelpArticles, getLearnArticles } from "../src/lib/content-library";
@@ -106,6 +107,7 @@ const contentPaths = new Set([
   ...legacySeoPages.map((page) => `/${page.slug}`),
   ...programmaticSeoPages.map((page) => `/${page.slug}`),
   ...revenueGeoResources.map((page) => `/resources/${page.slug}`),
+  ...revenueGeoResourcesZh.map((page) => `/zh/resources/${page.slug}`),
   ...getHelpArticles().map((page) => `/help/${page.slug}`),
   ...getLearnArticles().map((page) => `/learn/${page.slug}`),
   ...demoReportPaths,

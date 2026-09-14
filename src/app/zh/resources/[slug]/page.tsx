@@ -1,8 +1,8 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { AlertTriangle, CheckCircle2, ClipboardCheck, FileText } from "lucide-react"
-import { PrimaryCTA } from "@/components/marketing/MarketingActions"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { AlertTriangle, CheckCircle2, ClipboardCheck, FileText } from "lucide-react";
+import { PrimaryCTA } from "@/components/marketing/MarketingActions";
 import {
   Breadcrumbs,
   JsonLd,
@@ -10,38 +10,45 @@ import {
   Section,
   SectionHeader,
   breadcrumbJsonLd,
-} from "@/components/marketing/MarketingPrimitives"
+} from "@/components/marketing/MarketingPrimitives";
 import {
-  getRevenueGeoResource,
-  revenueGeoResources,
-} from "@/content/revenue-geo-resources"
-import { getRevenueGeoResourceZh } from "@/content/revenue-geo-resources-zh"
-import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
+  getRevenueGeoResourceZh,
+  revenueGeoResourcesZh,
+} from "@/content/revenue-geo-resources-zh";
+import type { RevenueGeoResource } from "@/content/revenue-geo-resources";
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content";
 
-export const dynamicParams = false
+export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return revenueGeoResources.map((resource) => ({ slug: resource.slug }))
+  return revenueGeoResourcesZh.map((resource) => ({ slug: resource.slug }));
 }
+
+const intentLabel: Record<RevenueGeoResource["intent"], string> = {
+  informational: "信息型",
+  commercial: "商业型",
+  service: "服务型",
+  template: "模板型",
+  comparison: "对比型",
+};
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params
-  const resource = getRevenueGeoResource(slug)
-  if (!resource) return {}
+  const { slug } = await params;
+  const resource = getRevenueGeoResourceZh(slug);
+  if (!resource) return {};
 
-  const url = `${siteUrl}/resources/${resource.slug}`
-  const zhUrl = `${siteUrl}/zh/resources/${resource.slug}`
-  const hasZhTranslation = Boolean(getRevenueGeoResourceZh(resource.slug))
+  const url = `${siteUrl}/zh/resources/${resource.slug}`;
+  const enUrl = `${siteUrl}/resources/${resource.slug}`;
   return {
     title: resource.metaTitle,
     description: resource.metaDescription,
     alternates: {
       canonical: url,
-      languages: hasZhTranslation ? { en: url, "zh-CN": zhUrl } : { en: url },
+      languages: { en: enUrl, "zh-CN": url },
     },
     openGraph: {
       title: resource.metaTitle,
@@ -50,24 +57,24 @@ export async function generateMetadata({
       type: "article",
       images: [socialOpenGraphImage],
     },
-  }
+  };
 }
 
-export default async function RevenueGeoResourcePage({
+export default async function ChineseRevenueGeoResourcePage({
   params,
 }: {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }) {
-  const { slug } = await params
-  const resource = getRevenueGeoResource(slug)
-  if (!resource) notFound()
+  const { slug } = await params;
+  const resource = getRevenueGeoResourceZh(slug);
+  if (!resource) notFound();
 
-  const resourceUrl = `${siteUrl}/resources/${resource.slug}`
+  const resourceUrl = `${siteUrl}/zh/resources/${resource.slug}`;
   const breadcrumbItems = [
-    { label: "Home", href: siteUrl },
-    { label: "Resources", href: `${siteUrl}/resources` },
+    { label: "首页", href: siteUrl },
+    { label: "资源", href: `${siteUrl}/zh/resources` },
     { label: resource.title, href: resourceUrl },
-  ]
+  ];
   const faqJsonLd = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -79,19 +86,20 @@ export default async function RevenueGeoResourcePage({
         text: faq.answer,
       },
     })),
-  }
+  };
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "Article",
     headline: resource.metaTitle,
     description: resource.metaDescription,
+    inLanguage: "zh-CN",
     url: resourceUrl,
     publisher: {
       "@type": "Organization",
       name: "8D Reports",
       url: siteUrl,
     },
-  }
+  };
 
   return (
     <PageShell>
@@ -137,20 +145,20 @@ export default async function RevenueGeoResourcePage({
             <div className="flex items-center gap-3">
               <ClipboardCheck className="h-5 w-5 text-indigo-600" />
               <h2 className="text-base font-semibold text-slate-950">
-                Answer-first summary
+                答案优先摘要
               </h2>
             </div>
             <dl className="mt-5 space-y-4 text-sm">
               <div>
-                <dt className="font-semibold text-slate-900">Target query</dt>
+                <dt className="font-semibold text-slate-900">目标查询</dt>
                 <dd className="mt-1 text-slate-600">{resource.targetQuery}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-slate-900">Search intent</dt>
-                <dd className="mt-1 capitalize text-slate-600">{resource.intent}</dd>
+                <dt className="font-semibold text-slate-900">搜索意图</dt>
+                <dd className="mt-1 text-slate-600">{intentLabel[resource.intent]}</dd>
               </div>
               <div>
-                <dt className="font-semibold text-slate-900">Proof to gather</dt>
+                <dt className="font-semibold text-slate-900">需要准备的证据</dt>
                 <dd className="mt-2">
                   <ul className="space-y-2 text-slate-600">
                     {resource.proofElements.map((item) => (
@@ -170,8 +178,8 @@ export default async function RevenueGeoResourcePage({
       <Section>
         <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <SectionHeader
-            title="Practical checklist"
-            description="Use this as a working review list before the report is sent, exported, or used as a reusable knowledge asset."
+            title="实用检查清单"
+            description="在报告发送、导出或作为可复用知识资产之前，用这份清单做一次工作评审。"
           />
           <div className="grid gap-3 sm:grid-cols-2">
             {resource.checklist.map((item) => (
@@ -221,9 +229,7 @@ export default async function RevenueGeoResourcePage({
           <aside className="rounded-lg border border-amber-200 bg-amber-50 p-5">
             <div className="flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-amber-700" />
-              <h2 className="text-base font-semibold text-slate-950">
-                Common mistakes
-              </h2>
+              <h2 className="text-base font-semibold text-slate-950">常见错误</h2>
             </div>
             <ul className="mt-5 space-y-3 text-sm leading-6 text-slate-700">
               {resource.mistakes.map((mistake) => (
@@ -240,8 +246,8 @@ export default async function RevenueGeoResourcePage({
       <Section className="border-y border-slate-200 bg-slate-50">
         <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <SectionHeader
-            title="Related resources"
-            description="Move from the article into an example, product workflow, or pricing detail when the issue becomes urgent."
+            title="相关资源"
+            description="当问题变得紧急时，从文章进入示例、产品工作流或定价细节。"
           />
           <div className="grid gap-3 sm:grid-cols-2">
             {resource.relatedLinks.map((link) => (
@@ -260,7 +266,10 @@ export default async function RevenueGeoResourcePage({
 
       <Section>
         <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-          <SectionHeader title="FAQ" description="Short answers for quality teams reviewing this topic." />
+          <SectionHeader
+            title="常见问题"
+            description="为正在评审这一主题的质量团队准备的简短回答。"
+          />
           <div className="space-y-4">
             {resource.faq.map((faq) => (
               <article key={faq.question} className="rounded-lg border border-slate-200 p-5">
@@ -272,5 +281,5 @@ export default async function RevenueGeoResourcePage({
         </div>
       </Section>
     </PageShell>
-  )
+  );
 }

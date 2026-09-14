@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { ZH_PATHS, ZH_ROUTE_MAP } from "../src/lib/i18n-routes";
+import {
+  ZH_DYNAMIC_COLLECTIONS,
+  ZH_PATHS,
+  ZH_ROUTE_MAP,
+} from "../src/lib/i18n-routes";
 
 // i18n core guard for the zh/en marketing switcher (Batch 1).
 // It verifies the message catalogs, the redirect-free switcher route map, and
@@ -136,14 +140,35 @@ function collectZhPageRoutes(dir: string, prefix = "/zh"): string[] {
   return routes;
 }
 
-const existingZhRoutes = collectZhPageRoutes(zhAppDir).sort();
+const allZhRoutes = collectZhPageRoutes(zhAppDir);
+const dynamicZhRoutes = allZhRoutes.filter((route) => route.includes("[")).sort();
+const existingZhRoutes = allZhRoutes.filter((route) => !route.includes("[")).sort();
 const mappedZhRoutes = [...ZH_PATHS].sort();
 
 assert.deepEqual(
   mappedZhRoutes,
   existingZhRoutes,
-  "The switcher route map must match the zh pages that exist",
+  "The switcher route map must match the static zh pages that exist",
 );
+
+// Dynamic collections such as /zh/resources/[slug] cannot live in the static
+// map. Every dynamic zh page must be registered as a dynamic collection, and
+// every registered collection must have a real page behind it.
+assert.ok(dynamicZhRoutes.length > 0, "expected at least one dynamic zh collection");
+for (const route of dynamicZhRoutes) {
+  const collection = ZH_DYNAMIC_COLLECTIONS.find(
+    (candidate) => route === `${candidate.zhPrefix}/[slug]`,
+  );
+  assert.ok(collection, `${route} must be registered in ZH_DYNAMIC_COLLECTIONS`);
+  const pageFile = path.join(root, "src/app", `${route.replace(/^\//, "")}/page.tsx`);
+  assert.ok(existsSync(pageFile), `${route} is registered but its page is missing`);
+}
+for (const collection of ZH_DYNAMIC_COLLECTIONS) {
+  assert.ok(
+    dynamicZhRoutes.includes(`${collection.zhPrefix}/[slug]`),
+    `${collection.zhPrefix} is registered but has no dynamic zh page`,
+  );
+}
 
 for (const enPath of Object.keys(ZH_ROUTE_MAP)) {
   const zhPath = ZH_ROUTE_MAP[enPath];
