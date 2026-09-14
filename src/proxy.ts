@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server"
 
 const LANG_COOKIE = "NEXT_LOCALE"
 const PUBLIC_LOCALE = "en"
+const SUPPORTED_LOCALES = new Set(["en", "zh-CN"])
 
 const protectedPaths = ["/dashboard", "/reports"]
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
-  const locale = PUBLIC_LOCALE
+  const requestedLocale = request.cookies.get(LANG_COOKIE)?.value
+  const locale =
+    requestedLocale && SUPPORTED_LOCALES.has(requestedLocale)
+      ? requestedLocale
+      : PUBLIC_LOCALE
 
   const headers = new Headers(request.headers)
   headers.set("x-locale", locale)
@@ -20,11 +25,13 @@ export default function proxy(request: NextRequest) {
     const response = NextResponse.next({
       request: { headers },
     })
-    response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
+    if (!requestedLocale) {
+      response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
+        path: "/",
+        maxAge: 31536000,
+        sameSite: "lax",
+      })
+    }
     return response
   }
 
@@ -36,22 +43,26 @@ export default function proxy(request: NextRequest) {
     const loginUrl = new URL("/login", request.url)
     loginUrl.searchParams.set("callbackUrl", `${pathname}${request.nextUrl.search}`)
     const response = NextResponse.redirect(loginUrl)
-    response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
-      path: "/",
-      maxAge: 31536000,
-      sameSite: "lax",
-    })
+    if (!requestedLocale) {
+      response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
+        path: "/",
+        maxAge: 31536000,
+        sameSite: "lax",
+      })
+    }
     return response
   }
 
   const response = NextResponse.next({
     request: { headers },
   })
-  response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
-    path: "/",
-    maxAge: 31536000,
-    sameSite: "lax",
-  })
+  if (!requestedLocale) {
+    response.cookies.set(LANG_COOKIE, PUBLIC_LOCALE, {
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "lax",
+    })
+  }
   return response
 }
 

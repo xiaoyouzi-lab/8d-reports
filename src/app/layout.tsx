@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { NextIntlClientProvider } from "next-intl";
+import { LocaleProvider } from "@/components/LocaleProvider";
 import { Analytics } from "@vercel/analytics/react";
 import { Toaster } from "sonner";
 import { CookieConsent } from "@/components/CookieConsent";
@@ -51,20 +51,20 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const locale = "en";
-  const messages = (await import("../messages/en.json")).default;
+  const enMessages = (await import("../messages/en.json")).default;
+  const zhMessages = (await import("../messages/zh-CN.json")).default;
 
   return (
-    <html lang={locale} className="h-full antialiased">
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <LocaleProvider en={enMessages} zh={zhMessages}>
           {children}
           <CookieConsent />
           <Analytics />
           <GoogleAnalytics />
           <Toaster position="top-center" offset={72} />
           <FeedbackWrapper />
-        </NextIntlClientProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

@@ -9,6 +9,7 @@ export function PlanCard({
   description,
   features,
   recommended,
+  recommendedLabel = "Recommended",
   children,
 }: {
   name: string
@@ -17,6 +18,7 @@ export function PlanCard({
   description: string
   features: string[]
   recommended?: boolean
+  recommendedLabel?: string
   children: ReactNode
 }) {
   return (
@@ -28,7 +30,7 @@ export function PlanCard({
     >
       {recommended ? (
         <span className="absolute right-5 top-5 rounded-md bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-700">
-          Recommended
+          {recommendedLabel}
         </span>
       ) : null}
       <h2 className="text-lg font-semibold text-slate-950">{name}</h2>

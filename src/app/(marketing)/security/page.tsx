@@ -8,6 +8,10 @@ export const metadata: Metadata = {
     "How 8D Reports handles report data, attachments, AI processing, sharing links, account deletion, and customer-facing quality documents.",
   alternates: {
     canonical: "https://www.8d-reports.com/security",
+    languages: {
+      en: "https://www.8d-reports.com/security",
+      "zh-CN": "https://www.8d-reports.com/zh/security",
+    },
   },
 }
 
