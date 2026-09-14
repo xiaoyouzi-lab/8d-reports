@@ -97,6 +97,77 @@ export const ZH_HELP_SLUGS = [
   "troubleshooting",
 ] as const;
 
+// Programmatic SEO collections (Batch 3). The English source of truth is
+// src/content/seo-pages.ts and the Chinese mirror is src/content/seo-pages-zh.ts.
+// scripts/i18n-seo.test.ts asserts these lists match the generated pages.
+export const ZH_SEO_EXAMPLE_SLUGS = [
+  "automotive",
+  "semiconductor",
+  "electronics",
+  "medical-device",
+  "supplier-quality",
+  "customer-complaint",
+  "led-failure",
+  "packaging-defect",
+  "plastic-injection-molding",
+  "machining-defect",
+  "battery-pack",
+  "aerospace",
+] as const;
+
+export const ZH_SEO_TEMPLATE_SLUGS = [
+  "automotive",
+  "supplier",
+  "manufacturing",
+  "pdf",
+  "word",
+  "excel",
+  "medical-device",
+  "semiconductor",
+  "battery",
+  "aerospace",
+] as const;
+
+export const ZH_SEO_FIVE_WHY_SLUGS = [
+  "customer-complaint",
+  "supplier-defect",
+  "late-delivery",
+  "assembly-defect",
+  "led-failure",
+  "semiconductor-defect",
+  "injection-molding-short-shot",
+  "machining-tolerance",
+  "weld-strength",
+  "packaging-seal",
+] as const;
+
+export const ZH_SEO_FISHBONE_SLUGS = [
+  "manufacturing-defect",
+  "customer-complaint",
+  "supplier-quality",
+  "process-failure",
+  "electronics-assembly",
+  "packaging-seal-failure",
+] as const;
+
+export const ZH_SEO_CORRECTIVE_SLUGS = [
+  "supplier-defect",
+  "customer-complaint",
+  "assembly-defect",
+  "machining-defect",
+  "labeling-error",
+  "battery-weld-failure",
+] as const;
+
+export const ZH_SEO_PREVENTIVE_SLUGS = [
+  "manufacturing",
+  "quality-system",
+  "supplier-quality",
+  "electronics-assembly",
+  "medical-device",
+  "aerospace-documentation",
+] as const;
+
 type ZhDynamicCollection = {
   enPrefix: string;
   zhPrefix: string;
@@ -123,6 +194,36 @@ export const ZH_DYNAMIC_COLLECTIONS: readonly ZhDynamicCollection[] = [
     enPrefix: "/docs",
     zhPrefix: "/zh/docs",
     slugs: ZH_DOCS_SLUGS,
+  },
+  {
+    enPrefix: "/8d-report-example",
+    zhPrefix: "/zh/8d-report-example",
+    slugs: ZH_SEO_EXAMPLE_SLUGS,
+  },
+  {
+    enPrefix: "/8d-report-template",
+    zhPrefix: "/zh/8d-report-template",
+    slugs: ZH_SEO_TEMPLATE_SLUGS,
+  },
+  {
+    enPrefix: "/5-why-example",
+    zhPrefix: "/zh/5-why-example",
+    slugs: ZH_SEO_FIVE_WHY_SLUGS,
+  },
+  {
+    enPrefix: "/fishbone-diagram-example",
+    zhPrefix: "/zh/fishbone-diagram-example",
+    slugs: ZH_SEO_FISHBONE_SLUGS,
+  },
+  {
+    enPrefix: "/corrective-action-example",
+    zhPrefix: "/zh/corrective-action-example",
+    slugs: ZH_SEO_CORRECTIVE_SLUGS,
+  },
+  {
+    enPrefix: "/preventive-action-example",
+    zhPrefix: "/zh/preventive-action-example",
+    slugs: ZH_SEO_PREVENTIVE_SLUGS,
   },
 ];
 
