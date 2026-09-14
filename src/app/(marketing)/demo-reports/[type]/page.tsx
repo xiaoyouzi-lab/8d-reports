@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { TrackedLink } from "@/components/marketing/MarketingActions";
 import { TeamWorkflowFeedbackForm } from "@/components/marketing/TeamWorkflowFeedbackForm";
 import { DEMO_REPORTS, getDemoReport } from "@/lib/demo-reports";
+import { getDemoReportZh } from "@/lib/demo-reports-zh";
 import { cn } from "@/lib/utils";
 
 const workflowByType: Record<string, Array<{ title: string; detail: string }>> = {
@@ -39,7 +40,15 @@ export async function generateMetadata({ params }: { params: Promise<{ type: str
   return {
     title: `${demo.title} | Controlled 8D Workflow Demo`,
     description: `Review the complete D0-D8 content, evidence, approval, locking, revision history, and delivery package for this ${demo.industry} scenario.`,
-    alternates: { canonical: `https://www.8d-reports.com/demo-reports/${type}` },
+    alternates: {
+      canonical: `https://www.8d-reports.com/demo-reports/${type}`,
+      languages: getDemoReportZh(type)
+        ? {
+            en: `https://www.8d-reports.com/demo-reports/${type}`,
+            "zh-CN": `https://www.8d-reports.com/zh/demo-reports/${type}`,
+          }
+        : { en: `https://www.8d-reports.com/demo-reports/${type}` },
+    },
   };
 }
 

@@ -13,7 +13,7 @@ import {
   getLearnArticle,
   getLearnArticles,
 } from "@/lib/content-library"
-import { ZH_ROUTE_MAP } from "@/lib/i18n-routes"
+import { ZH_DEMO_REPORT_SLUGS, ZH_ROUTE_MAP, zhPathFor } from "@/lib/i18n-routes"
 import { docsTopicZhSlugs, docsTopicsZh } from "@/lib/marketing-content-zh"
 import { INDEXABLE_STATIC_PATHS, SITE_URL } from "@/lib/seo-index-hygiene"
 
@@ -63,7 +63,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const staticEntries = INDEXABLE_STATIC_PATHS
     .map((path) => {
-      const zhPath = ZH_ROUTE_MAP[path]
+      // Static pairs come from ZH_ROUTE_MAP; dynamic collections such as
+      // /demo-reports/[type] resolve through zhPathFor.
+      const zhPath = ZH_ROUTE_MAP[path] ?? zhPathFor(path)
       const docsSlug = path.startsWith("/docs/")
         ? path.slice("/docs/".length)
         : undefined
@@ -81,6 +83,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
+  // /demo-reports/<type> is a dynamic collection, so its Chinese URLs are not
+  // in ZH_ROUTE_MAP. Add both directions explicitly.
+  const demoZhEntries = ZH_DEMO_REPORT_SLUGS
+    .map((type) => {
+      const enPath = `/demo-reports/${type}`
+      const zhPath = `/zh/demo-reports/${type}`
+      return entry(zhPath, "weekly", 0.85, languageAlternates(enPath, zhPath))
+    })
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
   const chineseEntries = Object.entries(ZH_ROUTE_MAP)
     .map(([enPath, zhPath]) =>
       entry(
@@ -93,7 +105,16 @@ export default function sitemap(): MetadataRoute.Sitemap {
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const legacyEntries = legacySeoPages
-    .map((page) => entry(`/${page.slug}`, "weekly", 0.85))
+    .map((page) => {
+      const enPath = `/${page.slug}`
+      const zhPath = zhPathFor(enPath)
+      return entry(
+        enPath,
+        "weekly",
+        0.85,
+        zhPath ? languageAlternates(enPath, zhPath) : undefined,
+      )
+    })
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
   const programmaticEntries = programmaticSeoPages
@@ -199,6 +220,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...staticEntries,
     ...chineseEntries,
     ...legacyEntries,
+    ...demoZhEntries,
     ...programmaticEntries,
     ...programmaticZhEntries,
     ...revenueResourceEntries,

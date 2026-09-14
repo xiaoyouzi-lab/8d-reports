@@ -17,6 +17,15 @@ export const ZH_ROUTE_MAP: Record<string, string> = {
   "/faq": "/zh/faq",
   "/security": "/zh/security",
   "/contact": "/zh/contact",
+  // Batch 4: remaining English-only public pages.
+  "/privacy": "/zh/privacy",
+  "/terms": "/zh/terms",
+  "/8d-report-template": "/zh/8d-report-template",
+  "/8d-report-example": "/zh/8d-report-example",
+  "/supplier-8d-report": "/zh/supplier-8d-report",
+  "/corrective-action-report-template": "/zh/corrective-action-report-template",
+  "/5-why-root-cause-template": "/zh/5-why-root-cause-template",
+  "/demo-reports": "/zh/demo-reports",
 };
 
 const EN_BY_ZH: Record<string, string> = Object.fromEntries(
@@ -168,10 +177,20 @@ export const ZH_SEO_PREVENTIVE_SLUGS = [
   "aerospace-documentation",
 ] as const;
 
+// Workflow demo reports (Batch 4). The English source of truth is
+// src/lib/demo-reports.ts and the Chinese mirror is src/lib/demo-reports-zh.ts.
+export const ZH_DEMO_REPORT_SLUGS = [
+  "automotive",
+  "molding",
+  "electronics",
+] as const;
+
 type ZhDynamicCollection = {
   enPrefix: string;
   zhPrefix: string;
   slugs: readonly string[];
+  // Dynamic segment name used by the route folder (defaults to "slug").
+  param?: string;
 };
 
 export const ZH_DYNAMIC_COLLECTIONS: readonly ZhDynamicCollection[] = [
@@ -224,6 +243,12 @@ export const ZH_DYNAMIC_COLLECTIONS: readonly ZhDynamicCollection[] = [
     enPrefix: "/preventive-action-example",
     zhPrefix: "/zh/preventive-action-example",
     slugs: ZH_SEO_PREVENTIVE_SLUGS,
+  },
+  {
+    enPrefix: "/demo-reports",
+    zhPrefix: "/zh/demo-reports",
+    slugs: ZH_DEMO_REPORT_SLUGS,
+    param: "type",
   },
 ];
 

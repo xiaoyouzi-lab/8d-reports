@@ -7,7 +7,13 @@ import { cn } from "@/lib/utils"
 export const metadata: Metadata = {
   title: "8D Workflow Demos | Automotive, Injection Molding, and Electronics",
   description: "Review three complete manufacturing 8D scenarios showing evidence, root cause analysis, approval, report locking, revisions, and customer-ready delivery.",
-  alternates: { canonical: "https://www.8d-reports.com/demo-reports" },
+  alternates: {
+    canonical: "https://www.8d-reports.com/demo-reports",
+    languages: {
+      en: "https://www.8d-reports.com/demo-reports",
+      "zh-CN": "https://www.8d-reports.com/zh/demo-reports",
+    },
+  },
 }
 
 const demos = [

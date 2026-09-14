@@ -20,6 +20,7 @@
     "test:i18n-learn-help": "tsx scripts/i18n-learn-help.test.ts",
     "test:i18n-docs": "tsx scripts/i18n-docs.test.ts",
     "test:i18n-seo": "tsx scripts/i18n-seo.test.ts",
+    "test:i18n-remaining": "tsx scripts/i18n-remaining.test.ts",
     "test:team-auth": "tsx scripts/team-authorization.test.ts",
     "test:p2-correctness": "tsx scripts/p2-correctness.test.ts",
     "test:version-consistency": "tsx scripts/version-consistency.test.ts",

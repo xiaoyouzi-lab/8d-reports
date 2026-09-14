@@ -10,6 +10,7 @@ import { seoPagesZh as programmaticSeoPagesZh } from "../src/content/seo-pages-z
 import { getHelpArticles, getLearnArticles } from "../src/lib/content-library";
 import { docsTopicsZh } from "../src/lib/marketing-content-zh";
 import { INDEXABLE_STATIC_PATHS, LEGACY_SEO_REDIRECTS, SITE_URL } from "../src/lib/seo-index-hygiene";
+import { ZH_DEMO_REPORT_SLUGS } from "../src/lib/i18n-routes";
 
 const requiredGscExamplePaths = [
   "/8d-report-example/automotive",
@@ -27,6 +28,7 @@ const requiredGscExamplePaths = [
 ];
 
 const demoReportPaths = ["/demo-reports/automotive", "/demo-reports/molding", "/demo-reports/electronics"];
+const demoReportZhPaths = ZH_DEMO_REPORT_SLUGS.map((slug) => `/zh/demo-reports/${slug}`);
 
 function fail(message: string): never {
   console.error(`SEO check failed: ${message}`);
@@ -117,6 +119,7 @@ const contentPaths = new Set([
   ...getLearnArticles("zh").map((page) => `/zh/learn/${page.slug}`),
   ...docsTopicsZh.map((page) => `/zh/docs/${page.slug}`),
   ...demoReportPaths,
+  ...demoReportZhPaths,
 ]);
 
 const existingPaths = new Set([...staticPagePaths, ...contentPaths]);
