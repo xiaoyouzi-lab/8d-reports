@@ -1,5 +1,20 @@
 # Development Log
 
+## Completed: Duplicate Brand in Page Titles (2026-09-12)
+
+- The root layout sets title.template = "%s | 8D Reports", but the programmatic
+  SEO pages and two hand-written pages already appended "| 8D Reports", so 53
+  public pages rendered "| 8D Reports | 8D Reports" in <title> (confirmed live).
+- Removed the hardcoded suffix from src/content/seo-pages.ts metaTitle,
+  src/lib/seo-pages.ts (5-why template), src/app/(marketing)/security/page.tsx,
+  and src/app/(marketing)/learn/page.tsx (metadata + openGraph). The root
+  template now adds the brand exactly once.
+- Added scripts/title-hygiene.test.ts (npm run test:title-hygiene) which scans
+  every app page/layout metadata title and fails if any appends the brand, plus
+  a guard on the programmatic SEO template literal.
+- No route, canonical, sitemap, auth, payment, database schema, export, or
+  production configuration change. Public URLs are unchanged.
+
 ## Completed: Team Authorization Fix Spec (2026-09-12)
 
 - Added docs/TEAM_AUTHORIZATION_FIX_SPEC.md, a decision-ready specification for

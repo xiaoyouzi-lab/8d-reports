@@ -12,12 +12,12 @@ import { getLearnArticles } from "@/lib/content-library"
 import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
 
 export const metadata: Metadata = {
-  title: "Learn 8D Reports",
+  title: "8D Report Guides and Education",
   description:
     "Educational articles about 8D reports, SCAR, Excel alternatives, AI-assisted drafting, supplier quality workflows, export, review, locking, and revision history.",
   alternates: { canonical: `${siteUrl}/learn` },
   openGraph: {
-    title: "Learn 8D Reports",
+    title: "8D Report Guides and Education",
     description:
       "Practical 8D and supplier quality education for quality engineers and manufacturing teams.",
     url: `${siteUrl}/learn`,
