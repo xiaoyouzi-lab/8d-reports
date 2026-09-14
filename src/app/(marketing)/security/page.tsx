@@ -3,7 +3,7 @@ import Link from "next/link"
 import { Lock, ShieldCheck, Trash2, UploadCloud } from "lucide-react"
 
 export const metadata: Metadata = {
-  title: "Security and Data Privacy | 8D Reports",
+  title: "Security and Data Privacy",
   description:
     "How 8D Reports handles report data, attachments, AI processing, sharing links, account deletion, and customer-facing quality documents.",
   alternates: {

@@ -654,7 +654,7 @@ function buildPage(type: SeoPageType, scenario: Scenario): SeoPage {
     slug: pathSlug,
     type,
     title: `${titleSubject} for ${scenario.problemType}`,
-    metaTitle: `${titleSubject} | ${scenario.problemType} | 8D Reports`,
+    metaTitle: `${titleSubject} | ${scenario.problemType}`,
     metaDescription: `Use this ${scenario.industry.toLowerCase()} ${actionLabel} for ${scenario.problemType}: problem description, containment, root cause, corrective action, prevention, export, and sharing.`,
     h1: `${titleSubject} for ${scenario.problemType}`,
     industry: scenario.industry,

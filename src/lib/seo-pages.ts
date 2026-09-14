@@ -207,7 +207,7 @@ export const seoPages: SeoPage[] = [
   },
   {
     slug: "5-why-root-cause-template",
-    title: "5 Why Root Cause Template | Use with 8D Reports",
+    title: "5 Why Root Cause Template | Root Cause Analysis",
     description:
       "Document 5-Why root cause analysis inside an 8D report and connect causes to corrective and preventive actions.",
     eyebrow: "5-Why root cause",
