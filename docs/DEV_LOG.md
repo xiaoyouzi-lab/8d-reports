@@ -1,5 +1,50 @@
 # Development Log
 
+## Completed: Product Docs Simplified Chinese (Batch 2c, 2026-09-15)
+
+- Added **all 10 `/docs` topics in Simplified Chinese**. The Chinese copy now
+  lives in `src/lib/marketing-content-zh.ts` with the same `DocsTopic` shape and
+  the same step count as the English source of truth in
+  `src/lib/marketing-content.ts`. The module also exports
+  `getDocsTopics(locale)`, `getDocsTopic(slug, locale)`, and
+  `docsTopicUrl(slug, locale)` (defaulting to `en` so every existing English
+  caller keeps working), plus `docsTopicsZh`, `docsTopicZhSlugs`, and
+  `getDocsTopicZh(slug)`.
+- Created `src/app/zh/docs/page.tsx` and `src/app/zh/docs/[slug]/page.tsx`.
+  Both reuse `DocsSidebar`, `DocsTopicSelector`, `PageShell`, `Breadcrumbs`,
+  `JsonLd`, and `PrimaryCTA` with Chinese labels; the topic route sets
+  `dynamicParams = false`, `generateStaticParams`, and `notFound()`. Each page
+  sets a `https://www.8d-reports.com/zh/docs/...` canonical and
+  `alternates.languages` for `en` + `zh-CN`.
+- Extended `src/lib/i18n-routes.ts`: added `/docs -> /zh/docs` to
+  `ZH_ROUTE_MAP`, added `ZH_DOCS_SLUGS`, and registered the
+  `/docs <-> /zh/docs` dynamic collection. The language switcher, the marketing
+  footer Docs link, and the header all resolve through `localizedHref`, so
+  `/docs/<slug>` now swaps to `/zh/docs/<slug>` only for translated slugs.
+- Made `src/components/marketing/DocsNav.tsx` locale-aware. The sidebar and the
+  mobile topic selector derive their `/docs` vs `/zh/docs` prefix from the
+  current pathname and accept optional `label` / `overviewLabel` props, so the
+  Chinese pages keep Chinese navigation without forking the component.
+- Added zh-CN hreflang to the English docs index and `[slug]` page (the topic
+  page only links to `/zh/docs/<slug>` when a translation exists), and gave the
+  English docs topic sitemap entries the matching `alternates.languages`.
+  `src/app/sitemap.ts` now also emits `/zh/docs` and all 10 zh topic URLs with
+  both-way alternates.
+- `scripts/check-seo-urls.ts` now knows the zh docs content paths so every
+  sitemap URL still maps to real content.
+- Added `scripts/i18n-docs.test.ts` (`npm run test:i18n-docs`) asserting slug
+  parity with the English source and `ZH_DOCS_SLUGS`, non-empty title / summary /
+  steps / callout, structural step parity, the `en`-default locale accessors,
+  the two zh routes and their `dynamicParams = false` / `generateStaticParams` /
+  `notFound()` guards, both-way dynamic mapping and `localizedHref`, both-way
+  canonical / hreflang, sitemap alternates for the index and every slug, and the
+  absence of the removed Quality Case, complaint-workbench,
+  supplier-collaboration-platform, manual/expert review, custom-service, or
+  removed-route positioning.
+- No auth, payment, database schema, export logic, environment variable, or
+  production configuration change.
+
+
 ## Completed: Learn and Help Center Simplified Chinese (Batch 2b, 2026-09-14)
 
 - Added markdown translations for the whole content library: 8

@@ -6,18 +6,27 @@ import { trackEvent } from "@/lib/analytics"
 import type { DocsTopic } from "@/lib/marketing-content"
 import { cn } from "@/lib/utils"
 
-export function DocsSidebar({ topics }: { topics: DocsTopic[] }) {
+export function DocsSidebar({
+  topics,
+  label = "Docs",
+}: {
+  topics: DocsTopic[]
+  label?: string
+}) {
   const pathname = usePathname()
+  // The sidebar is shared by the English and Chinese docs routes. Deriving the
+  // prefix from the current path keeps Chinese readers on /zh/docs/*.
+  const base = pathname.startsWith("/zh") ? "/zh/docs" : "/docs"
 
   return (
     <aside className="hidden lg:block">
       <div className="sticky top-20 rounded-lg border border-slate-200 bg-white p-3">
         <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Docs
+          {label}
         </p>
         <nav className="space-y-1">
           {topics.map((topic) => {
-            const href = `/docs/${topic.slug}`
+            const href = `${base}/${topic.slug}`
             const active = pathname === href
 
             return (
@@ -47,17 +56,26 @@ export function DocsSidebar({ topics }: { topics: DocsTopic[] }) {
   )
 }
 
-export function DocsTopicSelector({ topics }: { topics: DocsTopic[] }) {
+export function DocsTopicSelector({
+  topics,
+  label = "Docs topic",
+  overviewLabel = "Docs overview",
+}: {
+  topics: DocsTopic[]
+  label?: string
+  overviewLabel?: string
+}) {
   const pathname = usePathname()
   const router = useRouter()
-  const current = pathname.startsWith("/docs/")
-    ? pathname.replace("/docs/", "")
+  const base = pathname.startsWith("/zh") ? "/zh/docs" : "/docs"
+  const current = pathname.startsWith(`${base}/`)
+    ? pathname.slice(base.length + 1)
     : ""
 
   return (
     <div className="lg:hidden">
       <label htmlFor="docs-topic" className="text-sm font-semibold text-slate-900">
-        Docs topic
+        {label}
       </label>
       <select
         id="docs-topic"
@@ -65,7 +83,7 @@ export function DocsTopicSelector({ topics }: { topics: DocsTopic[] }) {
         className="mt-2 h-11 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900"
         onChange={(event) => {
           const slug = event.target.value
-          const href = slug ? `/docs/${slug}` : "/docs"
+          const href = slug ? `${base}/${slug}` : base
           trackEvent("docs_topic_opened", {
             topic: slug || "index",
             destination: href,
@@ -73,7 +91,7 @@ export function DocsTopicSelector({ topics }: { topics: DocsTopic[] }) {
           router.push(href)
         }}
       >
-        <option value="">Docs overview</option>
+        <option value="">{overviewLabel}</option>
         {topics.map((topic) => (
           <option key={topic.slug} value={topic.slug}>
             {topic.title}

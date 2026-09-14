@@ -1,67 +1,65 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { notFound } from "next/navigation"
-import { ArrowLeft, ArrowRight, Lightbulb } from "lucide-react"
-import { DocsSidebar, DocsTopicSelector } from "@/components/marketing/DocsNav"
-import { PrimaryCTA } from "@/components/marketing/MarketingActions"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { ArrowLeft, ArrowRight, Lightbulb } from "lucide-react";
+import { DocsSidebar, DocsTopicSelector } from "@/components/marketing/DocsNav";
+import { PrimaryCTA } from "@/components/marketing/MarketingActions";
 import {
   Breadcrumbs,
   JsonLd,
   PageShell,
   breadcrumbJsonLd,
-} from "@/components/marketing/MarketingPrimitives"
-import { docsTopicUrl, docsTopics, getDocsTopic, siteUrl, socialOpenGraphImage } from "@/lib/marketing-content"
-import { getDocsTopicZh } from "@/lib/marketing-content-zh"
+} from "@/components/marketing/MarketingPrimitives";
+import { docsTopicsZh, getDocsTopicZh } from "@/lib/marketing-content-zh";
+import { siteUrl, socialOpenGraphImage } from "@/lib/marketing-content";
 
-export const dynamicParams = false
+export const dynamicParams = false;
 
 type Props = {
-  params: Promise<{ slug: string }>
-}
+  params: Promise<{ slug: string }>;
+};
 
 export function generateStaticParams() {
-  return docsTopics.map((topic) => ({ slug: topic.slug }))
+  return docsTopicsZh.map((topic) => ({ slug: topic.slug }));
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params
-  const topic = getDocsTopic(slug)
-  if (!topic) return {}
+  const { slug } = await params;
+  const topic = getDocsTopicZh(slug);
+  if (!topic) return {};
 
-  const url = docsTopicUrl(topic.slug)
-  const zhUrl = `${siteUrl}/zh/docs/${topic.slug}`
-  const hasZhTranslation = Boolean(getDocsTopicZh(topic.slug))
-
+  const url = `${siteUrl}/zh/docs/${topic.slug}`;
+  const enUrl = `${siteUrl}/docs/${topic.slug}`;
   return {
-    title: `${topic.title} | Product Docs`,
+    title: `${topic.title} | 产品文档`,
     description: topic.summary,
     alternates: {
       canonical: url,
-      languages: hasZhTranslation ? { en: url, "zh-CN": zhUrl } : { en: url },
+      languages: { en: enUrl, "zh-CN": url },
     },
     openGraph: {
-      title: `${topic.title} | Product Docs`,
+      title: `${topic.title} | 产品文档`,
       description: topic.summary,
-      url: docsTopicUrl(topic.slug),
+      url,
       type: "article",
       images: [socialOpenGraphImage],
     },
-  }
+  };
 }
 
-export default async function DocsTopicPage({ params }: Props) {
-  const { slug } = await params
-  const topic = getDocsTopic(slug)
-  if (!topic) notFound()
+export default async function ChineseDocsTopicPage({ params }: Props) {
+  const { slug } = await params;
+  const topic = getDocsTopicZh(slug);
+  if (!topic) notFound();
 
-  const index = docsTopics.findIndex((item) => item.slug === topic.slug)
-  const previous = docsTopics[index - 1]
-  const next = docsTopics[index + 1]
+  const index = docsTopicsZh.findIndex((item) => item.slug === topic.slug);
+  const previous = docsTopicsZh[index - 1];
+  const next = docsTopicsZh[index + 1];
   const breadcrumbItems = [
-    { label: "Home", href: siteUrl },
-    { label: "Docs", href: `${siteUrl}/docs` },
-    { label: topic.title, href: docsTopicUrl(topic.slug) },
-  ]
+    { label: "首页", href: siteUrl },
+    { label: "使用文档", href: `${siteUrl}/zh/docs` },
+    { label: topic.title, href: `${siteUrl}/zh/docs/${topic.slug}` },
+  ];
 
   return (
     <PageShell>
@@ -80,11 +78,15 @@ export default async function DocsTopicPage({ params }: Props) {
 
       <section className="py-14 sm:py-16 lg:py-20">
         <div className="mx-auto grid max-w-6xl gap-8 px-4 sm:px-6 lg:grid-cols-[260px_1fr]">
-          <DocsSidebar topics={docsTopics} />
+          <DocsSidebar topics={docsTopicsZh} label="使用文档" />
           <article className="min-w-0">
-            <DocsTopicSelector topics={docsTopics} />
+            <DocsTopicSelector
+              topics={docsTopicsZh}
+              label="文档主题"
+              overviewLabel="文档总览"
+            />
             <div className="mt-8 lg:mt-0">
-              <h2 className="text-xl font-semibold text-slate-950">Steps</h2>
+              <h2 className="text-xl font-semibold text-slate-950">步骤</h2>
               <ol className="mt-5 space-y-4">
                 {topic.steps.map((step, stepIndex) => (
                   <li key={step} className="grid gap-3 sm:grid-cols-[44px_1fr]">
@@ -101,7 +103,7 @@ export default async function DocsTopicPage({ params }: Props) {
                   <Lightbulb className="mt-0.5 h-5 w-5 shrink-0 text-indigo-700" />
                   <div>
                     <h2 className="text-base font-semibold text-indigo-950">
-                      Note
+                      说明
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-indigo-900">
                       {topic.callout}
@@ -113,12 +115,12 @@ export default async function DocsTopicPage({ params }: Props) {
               <div className="mt-10 grid gap-4 sm:grid-cols-2">
                 {previous ? (
                   <Link
-                    href={`/docs/${previous.slug}`}
+                    href={`/zh/docs/${previous.slug}`}
                     className="rounded-lg border border-slate-200 p-5 transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
                   >
                     <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
                       <ArrowLeft className="h-3.5 w-3.5" />
-                      Previous
+                      上一篇
                     </span>
                     <p className="mt-2 font-semibold text-slate-950">
                       {previous.title}
@@ -129,11 +131,11 @@ export default async function DocsTopicPage({ params }: Props) {
                 )}
                 {next ? (
                   <Link
-                    href={`/docs/${next.slug}`}
+                    href={`/zh/docs/${next.slug}`}
                     className="rounded-lg border border-slate-200 p-5 text-right transition-colors hover:border-indigo-200 hover:bg-indigo-50/30"
                   >
                     <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-                      Next
+                      下一篇
                       <ArrowRight className="h-3.5 w-3.5" />
                     </span>
                     <p className="mt-2 font-semibold text-slate-950">
@@ -145,20 +147,19 @@ export default async function DocsTopicPage({ params }: Props) {
 
               <div className="mt-10 rounded-lg border border-slate-200 bg-slate-50 p-5">
                 <h2 className="text-lg font-semibold text-slate-950">
-                  Still need help?
+                  仍需要帮助？
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Send the context of the report, export, sharing, or billing
-                  question and we will help you choose the safest next step.
+                  发送报告、导出、分享或计费问题的背景，我们会帮助你选择最安全的下一步。
                 </p>
                 <div className="mt-5">
                   <PrimaryCTA
-                    href="/contact"
+                    href="/zh/contact"
                     page="docs"
-                    location={`topic_${topic.slug}_help`}
+                    location={`zh_topic_${topic.slug}_help`}
                     variant="secondary"
                   >
-                    Contact support
+                    联系支持
                   </PrimaryCTA>
                 </div>
               </div>
@@ -167,5 +168,5 @@ export default async function DocsTopicPage({ params }: Props) {
         </div>
       </section>
     </PageShell>
-  )
+  );
 }

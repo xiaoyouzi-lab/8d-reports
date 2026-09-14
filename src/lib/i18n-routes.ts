@@ -10,6 +10,7 @@ export const ZH_ROUTE_MAP: Record<string, string> = {
   "/resources": "/zh/resources",
   "/learn": "/zh/learn",
   "/help": "/zh/help",
+  "/docs": "/zh/docs",
   "/pricing": "/zh/pricing",
   "/sample-report": "/zh/sample-report",
   "/ai-8d-report-check": "/zh/ai-8d-report-check",
@@ -27,15 +28,15 @@ export const ZH_PATHS: string[] = Object.values(ZH_ROUTE_MAP);
 export const EN_CORE_PATHS: string[] = Object.keys(ZH_ROUTE_MAP);
 
 // Dynamic zh routes cannot live in ZH_ROUTE_MAP (one entry maps one exact
-// English URL to one exact zh URL). The /resources/*, /learn/*, and /help/*
-// collections are registered here instead: an English path maps to its zh
+// English URL to one exact zh URL). The /resources/*, /learn/*, /help/*, and
+// /docs/* collections are registered here instead: an English path maps to its zh
 // counterpart only when that slug has a translation, so the switcher never
 // navigates to a missing page.
 //
 // These lists are kept dependency-free on purpose (i18n-routes is bundled into
-// client components). scripts/i18n-resources.test.ts and
-// scripts/i18n-learn-help.test.ts assert they match the translated content and
-// the English source of truth.
+// client components). scripts/i18n-resources.test.ts,
+// scripts/i18n-learn-help.test.ts, and scripts/i18n-docs.test.ts assert they
+// match the translated content and the English source of truth.
 export const ZH_RESOURCE_SLUGS = [
   "how-to-write-8d-report-customer-complaint",
   "supplier-corrective-action-request-template",
@@ -58,6 +59,19 @@ export const ZH_LEARN_SLUGS = [
   "how-supplier-quality-teams-handle-customer-complaints-faster",
   "how-team-review-approval-locking-and-revision-history-work",
   "how-to-export-professional-8d-reports-in-pdf-word-and-excel",
+] as const;
+
+export const ZH_DOCS_SLUGS = [
+  "getting-started",
+  "create-report",
+  "edit-d0-d8",
+  "attachments",
+  "export-and-zip",
+  "sharing",
+  "team-workflow",
+  "plans-and-billing",
+  "security-and-data",
+  "ai-quality-check",
 ] as const;
 
 export const ZH_HELP_SLUGS = [
@@ -104,6 +118,11 @@ export const ZH_DYNAMIC_COLLECTIONS: readonly ZhDynamicCollection[] = [
     enPrefix: "/help",
     zhPrefix: "/zh/help",
     slugs: ZH_HELP_SLUGS,
+  },
+  {
+    enPrefix: "/docs",
+    zhPrefix: "/zh/docs",
+    slugs: ZH_DOCS_SLUGS,
   },
 ];
 

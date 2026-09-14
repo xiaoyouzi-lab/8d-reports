@@ -13,6 +13,7 @@ import {
   getLearnArticles,
 } from "@/lib/content-library"
 import { ZH_ROUTE_MAP } from "@/lib/i18n-routes"
+import { docsTopicZhSlugs, docsTopicsZh } from "@/lib/marketing-content-zh"
 import { INDEXABLE_STATIC_PATHS, SITE_URL } from "@/lib/seo-index-hygiene"
 
 type SitemapAlternates = MetadataRoute.Sitemap[number]["alternates"]
@@ -54,14 +55,27 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   }
 
+  // /docs/<slug> and /zh/docs/<slug> are translated pairs, but the dynamic
+  // docs routes cannot live in ZH_ROUTE_MAP. Match them explicitly so the
+  // English entries carry the same alternates as the Chinese ones.
+  const translatedDocsSlugs = new Set<string>(docsTopicZhSlugs)
+
   const staticEntries = INDEXABLE_STATIC_PATHS
     .map((path) => {
       const zhPath = ZH_ROUTE_MAP[path]
+      const docsSlug = path.startsWith("/docs/")
+        ? path.slice("/docs/".length)
+        : undefined
+      const alternates = zhPath
+        ? languageAlternates(path, zhPath)
+        : docsSlug && translatedDocsSlugs.has(docsSlug)
+          ? languageAlternates(path, `/zh/docs/${docsSlug}`)
+          : undefined
       return entry(
         path,
         path === "/" ? "weekly" : "monthly",
         path === "/" ? 1 : 0.8,
-        zhPath ? languageAlternates(path, zhPath) : undefined,
+        alternates,
       )
     })
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
@@ -140,6 +154,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     })
     .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
 
+  const docsZhEntries = docsTopicsZh
+    .map((topic) =>
+      entry(
+        `/zh/docs/${topic.slug}`,
+        "monthly",
+        0.8,
+        languageAlternates(`/docs/${topic.slug}`, `/zh/docs/${topic.slug}`),
+      ),
+    )
+    .filter((item): item is MetadataRoute.Sitemap[number] => Boolean(item))
+
   const learnZhEntries = getLearnArticles("zh")
     .map((page) =>
       entry(
@@ -162,5 +187,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...helpZhEntries,
     ...learnEntries,
     ...learnZhEntries,
+    ...docsZhEntries,
   ]
 }
