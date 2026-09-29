@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Sparkles, MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ChatDialog } from "./ChatDialog"
@@ -12,11 +13,12 @@ interface QualityAgentFabProps {
 }
 
 export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
+  const t = useTranslations("qualityAgent")
   const [open, setOpen] = useState(false)
   const [available, setAvailable] = useState<boolean | null>(null)
   const pathname = usePathname()
   const inReportEditor = pathname?.startsWith("/reports/")
-  const label = locale === "zh-CN" ? "质量专家顾问（Beta）" : "Quality Expert Chat (Beta)"
+  const label = t("fabLabel")
 
   useEffect(() => {
     fetch("/api/quality-agent/chat")
@@ -47,7 +49,7 @@ export function QualityAgentFab({ locale = "en" }: QualityAgentFabProps) {
           <>
             <MessageCircle className="size-4" />
             <span className="hidden sm:inline text-sm font-medium ml-1">
-              {locale === "zh-CN" ? "关闭" : "Close"}
+              {t("close")}
             </span>
           </>
         ) : (

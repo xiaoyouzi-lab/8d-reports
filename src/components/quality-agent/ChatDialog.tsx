@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { X, Send, Sparkles, Loader2 } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { ChatMessage } from "./ChatMessage"
 
@@ -19,15 +20,6 @@ interface LocalMessage {
   timestamp: number
 }
 
-const NOTICE_ZH = "\n\n---\n\n💡 此聊天信息不会保存到服务器。刷新页面后对话记录将清除。"
-const NOTICE_EN = "\n\n---\n\n💡 Chat history is not saved. Messages will be cleared on page refresh."
-
-const WELCOME_MESSAGES: Record<string, string> = {
-  "zh-CN":
-    "你好！我是**质量专家顾问**。\n\n我精通全球质量管理体系（ISO 9001、IATF 16949、AS9100、ISO 13485等）、方法论（六西格玛、精益、TQM、Kaizen、8D）、质量工具（FMEA、SPC、MSA、APQP、PPAP等）。\n\n无论你是世界500强、中型企业还是小作坊，我都能根据你的实际情况提供切实可行的质量建议。\n\n请告诉我你的企业情况（规模、行业、国家）以及你关心的质量问题，我会为你提供针对性的指导。" + NOTICE_ZH,
-  en: "Hello! I'm your **Quality Expert Consultant**.\n\nI specialize in global quality management systems (ISO 9001, IATF 16949, AS9100, ISO 13485, etc.), methodologies (Six Sigma, Lean, TQM, Kaizen, 8D), and quality tools (FMEA, SPC, MSA, APQP, PPAP, etc.).\n\nWhether you're a Fortune 500 company, a mid-sized business, or a small workshop, I can provide practical quality advice tailored to your situation.\n\nTell me about your company (size, industry, country) and the quality challenges you're facing, and I'll give you targeted guidance." + NOTICE_EN,
-}
-
 function resolveLocale(propLocale: string): string {
   if (typeof window !== "undefined") {
     const match = document.cookie.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/)
@@ -41,6 +33,7 @@ function resolveLocale(propLocale: string): string {
 }
 
 export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = false }: ChatDialogProps) {
+  const t = useTranslations("qualityAgent")
   const [messages, setMessages] = useState<LocalMessage[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -48,24 +41,22 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
   const inputRef = useRef<HTMLTextAreaElement>(null)
 
   const resolvedLocale = resolveLocale(locale)
-  const isZh = resolvedLocale === "zh-CN"
 
   useEffect(() => {
     if (open && messages.length === 0) {
       const timer = setTimeout(() => {
-        const welcomeText = WELCOME_MESSAGES[resolvedLocale] || WELCOME_MESSAGES.en
         setMessages([
           {
             id: "welcome",
             role: "assistant",
-            content: welcomeText,
+            content: t("welcome") + t("notice"),
             timestamp: Date.now(),
           },
         ])
       }, 0)
       return () => clearTimeout(timer)
     }
-  }, [open, resolvedLocale, messages.length])
+  }, [open, resolvedLocale, messages.length, t])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -132,9 +123,7 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
         {
           id: `error-${Date.now()}`,
           role: "assistant",
-          content: isZh
-            ? "抱歉，我暂时无法处理你的问题。请稍后再试。"
-            : "Sorry, I'm unable to process your request right now. Please try again later.",
+          content: t("errorMessage"),
           timestamp: Date.now(),
         },
       ])
@@ -161,7 +150,7 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
           </div>
           <div>
             <span className="text-sm font-semibold text-white">
-              {isZh ? "质量专家顾问（Beta）" : "Quality Expert Chat (Beta)"}
+              {t("fabLabel")}
             </span>
           </div>
         </div>
@@ -192,7 +181,7 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
             <div className="flex items-center gap-1.5 rounded-2xl bg-gray-100 px-4 py-2.5">
               <Loader2 className="size-4 animate-spin text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
-                {isZh ? "思考中..." : "Thinking..."}
+                {t("thinking")}
               </span>
             </div>
           </div>
@@ -207,7 +196,7 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={isZh ? "输入质量体系、8D、FMEA、SPC 等问题..." : "Ask about quality systems, 8D, FMEA, SPC..."}
+            placeholder={t("chatPlaceholder")}
             rows={1}
             className="flex-1 resize-none rounded-xl border bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-indigo-300 focus:ring-1 focus:ring-indigo-300 placeholder:text-muted-foreground"
           />
@@ -221,9 +210,7 @@ export function ChatDialog({ open, onClose, locale = "en", avoidBottomBar = fals
           </Button>
         </div>
         <p className="mt-1.5 text-center text-[10px] text-muted-foreground/60">
-          {isZh
-            ? "聊天记录不会保存 · 刷新页面后清除"
-            : "Chat is not saved · Cleared on refresh"}
+          {t("chatFooter")}
         </p>
       </div>
     </div>

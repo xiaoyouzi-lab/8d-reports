@@ -39,6 +39,20 @@ function read(path: string) {
   return readFileSync(resolve(root, path), "utf8");
 }
 
+// Batch 6 moved the app-interior user-facing copy into the English catalog.
+// Assertions below that pin product copy for a localized component read the
+// component plus only the relevant English catalog namespace, so the required
+// copy is still enforced (now from src/messages/en.json) while structural,
+// security, and "does not contain" assertions keep reading the component source
+// itself rather than the whole catalog.
+const englishCatalog = JSON.parse(read("src/messages/en.json")) as Record<string, unknown>;
+function readWithCatalog(relative: string, namespaces: string[], ...extra: string[]) {
+  const catalogText = namespaces
+    .map((namespace) => JSON.stringify(englishCatalog[namespace], null, 2))
+    .join("\n");
+  return [read(relative), catalogText, ...extra].join("\n");
+}
+
 const packageJson = JSON.parse(read("package.json")) as { scripts?: Record<string, string> };
 
 function access(role: TeamRole, workflowStatus = "draft", lockedAt: Date | null = null) {
@@ -255,12 +269,12 @@ const activityRoute = read("src/app/api/reports/[id]/activity/route.ts");
 assert.match(activityRoute, /report_exported/, "PDF/Word/ZIP exports must be loggable");
 assert.match(activityRoute, /canExportDraft/, "Viewer export logging must be blocked");
 
-const reportEditorPage = read("src/app/(app)/reports/[id]/page.tsx");
+const reportEditorPage = readWithCatalog("src/app/(app)/reports/[id]/page.tsx", ["editor"]);
 assert.match(reportEditorPage, /canEdit: false/, "Report editor should default to safe read-only permissions until the API returns real access");
 assert.match(reportEditorPage, /canShare: false/, "Report editor should default to hidden share controls until the API returns real access");
 assert.match(reportEditorPage, /canExportDraft: false/, "Report editor should default to hidden export controls until the API returns real access");
 assert.match(reportEditorPage, /res\.status === 401/, "Report editor should handle unauthorized report loads explicitly");
-assert.match(reportEditorPage, /setLoadError\("Report not found, or you do not have access to it\."\)/, "Report editor should not render a default editable report when access is missing");
+assert.match(reportEditorPage, /setLoadError\(te\("loadAccessError"\)\)/, "Report editor should not render a default editable report when access is missing");
 assert.match(reportEditorPage, /Report unavailable/, "Report editor should show a safe unavailable state when the report cannot be loaded");
 assert.match(reportEditorPage, /reportPermissions\.canEdit && \(\s*<AiReportTools/, "Report editor should hide AI draft/review tools for Viewers and locked reports");
 assert.match(reportEditorPage, /reportPermissions\.canEdit && \(\s*<Button[\s\S]*Logo/, "Report editor should hide logo upload for Viewers and locked reports");
@@ -279,7 +293,7 @@ assert.match(reportEditorPage, /if \(reportPermissions\.canEdit\) \{\s*const sav
 assert.match(reportEditorPage, /if \(saved === null\) return/, "Report editor should abort the step transition when the save barrier fails");
 assert.doesNotMatch(reportEditorPage, /pointer-events-none opacity-75/, "Read-only reports should still allow attachment preview and navigation");
 
-const stepForm = read("src/components/report/StepForm.tsx");
+const stepForm = readWithCatalog("src/components/report/StepForm.tsx", ["editor"]);
 assert.match(stepForm, /canEdit\?: boolean/, "Step form should accept explicit edit permission");
 assert.match(stepForm, /readOnly=\{!canEdit\}/, "Step text fields should become read-only for Viewers");
 assert.match(stepForm, /disabled=\{!canEdit\}/, "Step select fields should be disabled for Viewers");
@@ -292,16 +306,16 @@ assert.match(stepForm, /Check prevention and system-change ideas from similar is
 assert.match(stepForm, /Check lessons learned from similar completed reports\./, "D8 should expose the required lessons-learned reuse hint");
 assert.doesNotMatch(stepForm, /lessons learned.*D7|D7.*lessons learned/i, "Step form should not imply lessons learned is a D7 field");
 
-const attachmentArea = read("src/components/report/AttachmentArea.tsx");
+const attachmentArea = readWithCatalog("src/components/report/AttachmentArea.tsx", ["editor"]);
 assert.match(attachmentArea, /canEdit = true/, "Attachment area should default to editable for existing callers");
 assert.match(attachmentArea, /Attachments are view-only for your role/, "Attachment area should explain read-only evidence access");
 assert.match(attachmentArea, /\{canEdit && \(\s*<button[\s\S]*handleDelete/, "Attachment delete controls should be hidden for Viewers");
 
-const signatureArea = read("src/components/report/SignatureApprovalArea.tsx");
+const signatureArea = readWithCatalog("src/components/report/SignatureApprovalArea.tsx", ["editor"]);
 assert.match(signatureArea, /canEdit = true/, "Signature area should default to editable for existing callers");
 assert.match(signatureArea, /Signature changes are not available for your role/, "Signature area should explain read-only approval access");
 
-const workflowPanel = read("src/components/report/ReportWorkflowPanel.tsx");
+const workflowPanel = readWithCatalog("src/components/report/ReportWorkflowPanel.tsx", ["editor"]);
 assert.match(workflowPanel, /oldValuePreview/, "Activity panel must show old value previews for auditability");
 assert.match(workflowPanel, /newValuePreview/, "Activity panel must show new value previews for auditability");
 assert.match(workflowPanel, /metadata\?\.filename/, "Activity panel must show attachment filenames from metadata");
@@ -609,7 +623,7 @@ assert.match(templateRequestRoute, /isValidServiceContactEmail/, "Template Setup
 assert.match(templateRequestRoute, /isSupportedServiceRequestFile/, "Template Setup API must validate uploaded file type server-side");
 assert.match(templateRequestRoute, /normalizeServiceQuoteAmount/, "Service admin API must validate quote amount server-side");
 
-const dashboardPage = read("src/app/(app)/dashboard/page.tsx");
+const dashboardPage = readWithCatalog("src/app/(app)/dashboard/page.tsx", ["dashboard"]);
 assert.match(dashboardPage, /Workflow/, "Dashboard report list should show workflow status, not only completion status");
 assert.match(dashboardPage, /Rev\./, "Dashboard report list should show revision number");
 assert.match(dashboardPage, /What to do next/, "Dashboard should show a first-screen feature discovery prompt");
@@ -630,14 +644,14 @@ assert.doesNotMatch(dashboardPage, /<CheckCircle2[\s\S]{0,260}Complete and close
 assert.match(dashboardPage, /removeTeamMember/, "Dashboard Team workspace should let Owners remove members");
 assert.match(dashboardPage, /method: "DELETE"/, "Dashboard member removal should call the Team DELETE API");
 assert.match(dashboardPage, /Revoke invitation for/, "Dashboard member removal should expose an accessible revoke label for pending invites");
-assert.match(dashboardPage, /teamMemberLabel\(member\)/, "Dashboard member rows should use the shared member label");
+assert.match(dashboardPage, /memberLabel\(member\)/, "Dashboard member rows should use the shared member label");
 assert.match(dashboardPage, /member\.status === "pending"/, "Dashboard Team workspace should distinguish pending invites from accepted members");
 assert.match(dashboardPage, /Team activity/, "Dashboard Team workspace should show recent Team activity");
 assert.match(dashboardPage, /activity\.message/, "Dashboard Team activity should render human-readable audit messages");
 
-const appLayout = read("src/app/(app)/layout.tsx");
+const appLayout = readWithCatalog("src/app/(app)/layout.tsx", ["nav"], read("src/components/app/AppShell.tsx"));
 assert.match(appLayout, /Pro · Personal/, "App header should keep Pro positioned as personal use");
-assert.match(appLayout, /label: "Dashboard"/, "App header primary navigation should label the workspace home as Dashboard");
+assert.match(appLayout, /label: t\("dashboard"\)/, "App header primary navigation should label the workspace home as Dashboard");
 assert.match(appLayout, /Knowledge Base/, "App header menu should expose Knowledge Base");
 assert.match(appLayout, /Primary app navigation/, "App header should expose primary navigation outside the avatar menu");
 assert.match(appLayout, /href="\/dashboard"[\s\S]*navItem: "app_logo"/, "Authenticated app logo should route users back to the Dashboard");
@@ -649,7 +663,7 @@ assert.match(appLayout, /navItem: item\.navItem/, "App navigation analytics shou
 assert.match(appLayout, /destination: item\.href/, "App navigation analytics should use destination route metadata");
 assert.match(appLayout, /location,\s*plan/, "App navigation analytics should include safe location and plan metadata");
 
-const knowledgePage = read("src/components/knowledge/KnowledgeBaseClient.tsx");
+const knowledgePage = readWithCatalog("src/components/knowledge/KnowledgeBaseClient.tsx", ["knowledge"]);
 assert.match(knowledgePage, /\/api\/knowledge\/search/, "Knowledge page should use the dedicated Knowledge API");
 assert.match(knowledgePage, /method: "POST"/, "Knowledge page should call the Knowledge API with POST");
 assert.match(knowledgePage, /query: inputQuery\.trim\(\)/, "Knowledge page should send query in the POST body, not the URL");
@@ -682,7 +696,7 @@ assert.doesNotMatch(
   "Knowledge analytics metadata must not include raw query or report content fields",
 );
 
-const knowledgeReusePanel = read("src/components/knowledge/KnowledgeReusePanel.tsx");
+const knowledgeReusePanel = readWithCatalog("src/components/knowledge/KnowledgeReusePanel.tsx", ["knowledge"]);
 assert.match(knowledgeReusePanel, /export function KnowledgeReusePanel/, "Knowledge Reuse panel should exist as a dedicated component");
 assert.match(knowledgeReusePanel, /\/api\/knowledge\/search/, "Knowledge Reuse panel should reuse the existing Knowledge search API");
 assert.match(knowledgeReusePanel, /method: "POST"/, "Knowledge Reuse panel should call Knowledge search with POST");
@@ -710,7 +724,7 @@ assert.doesNotMatch(knowledgeReusePanel, /trackEvent\([\s\S]{0,280}(query:|probl
 assert.doesNotMatch(knowledgeReusePanel, /AiReportTools|ai\/|ExportMenu|Checkout|pricing|drizzle|db\/schema|CREATE TABLE|ALTER TABLE/, "Knowledge Reuse panel must not couple to AI, export, payment, or database schema code");
 assert.doesNotMatch(knowledgeReusePanel, /reportShares|accessToken|share token/i, "Knowledge Reuse panel must not rely on public share tokens");
 
-const knowledgeReadinessPanel = read("src/components/report/KnowledgeReadinessPanel.tsx");
+const knowledgeReadinessPanel = readWithCatalog("src/components/report/KnowledgeReadinessPanel.tsx", ["editor"]);
 const reportStepsSource = read("src/lib/report-steps.ts");
 assert.match(knowledgeReadinessPanel, /export function KnowledgeReadinessPanel/, "Knowledge readiness should exist as a reusable report component");
 assert.match(knowledgeReadinessPanel, /Knowledge readiness/, "Knowledge readiness panel should use the required title");
@@ -1418,8 +1432,8 @@ const aiPayload = read("src/lib/ai/report-payload.ts");
 assert.match(aiPayload, /knowledgeContext: QualityCheckKnowledgeContextItem\[\] = \[\]/, "AI report payload should accept optional Knowledge Context");
 assert.match(aiPayload, /knowledgeContextStatus/, "AI report payload should tell the model when no context exists");
 
-const aiReportTools = read("src/components/report/AiReportTools.tsx");
-assert.match(aiReportTools, /Knowledge context used: \$\{context\.contextCount\} similar reports/, "AI UI should show Knowledge Context count");
+const aiReportTools = readWithCatalog("src/components/report/AiReportTools.tsx", ["ai"]);
+assert.match(aiReportTools, /t\("knowledgeContextUsed", \{ count: context\.contextCount \}\)/, "AI UI should show Knowledge Context count");
 assert.match(aiReportTools, /No reusable knowledge context found yet\./, "AI UI should show Knowledge Context empty state");
 assert.match(aiReportTools, /Knowledge-based observations/, "AI UI should render Knowledge-based observations");
 assert.match(aiReportTools, /ai_quality_check_knowledge_context_used/, "AI UI should track used-context analytics");
@@ -1504,7 +1518,7 @@ const serviceRequestsAdmin = read("src/components/admin/ServiceRequestsAdmin.tsx
 assert.match(serviceRequestsAdmin, /fileSize[\s\S]*mimeType[\s\S]*status/, "Service request admin should show file metadata");
 assert.doesNotMatch(serviceRequestsAdmin, /href=\{file\.url\}|url\?: string/, "Service request admin should not expose private bucket URLs");
 
-const adminMetricsPage = read("src/app/(app)/admin/metrics/page.tsx");
+const adminMetricsPage = readWithCatalog("src/app/(app)/admin/metrics/page.tsx", ["admin"]);
 assert.match(adminMetricsPage, /isServiceAdmin/, "Revenue metrics page should be admin-only");
 assert.match(adminMetricsPage, /analyticsEvents/, "Revenue metrics page should read analytics events");
 assert.match(adminMetricsPage, /customTemplateRequests/, "Revenue metrics page should count saved service leads");

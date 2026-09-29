@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import Link from "next/link"
 import { ArrowUpRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -22,6 +23,7 @@ interface QuotaIndicatorProps {
 }
 
 export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
+  const t = useTranslations("quota")
   const [quota, setQuota] = useState<QuotaData>({ total: DEFAULT_QUOTA_TOTAL, used: 0 })
   const [loading, setLoading] = useState(true)
 
@@ -52,12 +54,10 @@ export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4">
         <p className="text-sm font-medium text-emerald-900">
-          {isTeam ? "Team Plan — 5 seats" : "Pro Plan — Unlimited personal reports"}
+          {isTeam ? t("teamPlanTitle") : t("proPlan")}
         </p>
         <p className="mt-0.5 text-xs text-emerald-700/80">
-          {isTeam
-            ? "Unlimited reports, team workspace, and premium export features."
-            : "You have unlimited personal reports and premium individual features."}
+          {isTeam ? t("teamPlanDesc") : t("proDesc")}
         </p>
         <div className="mt-3">
           <ManageSubscriptionButton />
@@ -69,7 +69,7 @@ export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
   if (loading) {
     return (
       <div className="rounded-xl border border-indigo-200 bg-indigo-50/50 p-4">
-        <p className="text-sm font-medium text-indigo-900">Free Quota</p>
+        <p className="text-sm font-medium text-indigo-900">{t("freeQuota")}</p>
         <div className="mt-2 h-2 overflow-hidden rounded-full bg-indigo-100">
           <div className="h-full w-0 rounded-full bg-indigo-500" />
         </div>
@@ -94,12 +94,12 @@ export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
           )}
         >
           {isExhausted
-            ? "Quota exhausted"
-            : `${quota.used} of ${quota.total} free reports used`}
+            ? t("exhausted")
+            : t("reportsUsed", { used: quota.used, total: quota.total })}
         </p>
         {!isExhausted && (
           <span className="font-mono text-xs font-semibold tabular-nums text-indigo-600">
-            {remaining} left
+            {t("remaining", { remaining })}
           </span>
         )}
       </div>
@@ -121,14 +121,14 @@ export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
 
       {!isExhausted && (
         <p className="mt-1.5 text-xs text-indigo-700/80">
-          Upgrade to Pro for unlimited personal reports and no watermarks, or buy a single report export when you only need one delivery.
+          {t("upgradeMessageSingle")}
         </p>
       )}
 
       {isExhausted && (
         <div className="mt-3">
           <p className="text-xs text-red-700/80">
-            You have used all 3 free reports. Upgrade to Pro or Team to create more reports.
+            {t("exhaustedDescFree")}
           </p>
           <Link
             href="/pricing"
@@ -141,7 +141,7 @@ export function QuotaIndicator({ isPro, plan = "free" }: QuotaIndicatorProps) {
               className="mt-2 w-full bg-indigo-600 text-white hover:bg-indigo-700"
               size="sm"
             >
-              Upgrade to Pro
+              {t("upgradeBtn")}
               <ArrowUpRight className="size-3.5" />
             </Button>
           </Link>

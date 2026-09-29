@@ -79,7 +79,7 @@ export default function ReportEditorPage({
     ...DEFAULT_REPORT_DATA,
   })
   const [activeStepIndex, setActiveStepIndex] = useState(0)
-  const [reportTitle, setReportTitle] = useState("Untitled Report")
+  const [reportTitle, setReportTitle] = useState(te("untitled"))
   const [logoUrl, setLogoUrl] = useState<string | null>(
     ((session?.user as Record<string, unknown>)?.logoUrl as string | undefined) ?? null,
   )
@@ -121,11 +121,11 @@ export default function ReportEditorPage({
           return
         }
         if (res.status === 404) {
-          setLoadError("Report not found, or you do not have access to it.")
+          setLoadError(te("loadAccessError"))
           return
         }
         if (!res.ok) {
-          setLoadError("We could not load this report. Please try again.")
+          setLoadError(te("loadFailed"))
           return
         }
         const row = await res.json()
@@ -144,8 +144,8 @@ export default function ReportEditorPage({
         }
         setWorkflowStatus(row.workflowStatus || "draft")
         setRevision(Number(row.revision) || 0)
-        setReportTitle(row.title || "Untitled Report")
-        setLastSavedTitle(row.title || "Untitled Report")
+        setReportTitle(row.title || te("untitled"))
+        setLastSavedTitle(row.title || te("untitled"))
         if (row.data && typeof row.data === "object") {
           const rowData = row.data as Partial<ReportData>
           const loadedData: ReportData = {
@@ -161,7 +161,7 @@ export default function ReportEditorPage({
           setLastSavedData({ ...DEFAULT_REPORT_DATA })
         }
       } catch {
-        setLoadError("We could not load this report. Please check your connection and try again.")
+        setLoadError(te("loadConnectionFailed"))
       } finally {
         setLoading(false)
       }
@@ -180,8 +180,8 @@ export default function ReportEditorPage({
 
   const currentStep = STEPS[activeStepIndex]
   const readOnlyReason = reportPermissions.locked
-    ? "This report is locked. The owner must unlock it for revision before changes can be made."
-    : "You have view-only access to this report."
+    ? te("lockedReason")
+    : te("viewOnlyReason")
 
   const handleFieldChange = useCallback((name: string, value: string) => {
     if (!reportPermissions.canEdit) return
@@ -229,7 +229,7 @@ export default function ReportEditorPage({
       trackEvent("report_saved", { plan, completedSteps: steps.size, auto: true }, reportId)
       return reportData
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not save the report. Please retry before continuing.")
+      toast.error(err instanceof Error ? err.message : te("saveRetry"))
       return null
     } finally {
       setSaving(false)
@@ -238,7 +238,7 @@ export default function ReportEditorPage({
 
   const handleSave = async () => {
     if (!reportPermissions.canEdit) {
-      toast.error(reportPermissions.locked ? "This report is locked" : "You do not have permission to edit this report")
+      toast.error(reportPermissions.locked ? te("locked") : te("noPermEdit"))
       return
     }
     const currentCompletedSteps = new Set(getCompletedStepIds(reportData))
@@ -290,10 +290,10 @@ export default function ReportEditorPage({
   const handleLogoClick = () => {
     if (!entitlements.companyLogo && !reportPermissions.canUseLogo) {
       trackEvent("logo_upload_gate_clicked", { plan: "free" }, reportId)
-      toast("Company logo is a Pro or Team feature", {
-        description: "Upgrade to add your company logo to exports.",
+      toast(te("logoGate"), {
+        description: te("logoGateDesc"),
         action: {
-          label: "Upgrade",
+          label: te("upgrade"),
           onClick: () => {
             trackEvent("upgrade_clicked", { source: "logo_upload_gate", plan: "free" }, reportId)
             window.location.href = "/pricing"
@@ -313,13 +313,13 @@ export default function ReportEditorPage({
       const res = await fetch("/api/profile/logo", { method: "POST", body: form })
       if (!res.ok) {
         const err = await res.json().catch(() => null)
-        throw new Error(err?.error || "Logo upload failed")
+        throw new Error(err?.error || te("logoUploadFailed"))
       }
       const data = await res.json()
       setLogoUrl(data.logoUrl || null)
       toast.success(te("logoUploaded"))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Logo upload failed")
+      toast.error(err instanceof Error ? err.message : te("logoUploadFailed"))
     } finally {
       setUploadingLogo(false)
     }
@@ -329,8 +329,8 @@ export default function ReportEditorPage({
     const issues = getReportCompletionIssues(reportData)
     if (issues.length === 0) return true
 
-    toast.error("Complete key report fields before closing", {
-      description: issues.slice(0, 4).join("; ") + (issues.length > 4 ? `; +${issues.length - 4} more` : ""),
+    toast.error(te("completeFields"), {
+      description: issues.slice(0, 4).join("; ") + (issues.length > 4 ? "; " + te("moreIssues", { count: issues.length - 4 }) : ""),
     })
     return false
   }
@@ -349,7 +349,7 @@ export default function ReportEditorPage({
         <Card className="w-full max-w-md">
           <CardContent className="space-y-4 p-6 text-center">
             <div>
-              <h1 className="text-lg font-semibold text-foreground">Report unavailable</h1>
+              <h1 className="text-lg font-semibold text-foreground">{te("reportUnavailable")}</h1>
               <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
             </div>
             <div className="flex justify-center gap-2">
@@ -357,7 +357,7 @@ export default function ReportEditorPage({
                 href="/dashboard"
                 className="inline-flex h-9 items-center justify-center rounded-md border border-input bg-background px-3 text-sm font-medium shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground"
               >
-                Back to dashboard
+                {te("backToDashboard")}
               </Link>
             </div>
           </CardContent>
@@ -391,7 +391,7 @@ export default function ReportEditorPage({
               onChange={(e) => setReportTitle(e.target.value)}
               readOnly={!reportPermissions.canEdit}
               className="min-w-0 bg-transparent text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground"
-              placeholder="Untitled Report"
+              placeholder={te("untitled")}
             />
           </div>
 
@@ -410,11 +410,11 @@ export default function ReportEditorPage({
               type="button"
               size="sm"
               variant="outline"
-              aria-label="Reuse Knowledge"
+              aria-label={te("reuseKnowledgeBtn")}
               onClick={() => openKnowledgeReuse("editor_top")}
             >
               <BookOpen className="size-3.5" />
-              <span className="hidden lg:inline">Reuse Knowledge</span>
+              <span className="hidden lg:inline">{te("reuseKnowledgeBtn")}</span>
             </Button>
 
             {reportPermissions.canEdit && (
@@ -479,7 +479,7 @@ export default function ReportEditorPage({
                 className="hidden md:inline-flex"
               >
                 <Upload className="size-3.5" />
-                Logo
+                {te("logo")}
               </Button>
             )}
 
@@ -515,7 +515,7 @@ export default function ReportEditorPage({
               </Button>
             ) : (
               <Badge variant="outline" className="hidden border-slate-300 bg-slate-50 text-slate-600 sm:inline-flex">
-                {reportPermissions.locked ? "Locked" : "View only"}
+                {reportPermissions.locked ? te("lockedBadge") : te("viewOnlyBadge")}
               </Badge>
             )}
           </div>
@@ -587,7 +587,7 @@ export default function ReportEditorPage({
                   </Button>
                 ) : (
                   <span className="hidden text-xs text-muted-foreground sm:inline">
-                    {reportPermissions.locked ? "Locked report" : "View-only role"}
+                    {reportPermissions.locked ? te("lockedReport") : te("viewOnlyRole")}
                   </span>
                 )}
 
