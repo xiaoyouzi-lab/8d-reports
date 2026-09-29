@@ -14,6 +14,7 @@
     "test:governance": "tsx scripts/team-governance.test.ts",
     "test:title-hygiene": "tsx scripts/title-hygiene.test.ts",
     "test:billing-portal": "tsx scripts/billing-portal.test.ts",
+    "test:paid-loop": "tsx scripts/paid-loop.test.ts",
     "test:tool-only-positioning": "tsx scripts/tool-only-positioning.test.ts",
     "test:i18n-core": "tsx scripts/i18n-core.test.ts",
     "test:i18n-resources": "tsx scripts/i18n-resources.test.ts",

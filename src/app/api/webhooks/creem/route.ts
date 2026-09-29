@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { analyticsEvents, subscriptions, plans, users, reportPurchases, teamMembers, teamWorkspaces } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { getConfiguredProductId, getPlanFromName, isCheckoutType, type CheckoutType } from "@/lib/plans";
+import { verifyCreemWebhookSignature } from "@/lib/creem";
 
 export const runtime = "nodejs";
 
@@ -43,29 +44,6 @@ function isObject(value: unknown): value is JsonObject {
 
 function asString(value: unknown): string | undefined {
   return typeof value === "string" && value.trim() ? value.trim() : undefined;
-}
-
-function verifyCreemSignature(payload: string, signature: string | null) {
-  const secret = process.env.CREEM_WEBHOOK_SECRET;
-  if (!secret) return false;
-  if (!signature) return false;
-
-  const expected = createHmac("sha256", secret).update(payload).digest("hex");
-  const candidates = signature
-    .split(",")
-    .map((part) => part.trim().replace(/^sha256=/i, ""))
-    .filter(Boolean);
-
-  return candidates.some((candidate) => {
-    try {
-      const expectedBuffer = Buffer.from(expected, "hex");
-      const candidateBuffer = Buffer.from(candidate, "hex");
-      return expectedBuffer.length === candidateBuffer.length
-        && timingSafeEqual(expectedBuffer, candidateBuffer);
-    } catch {
-      return false;
-    }
-  });
 }
 
 function getMetadataUserId(event: CreemPayload, sub?: CreemPayload) {
@@ -249,7 +227,7 @@ export async function POST(req: NextRequest) {
     || req.headers.get("x-creem-signature")
     || req.headers.get("webhook-signature");
 
-  if (!verifyCreemSignature(body, signature)) {
+  if (!verifyCreemWebhookSignature(body, signature)) {
     return NextResponse.json({ error: "Invalid webhook signature" }, { status: 401 });
   }
 
