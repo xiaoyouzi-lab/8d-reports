@@ -26,6 +26,7 @@
     "test:i18n-share": "tsx scripts/i18n-share.test.ts",
     "test:i18n-app": "tsx scripts/i18n-app.test.ts",
     "test:i18n-cta": "tsx scripts/i18n-cta.test.tsx",
+    "test:i18n-report-strings": "tsx scripts/i18n-report-strings.test.tsx",
     "test:i18n-key-coverage": "tsx scripts/i18n-key-coverage.test.ts",
     "test:team-auth": "tsx scripts/team-authorization.test.ts",
     "test:p2-correctness": "tsx scripts/p2-correctness.test.ts",

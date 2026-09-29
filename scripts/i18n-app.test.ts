@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
-import { existsSync, readdirSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { localeFromPathname } from "../src/lib/i18n-routes";
+import { STEPS, type ReportField } from "../src/lib/report-steps";
 
 // i18n app interior guard (Batch 6). The (app) subtree now renders in the
 // language remembered in the NEXT_LOCALE cookie, resolved on the server, so the
@@ -129,6 +130,145 @@ assert.match(
 );
 assert.match(read("src/proxy.ts"), /"\/dashboard", "\/reports"/, "the proxy protected paths must stay URL-based");
 
+// 5. Batch 8: the remaining user-visible English in the report definition is now
+//    resolved from the catalogs at render time. src/lib/report-steps.ts stays
+//    locale-agnostic; its English strings remain only as the fallback for
+//    renderers without a catalog entry (PDF/Word/XLSX export and the share-viewer
+//    body), so no 8D terminology is duplicated or invented in the catalog.
+const FISHBONE_FIELDS = [
+  "fishboneMan",
+  "fishboneMachine",
+  "fishboneMaterial",
+  "fishboneMethod",
+  "fishboneMeasurement",
+  "fishboneEnvironment",
+] as const;
+
+const d4 = STEPS.find((step) => step.id === "D4");
+assert.ok(d4, "STEPS must contain D4 so the fishbone fields can be checked");
+
+const enEditor = en.editor;
+const zhEditor = zh.editor;
+assert.ok(enEditor && typeof enEditor === "object", "en catalog must have an editor namespace");
+assert.ok(zhEditor && typeof zhEditor === "object", "zh catalog must have an editor namespace");
+
+for (const name of FISHBONE_FIELDS) {
+  const field: ReportField | undefined = d4.fields.find((candidate) => candidate.name === name);
+  assert.ok(field, "D4 must define the fishbone field " + name);
+
+  const enLabel = enEditor[name];
+  const zhLabel = zhEditor[name];
+  assert.equal(
+    enLabel,
+    field.label,
+    "en editor." + name + " must stay byte-identical to the report-steps label",
+  );
+  assert.ok(zhLabel && zhLabel.trim().length > 0, "zh editor." + name + " must not be empty");
+  assert.notEqual(zhLabel, enLabel, "zh editor." + name + " must be translated");
+  assert.match(zhLabel, /[\u4e00-\u9fff]/, "zh editor." + name + " must render Chinese");
+
+  const enPlaceholder = enEditor[name + "Placeholder"];
+  const zhPlaceholder = zhEditor[name + "Placeholder"];
+  assert.equal(
+    enPlaceholder,
+    field.placeholder,
+    "en editor." + name + "Placeholder must stay byte-identical to the report-steps placeholder",
+  );
+  assert.ok(
+    zhPlaceholder && zhPlaceholder.trim().length > 0,
+    "zh editor." + name + "Placeholder must not be empty",
+  );
+  assert.notEqual(
+    zhPlaceholder,
+    enPlaceholder,
+    "zh editor." + name + "Placeholder must be translated",
+  );
+  assert.match(
+    zhPlaceholder,
+    /[\u4e00-\u9fff]/,
+    "zh editor." + name + "Placeholder must render Chinese",
+  );
+}
+
+// The nine D-step descriptions live next to the already-translated step names.
+// The English values must stay byte-identical to the report definition and the
+// Chinese values must reuse the established D-step terminology.
+const enStepDocs = (en.docs as unknown as { step: Record<string, Record<string, string>> }).step;
+const zhStepDocs = (zh.docs as unknown as { step: Record<string, Record<string, string>> }).step;
+assert.deepEqual(
+  Object.keys(enStepDocs).sort(),
+  Object.keys(zhStepDocs).sort(),
+  "en and zh docs.step must cover the same steps",
+);
+for (const step of STEPS) {
+  const enStep = enStepDocs[step.id];
+  const zhStep = zhStepDocs[step.id];
+  assert.ok(enStep, "en docs.step." + step.id + " must exist");
+  assert.ok(zhStep, "zh docs.step." + step.id + " must exist");
+  assert.equal(
+    enStep.name,
+    step.label,
+    "en docs.step." + step.id + ".name must stay byte-identical to the STEPS label",
+  );
+  assert.equal(
+    enStep.description,
+    step.description,
+    "en docs.step." + step.id + ".description must stay byte-identical to the STEPS description",
+  );
+  assert.ok(
+    zhStep.description && zhStep.description.trim().length > 0,
+    "zh docs.step." + step.id + ".description must not be empty",
+  );
+  assert.notEqual(
+    zhStep.description,
+    enStep.description,
+    "zh docs.step." + step.id + ".description must be translated",
+  );
+  assert.match(
+    zhStep.description,
+    /[\u4e00-\u9fff]/,
+    "zh docs.step." + step.id + ".description must render Chinese",
+  );
+}
+
+// The renderer must consume the catalog instead of the raw English literal.
+const stepForm = read("src/components/report/StepForm.tsx");
+assert.match(
+  stepForm,
+  /tStep\(`\$\{step\.id\}\.description`\)/,
+  "StepForm must render the localized docs.step.<D>.description",
+);
+assert.doesNotMatch(
+  stepForm,
+  /\{step\.description\}/,
+  "StepForm must not render the raw English step.description",
+);
+assert.match(
+  stepForm,
+  /fieldPlaceholder/,
+  "StepForm must resolve fishbone placeholders through the editor catalog",
+);
+assert.match(
+  stepForm,
+  /t\.has\(field\.name\)/,
+  "StepForm must keep preferring a catalog label for report fields",
+);
+
+// The desktop step sidebar must resolve titles from the same
+// docs.step.<D>.name keys as the editor and the share viewer; rendering the raw
+// report-steps label would leave the step titles English on zh pages.
+const stepsNav = read("src/components/report/ReportStepsNav.tsx");
+assert.equal(
+  stepsNav.includes("{step.label}"),
+  false,
+  "ReportStepsNav must not render the raw English step label",
+);
+assert.match(
+  stepsNav,
+  /useTranslations\("docs\.step"\)/,
+  "ReportStepsNav must resolve step titles from docs.step",
+);
+
 console.log(
   "i18n app checks passed: server (app) layout + client shell, " +
     APP_NAMESPACES.length +
@@ -136,5 +276,9 @@ console.log(
     checkedPairs +
     " translated zh values, " +
     NEUTRAL_APP_KEYS.size +
-    " neutral allowlist keys, proxy/admin guards unchanged, URL locale rule intact.",
+    " neutral allowlist keys, " +
+    FISHBONE_FIELDS.length * 2 +
+    " localized fishbone strings, " +
+    STEPS.length +
+    " localized step descriptions, proxy/admin guards unchanged, URL locale rule intact.",
 );

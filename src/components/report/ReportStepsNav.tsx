@@ -19,6 +19,11 @@ export function ReportStepsNav({
   onStepClick,
 }: ReportStepsNavProps) {
   const t = useTranslations("editor")
+  // Step titles come from the same docs.step.<D>.name keys the editor and the
+  // share viewer use, so the desktop sidebar is Chinese on zh pages too.
+  const tStep = useTranslations("docs.step")
+  const stepLabel = (step: ReportStep) =>
+    tStep.has(`${step.id}.name`) ? tStep(`${step.id}.name`) : step.label
   const completedCount = completedSteps.size
   const totalSteps = steps.length
   const progressPercent = Math.round((completedCount / totalSteps) * 100)
@@ -80,7 +85,7 @@ export function ReportStepsNav({
                       stepNumber
                     )}
                   </span>
-                  <span className="truncate">{step.label}</span>
+                  <span className="truncate">{stepLabel(step)}</span>
                 </button>
               )
             })}

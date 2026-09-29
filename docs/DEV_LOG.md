@@ -79,6 +79,102 @@
 - Suggested next task: with a Creem test-mode key, walk
   `docs/PAID_LOOP_ACCEPTANCE.md` and record the subscription id, statuses, and
   UI observations; then fix whatever the sandbox run exposes.
+## Completed: Report Definition + Search Labels Localization (Batch 8, 2026-09-20)
+
+### Post-review fix: desktop step sidebar titles
+- `src/components/report/ReportStepsNav.tsx` still rendered the raw
+  `{step.label}` from `report-steps.ts`, so the desktop step sidebar kept
+  English step titles on Chinese pages while the editor body was translated.
+- It now resolves `docs.step.<D>.name` with the report-steps label as the
+  fallback, and `scripts/i18n-app.test.ts` asserts the file no longer renders
+  `{step.label}` and does resolve from `docs.step`.
+
+### What changed
+- Localized the last user-visible English in the report definition. The six
+  Fishbone 6M field labels and their six prompt sentences now resolve from the
+  `editor` namespace (`editor.fishboneMan`, `editor.fishboneManPlaceholder`, …)
+  at render time, and the nine D-step descriptions now live in the existing
+  `docs.step.<D>` objects next to the already-translated `<D>.name`.
+- Approach for `src/lib/report-steps.ts`: it stays locale-agnostic. The field
+  `name` is already the stable machine key, so `StepForm.tsx` keeps preferring a
+  catalog entry when one exists (`t.has(field.name)`, plus a new
+  `fieldPlaceholder` helper that checks `<fieldName>Placeholder`) and falls back
+  to the English `report-steps` value only when no catalog entry exists (photo
+  inputs, etc.). This is the smallest change that does not make `report-steps.ts`
+  depend on React/next-intl and does not touch the export code that still reads
+  `field.label` / `step.description` directly.
+- Added `docs.step.<D>.description` to BOTH catalogs. English is byte-identical
+  to the existing `report-steps` `description` strings; Chinese reuses the
+  established D-step terminology (准备/团队/问题描述/围堵/根因/纠正/实施/预防/关闭).
+  `StepForm.tsx` now renders `tStep(\`${step.id}.description\`)`.
+
+### Translations added
+- Fishbone labels (zh): 鱼骨图 6M — 人 / 人员, — 机器 / 设备, — 物料,
+  — 方法 / 流程, — 测量 / 检验, — 环境.
+- Fishbone placeholders (zh): 操作人员技能、培训、人员配置、交接班、疲劳或责任心等因素。 /
+  设备状态、工装、夹具、维护保养、校准或设备能力等因素。 /
+  来料、批次波动、供应商变更、存储、保质期或污染等因素。 /
+  作业指导书、工艺参数、换型顺序、检验方法或控制计划缺失。 /
+  量具精度、样本量、检出限、检验频次、MSA 或数据记录等因素。 /
+  温度、湿度、粉尘、照明、静电、振动或其他环境因素。
+- D-step descriptions (zh, D0–D8): 为 8D 流程做准备 — 明确问题并收集初步信息。 /
+  组建团队 — 确定参与问题解决的人员。 / 描述问题 — 以可衡量的量化方式说明问题所在。 /
+  制定临时围堵措施 — 将问题与客户隔离。 /
+  确定根本原因 — 使用鱼骨图 6M、5-Why、验证证据或 FMEA，查明问题为何发生以及为何流出。 /
+  选择并验证永久纠正措施 — 确保根本原因得到解决。 /
+  实施并验证永久纠正措施 — 落实纠正措施并验证其有效。 /
+  预防再发 — 更新系统、流程和程序，确保问题不再发生。 /
+  表彰团队并关闭项目 — 总结经验教训以持续改进。
+
+### What intentionally stays English
+- `src/app/api/reports/search/route.ts`: the search labels are composed
+  SERVER-side into the `matchSnippet` sentence, and the response carries no
+  stable field key, so the client cannot re-map a label to a catalog entry
+  without changing the API response contract. Per the Batch 8 scope they stay
+  English; the route now documents this inline. (The `src/components/knowledge/*`
+  panels read a different endpoint, `/api/knowledge/search`, whose snippets are
+  built in `src/lib/report-knowledge.ts` and are likewise frozen in this batch.)
+- PDF/Word/XLSX export and the share-viewer report body (field labels and
+  `step.description`) still read the `report-steps` English directly. Export
+  logic is frozen, and the share-viewer body was explicitly out of Batch 8 scope;
+  it was documented as intentional rather than changed.
+
+### Tests
+- Extended `scripts/i18n-app.test.ts`: it asserts the six fishbone labels +
+  placeholders and all nine step descriptions exist in BOTH catalogs, that the
+  English values are byte-identical to `report-steps`, that the zh values differ
+  and contain CJK, and that `StepForm.tsx` consumes the catalog instead of the
+  raw `step.description`.
+- Added `scripts/i18n-report-strings.test.tsx` (`test:i18n-report-strings`):
+  renders `StepForm` through `NextIntlClientProvider` with
+  `renderToStaticMarkup` for all nine steps in en and zh-CN, and asserts the
+  exact English descriptions still render while the zh labels, placeholders and
+  descriptions replace them. This is the render proof; an HTTP proof of these
+  strings is not reachable without a real report row.
+
+### Verification
+- `npm ci --no-audit --no-fund` exit 0.
+- `npx tsc --noEmit` exit 0.
+- `npm run lint` exit 0 (0 errors, 13 warnings).
+- CI's exact `test:*` discovery ran 24 offline scripts (the two smoke scripts
+  excluded); all exit 0. New/extended guards: `test:i18n-app` (12 localized
+  fishbone strings, 9 localized step descriptions, catalog/source parity) and
+  `test:i18n-report-strings` (9 descriptions rendered in both locales, 6
+  fishbone labels + placeholders localized). `test:i18n-key-coverage` still
+  passes: 572 literal keys resolve in both catalogs.
+- `npm run check:seo` exit 0 (240 sitemap URLs, 16 redirects).
+- `npm run build` exit 0.
+- `git diff --check` exit 0.
+- HTTP smoke with client JS disabled: the production server on
+  `127.0.0.1:3141` returned HTTP 200 for `GET /dashboard` with both
+  `NEXT_LOCALE=zh-CN` (113,712 bytes; Chinese nav e.g. 定价) and
+  `NEXT_LOCALE=en` (113,728 bytes; English nav e.g. Pricing / Sign out),
+  proving the cookie locale resolves server-side. `/dashboard` does not render
+  `StepForm`, and the only route that does is `/reports/[id]`, which requires a
+  real report row, so a route-level HTTP render of the step descriptions/Fishbone
+  prompts was NOT possible; the `renderToStaticMarkup` test above is the render
+  proof for those exact strings.
+- Server killed after the smoke.
 
 ## Completed: Chinese App Interior from the Cookie (Batch 6, 2026-09-19)
 
