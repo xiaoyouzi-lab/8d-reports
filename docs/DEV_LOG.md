@@ -1,5 +1,85 @@
 # Development Log
 
+## Completed: Paid Loop Sandbox Testability (Batch 7, 2026-09-29)
+
+- **Configurable Creem base URL.** `src/lib/creem.ts` now reads
+  `const CREEM_API_URL = (process.env.CREEM_API_URL?.trim() || "https://api.creem.io/v1").replace(/\/$/, "")`.
+  No new required variable: when `CREEM_API_URL` is unset the value is
+  byte-identical to the previous hardcoded production URL. This is the only
+  environment-related change and it is optional and defaulted.
+- **One shared, real webhook verifier.** The route's local HMAC function was
+  moved verbatim into `src/lib/creem.ts` as
+  `export function verifyCreemWebhookSignature(payload: string, signature: string | null | undefined, secret?: string): boolean`.
+  It defaults the secret to `process.env.CREEM_WEBHOOK_SECRET`, accepts
+  comma-separated candidates, tolerates a case-insensitive `sha256=` prefix,
+  compares equal-length hex buffers with `timingSafeEqual`, and returns false
+  on any missing/malformed input. `src/app/api/webhooks/creem/route.ts` imports
+  it and no longer defines its own HMAC comparison or imports
+  `createHmac`/`timingSafeEqual`. The route still resolves the header from
+  `creem-signature` → `x-creem-signature` → `webhook-signature` and still
+  returns 401 on failure / 400 on invalid JSON before any DB work. No internal
+  helper was exported.
+- **Offline end-to-end contract test.** Added `scripts/paid-loop.test.ts`
+  (`npm run test:paid-loop`). It starts a real `node:http` server bound to
+  `127.0.0.1` on an ephemeral port, sets a fake `CREEM_API_KEY`,
+  `CREEM_WEBHOOK_SECRET`, and `CREEM_API_URL` pointing at it, then imports the
+  real `src/lib/creem.ts` and asserts on the requests the server received:
+  - `createCheckoutSession`: POST `/checkouts`, `x-api-key`, body
+    `product_id`/`customer.email`/`success_url`/`metadata.userId`, and a
+    `request_id` prefixed with `<userId>-`; non-2xx throws.
+  - `findCreemCustomerByEmail`: GET `/customers?email=...` with the email
+    URL-encoded; resolves the single-`CustomerEntity`, `{ items }`, and bare
+    array shapes; prefers the email match over the first row; `null` on
+    non-2xx and when the key or email is missing (and makes no request then).
+  - `generateBillingPortalLink`: POST `/customers/billing` with
+    `{ customer_id }`; returns `customer_portal_link`; throws on a missing
+    link and on a non-ok response.
+  - `verifyCreemWebhookSignature`: valid HMAC passes; tampered payload, wrong
+    secret, missing/empty signature, and non-hex signature fail; `sha256=`
+    prefix passes (case-insensitive); one valid candidate among several passes.
+  The server is closed in a `finally` and any assertion failure exits non-zero.
+  Global `fetch` is wrapped to throw for any URL outside the fake origin, so
+  the test makes no outbound network call; each received request's `Host` is
+  also asserted to start with `127.0.0.1`.
+- **Sandbox acceptance runbook.** Added `docs/PAID_LOOP_ACCEPTANCE.md`: the
+  test-mode key/product/webhook-secret/`CREEM_API_URL` env vars, webhook
+  endpoint registration and event list, the checkout → webhook →
+  subscription-row → `/api/billing/portal` → cancel sequence, the exact SQL/UI
+  observations that prove each step, failure signatures, and the statement that
+  the production key must not be used and that this is the remaining acceptance
+  gate.
+- **Behaviour proof for the route.** Invoking the real `POST` handler offline
+  with no signature and with invalid `creem-signature`/`webhook-signature`
+  headers returned 401 `{"error":"Invalid webhook signature"}`; a valid
+  signature passed verification and stopped at the intentionally-absent
+  `DATABASE_URL` (500), proving the 401 is the signature gate and no DB/Creem
+  call was made. The temporary proof script was deleted and is not committed.
+- **Why the prior gap existed:** `scripts/billing-portal.test.ts` covered the
+  customer-lookup parser but only string-matched the checkout/portal/verifier
+  code and could not point the client at a fake host, so the request contract
+  was never exercised. The sandbox host was unreachable because the base URL was
+  hardcoded.
+- **Verification (Batch 7):** `npx tsc --noEmit` passed; `npm run lint`
+  passed (0 errors, existing warnings); CI's full offline discovery
+  (`test:*` minus `test:production-smoke`/`test:auth-smoke`) ran all 24
+  scripts including `test:paid-loop` and printed `ALL_TESTS_PASSED`;
+  `npm run check:seo` passed (240 sitemap URLs, 16 redirects); `npm run build`
+  passed; `git diff --check` was clean.
+- Changed files: `src/lib/creem.ts`,
+  `src/app/api/webhooks/creem/route.ts`, `scripts/paid-loop.test.ts`,
+  `package.json`, `docs/PAID_LOOP_ACCEPTANCE.md`, `docs/DEV_LOG.md`.
+- Scope guard: no auth, DB schema/query, env var name, export logic, production
+  configuration, subscription/plan/team webhook logic, billing-portal
+  behaviour, or user-facing copy changed.
+- Residual risk: the real Creem sandbox has still not been exercised; the
+  offline test proves the client contract against a fake server, not the
+  provider. The paid-loop acceptance gate in `docs/PAID_LOOP_ACCEPTANCE.md`
+  remains open until a test-mode key exists and one checkout → webhook → portal
+  → cancel run is recorded here.
+- Suggested next task: with a Creem test-mode key, walk
+  `docs/PAID_LOOP_ACCEPTANCE.md` and record the subscription id, statuses, and
+  UI observations; then fix whatever the sandbox run exposes.
+
 ## Completed: Chinese App Interior from the Cookie (Batch 6, 2026-09-19)
 
 ### Post-review fix: missing editor.revShort key

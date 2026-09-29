@@ -1,6 +1,41 @@
-import { randomUUID } from "node:crypto";
+import { createHmac, randomUUID, timingSafeEqual } from "node:crypto";
 
-const CREEM_API_URL = "https://api.creem.io/v1";
+const CREEM_API_URL = (process.env.CREEM_API_URL?.trim() || "https://api.creem.io/v1").replace(/\/$/, "");
+
+/**
+ * Verifies a Creem webhook signature (HMAC-SHA256 hex of the raw request body).
+ *
+ * The signature header may be a comma-separated candidate list, and each
+ * candidate may carry a "sha256=" prefix (case-insensitive). Comparison is
+ * timing-safe and the function returns false for any missing or malformed
+ * input. Defaults to CREEM_WEBHOOK_SECRET when no secret is supplied.
+ */
+export function verifyCreemWebhookSignature(
+  payload: string,
+  signature: string | null | undefined,
+  secret?: string,
+): boolean {
+  const activeSecret = secret ?? process.env.CREEM_WEBHOOK_SECRET;
+  if (!activeSecret) return false;
+  if (!signature) return false;
+
+  const expected = createHmac("sha256", activeSecret).update(payload).digest("hex");
+  const candidates = signature
+    .split(",")
+    .map((part) => part.trim().replace(/^sha256=/i, ""))
+    .filter(Boolean);
+
+  return candidates.some((candidate) => {
+    try {
+      const expectedBuffer = Buffer.from(expected, "hex");
+      const candidateBuffer = Buffer.from(candidate, "hex");
+      return expectedBuffer.length === candidateBuffer.length
+        && timingSafeEqual(expectedBuffer, candidateBuffer);
+    } catch {
+      return false;
+    }
+  });
+}
 
 export async function createCheckoutSession(params: {
   productId: string;
