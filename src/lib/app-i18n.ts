@@ -3,11 +3,11 @@ import { cookies } from "next/headers"
 import { createTranslator } from "next-intl"
 
 // Server components inside the (app) subtree render in the language remembered
-// in the NEXT_LOCALE cookie. getTranslations() is not usable here because
-// src/i18n/request.ts pins the request locale to English for the public
-// marketing/auth/share URL rule, so this helper resolves the cookie with the same
+// in the NEXT_LOCALE cookie. This helper resolves the cookie with the same
 // supported set the proxy and the (app) layout use and builds a standalone
-// translator from the matching catalog.
+// translator from the matching catalog. src/i18n/request.ts now applies the same
+// rule to the standard getTranslations()/getLocale() APIs, but existing (app)
+// server code keeps using this helper so its behavior is unchanged.
 const LANG_COOKIE = "NEXT_LOCALE"
 const SUPPORTED_LOCALES = new Set(["en", "zh-CN"])
 const DEFAULT_LOCALE = "en"

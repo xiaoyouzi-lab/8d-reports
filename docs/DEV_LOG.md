@@ -1,5 +1,89 @@
 # Development Log
 
+## Completed: Server-Side Locale Resolution (Batch 9, 2026-09-29)
+
+- **One pure rule.** Added `src/lib/server-locale.ts` with
+  `resolveServerLocale(pathname: string | null | undefined, cookieLocale: string | null | undefined): "en" | "zh-CN"`
+  and an exported `APP_ROUTE_PREFIXES = ["/dashboard", "/reports", "/knowledge", "/admin"]`.
+  Priority: (1) `/zh` or `/zh/*` always resolves `zh-CN` (the public URL rule
+  wins over any cookie), (2) an app route matches the exported prefixes as whole
+  path segments (`/dashboard`, `/dashboard/x` match; `/dashboardx` does not) and
+  follows `NEXT_LOCALE` only when it is exactly `"en"` or `"zh-CN"`, (3) everything
+  else is `"en"`. The module has no React, next-intl, or I/O dependency, so the
+  rule is trivially unit-testable and shared.
+- **Proxy forwards the path (additive).** `src/proxy.ts` now also sets
+  `headers.set("x-pathname", pathname)` on the same request headers it already
+  used for `x-locale`. The locale logic, `protectedPaths`, the session check, and
+  the redirect are byte-for-byte unchanged.
+- **Request config uses the rule.** `src/i18n/request.ts` no longer hardcodes
+  `locale: "en"`. It awaits `headers()` and `cookies()` from `next/headers`,
+  resolves the locale with `resolveServerLocale(x-pathname, NEXT_LOCALE)`, returns
+  the matching `en`/`zh-CN` catalog, and keeps `timeZone: "Asia/Shanghai"`. No new
+  dependency and no routing setup was introduced.
+- **Comment-only app helper note.** `src/lib/app-i18n.ts` keeps its standalone
+  cookie translator and behavior; its comment now records that the standard
+  `getTranslations()`/`getLocale()` APIs resolve with the same rule. The
+  `(app)/layout.tsx` and the admin consumers were not touched.
+- **Tests.** Added `scripts/server-locale.test.ts` (`npm run test:server-locale`,
+  picked up automatically by CI's `test:*` discovery). It makes 199 resolver
+  assertions plus source-wiring assertions: `/zh`/`/zh/*` wins for every cookie
+  value; every exported app prefix and sub-path follows `zh-CN`/rejects
+  absent/`en`/invalid/near-miss cookies; `/pricing`, `/signup`, `/share/x`,
+  `/help/x` stay English even with a `zh-CN` cookie; `null`/empty pathname is
+  English; segment boundaries (`/dashboardx`, `/knowledgebase`) are English. It
+  also asserts the request config imports the resolver, no longer contains a bare
+  `locale: "en"`, reads `x-pathname`/`NEXT_LOCALE` and keeps `Asia/Shanghai`, and
+  that the proxy still sets `x-pathname`, keeps `x-locale`, and keeps
+  `protectedPaths = ["/dashboard", "/reports"]`.
+
+## Tests / Verification
+
+- `npx tsc --noEmit` passed (exit 0).
+- `npm run lint` passed (exit 0; 13 pre-existing warnings, 0 errors).
+- CI's exact `test:*` discovery (excluding `test:production-smoke` and
+  `test:auth-smoke`) passed: 26 scripts, all exit 0, including
+  `test:i18n-key-coverage` and the new `test:server-locale`.
+- `npm run check:seo` passed (240 sitemap URLs, 16 redirects).
+- `npm run build` passed (286 static pages; `/pricing`, `/zh/pricing`, `/signup`
+  stay Static, `/dashboard`, `/reports/*`, `/knowledge`, `/admin/*` were already
+  Dynamic from the `(app)` layout's `cookies()`).
+- `git diff --check` passed.
+- Stripped-JS `next start` smoke on 127.0.0.1:3099: `/pricing` 200 (English),
+  `/zh/pricing` 200 (Chinese), `/pricing` with `NEXT_LOCALE=zh-CN` still 200 and
+  English, `/dashboard` 307 → `/login?callbackUrl=%2Fdashboard`, and `/dashboard`
+  with `NEXT_LOCALE=zh-CN` 307 → `/zh/login?callbackUrl=%2Fdashboard` (existing
+  redirect behavior preserved).
+
+## Evidence Limits
+
+- No page currently calls the standard server-side `getTranslations()`/`getLocale()`,
+  and the only server render of `NextIntlClientProvider` is inside the auth-gated
+  `(app)` subtree. There is therefore no reachable HTTP response whose body proves
+  the request config resolves the locale; the proof is the pure-function unit
+  tests plus tsc/lint/build. The smoke above only shows the public pages and the
+  proxy redirect are not regressed.
+- The `next start` log shows `BetterAuthError: Failed to initialize database
+  adapter` because no database is configured locally. This is pre-existing and
+  unrelated to this change.
+
+## Risks
+
+- `x-pathname` is a request header, but the proxy overwrites it on every matched
+  path (`headers.set`), so a client cannot spoof it to change an app route's
+  locale. Paths excluded from the proxy matcher (`/api/*`, `/_next/*`) never use
+  the request config.
+- The app-route prefix list intentionally includes `/knowledge` and `/admin`,
+  which are broader than the proxy's `protectedPaths`; that is the requested
+  locale rule, not an authorization change.
+
+## Suggested Next Task
+
+After this lands, migrate the `(app)` server translator consumers
+(`getAppTranslator`) to the standard `getTranslations()` API in a separate,
+behavior-preserving batch now that the request config resolves correctly, and
+remove the duplicated cookie/supported-locale constants once no consumer needs
+them.
+
 ## Completed: Paid Loop Sandbox Testability (Batch 7, 2026-09-29)
 
 - **Configurable Creem base URL.** `src/lib/creem.ts` now reads
