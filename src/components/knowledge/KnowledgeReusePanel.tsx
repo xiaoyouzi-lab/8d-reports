@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import type { ReactNode } from "react"
+import { useTranslations } from "next-intl"
 import {
   ArrowUpRight,
   BookOpen,
@@ -34,27 +35,45 @@ type KnowledgeFilter = "all" | "completed" | "approved" | "submitted" | "closed"
 type KnowledgeReportTypeFilter = "all" | "customer_8d" | "internal_8d"
 type KnowledgePriorityFilter = "all" | "critical" | "high" | "medium" | "low"
 
-const filters: Array<{ value: KnowledgeFilter; label: string }> = [
-  { value: "all", label: "All" },
-  { value: "completed", label: "Completed" },
-  { value: "approved", label: "Approved" },
-  { value: "submitted", label: "Submitted" },
-  { value: "closed", label: "Closed" },
-]
+const filters: KnowledgeFilter[] = ["all", "completed", "approved", "submitted", "closed"]
 
-const reportTypeFilters: Array<{ value: KnowledgeReportTypeFilter; label: string }> = [
-  { value: "all", label: "All types" },
-  { value: "customer_8d", label: "Customer 8D" },
-  { value: "internal_8d", label: "Internal 8D" },
-]
+const reportTypeFilters: KnowledgeReportTypeFilter[] = ["all", "customer_8d", "internal_8d"]
 
-const priorityFilters: Array<{ value: KnowledgePriorityFilter; label: string }> = [
-  { value: "all", label: "All priorities" },
-  { value: "critical", label: "Critical" },
-  { value: "high", label: "High" },
-  { value: "medium", label: "Medium" },
-  { value: "low", label: "Low" },
-]
+const priorityFilters: KnowledgePriorityFilter[] = ["all", "critical", "high", "medium", "low"]
+
+const filterKeys: Record<string, string> = {
+  all: "all",
+  completed: "completed",
+  approved: "approved",
+  submitted: "submitted",
+  closed: "closed",
+}
+
+const reportTypeFilterKeys: Record<string, string> = {
+  all: "allTypes",
+  customer_8d: "customer8d",
+  internal_8d: "internal8d",
+}
+
+const priorityFilterKeys: Record<string, string> = {
+  all: "allPriorities",
+  critical: "critical",
+  high: "high",
+  medium: "medium",
+  low: "low",
+}
+
+const REPORT_TYPE_KEYS: Record<string, string> = {
+  customer_8d: "customer8d",
+  internal_8d: "internal8d",
+}
+
+const TRUST_KEYS: Record<string, string> = {
+  Completed: "completed",
+  Approved: "approved",
+  Submitted: "submitted",
+  Closed: "closed",
+}
 
 const workflowStyles: Record<string, string> = {
   Completed: "bg-emerald-50 text-emerald-700 ring-emerald-600/20",
@@ -82,8 +101,8 @@ function shortDate(value: string | Date) {
   }
 }
 
-function trimText(value: string | null, max = 260) {
-  if (!value) return "No relevant data"
+function trimText(value: string | null, fallback: string, max = 260) {
+  if (!value) return fallback
   return value.length > max ? `${value.slice(0, max).trim()}...` : value
 }
 
@@ -120,6 +139,7 @@ function CopyButton({
   location: KnowledgeReuseLocation
   plan: string
 }) {
+  const t = useTranslations("knowledge")
   const disabled = !value
   return (
     <Button
@@ -132,9 +152,9 @@ function CopyButton({
         try {
           await navigator.clipboard.writeText(value)
           trackEvent(eventName, safeMetadata(location, plan, { copiedField }), reportId)
-          toast.success("Copied")
+          toast.success(t("copied"))
         } catch {
-          toast.error("Could not copy. Select and copy manually.")
+          toast.error(t("copyFailed"))
         }
       }}
     >
@@ -182,7 +202,11 @@ function KnowledgeReuseCard({
   resultCount: number
   queryLength: number
 }) {
+  const t = useTranslations("knowledge")
   const trustLabel = entry.trustLabel || "Completed"
+  const trustText = TRUST_KEYS[trustLabel] ? t(TRUST_KEYS[trustLabel]) : trustLabel
+  const priorityLabel = t.has(entry.priority) ? t(entry.priority) : titleCase(entry.priority)
+  const reportTypeLabel = REPORT_TYPE_KEYS[entry.reportType] ? t(REPORT_TYPE_KEYS[entry.reportType]) : titleCase(entry.reportType)
   return (
     <div className="space-y-4 rounded-lg border bg-white p-4 shadow-sm">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -195,19 +219,19 @@ function KnowledgeReuseCard({
               variant="outline"
               className={cn("ring-1 ring-inset", workflowStyles[trustLabel] || workflowStyles.Completed)}
             >
-              {trustLabel}
+              {trustText}
             </Badge>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <span className={cn("inline-block size-2 rounded-full", priorityDot[entry.priority] || priorityDot.medium)} />
-              {titleCase(entry.priority)}
+              {priorityLabel}
             </span>
-            <span className="text-xs text-muted-foreground">{titleCase(entry.reportType)}</span>
+            <span className="text-xs text-muted-foreground">{reportTypeLabel}</span>
           </div>
           <h3 className="break-words text-sm font-semibold leading-snug text-foreground">
             {entry.title}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Updated {shortDate(entry.updatedAt)}
+            {t("updated", { date: shortDate(entry.updatedAt) })}
           </p>
         </div>
         <Link
@@ -224,7 +248,7 @@ function KnowledgeReuseCard({
           className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-sm font-medium hover:bg-muted"
         >
           <FileText className="size-3.5" />
-          Open report
+          {t("openReport")}
           <ArrowUpRight className="size-3.5" />
         </Link>
       </div>
@@ -238,10 +262,10 @@ function KnowledgeReuseCard({
       <div className="rounded-lg border border-slate-200 bg-white p-3">
         <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
           <FileText className="size-3.5" />
-          Problem Summary
+          {t("problemSummary")}
         </div>
         <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
-          {trimText(entry.problem)}
+          {trimText(entry.problem, t("noRelevantData"))}
         </p>
       </div>
 
@@ -249,28 +273,28 @@ function KnowledgeReuseCard({
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
             <ShieldCheck className="size-3.5" />
-            Root Cause
+            {t("rootCause")}
           </div>
           <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
-            {trimText(entry.rootCause)}
+            {trimText(entry.rootCause, t("noRelevantData"))}
           </p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
             <CheckCircle2 className="size-3.5" />
-            Corrective Action
+            {t("correctiveAction")}
           </div>
           <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
-            {trimText(entry.correctiveAction)}
+            {trimText(entry.correctiveAction, t("noRelevantData"))}
           </p>
         </div>
         <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
           <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
             <Lightbulb className="size-3.5" />
-            Lessons Learned
+            {t("lessonsLearned")}
           </div>
           <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
-            {trimText(entry.lessonsLearned)}
+            {trimText(entry.lessonsLearned, t("noRelevantData"))}
           </p>
         </div>
       </div>
@@ -280,19 +304,19 @@ function KnowledgeReuseCard({
           <div className="rounded-lg border border-slate-200 bg-white p-3">
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
               <CheckCircle2 className="size-3.5" />
-              Validation
+              {t("validation")}
             </div>
             <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
-              {trimText(entry.validation)}
+              {trimText(entry.validation, t("noRelevantData"))}
             </p>
           </div>
           <div className="rounded-lg border border-slate-200 bg-white p-3">
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase text-slate-500">
               <ShieldCheck className="size-3.5" />
-              Prevention
+              {t("prevention")}
             </div>
             <p className="whitespace-pre-wrap break-words text-sm leading-5 text-slate-800">
-              {trimText(entry.prevention)}
+              {trimText(entry.prevention, t("noRelevantData"))}
             </p>
           </div>
         </div>
@@ -300,7 +324,7 @@ function KnowledgeReuseCard({
 
       <div className="flex flex-wrap gap-2">
         <CopyButton
-          label="Copy root cause"
+          label={t("copyRootCause")}
           value={entry.rootCause}
           reportId={entry.id}
           eventName="knowledge_reuse_root_cause_copied"
@@ -309,7 +333,7 @@ function KnowledgeReuseCard({
           plan={plan}
         />
         <CopyButton
-          label="Copy corrective action"
+          label={t("copyCorrectiveAction")}
           value={entry.correctiveAction}
           reportId={entry.id}
           eventName="knowledge_reuse_corrective_action_copied"
@@ -318,7 +342,7 @@ function KnowledgeReuseCard({
           plan={plan}
         />
         <CopyButton
-          label="Copy lessons learned"
+          label={t("copyLessonsLearned")}
           value={entry.lessonsLearned}
           reportId={entry.id}
           eventName="knowledge_reuse_lesson_copied"
@@ -342,6 +366,7 @@ export function KnowledgeReusePanel({
   location: KnowledgeReuseLocation
   plan: string
 }) {
+  const t = useTranslations("knowledge")
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<KnowledgeFilter>("all")
   const [reportType, setReportType] = useState<KnowledgeReportTypeFilter>("all")
@@ -376,7 +401,7 @@ export function KnowledgeReusePanel({
         }),
       })
       const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || "Knowledge search failed")
+      if (!res.ok) throw new Error(data?.error || t("searchFailed"))
       const nextResults = Array.isArray(data?.results) ? data.results : []
       setResults(nextResults)
       if (inputQuery.trim().length >= 2) {
@@ -386,12 +411,12 @@ export function KnowledgeReusePanel({
         }))
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Knowledge search failed")
+      setError(err instanceof Error ? err.message : t("searchFailed"))
       setResults([])
     } finally {
       setLoading(false)
     }
-  }, [location, open, plan])
+  }, [location, open, plan, t])
 
   useEffect(() => {
     if (!open) return
@@ -416,9 +441,9 @@ export function KnowledgeReusePanel({
               <BookOpen className="size-4" />
             </div>
             <div>
-              <SheetTitle>Reuse Knowledge</SheetTitle>
+              <SheetTitle>{t("reuseTitle")}</SheetTitle>
               <SheetDescription>
-                Search completed 8D reports and copy proven root causes, corrective actions, and lessons learned.
+                {t("reuseDesc")}
               </SheetDescription>
             </div>
           </div>
@@ -430,45 +455,45 @@ export function KnowledgeReusePanel({
             <Input
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search problem, root cause, corrective action, lessons learned..."
+              placeholder={t("searchPlaceholder")}
               className="h-9 pl-8 text-sm"
             />
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {filters.map((item) => (
               <FilterButton
-                key={item.value}
-                active={filter === item.value}
-                onClick={() => setFilter(item.value)}
+                key={item}
+                active={filter === item}
+                onClick={() => setFilter(item)}
               >
-                {item.label}
+                {t(filterKeys[item])}
               </FilterButton>
             ))}
           </div>
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {reportTypeFilters.map((item) => (
               <FilterButton
-                key={item.value}
-                active={reportType === item.value}
-                onClick={() => setReportType(item.value)}
+                key={item}
+                active={reportType === item}
+                onClick={() => setReportType(item)}
               >
-                {item.label}
+                {t(reportTypeFilterKeys[item])}
               </FilterButton>
             ))}
           </div>
           <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
             {priorityFilters.map((item) => (
               <FilterButton
-                key={item.value}
-                active={priority === item.value}
-                onClick={() => setPriority(item.value)}
+                key={item}
+                active={priority === item}
+                onClick={() => setPriority(item)}
               >
-                {item.label}
+                {t(priorityFilterKeys[item])}
               </FilterButton>
             ))}
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Copy-only reuse. Nothing is written to the current report automatically.
+            {t("copyOnly")}
           </p>
         </div>
 
@@ -480,26 +505,26 @@ export function KnowledgeReusePanel({
           )}
 
           {loading ? (
-            <div className="py-12 text-center text-sm text-muted-foreground">Loading knowledge assets...</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">{t("loadingAssets")}</div>
           ) : results.length === 0 ? (
             <div className="rounded-lg border bg-white px-4 py-10 text-center">
               <div className="mx-auto mb-3 flex size-11 items-center justify-center rounded-lg bg-slate-100">
                 <BookOpen className="size-5 text-slate-500" />
               </div>
               <h3 className="text-base font-semibold text-foreground">
-                {hasSearchContext ? "No matching knowledge found." : "No reusable knowledge yet."}
+                {hasSearchContext ? t("noMatching") : t("noReusable")}
               </h3>
               <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
                 {hasSearchContext
-                  ? "Try a product name, symptom, root cause, corrective action, or customer reference."
-                  : "Completed and closed 8D reports will appear here as reusable quality knowledge."}
+                  ? t("tryDifferent")
+                  : t("willAppear")}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
-                <span>{resultCount} reusable result{resultCount === 1 ? "" : "s"}</span>
-                {activeFilterCount > 0 && <span>{activeFilterCount} filter{activeFilterCount === 1 ? "" : "s"} active</span>}
+                <span>{t("reusableResults", { count: resultCount })}</span>
+                {activeFilterCount > 0 && <span>{t("activeFilters", { count: activeFilterCount })}</span>}
               </div>
               {results.map((entry) => (
                 <KnowledgeReuseCard

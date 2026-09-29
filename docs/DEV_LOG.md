@@ -1,5 +1,81 @@
 # Development Log
 
+## Completed: Chinese App Interior from the Cookie (Batch 6, 2026-09-19)
+
+### Post-review fix: missing editor.revShort key
+- The Batch 6 refactor replaced the literal `Rev.{entry.revision}` in
+  `src/components/knowledge/KnowledgeBaseClient.tsx` with
+  `te("revShort", { n: entry.revision })`, but no `editor.revShort` key existed
+  in either catalog. The build still succeeded and the existing suite did not
+  catch it, so the Knowledge Base revision badge would have rendered the raw key
+  at runtime.
+- Added `editor.revShort` to BOTH catalogs (`Rev.{n}` / `版本 {n}`, matching
+  the existing `dashboard.revShort` terminology exactly).
+- Added `scripts/i18n-key-coverage.test.ts` (`test:i18n-key-coverage`): it walks
+  all of `src/`, maps each translator declaration to its namespace(s), and
+  requires every literal `t("key")` reference to resolve in BOTH catalogs.
+  Verified the guard fails when `editor.revShort` is removed.
+
+### Server-side locale for the (app) subtree
+- Converted `src/app/(app)/layout.tsx` into a server component. It reads
+  `(await cookies()).get("NEXT_LOCALE")?.value`, validates it against
+  `new Set(["en", "zh-CN"])` (the same supported set the proxy uses), and falls
+  back to `"en"`. It imports the same two catalogs as the root layout and wraps
+  the subtree in a nested
+  `<NextIntlClientProvider locale={locale} messages={locale === "zh-CN" ? zh : en} timeZone="UTC">`.
+- Moved the previous client behaviour (session check, unauthenticated redirect to
+  `/login`, header/nav/avatar menu, quota badge, `QualityAgentFab`) into a new
+  `"use client"` `src/components/app/AppShell.tsx` that receives the resolved
+  locale as a prop. The redirect-when-unauthenticated behaviour is unchanged.
+- The header/navigation chrome renders on every server render, including before the
+  client session resolves, so the first paint already contains the localized nav
+  labels. Session-only controls (plan badge, avatar menu) and the page body appear
+  once the session is known, still behind the same client-side redirect.
+- Result: `useLocale()`/`useTranslations()` in the app subtree return the
+  cookie locale and the HTML is Chinese on first paint — no flash. The public
+  marketing/auth/share pages keep their URL-driven locale (the root
+  `LocaleProvider` and `src/proxy.ts` are untouched).
+
+### Wired the app interior to the catalogs
+- Localized the app chrome and main surfaces to the existing namespaces (`nav`,
+  `dashboard`, `editor`, `export`, `quota`, `share`, `qualityAgent`) plus
+  three new app-interior namespaces (`knowledge`, `admin`, `ai`):
+  `AppShell`, dashboard, reports/new, the report editor chrome, StepForm,
+  AttachmentArea, ExportButton/ExportMenu, QuotaIndicator,
+  ManageSubscriptionButton, KnowledgeReadinessPanel, ReportStepsNav, ShareDialog,
+  ReportWorkflowPanel, SignatureApprovalArea, AiReportTools, KnowledgeBaseClient,
+  KnowledgeReusePanel, QualityAgentFab/ChatDialog, ServiceRequestsAdmin and both
+  admin pages.
+- English values added to the catalog are byte-identical to the replaced
+  literals. Report field labels reuse the existing `editor.<fieldName>` keys via
+  `t.has(fieldName)`; D0-D8 titles reuse `docs.step.<D>.name`. The six Fishbone
+  prompt labels and `step.description` have no translated equivalent and stay
+  English rather than inventing 8D terminology.
+- Admin pages are server components; because `src/i18n/request.ts` pins the
+  request locale to English for the public URL rule, a new server helper
+  `src/lib/app-i18n.ts` resolves the cookie and builds a standalone
+  `createTranslator` from the matching catalog.
+
+### Verification
+- `npx tsc --noEmit` passed.
+- `npm run lint` passed (warnings only, 0 errors).
+- `scripts/i18n-app.test.ts` + `npm run test:i18n-app` added and picked up by
+  CI's `test:*` discovery. It asserts the server layout contract, AppShell,
+  catalog parity/translation quality for the app namespaces, the unchanged proxy
+  protected paths and admin guards, and the unchanged URL locale rule.
+- All discovered `test:*` scripts passed, `npm run check:seo` passed,
+  `npm run build` passed, `git diff --check` passed.
+- Started `next start` locally and confirmed with curl that
+  `Cookie: NEXT_LOCALE=zh-CN` renders the Chinese nav labels on `/dashboard`
+  while `NEXT_LOCALE=en` renders the English ones, and that `/zh/pricing` stays
+  Chinese and `/pricing` stays English. See the completion report for counts.
+
+### Notes / residual
+- Transient server error strings returned by APIs are still surfaced verbatim
+  (not rewrapped), and AI-returned content is never translated.
+- `src/proxy.ts`, auth/OTP/better-auth logic, all DB queries, export logic and
+  production config were not changed.
+
 ## Completed: Chinese Share Viewer + zh Auth Metadata (Batch 5c, 2026-09-18)
 
 ### Chinese share viewer at /zh/share/<token>

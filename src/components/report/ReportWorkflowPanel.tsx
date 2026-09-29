@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { BookOpen, History, Lock, Unlock } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
@@ -13,12 +14,12 @@ import { KnowledgeReadinessPanel, knowledgeReadinessAnalytics } from "@/componen
 
 const LOCKED_STATUSES = new Set(["approved", "submitted", "closed"])
 
-const STATUSES = [
-  ["draft", "Draft"],
-  ["internal_review", "Internal Review"],
-  ["approved", "Approved"],
-  ["submitted", "Submitted to Customer"],
-  ["closed", "Closed"],
+const STATUS_KEYS = [
+  ["draft", "statusDraft"],
+  ["internal_review", "statusInternalReview"],
+  ["approved", "statusApproved"],
+  ["submitted", "statusSubmittedCustomer"],
+  ["closed", "statusClosed"],
 ] as const
 
 interface Activity {
@@ -35,20 +36,23 @@ interface Activity {
   metadata?: Record<string, unknown>
 }
 
-const ACTION_LABELS: Record<string, string> = {
-  report_field_updated: "Updated report field",
-  report_updated: "Updated report details",
-  attachment_uploaded: "Uploaded attachment",
-  attachment_deleted: "Deleted attachment",
-  share_link_created: "Created share link",
-  share_link_updated: "Updated share link",
-  share_link_revoked: "Revoked share link",
-  workflow_status_changed: "Changed workflow status",
-  report_approved_or_locked: "Approved / locked report",
-  report_unlocked: "Unlocked for revision",
-  report_exported: "Exported report",
+const ACTION_LABEL_KEYS: Record<string, string> = {
+  report_field_updated: "actionReportFieldUpdated",
+  report_updated: "actionReportUpdated",
+  attachment_uploaded: "actionAttachmentUploaded",
+  attachment_deleted: "actionAttachmentDeleted",
+  share_link_created: "actionShareLinkCreated",
+  share_link_updated: "actionShareLinkUpdated",
+  share_link_revoked: "actionShareLinkRevoked",
+  workflow_status_changed: "actionWorkflowStatusChanged",
+  report_approved_or_locked: "actionReportApprovedOrLocked",
+  report_unlocked: "actionReportUnlocked",
+  report_exported: "actionReportExported",
 }
 
+// The activity feed mixes known action types with raw database values. Known
+// actions come from the catalog; unknown action/field/entity names keep the
+// humanized database value rather than inventing a translation.
 function humanize(value: string) {
   return value
     .replaceAll("_", " ")
@@ -60,12 +64,15 @@ function shortText(value: unknown) {
   return String(value)
 }
 
-function activityLabel(activity: Activity) {
-  const base = ACTION_LABELS[activity.actionType] || humanize(activity.actionType)
+type Translator = (key: string, values?: Record<string, string | number>) => string
+
+function activityLabel(activity: Activity, t: Translator) {
+  const key = ACTION_LABEL_KEYS[activity.actionType]
+  const base = key ? t(key) : humanize(activity.actionType)
   return activity.fieldName ? `${base} · ${humanize(activity.fieldName)}` : base
 }
 
-function activityDetails(activity: Activity) {
+function activityDetails(activity: Activity, t: Translator) {
   const details: string[] = []
   const filename = shortText(activity.metadata?.filename)
   const stepId = shortText(activity.metadata?.stepId)
@@ -73,12 +80,12 @@ function activityDetails(activity: Activity) {
   const permissionLevel = shortText(activity.metadata?.permissionLevel)
   const revision = shortText(activity.metadata?.revision)
 
-  if (filename) details.push(`File: ${filename}`)
-  if (stepId) details.push(`Step: ${stepId.toUpperCase()}`)
-  if (format) details.push(`Format: ${format.toUpperCase()}`)
-  if (permissionLevel) details.push(`Share: ${permissionLevel}`)
-  if (revision) details.push(`Revision: ${revision}`)
-  if (activity.entityType && activity.entityType !== "report") details.push(`Entity: ${humanize(activity.entityType)}`)
+  if (filename) details.push(t("detailFile", { value: filename }))
+  if (stepId) details.push(t("detailStep", { value: stepId.toUpperCase() }))
+  if (format) details.push(t("detailFormat", { value: format.toUpperCase() }))
+  if (permissionLevel) details.push(t("detailShare", { value: permissionLevel }))
+  if (revision) details.push(t("detailRevision", { value: revision }))
+  if (activity.entityType && activity.entityType !== "report") details.push(t("detailEntity", { value: humanize(activity.entityType) }))
 
   return details
 }
@@ -118,6 +125,8 @@ export function ReportWorkflowPanel({
    */
   onBeforeAction?: () => Promise<unknown>
 }) {
+  const t = useTranslations("editor")
+  const tn = useTranslations("nav")
   const [open, setOpen] = useState(false)
   const [activities, setActivities] = useState<Activity[]>([])
   const [reason, setReason] = useState("")
@@ -141,14 +150,14 @@ export function ReportWorkflowPanel({
         body: JSON.stringify(body),
       })
       const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || "Workflow update failed")
+      if (!res.ok) throw new Error(data?.error || t("workflowUpdateFailed"))
       onUpdated(data)
       setReason("")
       const activityRes = await fetch(`/api/reports/${reportId}/activity`)
       if (activityRes.ok) setActivities(await activityRes.json())
-      toast.success(body.action === "unlock" ? "Report unlocked for revision" : "Workflow status updated")
+      toast.success(body.action === "unlock" ? t("reportUnlocked") : t("workflowUpdated"))
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Workflow update failed")
+      toast.error(error instanceof Error ? error.message : t("workflowUpdateFailed"))
     } finally {
       setSaving(false)
     }
@@ -161,29 +170,29 @@ export function ReportWorkflowPanel({
         knowledgeReadinessAnalytics(knowledgeReadiness, plan),
         reportId,
       )
-      toast.warning(
-        "This report can still be completed, but missing root cause, corrective action, validation, or lessons learned will make future knowledge reuse weaker.",
-      )
+      toast.warning(t("knowledgeWarning"))
     }
     void updateWorkflow({ workflowStatus: nextStatus })
   }
+
+  const currentStatusKey = STATUS_KEYS.find(([value]) => value === workflowStatus)?.[1]
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger render={<Button size="sm" variant="outline" />}>
         {locked ? <Lock className="size-3.5" /> : <History className="size-3.5" />}
-        <span className="hidden md:inline">Workflow</span>
+        <span className="hidden md:inline">{t("workflow")}</span>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Workflow and activity</DialogTitle>
+          <DialogTitle>{t("workflowActivity")}</DialogTitle>
         </DialogHeader>
         <div className="rounded-lg border bg-slate-50 p-3 text-sm">
-          <div className="font-medium">Revision {revision} · {STATUSES.find(([value]) => value === workflowStatus)?.[1] || workflowStatus}</div>
-          <div className="mt-1 text-xs text-muted-foreground">{locked ? "Locked against edits, attachment deletion, and signature replacement." : "Open for editing."}</div>
+          <div className="font-medium">{t("revisionStatus", { revision, status: currentStatusKey ? t(currentStatusKey) : workflowStatus })}</div>
+          <div className="mt-1 text-xs text-muted-foreground">{locked ? t("lockedAgainstEdits") : t("openForEditing")}</div>
           <div className="mt-3 flex flex-col gap-2 rounded-md border border-indigo-100 bg-white p-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
             <span>
-              Completed and closed reports become reusable knowledge for future root-cause and corrective-action work.
+              {t("reuseKnowledgeDesc")}
             </span>
             <Link
               href="/knowledge"
@@ -195,7 +204,7 @@ export function ReportWorkflowPanel({
               className="inline-flex h-8 shrink-0 items-center justify-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-2.5 font-medium text-indigo-700 hover:bg-indigo-100"
             >
               <BookOpen className="size-3.5" />
-              Knowledge Base
+              {tn("knowledgeBase")}
             </Link>
           </div>
           {canManageWorkflow && !locked && (
@@ -205,24 +214,24 @@ export function ReportWorkflowPanel({
               disabled={saving}
               onChange={(event) => handleWorkflowStatusChange(event.target.value)}
             >
-              {STATUSES.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+              {STATUS_KEYS.map(([value, key]) => <option key={value} value={value}>{t(key)}</option>)}
             </select>
           )}
           {canManageWorkflow && locked && (
             <div className="mt-3 grid gap-2">
               {workflowStatus === "approved" && (
                 <Button disabled={saving} onClick={() => void updateWorkflow({ workflowStatus: "submitted" })}>
-                  Submit to customer
+                  {t("submitToCustomer")}
                 </Button>
               )}
               {workflowStatus === "submitted" && (
                 <Button disabled={saving} onClick={() => void updateWorkflow({ workflowStatus: "closed" })}>
-                  Close report
+                  {t("closeReport")}
                 </Button>
               )}
-              <Textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Reason for unlocking this report for revision" rows={3} />
+              <Textarea value={reason} onChange={(event) => setReason(event.target.value)} placeholder={t("unlockReasonPlaceholder")} rows={3} />
               <Button variant="outline" disabled={saving || !reason.trim()} onClick={() => void updateWorkflow({ action: "unlock", reason })}>
-                <Unlock className="size-3.5" /> Unlock for revision
+                <Unlock className="size-3.5" /> {t("unlockForRevision")}
               </Button>
             </div>
           )}
@@ -235,11 +244,11 @@ export function ReportWorkflowPanel({
           trackViewed={false}
         />
         <div>
-          <h3 className="text-sm font-semibold">Activity log</h3>
+          <h3 className="text-sm font-semibold">{t("activityLog")}</h3>
           <div className="mt-2 divide-y rounded-lg border">
-            {activities.length === 0 && <div className="p-3 text-xs text-muted-foreground">No activity recorded yet.</div>}
+            {activities.length === 0 && <div className="p-3 text-xs text-muted-foreground">{t("noActivity")}</div>}
             {activities.map((activity) => {
-              const details = activityDetails(activity)
+              const details = activityDetails(activity, t)
               const hasValueChange = hasActivityValueChange(activity)
 
               return (
@@ -247,7 +256,7 @@ export function ReportWorkflowPanel({
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <div className="font-medium">
-                        {activity.actorName || "Team member"} · {activityLabel(activity)}
+                        {activity.actorName || t("teamMember")} · {activityLabel(activity, t)}
                       </div>
                       <div className="mt-1 text-muted-foreground">
                         {new Date(activity.createdAt).toLocaleString()}
@@ -273,13 +282,13 @@ export function ReportWorkflowPanel({
                   {hasValueChange && (
                     <div className="grid gap-2 rounded-md bg-slate-50 p-2 sm:grid-cols-2">
                       <div>
-                        <div className="mb-1 font-medium text-slate-500">Before</div>
+                        <div className="mb-1 font-medium text-slate-500">{t("before")}</div>
                         <div className="max-h-20 overflow-y-auto whitespace-pre-wrap break-words text-slate-700">
                           {activity.oldValuePreview || "-"}
                         </div>
                       </div>
                       <div>
-                        <div className="mb-1 font-medium text-slate-500">After</div>
+                        <div className="mb-1 font-medium text-slate-500">{t("after")}</div>
                         <div className="max-h-20 overflow-y-auto whitespace-pre-wrap break-words text-slate-700">
                           {activity.newValuePreview || "-"}
                         </div>
@@ -289,7 +298,7 @@ export function ReportWorkflowPanel({
 
                   {activity.reason && (
                     <div className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1.5 text-amber-900">
-                      Reason: {activity.reason}
+                      {t("reasonPrefix", { reason: activity.reason })}
                     </div>
                   )}
                 </div>

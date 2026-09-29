@@ -36,6 +36,7 @@ function AttachmentImage({
   attachment: Attachment
   onPreview: (url: string) => void
 }) {
+  const t = useTranslations("editor")
   const [objectUrl, setObjectUrl] = useState<string | null>(null)
   const [failed, setFailed] = useState(false)
 
@@ -70,7 +71,7 @@ function AttachmentImage({
     return (
       <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded bg-muted px-2 text-center text-[11px] text-muted-foreground">
         <FileText className="size-7" />
-        <span>Preview unavailable</span>
+        <span>{t("previewUnavailable")}</span>
       </div>
     )
   }
@@ -78,7 +79,7 @@ function AttachmentImage({
   if (!objectUrl) {
     return (
       <div className="flex aspect-[4/3] w-full items-center justify-center rounded bg-muted text-[11px] text-muted-foreground">
-        Loading preview...
+        {t("loadingPreview")}
       </div>
     )
   }
@@ -111,6 +112,7 @@ interface AttachmentAreaProps {
 
 export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true }: AttachmentAreaProps) {
   const t = useTranslations("editor")
+  const tc = useTranslations("common")
   const [attachments, setAttachments] = useState<Attachment[]>([])
   const [loading, setLoading] = useState(true)
   const [uploading, setUploading] = useState(false)
@@ -139,12 +141,12 @@ export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true
 
   const handleFileSelect = async (file: File) => {
     if (!canEdit) {
-      toast.error("You do not have permission to add attachments to this report")
+      toast.error(t("noPermAddAttachment"))
       return
     }
     const maxFileSize = isPro ? 10 * 1024 * 1024 : 5 * 1024 * 1024
     if (file.size > maxFileSize) {
-      toast.error(`File too large (max ${isPro ? "10MB" : "5MB"})`)
+      toast.error(t("fileTooLarge", { size: isPro ? "10MB" : "5MB" }))
       return
     }
     setUploading(true)
@@ -156,7 +158,7 @@ export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true
       const uploadRes = await fetch("/api/upload", { method: "POST", body: form })
       if (!uploadRes.ok) {
         const err = await uploadRes.json().catch(() => null)
-        throw new Error(err?.error || "Upload failed")
+        throw new Error(err?.error || t("uploadFailed"))
       }
       const uploaded = await uploadRes.json()
 
@@ -175,13 +177,13 @@ export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true
       })
       if (!attachRes.ok) {
         const err = await attachRes.json().catch(() => null)
-        throw new Error(err?.error || "Attachment save failed")
+        throw new Error(err?.error || t("attachmentSaveFailed"))
       }
       trackEvent("attachment_uploaded", { stepId, fileType: file.type, fileSize: file.size }, reportId)
-      toast.success("File attached")
+      toast.success(t("fileAttached"))
       await fetchAttachments()
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to upload file")
+      toast.error(err instanceof Error ? err.message : t("uploadFileFailed"))
     } finally {
       setUploading(false)
     }
@@ -189,16 +191,16 @@ export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true
 
   const handleDelete = async (att: Attachment) => {
     if (!canEdit) {
-      toast.error("You do not have permission to delete attachments from this report")
+      toast.error(t("noPermDeleteAttachment"))
       return
     }
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments?attachmentId=${att.id}`, { method: "DELETE" })
-      if (!res.ok) throw new Error("Delete failed")
+      if (!res.ok) throw new Error(t("deleteFailed"))
       setAttachments((prev) => prev.filter((a) => a.id !== att.id))
-      toast.success("Attachment removed")
+      toast.success(t("attachmentRemoved"))
     } catch {
-      toast.error("Failed to remove attachment")
+      toast.error(t("removeAttachmentFailed"))
     }
   }
 
@@ -249,16 +251,16 @@ export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true
         </div>
       ) : (
         <p className="text-xs text-muted-foreground">
-          Attachments are view-only for your role.
+          {t("attachmentsViewOnly")}
         </p>
       )}
 
       {uploading && (
-        <div className="text-xs text-muted-foreground py-2">Uploading...</div>
+        <div className="text-xs text-muted-foreground py-2">{t("uploading")}</div>
       )}
 
       {loading && attachments.length === 0 && (
-        <div className="text-xs text-muted-foreground py-2">Loading...</div>
+        <div className="text-xs text-muted-foreground py-2">{tc("loading")}</div>
       )}
 
       {attachments.length > 0 && (
@@ -309,7 +311,7 @@ export function AttachmentArea({ reportId, stepId, isPro = false, canEdit = true
           </button>
           <img
             src={previewUrl}
-            alt="Preview"
+            alt={t("previewAlt")}
             className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
             onClick={(e) => e.stopPropagation()}
           />

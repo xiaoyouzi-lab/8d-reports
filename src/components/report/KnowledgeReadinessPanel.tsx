@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { AlertTriangle, CheckCircle2, CircleDashed, Info } from "lucide-react"
 import { trackEvent } from "@/lib/analytics"
 import {
@@ -24,6 +25,12 @@ const statusIcons: Record<KnowledgeReadinessStatus, typeof CheckCircle2> = {
   Ready: CheckCircle2,
   "Needs detail": AlertTriangle,
   Missing: CircleDashed,
+}
+
+const STATUS_KEYS: Record<KnowledgeReadinessStatus, string> = {
+  Ready: "statusReady",
+  "Needs detail": "statusNeedsDetail",
+  Missing: "statusMissing",
 }
 
 export function knowledgeReadinessAnalytics(summary: KnowledgeReadinessSummary, plan: Plan) {
@@ -53,6 +60,7 @@ export function KnowledgeReadinessPanel({
   location?: "editor" | "workflow_panel"
   trackViewed?: boolean
 }) {
+  const t = useTranslations("editor")
   const summary = useMemo(
     () => providedSummary || getKnowledgeReadinessSummary(reportData || DEFAULT_REPORT_DATA),
     [providedSummary, reportData],
@@ -76,9 +84,9 @@ export function KnowledgeReadinessPanel({
         <div className="flex min-w-0 gap-2">
           <Info className={cn("mt-0.5 size-4 shrink-0", needsAttention ? "text-amber-600" : "text-emerald-600")} />
           <div>
-            <h3 className="font-semibold text-foreground">Knowledge readiness</h3>
+            <h3 className="font-semibold text-foreground">{t("knowledgeReadiness")}</h3>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
-              Completed, submitted, approved, and closed reports become stronger reusable knowledge when these fields are captured.
+              {t("knowledgeReadinessDesc")}
             </p>
           </div>
         </div>
@@ -86,7 +94,7 @@ export function KnowledgeReadinessPanel({
           "w-fit rounded-full border px-2 py-0.5 text-xs font-medium",
           needsAttention ? "border-amber-200 bg-white text-amber-800" : "border-emerald-200 bg-white text-emerald-800",
         )}>
-          {needsAttention ? `${summary.missingCount} need detail` : "Ready for reuse"}
+          {needsAttention ? t("needDetail", { count: summary.missingCount }) : t("readyForReuse")}
         </div>
       </div>
       <div className={cn(
@@ -102,7 +110,7 @@ export function KnowledgeReadinessPanel({
                 <span className="truncate text-xs font-medium text-foreground">{item.label}</span>
               </div>
               <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium", statusStyles[item.status])}>
-                {item.status}
+                {t(STATUS_KEYS[item.status])}
               </span>
             </div>
           )

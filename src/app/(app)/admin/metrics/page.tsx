@@ -4,6 +4,7 @@ import { getSessionUser } from "@/lib/api-helpers";
 import { db } from "@/lib/db";
 import { analyticsEvents, customTemplateRequests } from "@/lib/db/schema";
 import { isServiceAdmin } from "@/lib/service-requests";
+import { getAppTranslator } from "@/lib/app-i18n";
 
 type MetricKey =
   | "pageViews"
@@ -22,46 +23,48 @@ type MetricRow = {
   days30: number;
 };
 
+type Translator = (key: string) => string;
+
 const eventMetrics: Array<{
   key: Exclude<MetricKey, "templateSetupSubmissions">;
-  label: string;
-  description: string;
+  labelKey: string;
+  descriptionKey: string;
   eventNames: string[];
 }> = [
   {
     key: "pageViews",
-    label: "Page views",
-    description: "SEO and demo page view events.",
+    labelKey: "metricPageViews",
+    descriptionKey: "metricPageViewsDesc",
     eventNames: ["seo_page_view", "demo_report_viewed"],
   },
   {
     key: "demoDownloads",
-    label: "Demo downloads",
-    description: "PDF, Word, Excel, and ZIP demo download clicks.",
+    labelKey: "metricDemoDownloads",
+    descriptionKey: "metricDemoDownloadsDesc",
     eventNames: ["demo_report_downloaded", "sample_download"],
   },
   {
     key: "contactSubmissions",
-    label: "Contact submissions",
-    description: "Contact form submissions recorded as conversion intent.",
+    labelKey: "metricContactSubmissions",
+    descriptionKey: "metricContactSubmissionsDesc",
     eventNames: ["contact_form_submitted"],
   },
   {
     key: "signupCount",
-    label: "Signup count",
-    description: "Completed signup events.",
+    labelKey: "metricSignupCount",
+    descriptionKey: "metricSignupCountDesc",
     eventNames: ["signup_completed"],
   },
   {
     key: "exportAttempts",
-    label: "Export attempts",
-    description: "Report export attempts across PDF, Word, and Excel.",
+    labelKey: "metricExportAttempts",
+    descriptionKey: "metricExportAttemptsDesc",
     eventNames: ["export_attempted"],
   },
   {
     key: "pricingCtaClicks",
-    label: "Pricing CTA clicks",
-    description: "Professional service, plan, upgrade, and single export CTA clicks.",
+    labelKey: "metricPricingCtaClicks",
+    descriptionKey: "metricPricingCtaClicksDesc",
     eventNames: ["pricing_service_cta_clicked", "pricing_plan_clicked", "upgrade_clicked", "single_export_clicked"],
   },
 ];
@@ -89,19 +92,19 @@ async function countTemplateRequests(days: number) {
   return Number(row?.count || 0);
 }
 
-async function buildMetrics(): Promise<MetricRow[]> {
+async function buildMetrics(t: Translator): Promise<MetricRow[]> {
   const rows: MetricRow[] = await Promise.all(eventMetrics.map(async (metric) => ({
     key: metric.key,
-    label: metric.label,
-    description: metric.description,
+    label: t(metric.labelKey),
+    description: t(metric.descriptionKey),
     days7: await countEvents(metric.eventNames, 7),
     days30: await countEvents(metric.eventNames, 30),
   })));
 
   rows.splice(2, 0, {
     key: "templateSetupSubmissions",
-    label: "Template setup submissions",
-    description: "Template Setup, Team Launch, and Assisted 8D / SCAR leads saved in the service request table.",
+    label: t("metricTemplateSetup"),
+    description: t("metricTemplateSetupDesc"),
     days7: await countTemplateRequests(7),
     days30: await countTemplateRequests(30),
   });
@@ -113,19 +116,18 @@ export default async function AdminMetricsPage() {
   const user = await getSessionUser();
   if (!user || !isServiceAdmin(user.email)) notFound();
 
-  const metrics = await buildMetrics();
+  const { t } = await getAppTranslator("admin");
+  const metrics = await buildMetrics(t as unknown as Translator);
 
   return (
     <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="mb-6">
-        <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Admin</p>
+        <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">{t("admin")}</p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
-          Revenue evidence metrics
+          {t("revenueMetrics")}
         </h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-          A compact view of whether visitors click, download demos, submit setup
-          requests, sign up, and attempt exports. Metrics use existing
-          application events and saved service leads.
+          {t("revenueMetricsDesc")}
         </p>
       </div>
 
@@ -133,10 +135,10 @@ export default async function AdminMetricsPage() {
         <table className="w-full min-w-[760px] border-collapse text-sm">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-left">
-              <th className="px-4 py-3 font-semibold text-slate-950">Metric</th>
-              <th className="px-4 py-3 font-semibold text-slate-950">Last 7 days</th>
-              <th className="px-4 py-3 font-semibold text-slate-950">Last 30 days</th>
-              <th className="px-4 py-3 font-semibold text-slate-950">Meaning</th>
+              <th className="px-4 py-3 font-semibold text-slate-950">{t("metric")}</th>
+              <th className="px-4 py-3 font-semibold text-slate-950">{t("last7")}</th>
+              <th className="px-4 py-3 font-semibold text-slate-950">{t("last30")}</th>
+              <th className="px-4 py-3 font-semibold text-slate-950">{t("meaning")}</th>
             </tr>
           </thead>
           <tbody>

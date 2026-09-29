@@ -20,15 +20,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { authClient } from "@/lib/auth-client"
 import { usePlan } from "@/lib/use-plan"
 
-const reportTypeLabels: Record<string, string> = {
-  customer_8d: "Customer 8D",
-  internal_8d: "Internal 8D",
+const reportTypeLabelKeys: Record<string, string> = {
+  customer_8d: "customer8d",
+  internal_8d: "internal8d",
 }
 
-const priorityLabels: Record<string, string> = {
-  low: "Low",
-  medium: "Medium",
-  high: "High",
+const priorityLabelKeys: Record<string, string> = {
+  low: "priorityLow",
+  medium: "priorityMedium",
+  high: "priorityHigh",
 }
 
 export default function NewReportPage() {
@@ -81,7 +81,7 @@ export default function NewReportPage() {
       trackEvent("report_created", { reportType, priority }, report.id)
       router.push(`/reports/${report.id}`)
     } catch {
-      toast.error("An unexpected error occurred")
+      toast.error(t("unexpectedError"))
       setIsSubmitting(false)
     }
   }
@@ -93,7 +93,7 @@ export default function NewReportPage() {
           <FileText className="size-6 text-indigo-600" />
         </div>
         <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          New 8D Report
+          {t("newReportTitle")}
         </h1>
         <p className="mt-1.5 text-sm text-muted-foreground">
           {t("reportDetailsDesc")}
@@ -106,17 +106,17 @@ export default function NewReportPage() {
             <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full bg-white text-indigo-600">
               <Lock className="size-5" />
             </div>
-            <CardTitle>Free report limit reached</CardTitle>
+            <CardTitle>{t("freeLimitReached")}</CardTitle>
             <CardDescription>
-              You have used {quota.usedQuota} of {quota.totalQuota} free reports. Upgrade to Pro or Team to create more reports.
+              {t("freeLimitDesc", { used: quota.usedQuota, total: quota.totalQuota })}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <Link href="/pricing" className="inline-flex h-10 w-full items-center justify-center rounded-md bg-indigo-600 px-4 text-sm font-medium text-white hover:bg-indigo-700">
-              View upgrade options
+              {t("viewUpgradeOptions")}
             </Link>
             <Link href="/dashboard" className="inline-flex h-10 w-full items-center justify-center rounded-md border border-indigo-200 bg-white px-4 text-sm font-medium text-indigo-700 hover:bg-indigo-50">
-              Back to dashboard
+              {t("backToDashboard")}
             </Link>
           </CardContent>
         </Card>
@@ -137,11 +137,11 @@ export default function NewReportPage() {
             <Select value={reportType} onValueChange={(val) => setReportType(val ?? "customer_8d")}>
               <SelectTrigger className="w-full">
                 <SelectValue className="sr-only" />
-                <span>{reportTypeLabels[reportType] || "Customer 8D"}</span>
+                <span>{t(reportTypeLabelKeys[reportType] || "customer8d")}</span>
               </SelectTrigger>
               <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
-                <SelectItem value="customer_8d">Customer 8D</SelectItem>
-                <SelectItem value="internal_8d">Internal 8D</SelectItem>
+                <SelectItem value="customer_8d">{t("customer8d")}</SelectItem>
+                <SelectItem value="internal_8d">{t("internal8d")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -154,12 +154,12 @@ export default function NewReportPage() {
             <Select value={priority} onValueChange={(val) => setPriority(val ?? "medium")}>
               <SelectTrigger className="w-full">
                 <SelectValue className="sr-only" />
-                <span>{priorityLabels[priority] || "Medium"}</span>
+                <span>{t(priorityLabelKeys[priority] || "priorityMedium")}</span>
               </SelectTrigger>
               <SelectContent align="start" sideOffset={8} className="max-h-60 z-[100]">
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="low">{t("priorityLow")}</SelectItem>
+                <SelectItem value="medium">{t("priorityMedium")}</SelectItem>
+                <SelectItem value="high">{t("priorityHigh")}</SelectItem>
               </SelectContent>
             </Select>
           </div>

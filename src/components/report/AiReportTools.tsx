@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Loader2, Sparkles } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -109,6 +110,7 @@ function ResultSection({ title, value }: AiSection) {
 }
 
 function AiReviewResult({ output }: { output: AiOutput }) {
+  const t = useTranslations("ai")
   const score = toText(output.overallScore)
   const readiness = toText(output.readiness)
   const summary = toText(output.summaryText)
@@ -125,7 +127,7 @@ function AiReviewResult({ output }: { output: AiOutput }) {
   if (summary && !hasStructuredSections) {
     return (
       <div className="rounded-lg border bg-white p-3">
-        <h3 className="text-sm font-semibold">AI review summary</h3>
+        <h3 className="text-sm font-semibold">{t("summaryTitle")}</h3>
         <div className="mt-2 space-y-2 text-sm text-muted-foreground">
           {summary.split(/\n{2,}/).map((paragraph, index) => (
             <p key={index}>{paragraph.replace(/^#+\s*/, "")}</p>
@@ -139,24 +141,24 @@ function AiReviewResult({ output }: { output: AiOutput }) {
     <div className="grid gap-3">
       <div className="grid gap-2 sm:grid-cols-2">
         <div className="rounded-lg border bg-white p-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Readiness</div>
-          <div className="mt-1 text-lg font-semibold text-foreground">{readiness.replace(/_/g, " ") || "Needs review"}</div>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("readiness")}</div>
+          <div className="mt-1 text-lg font-semibold text-foreground">{readiness.replace(/_/g, " ") || t("needsReview")}</div>
         </div>
         <div className="rounded-lg border bg-white p-3">
-          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Overall score</div>
-          <div className="mt-1 text-lg font-semibold text-foreground">{score || "No score provided"}</div>
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("overallScore")}</div>
+          <div className="mt-1 text-lg font-semibold text-foreground">{score || t("noScore")}</div>
         </div>
       </div>
-      <ResultSection title="Critical issues" value={output.criticalIssues} />
-      <ResultSection title="Missing evidence / information" value={output.missingInformation} />
-      <ResultSection title="Root cause and section concerns" value={output.sectionScores} />
-      <ResultSection title="Corrective action improvements" value={output.improvementSuggestions} />
-      <ResultSection title="Knowledge-based observations" value={output.knowledgeBasedObservations} />
-      <ResultSection title="Customer rejection risks" value={output.customerRejectionRisks} />
-      <ResultSection title="Suggested wording improvements" value={output.revisedWordingSuggestions} />
+      <ResultSection title={t("criticalIssues")} value={output.criticalIssues} />
+      <ResultSection title={t("missingInfo")} value={output.missingInformation} />
+      <ResultSection title={t("sectionConcerns")} value={output.sectionScores} />
+      <ResultSection title={t("correctiveImprovements")} value={output.improvementSuggestions} />
+      <ResultSection title={t("knowledgeObservations")} value={output.knowledgeBasedObservations} />
+      <ResultSection title={t("rejectionRisks")} value={output.customerRejectionRisks} />
+      <ResultSection title={t("wordingImprovements")} value={output.revisedWordingSuggestions} />
       {!hasStructuredSections && (
         <div className="rounded-lg border bg-white p-3 text-sm text-muted-foreground">
-          AI returned no detailed findings. Review the report manually before customer submission.
+          {t("noFindings")}
         </div>
       )}
     </div>
@@ -164,22 +166,24 @@ function AiReviewResult({ output }: { output: AiOutput }) {
 }
 
 function KnowledgeContextStatus({ context }: { context: ReviewKnowledgeContext | null }) {
+  const t = useTranslations("ai")
   if (!context) return null
   return (
     <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-950">
       {context.hasContext
-        ? `Knowledge context used: ${context.contextCount} similar reports`
-        : "No reusable knowledge context found yet."}
+        ? t("knowledgeContextUsed", { count: context.contextCount })
+        : t("noKnowledgeContext")}
     </div>
   )
 }
 
 function AiDraftResult({ draftFields, onApply }: { draftFields: Partial<ReportData>; onApply: () => void }) {
+  const t = useTranslations("ai")
   const entries = Object.entries(draftFields).filter(([, value]) => String(value || "").trim())
   if (entries.length === 0) {
     return (
       <div className="rounded-lg border bg-white p-3 text-sm text-muted-foreground">
-        AI did not return draft fields. Add more source material and try again.
+        {t("noDraftFields")}
       </div>
     )
   }
@@ -187,8 +191,8 @@ function AiDraftResult({ draftFields, onApply }: { draftFields: Partial<ReportDa
   return (
     <div className="rounded-lg border bg-white p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Draft preview</h3>
-        <Button size="sm" onClick={onApply}>Apply to empty fields</Button>
+        <h3 className="text-sm font-semibold">{t("draftPreview")}</h3>
+        <Button size="sm" onClick={onApply}>{t("applyToEmpty")}</Button>
       </div>
       <div className="grid gap-2 text-sm">
         {entries.map(([key, value]) => (
@@ -203,6 +207,7 @@ function AiDraftResult({ draftFields, onApply }: { draftFields: Partial<ReportDa
 }
 
 export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraft, onBeforeAction }: AiReportToolsProps) {
+  const t = useTranslations("ai")
   const [open, setOpen] = useState(false)
   const [materials, setMaterials] = useState("")
   const [review, setReview] = useState<AiOutput | null>(null)
@@ -241,14 +246,14 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
           reportId,
         )
       }
-      if (!res.ok) throw new Error(data?.error || "AI review failed")
+      if (!res.ok) throw new Error(data?.error || t("reviewFailed"))
       const output = normalizeAiOutput(data?.output)
-      if (!output) throw new Error("AI returned an unreadable response. Please try again.")
+      if (!output) throw new Error(t("unreadableReview"))
       setReview(output)
       setReviewError(null)
-      toast.success("Quality review generated")
+      toast.success(t("qualityReviewGenerated"))
     } catch (err) {
-      const message = err instanceof Error ? err.message : "AI review failed"
+      const message = err instanceof Error ? err.message : t("reviewFailed")
       setReviewError(message)
       toast.error(message)
     } finally {
@@ -258,7 +263,7 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
 
   const runDraft = async () => {
     if (!materials.trim()) {
-      toast.error("Paste complaint emails, inspection notes, photos descriptions, or 5-Why notes first")
+      toast.error(t("materialsRequired"))
       return
     }
     setLoading("draft")
@@ -272,14 +277,14 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
         body: JSON.stringify({ reportId, materials, currentReportData: fresh }),
       })
       const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || "AI draft failed")
+      if (!res.ok) throw new Error(data?.error || t("draftFailed"))
       const output = normalizeAiOutput(data?.output)
-      if (!output) throw new Error("AI returned an unreadable draft. Please try again.")
+      if (!output) throw new Error(t("unreadableDraft"))
       setDraft(output)
       setDraftError(null)
-      toast.success("Draft generated for review")
+      toast.success(t("draftGenerated"))
     } catch (err) {
-      const message = err instanceof Error ? err.message : "AI draft failed"
+      const message = err instanceof Error ? err.message : t("draftFailed")
       setDraftError(message)
       toast.error(message)
     } finally {
@@ -299,35 +304,35 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
         }
       >
           <Sparkles className="size-3.5" />
-          <span className="hidden sm:inline">AI</span>
+          <span className="hidden sm:inline">{t("ai")}</span>
       </DialogTrigger>
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
-          <DialogTitle>AI Quality Check — Beta</DialogTitle>
+          <DialogTitle>{t("dialogTitle")}</DialogTitle>
         </DialogHeader>
         <div className="grid gap-4">
           <div className="rounded-lg border bg-indigo-50 p-3 text-sm text-indigo-950">
-            AI Quality Check helps identify missing information and logic risks. It does not approve or certify the report.
+            {t("disclaimer")}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-lg border p-3">
-              <h3 className="text-sm font-semibold">AI Quality Check — Beta</h3>
+              <h3 className="text-sm font-semibold">{t("reviewTitle")}</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                Check problem clarity, containment, root cause, corrective action, verification, prevention, and customer rejection risk.
+                {t("reviewDesc")}
               </p>
               <Button className="mt-3" size="sm" onClick={runReview} disabled={!!loading}>
                 {loading === "review" && <Loader2 className="size-3.5 animate-spin" />}
-                Review report
+                {t("reviewReport")}
               </Button>
             </div>
             <div className="rounded-lg border p-3">
-              <h3 className="text-sm font-semibold">Generate draft from materials</h3>
+              <h3 className="text-sm font-semibold">{t("draftTitle")}</h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                AI Draft uses only your current report fields and the material you provide in this session.
+                {t("draftDesc")}
               </p>
               <Button className="mt-3" size="sm" onClick={runDraft} disabled={!!loading}>
                 {loading === "draft" && <Loader2 className="size-3.5 animate-spin" />}
-                Generate draft
+                {t("generateDraft")}
               </Button>
             </div>
           </div>
@@ -336,7 +341,7 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
             value={materials}
             onChange={(event) => setMaterials(event.target.value)}
             rows={6}
-            placeholder="Paste customer complaint email, inspection records, temporary containment, 5-Why notes, and photo descriptions here..."
+            placeholder={t("materialsPlaceholder")}
           />
 
           {reviewError && (
@@ -349,11 +354,11 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
 
           {review && (
             <div className="rounded-lg border bg-slate-50 p-3">
-              <h3 className="mb-3 text-sm font-semibold">AI Quality Check result</h3>
+              <h3 className="mb-3 text-sm font-semibold">{t("reviewResult")}</h3>
               <AiReviewResult output={review} />
               {process.env.NODE_ENV === "development" && (
                 <details className="mt-3 text-xs text-muted-foreground">
-                  <summary>Developer raw output</summary>
+                  <summary>{t("devRawOutput")}</summary>
                   <pre className="mt-2 max-h-80 overflow-auto rounded bg-slate-950 p-3 text-slate-50">
                     {JSON.stringify(review, null, 2)}
                   </pre>
@@ -374,7 +379,7 @@ export function AiReportTools({ reportId, reportData, plan = "free", onApplyDraf
               onApply={() => {
                 onApplyDraft(draftFields)
                 trackEvent("ai_draft_applied", {}, reportId)
-                toast.success("AI draft applied to empty report fields")
+                toast.success(t("draftApplied"))
               }}
             />
           )}

@@ -3,6 +3,7 @@
 import { useRef, useState } from "react"
 import { ImageUp, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import type { ReportData } from "@/lib/report-steps"
 
@@ -10,7 +11,7 @@ type SignatureRole = "prepared" | "reviewed" | "approved"
 
 interface SignatureConfig {
   role: SignatureRole
-  title: string
+  titleKey: string
   nameField: keyof ReportData
   dateField: keyof ReportData
   idField: keyof ReportData
@@ -20,7 +21,7 @@ interface SignatureConfig {
 const SIGNATURES: SignatureConfig[] = [
   {
     role: "prepared",
-    title: "Prepared signature",
+    titleKey: "preparedSignature",
     nameField: "preparedBy",
     dateField: "preparedDate",
     idField: "preparedSignatureId",
@@ -28,7 +29,7 @@ const SIGNATURES: SignatureConfig[] = [
   },
   {
     role: "reviewed",
-    title: "Reviewed signature",
+    titleKey: "reviewedSignature",
     nameField: "reviewedBy",
     dateField: "reviewedDate",
     idField: "reviewedSignatureId",
@@ -36,7 +37,7 @@ const SIGNATURES: SignatureConfig[] = [
   },
   {
     role: "approved",
-    title: "Approved signature",
+    titleKey: "approvedSignature",
     nameField: "approverName",
     dateField: "approverDate",
     idField: "approvedSignatureId",
@@ -64,21 +65,23 @@ function SignatureCard({
   onChange: (name: string, value: string) => void
   canEdit: boolean
 }) {
+  const t = useTranslations("editor")
   const inputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(false)
   const signatureUrl = String(data[config.urlField] || "")
+  const title = t(config.titleKey)
 
   const upload = async (file: File) => {
     if (!canEdit) {
-      toast.error("You do not have permission to replace signatures on this report")
+      toast.error(t("noPermReplaceSignature"))
       return
     }
     if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
-      toast.error("Signature must be PNG, JPG, or WebP")
+      toast.error(t("signatureTypeError"))
       return
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Signature image must be 2MB or less")
+      toast.error(t("signatureSizeError"))
       return
     }
 
@@ -89,12 +92,12 @@ function SignatureCard({
       form.append("role", config.role)
       const res = await fetch(`/api/reports/${reportId}/signatures`, { method: "POST", body: form })
       const result = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(result?.error || "Signature upload failed")
+      if (!res.ok) throw new Error(result?.error || t("signatureUploadFailed"))
       onChange(String(config.idField), result.attachmentId || "")
       onChange(String(config.urlField), result.url || "")
-      toast.success("Signature uploaded")
+      toast.success(t("signatureUploaded"))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Signature upload failed")
+      toast.error(err instanceof Error ? err.message : t("signatureUploadFailed"))
     } finally {
       setLoading(false)
     }
@@ -102,19 +105,19 @@ function SignatureCard({
 
   const remove = async () => {
     if (!canEdit) {
-      toast.error("You do not have permission to delete signatures on this report")
+      toast.error(t("noPermDeleteSignature"))
       return
     }
     setLoading(true)
     try {
       const res = await fetch(`/api/reports/${reportId}/signatures/${config.role}`, { method: "DELETE" })
       const result = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(result?.error || "Signature removal failed")
+      if (!res.ok) throw new Error(result?.error || t("signatureRemovalFailed"))
       onChange(String(config.idField), "")
       onChange(String(config.urlField), "")
-      toast.success("Signature removed")
+      toast.success(t("signatureRemoved"))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Signature removal failed")
+      toast.error(err instanceof Error ? err.message : t("signatureRemovalFailed"))
     } finally {
       setLoading(false)
     }
@@ -124,18 +127,18 @@ function SignatureCard({
     <div className="rounded-lg border bg-white p-3">
       <div className="mb-2 flex items-center justify-between gap-2">
         <div>
-          <div className="text-sm font-medium text-foreground">{config.title}</div>
+          <div className="text-sm font-medium text-foreground">{title}</div>
           <div className="text-xs text-muted-foreground">
-            {String(data[config.nameField] || "Name not filled")} · {String(data[config.dateField] || "Date not filled")}
+            {String(data[config.nameField] || t("nameNotFilled"))} · {String(data[config.dateField] || t("dateNotFilled"))}
           </div>
         </div>
       </div>
       <div className="flex h-24 items-center justify-center rounded-md border border-dashed bg-muted/30">
         {signatureUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={signatureUrl} alt={config.title} className="max-h-20 max-w-full object-contain" />
+          <img src={signatureUrl} alt={title} className="max-h-20 max-w-full object-contain" />
         ) : (
-          <span className="text-xs text-muted-foreground">No signature uploaded</span>
+          <span className="text-xs text-muted-foreground">{t("noSignatureUploaded")}</span>
         )}
       </div>
       {canEdit ? (
@@ -153,18 +156,18 @@ function SignatureCard({
           />
           <Button type="button" size="sm" variant="outline" disabled={loading} onClick={() => inputRef.current?.click()}>
             <ImageUp className="size-3.5" />
-            Upload
+            {t("upload")}
           </Button>
           {signatureUrl && (
             <Button type="button" size="sm" variant="ghost" disabled={loading} onClick={remove}>
               <Trash2 className="size-3.5" />
-              Remove
+              {t("remove")}
             </Button>
           )}
         </div>
       ) : (
         <p className="mt-2 text-xs text-muted-foreground">
-          Signature changes are not available for your role.
+          {t("signatureRoleUnavailable")}
         </p>
       )}
     </div>
@@ -172,13 +175,13 @@ function SignatureCard({
 }
 
 export function SignatureApprovalArea({ reportId, data, onChange, canEdit = true }: SignatureApprovalAreaProps) {
+  const t = useTranslations("editor")
   return (
     <div className="space-y-3 border-t pt-4">
       <div>
-        <h3 className="text-sm font-semibold text-foreground">Approval signatures</h3>
+        <h3 className="text-sm font-semibold text-foreground">{t("approvalSignatures")}</h3>
         <p className="mt-1 text-xs leading-5 text-muted-foreground">
-          Upload PNG, JPG, or WebP signature images for the customer-facing PDF and Word exports.
-          These images are for report presentation and are not a legal electronic signature.
+          {t("approvalSignaturesDesc")}
         </p>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

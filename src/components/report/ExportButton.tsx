@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { FileDown, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,7 @@ export function ExportButton({
   reportId,
   withWatermark,
 }: ExportButtonProps) {
+  const t = useTranslations("export")
   const [loading, setLoading] = useState(false)
 
   const handleExport = async () => {
@@ -29,9 +31,9 @@ export function ExportButton({
         reportData, reportTitle, reportId, withWatermark,
       })
       pdf.save(`${reportId.slice(0, 8)}_8D_Report.pdf`)
-      toast.success("PDF exported successfully")
+      toast.success(t("pdfSuccess"))
     } catch {
-      toast.error("Failed to export PDF")
+      toast.error(t("pdfFailed"))
     } finally {
       setLoading(false)
     }
@@ -49,7 +51,7 @@ export function ExportButton({
       ) : (
         <FileDown className="size-3.5" />
       )}
-      <span className="hidden sm:inline">Export PDF</span>
+      <span className="hidden sm:inline">{t("exportPdf")}</span>
     </Button>
   )
 }

@@ -68,12 +68,12 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
   const fetchAttachments = async (): Promise<ExportAttachment[]> => {
     try {
       const res = await fetch(`/api/reports/${reportId}/attachments`)
-      if (!res.ok) throw new Error("Could not load report attachments for export")
+      if (!res.ok) throw new Error(t("loadAttachmentsFailed"))
       const data = await res.json().catch(() => [])
       return Array.isArray(data) ? data.filter(isExportAttachment) : []
     } catch (error) {
       if (error instanceof Error) throw error
-      throw new Error("Could not load report attachments for export")
+      throw new Error(t("loadAttachmentsFailed"))
     }
   }
 
@@ -98,7 +98,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       })
       if (!res.ok) {
         const data = await res.json().catch(() => null)
-        throw new Error(data?.error || "Could not package report attachments")
+        throw new Error(data?.error || t("packageFailed"))
       }
       const zip = await res.blob()
       downloadBlob(zip, `${reportId}_8D_Export.zip`)
@@ -128,11 +128,11 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
         body: JSON.stringify({ planType: "single_report_export", reportId }),
       })
       const data = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(data?.error || "Failed to create checkout session")
-      if (!data?.checkout_url) throw new Error("Checkout URL missing")
+      if (!res.ok) throw new Error(data?.error || t("checkoutSessionFailed"))
+      if (!data?.checkout_url) throw new Error(t("checkoutUrlMissing"))
       window.location.href = data.checkout_url
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Checkout failed")
+      toast.error(err instanceof Error ? err.message : t("checkoutFailed"))
     } finally {
       setLoading(null)
     }
@@ -142,8 +142,8 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     const issues = getReportCompletionIssues(data)
     if (issues.length === 0) return
 
-    toast.warning("This report may need more detail before delivery", {
-      description: issues.slice(0, 3).join("; ") + (issues.length > 3 ? `; +${issues.length - 3} more` : ""),
+    toast.warning(t("needsWork"), {
+      description: issues.slice(0, 3).join("; ") + (issues.length > 3 ? "; " + t("moreIssues", { count: issues.length - 3 }) : ""),
     })
   }
 
@@ -196,10 +196,10 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     setOpen(false)
     if (withWatermark) {
       trackEvent("word_export_gate_clicked", { plan: "free" }, reportId)
-      toast("Word export requires Pro, Team, or a single-report export", {
-        description: "Export this report once for $4.99, including Word and no-watermark PDF.",
+      toast(t("wordGate"), {
+        description: t("wordGateDesc"),
         action: {
-          label: "Export for $4.99",
+          label: t("exportFor499"),
           onClick: () => {
             trackEvent("upgrade_clicked", { source: "single_export_gate", plan: "free" }, reportId)
             void startSingleExportCheckout()
@@ -209,7 +209,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       return
     }
     if (!canExportWord) {
-      toast.error("Word export is not available for this account")
+      toast.error(t("wordUnavailable"))
       return
     }
     setLoading("docx")
@@ -248,10 +248,10 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
     setOpen(false)
     if (withWatermark) {
       trackEvent("excel_export_gate_clicked", { plan: "free" }, reportId)
-      toast("Excel export requires Pro, Team, or a single-report export", {
-        description: "Export this report once for $4.99, including Excel, Word, and no-watermark PDF.",
+      toast(t("excelGate"), {
+        description: t("excelGateDesc"),
         action: {
-          label: "Export for $4.99",
+          label: t("exportFor499"),
           onClick: () => {
             trackEvent("upgrade_clicked", { source: "single_export_excel_gate", plan: "free" }, reportId)
             void startSingleExportCheckout()
@@ -261,7 +261,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
       return
     }
     if (!canExportWord) {
-      toast.error("Excel export is not available for this account")
+      toast.error(t("excelUnavailable"))
       return
     }
     setLoading("xlsx")
@@ -309,7 +309,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
           ref={menuRef}
           className="absolute right-0 top-full z-50 mt-1 min-w-40 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
         >
-          <div className="px-1.5 py-1 text-xs font-medium text-muted-foreground">Export Format</div>
+          <div className="px-1.5 py-1 text-xs font-medium text-muted-foreground">{t("format")}</div>
           <div className="-mx-1 my-1 h-px bg-border" />
           <button
             type="button"
@@ -345,7 +345,7 @@ export function ExportMenu({ reportData, reportTitle, reportId, withWatermark, c
               className="mt-1 flex w-full items-center gap-2 rounded-md bg-indigo-50 px-2 py-1.5 text-sm font-medium text-indigo-700 hover:bg-indigo-100"
             >
               <FileDown className="size-4" />
-              Export this report — $4.99
+              {t("exportThisReport")}
             </button>
           )}
         </div>

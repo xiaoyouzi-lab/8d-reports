@@ -1,6 +1,7 @@
 "use client"
 
 import { Check } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import type { ReportStep } from "@/lib/report-steps"
 
@@ -17,6 +18,7 @@ export function ReportStepsNav({
   completedSteps,
   onStepClick,
 }: ReportStepsNavProps) {
+  const t = useTranslations("editor")
   const completedCount = completedSteps.size
   const totalSteps = steps.length
   const progressPercent = Math.round((completedCount / totalSteps) * 100)
@@ -28,7 +30,7 @@ export function ReportStepsNav({
           <div className="mb-5 px-1">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">
-                Progress
+                {t("progress")}
               </span>
               <span className="font-mono text-xs font-semibold text-indigo-600 tabular-nums">
                 {completedCount}/{totalSteps}
