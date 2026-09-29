@@ -6,6 +6,10 @@ import { getUserEntitlements } from "@/lib/subscription";
 import { getAccessibleReportScope, accessibleReportsWhere } from "@/lib/report-access";
 import { desc } from "drizzle-orm";
 
+// These labels are composed SERVER-side into the matchSnippet sentence returned
+// to the client. The response contract carries no stable field key, so the client
+// cannot re-map a label to a catalog entry without changing the contract; per the
+// Batch 8 scope they intentionally stay English.
 const SEARCH_FIELDS: Array<{ key: string; label: string }> = [
   { key: "problemDescription", label: "Problem Description" },
   { key: "productName", label: "Product" },

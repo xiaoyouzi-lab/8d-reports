@@ -40,9 +40,10 @@ const FISHBONE_FIELDS = new Set([
 ])
 
 // The editor catalog reuses the report-steps field names as keys wherever a
-// translated label exists. Field names without a catalog entry (the six
-// fishbone prompts and the photo inputs) keep their English report-steps label
-// rather than inventing 8D terminology.
+// translated label exists, and "<fieldName>Placeholder" for the six fishbone
+// prompt sentences. report-steps.ts stays locale-agnostic: its English label
+// and placeholder are only the fallback for fields (e.g. photo inputs) and
+// renderers without a catalog entry, so no 8D terminology is invented here.
 const OPTION_LABEL_KEYS: Record<string, Record<string, string>> = {
   reportType: { customer_8d: "customer8d", internal_8d: "internal8d" },
   priority: { low: "priorityLow", medium: "priorityMedium", high: "priorityHigh" },
@@ -71,6 +72,10 @@ export function StepForm({
   const tStep = useTranslations("docs.step")
 
   const fieldLabel = (field: ReportField) => (t.has(field.name) ? t(field.name) : field.label)
+  const fieldPlaceholder = (field: ReportField) => {
+    const key = `${field.name}Placeholder`
+    return t.has(key) ? t(key) : field.placeholder
+  }
   const optionLabel = (field: ReportField, value: string, fallback: string) => {
     const key = OPTION_LABEL_KEYS[field.name]?.[value]
     return key ? t(key) : fallback
@@ -92,7 +97,7 @@ export function StepForm({
           </Label>
           <Textarea
             id={field.name}
-            placeholder={field.placeholder}
+            placeholder={fieldPlaceholder(field)}
             value={value}
             readOnly={!canEdit}
             onChange={(e) => onChange(field.name, e.target.value)}
@@ -160,7 +165,7 @@ export function StepForm({
         <Input
           id={field.name}
           type={inputType}
-          placeholder={field.placeholder}
+          placeholder={fieldPlaceholder(field)}
           value={value}
           readOnly={!canEdit}
           onChange={(e) => onChange(field.name, e.target.value)}
@@ -193,7 +198,7 @@ export function StepForm({
           {tStep(`${step.id}.name`)}
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          {step.description}
+          {tStep(`${step.id}.description`)}
         </p>
       </div>
 
@@ -284,7 +289,7 @@ export function StepForm({
                         <Input
                           id={field.name}
                           aria-label={t("whyQuestion", { n: idx + 1 })}
-                          placeholder={field.placeholder}
+                          placeholder={fieldPlaceholder(field)}
                           value={data[field.name as keyof ReportData] as string}
                           readOnly={!canEdit}
                           onChange={(e) => onChange(field.name, e.target.value)}
