@@ -16,6 +16,7 @@ export default function proxy(request: NextRequest) {
 
   const headers = new Headers(request.headers)
   headers.set("x-locale", locale)
+  headers.set("x-pathname", pathname)
 
   const isProtected = protectedPaths.some(
     (path) => pathname === path || pathname.startsWith(`${path}/`)
